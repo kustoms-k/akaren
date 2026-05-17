@@ -3,6 +3,7 @@ import { useLiveQuery }  from 'dexie-react-hooks';
 import { db }            from '../db/dexie.js';
 import { syncFleetStats } from '../db/sync.js';
 import { useSync }       from '../context/SyncContext.jsx';
+import { useLanguage }   from '../context/LanguageContext.jsx';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const BLUE    = '#4361ee';
@@ -16,27 +17,22 @@ const FAINT   = '#9ca3af';
 const INTER   = "'Inter', sans-serif";
 const SURF    = '#f8f9fa';
 
-const MONTHS_SV = [
-  'Januari','Februari','Mars','April','Maj','Juni',
-  'Juli','Augusti','September','Oktober','November','December',
-];
-
 function currentMonth() {
   return new Date().toISOString().slice(0, 7);
 }
 
-function buildMonthOptions() {
+function buildMonthOptions(lang) {
   const out = [];
   const now = new Date();
+  const locale = lang === 'sv' ? 'sv-SE' : 'en-GB';
   for (let i = 0; i < 12; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    out.push({ value, label: `${MONTHS_SV[d.getMonth()]} ${d.getFullYear()}` });
+    const label = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(d);
+    out.push({ value, label: label.charAt(0).toUpperCase() + label.slice(1) });
   }
   return out;
 }
-
-const MONTH_OPTIONS = buildMonthOptions();
 
 const fmtSEK = (n) =>
   n == null ? '—' : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n) + ' kr';
@@ -49,20 +45,6 @@ const EURO_BADGE = {
   5: { label: 'E5', color: '#d97706', bg: '#fff7ed' },
   4: { label: 'E4', color: '#e74c3c', bg: '#fff0f0' },
 };
-
-const COLS = [
-  { key: 'id',              label: 'Fordon',           width: '7%',  align: 'left'   },
-  { key: 'namn',            label: 'Namn / Name',      width: '14%', align: 'left'   },
-  { key: 'typ',             label: 'Typ / Type',       width: '11%', align: 'left'   },
-  { key: 'maxLast_kg',      label: 'Max last',         width: '9%',  align: 'right'  },
-  { key: 'monthly_revenue', label: 'Intäkt / Revenue', width: '12%', align: 'right'  },
-  { key: 'monthly_hours',   label: 'Tim / Hours',      width: '8%',  align: 'right'  },
-  { key: 'profit_per_hour', label: 'Vinst/tim',        width: '10%', align: 'right'  },
-  { key: 'timkostnad_sek',  label: 'Kostnad/tim',      width: '10%', align: 'right'  },
-  { key: 'euro_klass',      label: 'Euro',             width: '7%',  align: 'center' },
-  { key: 'lez_godkänd',     label: 'LEZ',              width: '7%',  align: 'center' },
-  { key: 'tillstånd',       label: 'Tillstånd',        width: '5%',  align: 'center' },
-];
 
 function SortIndicator({ active, dir }) {
   if (!active) return <span style={{ color: FAINT, marginLeft: 3, fontSize: 10 }}>↕</span>;
@@ -98,11 +80,28 @@ function EuroBadge({ klass }) {
 }
 
 export function Fleet() {
+  const { t, lang } = useLanguage();
   const { isOnline } = useSync();
   const [month,   setMonth]   = useState(currentMonth);
   const [sortKey, setSortKey] = useState('id');
   const [sortDir, setSortDir] = useState('asc');
   const [refreshing, setRefreshing] = useState(false);
+
+  const MONTH_OPTIONS = buildMonthOptions(lang);
+
+  const COLS = [
+    { key: 'id',              label: t.fleet.cols.vehicle,       width: '7%',  align: 'left'   },
+    { key: 'namn',            label: t.fleet.cols.name,          width: '14%', align: 'left'   },
+    { key: 'typ',             label: t.fleet.cols.type,          width: '11%', align: 'left'   },
+    { key: 'maxLast_kg',      label: t.fleet.cols.maxLoad,       width: '9%',  align: 'right'  },
+    { key: 'monthly_revenue', label: t.fleet.cols.revenue,       width: '12%', align: 'right'  },
+    { key: 'monthly_hours',   label: t.fleet.cols.hours,         width: '8%',  align: 'right'  },
+    { key: 'profit_per_hour', label: t.fleet.cols.profitPerHour, width: '10%', align: 'right'  },
+    { key: 'timkostnad_sek',  label: t.fleet.cols.costPerHour,   width: '10%', align: 'right'  },
+    { key: 'euro_klass',      label: t.fleet.cols.euro,          width: '7%',  align: 'center' },
+    { key: 'lez_godkänd',     label: t.fleet.cols.lez,           width: '7%',  align: 'center' },
+    { key: 'tillstånd',       label: t.fleet.cols.permits,       width: '5%',  align: 'center' },
+  ];
 
   const cachedFleet = useLiveQuery(
     () => db.fleetStats.where('month').equals(month).toArray(),
@@ -159,16 +158,16 @@ export function Fleet() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
         <div>
           <h1 style={{ fontFamily: INTER, fontSize: 20, fontWeight: 700, color: TEXT, margin: '0 0 4px' }}>
-            Fleet / Fordonspark
+            {t.fleet.heading}
           </h1>
           {!loading && lowCount > 0 && (
             <div style={{ fontFamily: INTER, fontSize: 13, color: '#d97706' }}>
-              {lowCount} fordon under 200 kr/tim vinst — {lowCount} vehicle{lowCount !== 1 ? 's' : ''} below 200 kr/h profit
+              {t.fleet.underperforming(lowCount)}
             </div>
           )}
           {refreshing && (
             <div style={{ fontFamily: INTER, fontSize: 12, color: FAINT }}>
-              Uppdaterar… / Refreshing…
+              {t.fleet.refreshing}
             </div>
           )}
         </div>
@@ -187,7 +186,7 @@ export function Fleet() {
 
       {loading && (
         <div style={{ fontFamily: INTER, fontSize: 14, color: MUTED, textAlign: 'center', padding: 48 }}>
-          Laddar…
+          {t.fleet.loading}
         </div>
       )}
 
@@ -202,7 +201,7 @@ export function Fleet() {
                 <thead>
                   <tr>
                     {COLS.map((col) => (
-                      <th key={col.key} style={thStyle(col)} onClick={() => handleSort(col.key)} title={`Sortera efter ${col.label}`}>
+                      <th key={col.key} style={thStyle(col)} onClick={() => handleSort(col.key)}>
                         {col.label}
                         <SortIndicator active={sortKey === col.key} dir={sortDir} />
                       </th>
@@ -252,7 +251,7 @@ export function Fleet() {
                               color: '#3b82f6', background: '#eff6ff',
                               padding: '3px 10px', borderRadius: 6, cursor: 'default', whiteSpace: 'nowrap',
                             }}>
-                              {v.tillstånd.length} tillst.
+                              {t.fleet.permitsCount(v.tillstånd.length)}
                             </span>
                           ) : <span style={{ color: FAINT, fontSize: 13 }}>—</span>}
                         </td>
@@ -273,7 +272,7 @@ export function Fleet() {
                   borderLeft: '3px solid #f59e0b', background: '#fff7ed', flexShrink: 0,
                 }} />
                 <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>
-                  &lt; 200 kr/tim vinst — underpresterande / underperforming
+                  {t.fleet.legend.underperforming}
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -281,20 +280,20 @@ export function Fleet() {
                   display: 'inline-block', width: 10, height: 10,
                   background: '#e8fdf0', border: '1px solid #16a34a', borderRadius: 2, flexShrink: 0,
                 }} />
-                <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>≥ 200 kr/tim vinst / profit</span>
+                <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>{t.fleet.legend.performing}</span>
               </div>
               <span style={{ fontFamily: INTER, fontSize: 12, color: FAINT, marginLeft: 'auto', fontStyle: 'italic' }}>
-                * Vinst/tim beräknas från faktiska uppdrag denna månad · hover på tillstånd för detaljer
+                {t.fleet.legend.note}
               </span>
             </div>
           </div>
 
           <div style={{ display: 'flex', gap: 12 }}>
             {[
-              { label: 'Fordon i flottan / Total vehicles',           value: fleet.length,                                          unit: 'st' },
-              { label: 'LEZ-godkända / LEZ approved',                 value: fleet.filter((v) => v.lez_godkänd).length,             unit: `av ${fleet.length}` },
-              { label: 'Med data denna månad / With data this month', value: fleet.filter((v) => v.monthly_hours > 0).length,       unit: `av ${fleet.length}` },
-              { label: 'Under 200 kr/tim / Below 200 kr/h',          value: lowCount,                                              unit: 'fordon', warn: lowCount > 0 },
+              { label: t.fleet.cards.total,                         value: fleet.length,                                          unit: lang === 'sv' ? 'st' : 'pcs' },
+              { label: t.fleet.cards.lez(fleet.length),             value: fleet.filter((v) => v.lez_godkänd).length,             unit: '' },
+              { label: t.fleet.cards.withData(fleet.length),        value: fleet.filter((v) => v.monthly_hours > 0).length,       unit: '' },
+              { label: t.fleet.cards.underperforming,               value: lowCount,                                              unit: lang === 'sv' ? 'fordon' : 'vehicles', warn: lowCount > 0 },
             ].map((card) => (
               <div key={card.label} style={{
                 flex: 1, background: WHITE,
@@ -316,7 +315,9 @@ export function Fleet() {
                   }}>
                     {card.value}
                   </span>
-                  <span style={{ fontFamily: INTER, fontSize: 14, color: MUTED }}>{card.unit}</span>
+                  {card.unit && (
+                    <span style={{ fontFamily: INTER, fontSize: 14, color: MUTED }}>{card.unit}</span>
+                  )}
                 </div>
               </div>
             ))}

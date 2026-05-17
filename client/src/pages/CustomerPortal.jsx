@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
-// ── Design tokens ─────────────────────────────────────────────────────────────
 const BLUE    = '#4361ee';
 const BLUE_DK = '#3451d1';
 const WHITE   = '#ffffff';
@@ -11,7 +11,6 @@ const MUTED   = '#6c757d';
 const FAINT   = '#9ca3af';
 const INTER   = "'Inter', sans-serif";
 
-// ── Formatters ────────────────────────────────────────────────────────────────
 const fmtSEK = (n) =>
   n == null ? '—' :
   new Intl.NumberFormat('sv-SE', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n) + ' kr';
@@ -32,20 +31,22 @@ const fmtTime = (s) => {
   } catch { return ''; }
 };
 
-function statusBadge(status) {
-  if (status === 'godkänd')  return { label: 'Godkänd',  bg: '#e8fdf0', color: '#16a34a' };
-  if (status === 'avböjd')   return { label: 'Avböjd',   bg: '#fff0f0', color: '#e74c3c' };
-  if (status === 'avslutad') return { label: 'Avslutad', bg: '#f0f2f5', color: '#6c757d' };
-  return                            { label: 'Väntande', bg: '#fff7ed', color: '#d97706' };
+function statusBadge(status, t) {
+  const tp = t.portal;
+  if (status === 'godkänd')  return { label: tp.statuses.accepted,  bg: '#e8fdf0', color: '#16a34a' };
+  if (status === 'avböjd')   return { label: tp.statuses.declined,  bg: '#fff0f0', color: '#e74c3c' };
+  if (status === 'avslutad') return { label: tp.statuses.completed, bg: '#f0f2f5', color: '#6c757d' };
+  if (status === 'fakturerad')return { label: tp.statuses.invoiced,  bg: '#eff6ff', color: '#1e3a5f' };
+  return                            { label: tp.statuses.pending,   bg: '#fff7ed', color: '#d97706' };
 }
 
-function invoiceStatusBadge(status) {
-  if (status === 'betald')    return { label: 'Betald',    bg: '#e8fdf0', color: '#16a34a' };
-  if (status === 'förfallen') return { label: 'Förfallen', bg: '#fff0f0', color: '#e74c3c' };
-  return                             { label: 'Utestående', bg: '#fff7ed', color: '#d97706' };
+function invoiceStatusBadge(status, t) {
+  const is = t.portal.invoiceStatuses;
+  if (status === 'betald')    return { label: is.paid,        bg: '#e8fdf0', color: '#16a34a' };
+  if (status === 'förfallen') return { label: is.overdue,     bg: '#fff0f0', color: '#e74c3c' };
+  return                             { label: is.outstanding, bg: '#fff7ed', color: '#d97706' };
 }
 
-// ── Small reusable components ─────────────────────────────────────────────────
 function KpiCard({ label, value, sub, accent }) {
   return (
     <div style={{
@@ -67,46 +68,21 @@ function KpiCard({ label, value, sub, accent }) {
   );
 }
 
-function TabBar({ active, onChange }) {
-  const tabs = [
-    { id: 'history',  label: 'Historik' },
-    { id: 'messages', label: 'Meddelanden' },
-  ];
-  return (
-    <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${BORDER}`, marginBottom: 24 }}>
-      {tabs.map(({ id, label }) => (
-        <button
-          key={id}
-          onClick={() => onChange(id)}
-          style={{
-            fontFamily: INTER, fontSize: 13, fontWeight: active === id ? 600 : 400,
-            color: active === id ? BLUE : MUTED,
-            background: 'none', border: 'none',
-            borderBottom: active === id ? `2px solid ${BLUE}` : '2px solid transparent',
-            padding: '10px 18px', cursor: 'pointer',
-            marginBottom: -1, transition: 'color 0.15s',
-          }}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-// ── Main component ────────────────────────────────────────────────────────────
 export function CustomerPortal({ token }) {
-  const [data,            setData]            = useState(null);
-  const [loading,         setLoading]         = useState(true);
-  const [error,           setError]           = useState(null);
-  const [activeTab,       setActiveTab]       = useState('history');
-  const [messages,        setMessages]        = useState([]);
-  const [msgInput,        setMsgInput]        = useState('');
-  const [sending,         setSending]         = useState(false);
-  const [showInquiry,     setShowInquiry]     = useState(false);
-  const [inquiryText,     setInquiryText]     = useState('');
-  const [sendingInquiry,  setSendingInquiry]  = useState(false);
-  const [inquirySent,     setInquirySent]     = useState(false);
+  const { t } = useLanguage();
+  const tp = t.portal;
+
+  const [data,           setData]           = useState(null);
+  const [loading,        setLoading]        = useState(true);
+  const [error,          setError]          = useState(null);
+  const [activeTab,      setActiveTab]      = useState('history');
+  const [messages,       setMessages]       = useState([]);
+  const [msgInput,       setMsgInput]       = useState('');
+  const [sending,        setSending]        = useState(false);
+  const [showInquiry,    setShowInquiry]    = useState(false);
+  const [inquiryText,    setInquiryText]    = useState('');
+  const [sendingInquiry, setSendingInquiry] = useState(false);
+  const [inquirySent,    setInquirySent]    = useState(false);
   const msgEndRef = useRef(null);
 
   useEffect(() => {
@@ -159,17 +135,15 @@ export function CustomerPortal({ token }) {
     } catch { /* silent */ } finally { setSendingInquiry(false); }
   }
 
-  // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: BG, display: 'flex',
         alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontFamily: INTER, fontSize: 14, color: MUTED }}>Laddar portal…</div>
+        <div style={{ fontFamily: INTER, fontSize: 14, color: MUTED }}>{tp.loadingPortal}</div>
       </div>
     );
   }
 
-  // ── Error ──────────────────────────────────────────────────────────────────
   if (error || !data) {
     return (
       <div style={{ minHeight: '100vh', background: BG, display: 'flex',
@@ -177,10 +151,10 @@ export function CustomerPortal({ token }) {
         <div style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12,
           padding: '32px 40px', textAlign: 'center', maxWidth: 400 }}>
           <div style={{ fontFamily: INTER, fontSize: 16, fontWeight: 600, color: TEXT, marginBottom: 8 }}>
-            Portal hittades inte
+            {tp.notFound}
           </div>
           <div style={{ fontFamily: INTER, fontSize: 13, color: MUTED }}>
-            Länken kan ha löpt ut eller vara felaktig. Kontakta er speditör.
+            {tp.notFoundDesc}
           </div>
         </div>
       </div>
@@ -189,14 +163,16 @@ export function CustomerPortal({ token }) {
 
   const { portal, quotes, ytd_spend, total_spend, inquiries } = data;
   const activeQuotes  = (quotes ?? []).filter((q) => q.status === 'väntande');
-  const closedQuotes  = (quotes ?? []).filter((q) => q.status !== 'väntande');
   const unreadCount   = messages.filter((m) => m.direction === 'out' && !m.read_at).length;
-  const pendingInquiries = (inquiries ?? []).filter((i) => !i.quote_id).length;
+
+  const TABS = [
+    { id: 'history',  label: tp.tabs.history },
+    { id: 'messages', label: tp.tabs.messages },
+  ];
 
   return (
     <div style={{ minHeight: '100vh', background: BG, fontFamily: INTER }}>
 
-      {/* ── Top bar ───────────────────────────────────────────────────────── */}
       <header style={{
         background: WHITE, borderBottom: `1px solid ${BORDER}`,
         position: 'sticky', top: 0, zIndex: 50,
@@ -225,7 +201,7 @@ export function CustomerPortal({ token }) {
               background: BG, border: `1px solid ${BORDER}`,
               borderRadius: 20, padding: '4px 12px',
             }}>
-              🔒 Ert konto
+              {tp.yourAccount}
             </div>
           </div>
         </div>
@@ -233,51 +209,48 @@ export function CustomerPortal({ token }) {
 
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px 80px' }}>
 
-        {/* ── Welcome ───────────────────────────────────────────────────────── */}
         <div style={{ marginBottom: 28 }}>
           <h1 style={{ fontFamily: INTER, fontSize: 24, fontWeight: 700, color: TEXT,
             margin: '0 0 6px', letterSpacing: '-0.02em' }}>
-            Välkommen, {portal.customer_name}
+            {tp.welcome}, {portal.customer_name}
           </h1>
           <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: 0 }}>
-            Här ser du alla era offerter, uppdrag och fakturor med {portal.company_name}.
+            {tp.subtitle(portal.company_name)}
           </p>
         </div>
 
-        {/* ── KPI row ───────────────────────────────────────────────────────── */}
         <div style={{ display: 'flex', gap: 14, marginBottom: 32, flexWrap: 'wrap' }}>
           <KpiCard
-            label="Offerter totalt"
+            label={tp.kpis.quotes}
             value={String(quotes?.length ?? 0)}
-            sub={`${activeQuotes.length} aktiva`}
+            sub={tp.kpis.activeQuotes(activeQuotes.length)}
           />
           <KpiCard
-            label="Betalt i år"
+            label={tp.kpis.paidLabel}
             value={fmtSEK(ytd_spend)}
-            sub="betalda fakturor"
+            sub={tp.kpis.paidSub}
             accent={BLUE}
           />
           <KpiCard
-            label="Totalt värde"
+            label={tp.kpis.totalLabel}
             value={fmtSEK(total_spend)}
-            sub="godkända offerter"
+            sub={tp.kpis.totalSub}
           />
           {unreadCount > 0 && (
             <KpiCard
-              label="Nya meddelanden"
+              label={tp.kpis.newMessages}
               value={String(unreadCount)}
-              sub="från er speditör"
+              sub={tp.kpis.fromDispatcher}
               accent="#d97706"
             />
           )}
         </div>
 
-        {/* ── Active quote highlight ─────────────────────────────────────────── */}
         {activeQuotes.length > 0 && (
           <div style={{ marginBottom: 28 }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: MUTED,
               textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
-              Aktiv offert inväntar ert svar
+              {tp.activeQuote.heading}
             </div>
             {activeQuotes.map((q) => (
               <div key={q.id} style={{
@@ -297,7 +270,7 @@ export function CustomerPortal({ token }) {
                       </div>
                     )}
                     {q.datum && (
-                      <div style={{ fontSize: 12, color: FAINT }}>Datum: {q.datum}</div>
+                      <div style={{ fontSize: 12, color: FAINT }}>{fmtDate(q.datum)}</div>
                     )}
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -322,7 +295,7 @@ export function CustomerPortal({ token }) {
                       onMouseEnter={(e) => { e.currentTarget.style.background = BLUE_DK; }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = BLUE; }}
                     >
-                      Visa & svara på offert →
+                      {tp.activeQuote.viewBtn}
                     </a>
                   </div>
                 )}
@@ -331,10 +304,23 @@ export function CustomerPortal({ token }) {
           </div>
         )}
 
-        {/* ── Tabs ─────────────────────────────────────────────────────────── */}
-        <TabBar active={activeTab} onChange={setActiveTab} />
+        {/* Tab bar */}
+        <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${BORDER}`, marginBottom: 24 }}>
+          {TABS.map(({ id, label }) => (
+            <button key={id} onClick={() => setActiveTab(id)} style={{
+              fontFamily: INTER, fontSize: 13, fontWeight: activeTab === id ? 600 : 400,
+              color: activeTab === id ? BLUE : MUTED,
+              background: 'none', border: 'none',
+              borderBottom: activeTab === id ? `2px solid ${BLUE}` : '2px solid transparent',
+              padding: '10px 18px', cursor: 'pointer',
+              marginBottom: -1, transition: 'color 0.15s',
+            }}>
+              {label}
+            </button>
+          ))}
+        </div>
 
-        {/* ── History tab ──────────────────────────────────────────────────── */}
+        {/* History tab */}
         {activeTab === 'history' && (
           <div>
             {quotes?.length === 0 ? (
@@ -342,16 +328,15 @@ export function CustomerPortal({ token }) {
                 background: WHITE, border: `1px solid ${BORDER}`,
                 borderRadius: 12, padding: '48px 24px', textAlign: 'center',
               }}>
-                <div style={{ fontSize: 13, color: MUTED }}>
-                  Inga offerter ännu — er speditör kontaktar er snart.
-                </div>
+                <div style={{ fontSize: 13, color: MUTED }}>{tp.noQuotesDesc}</div>
               </div>
             ) : (
               <div style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12, overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ background: BG }}>
-                      {['Referens', 'Typ av last', 'Rutt', 'Datum', 'Belopp', 'Status'].map((col) => (
+                      {[tp.table.ref, tp.table.cargo, tp.table.route,
+                        tp.table.date, tp.table.amount, tp.table.status].map((col) => (
                         <th key={col} style={{
                           fontFamily: INTER, fontSize: 11, fontWeight: 600,
                           color: MUTED, textAlign: 'left',
@@ -365,8 +350,8 @@ export function CustomerPortal({ token }) {
                   </thead>
                   <tbody>
                     {quotes.map((q, i) => {
-                      const sb = statusBadge(q.status ?? 'väntande');
-                      const ib = q.invoice_status ? invoiceStatusBadge(q.invoice_status) : null;
+                      const sb = statusBadge(q.status ?? 'väntande', t);
+                      const ib = q.invoice_status ? invoiceStatusBadge(q.invoice_status, t) : null;
                       return (
                         <tr key={q.id}
                           style={{ borderBottom: i < quotes.length - 1 ? `1px solid ${BORDER}` : 'none' }}
@@ -423,7 +408,6 @@ export function CustomerPortal({ token }) {
               </div>
             )}
 
-            {/* ── Request new quote CTA ────────────────────────────────────── */}
             <div style={{ marginTop: 28, textAlign: 'center' }}>
               <button
                 onClick={() => setShowInquiry(true)}
@@ -436,16 +420,16 @@ export function CustomerPortal({ token }) {
                 onMouseEnter={(e) => { e.currentTarget.style.background = BLUE_DK; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = BLUE; }}
               >
-                + Begär ny offert
+                {tp.newInquiry.btn}
               </button>
               <p style={{ fontFamily: INTER, fontSize: 11, color: FAINT, marginTop: 8 }}>
-                Er förfrågan skickas direkt till speditören och besvaras inom kort.
+                {tp.newInquiry.hint}
               </p>
             </div>
           </div>
         )}
 
-        {/* ── Messages tab ─────────────────────────────────────────────────── */}
+        {/* Messages tab */}
         {activeTab === 'messages' && (
           <div>
             <div style={{
@@ -454,13 +438,12 @@ export function CustomerPortal({ token }) {
               display: 'flex', flexDirection: 'column',
               minHeight: 360, maxHeight: 520,
             }}>
-              {/* Thread */}
               <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px',
                 display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {messages.length === 0 ? (
                   <div style={{ margin: 'auto', textAlign: 'center' }}>
                     <div style={{ fontFamily: INTER, fontSize: 13, color: MUTED }}>
-                      Inga meddelanden ännu. Skriv ett meddelande till er speditör.
+                      {tp.noMessagesDesc}
                     </div>
                   </div>
                 ) : (
@@ -482,7 +465,7 @@ export function CustomerPortal({ token }) {
                           {msg.body}
                         </div>
                         <div style={{ fontFamily: INTER, fontSize: 10, color: FAINT, marginTop: 4 }}>
-                          {isOut ? msg.sender_name : 'Du'} · {fmtTime(msg.created_at)}
+                          {isOut ? msg.sender_name : tp.messageThread.you} · {fmtTime(msg.created_at)}
                         </div>
                       </div>
                     );
@@ -491,7 +474,6 @@ export function CustomerPortal({ token }) {
                 <div ref={msgEndRef} />
               </div>
 
-              {/* Input row */}
               <div style={{
                 borderTop: `1px solid ${BORDER}`, padding: '14px 20px',
                 display: 'flex', gap: 10, alignItems: 'flex-end',
@@ -502,7 +484,7 @@ export function CustomerPortal({ token }) {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
                   }}
-                  placeholder="Skriv ett meddelande… (Enter för att skicka)"
+                  placeholder={tp.messageThread.placeholder}
                   rows={2}
                   style={{
                     flex: 1, fontFamily: INTER, fontSize: 13, color: TEXT,
@@ -524,7 +506,7 @@ export function CustomerPortal({ token }) {
                     whiteSpace: 'nowrap', flexShrink: 0,
                   }}
                 >
-                  {sending ? '…' : 'Skicka'}
+                  {sending ? tp.messageThread.sending : tp.messageThread.send}
                 </button>
               </div>
             </div>
@@ -533,7 +515,7 @@ export function CustomerPortal({ token }) {
 
       </div>
 
-      {/* ── New inquiry modal ─────────────────────────────────────────────────── */}
+      {/* New inquiry modal */}
       {showInquiry && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 200,
@@ -547,7 +529,6 @@ export function CustomerPortal({ token }) {
             boxShadow: '0 20px 60px rgba(0,0,0,0.16)',
             overflow: 'hidden',
           }}>
-            {/* Header */}
             <div style={{
               padding: '20px 24px 16px',
               borderBottom: `1px solid ${BORDER}`,
@@ -555,10 +536,10 @@ export function CustomerPortal({ token }) {
             }}>
               <div>
                 <div style={{ fontFamily: INTER, fontSize: 15, fontWeight: 700, color: TEXT }}>
-                  Begär ny offert
+                  {tp.newInquiry.heading}
                 </div>
                 <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED, marginTop: 2 }}>
-                  Beskriv uppdraget så kontaktar speditören er.
+                  {tp.newInquiry.sub}
                 </div>
               </div>
               <button
@@ -569,16 +550,15 @@ export function CustomerPortal({ token }) {
               </button>
             </div>
 
-            {/* Body */}
             <div style={{ padding: '20px 24px' }}>
               {inquirySent ? (
                 <div style={{ textAlign: 'center', padding: '16px 0' }}>
                   <div style={{ fontSize: 24, marginBottom: 8 }}>✓</div>
                   <div style={{ fontFamily: INTER, fontSize: 14, fontWeight: 600, color: '#16a34a', marginBottom: 4 }}>
-                    Förfrågan skickad!
+                    {tp.newInquiry.sent}
                   </div>
                   <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>
-                    Speditören återkommer med en offert.
+                    {tp.newInquiry.sentDesc}
                   </div>
                 </div>
               ) : (
@@ -587,11 +567,7 @@ export function CustomerPortal({ token }) {
                     autoFocus
                     value={inquiryText}
                     onChange={(e) => setInquiryText(e.target.value)}
-                    placeholder={`Beskriv ert transportbehov:
-• Vad ska transporteras?
-• Upphämtning och leveransadress
-• Önskat datum
-• Eventuella specialkrav`}
+                    placeholder={tp.newInquiry.placeholder}
                     rows={7}
                     style={{
                       width: '100%', fontFamily: INTER, fontSize: 13, color: TEXT,
@@ -610,7 +586,7 @@ export function CustomerPortal({ token }) {
                         padding: '10px 20px', cursor: 'pointer',
                       }}
                     >
-                      Avbryt
+                      {tp.newInquiry.cancel}
                     </button>
                     <button
                       onClick={sendInquiry}
@@ -624,7 +600,7 @@ export function CustomerPortal({ token }) {
                         transition: 'background 0.15s',
                       }}
                     >
-                      {sendingInquiry ? 'Skickar…' : 'Skicka förfrågan'}
+                      {sendingInquiry ? tp.newInquiry.sending : tp.newInquiry.submit}
                     </button>
                   </div>
                 </>
@@ -634,7 +610,6 @@ export function CustomerPortal({ token }) {
         </div>
       )}
 
-      {/* ── Footer ───────────────────────────────────────────────────────────── */}
       <footer style={{
         borderTop: `1px solid ${BORDER}`, background: WHITE,
         padding: '16px 24px', textAlign: 'center', marginTop: 40,

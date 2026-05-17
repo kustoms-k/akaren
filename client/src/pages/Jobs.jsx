@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Download, Mail, FileText } from 'lucide-react';
 import { useLiveQuery }    from 'dexie-react-hooks';
 import { useAuth }         from '../context/AuthContext.jsx';
+import { useLanguage }     from '../context/LanguageContext.jsx';
 import { generateFaktura } from '../utils/generateFaktura.js';
 import { apiFetch }        from '../utils/apiFetch.js';
 import { Toast }           from '../components/Toast.jsx';
@@ -33,25 +34,28 @@ const fmtDate = (s) => {
 
 // ── Status badge ──────────────────────────────────────────────────────────────
 function StatusBadge({ status }) {
-  const map = {
-    planerad:   { label: 'Planerad',   color: '#d97706', bg: '#fff7ed' },
-    aktiv:      { label: 'Aktiv',      color: '#15803d', bg: '#f0fdf4' },
-    fakturerad: { label: 'Fakturerad', color: '#3b82f6', bg: '#eff6ff' },
+  const { t } = useLanguage();
+  const colors = {
+    planerad:   { color: '#d97706', bg: '#fff7ed' },
+    aktiv:      { color: '#15803d', bg: '#f0fdf4' },
+    fakturerad: { color: '#3b82f6', bg: '#eff6ff' },
   };
-  const s = map[status] ?? map.planerad;
+  const s = colors[status] ?? colors.planerad;
+  const label = t.jobs.statuses[status] ?? status;
   return (
     <span style={{
       fontFamily: INTER, fontSize: 11, letterSpacing: '0.02em', fontWeight: 600,
       textTransform: 'uppercase', color: s.color, background: s.bg,
       padding: '3px 10px', borderRadius: 6, whiteSpace: 'nowrap',
     }}>
-      {s.label}
+      {label}
     </span>
   );
 }
 
 // ── Invoice modal ─────────────────────────────────────────────────────────────
 function InvoiceModal({ job, customers, onClose, onSuccess }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState({
     customer_name: '', customer_org_nr: '', customer_address: '', customer_email: '',
   });
@@ -147,7 +151,7 @@ function InvoiceModal({ job, customers, onClose, onSuccess }) {
         }}
       >
         <div style={{ fontFamily: INTER, fontSize: 11, letterSpacing: '0.05em', textTransform: 'uppercase', color: FAINT, fontWeight: 600, marginBottom: 6 }}>
-          Generera Faktura / Generate Invoice
+          {t.jobs.invoiceModal.heading}
         </div>
         <div style={{ fontFamily: INTER, fontSize: 15, fontWeight: 600, color: TEXT, marginBottom: 4 }}>
           {job.lasttyp || 'Transport'}
@@ -156,23 +160,23 @@ function InvoiceModal({ job, customers, onClose, onSuccess }) {
           <div style={{ fontFamily: INTER, fontSize: 13, color: MUTED, marginBottom: 20 }}>
             {[job.upphämtning, job.leverans].filter(Boolean).join(' → ')}
             {job.totalpris_sek != null && (
-              <span style={{ color: BLUE, marginLeft: 10, fontWeight: 600 }}>{fmtSEK(job.totalpris_sek)} exkl. moms</span>
+              <span style={{ color: BLUE, marginLeft: 10, fontWeight: 600 }}>{fmtSEK(job.totalpris_sek)} {t.jobs.exclVat}</span>
             )}
           </div>
         )}
 
         {customers.length > 0 && (
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Välj kund (Fortnox) / Select customer</label>
+            <label style={labelStyle}>{t.jobs.invoiceModal.selectCustomer}</label>
             <select value={selectedCustId} onChange={(e) => pickCustomer(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-              <option value="">— Välj eller fyll i manuellt —</option>
+              <option value="">{t.jobs.invoiceModal.selectOrManual}</option>
               {customers.map((c) => <option key={c.id} value={c.id}>{c.name} {c.org_nr ? `(${c.org_nr})` : ''}</option>)}
             </select>
           </div>
         )}
 
         <div style={{ marginBottom: 12 }}>
-          <label style={labelStyle}>Kundnamn *</label>
+          <label style={labelStyle}>{t.jobs.invoiceModal.customerName}</label>
           <input
             autoFocus={customers.length === 0}
             required
@@ -185,17 +189,17 @@ function InvoiceModal({ job, customers, onClose, onSuccess }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
           <div>
-            <label style={labelStyle}>Org.nr</label>
+            <label style={labelStyle}>{t.jobs.invoiceModal.orgNr}</label>
             <input value={form.customer_org_nr} onChange={(e) => setForm((f) => ({ ...f, customer_org_nr: e.target.value }))} placeholder="556xxx-xxxx" style={inputStyle} />
           </div>
           <div>
-            <label style={labelStyle}>E-post</label>
+            <label style={labelStyle}>{t.jobs.invoiceModal.email}</label>
             <input type="email" value={form.customer_email} onChange={(e) => setForm((f) => ({ ...f, customer_email: e.target.value }))} placeholder="faktura@kund.se" style={inputStyle} />
           </div>
         </div>
 
         <div style={{ marginBottom: 20 }}>
-          <label style={labelStyle}>Fakturaadress</label>
+          <label style={labelStyle}>{t.jobs.invoiceModal.address}</label>
           <textarea rows={3} value={form.customer_address} onChange={(e) => setForm((f) => ({ ...f, customer_address: e.target.value }))} placeholder={'Gatuadress\nPostnummer Ort'} style={{ ...inputStyle, resize: 'none' }} />
         </div>
 
@@ -208,7 +212,7 @@ function InvoiceModal({ job, customers, onClose, onSuccess }) {
               border: '1.5px solid #e9ecef', borderRadius: 8, background: WHITE,
               color: '#374151', cursor: 'pointer',
             }}>
-            Avbryt
+            {t.jobs.invoiceModal.cancel}
           </button>
           <button type="submit" disabled={busy || !form.customer_name.trim()}
             style={{
@@ -218,7 +222,7 @@ function InvoiceModal({ job, customers, onClose, onSuccess }) {
               color: busy || !form.customer_name.trim() ? MUTED : WHITE,
               cursor: busy || !form.customer_name.trim() ? 'not-allowed' : 'pointer',
             }}>
-            {busy ? 'Genererar…' : 'Generera & ladda ned PDF'}
+            {busy ? t.jobs.invoiceModal.generating : t.jobs.invoiceModal.generate}
           </button>
         </div>
       </form>
@@ -228,6 +232,7 @@ function InvoiceModal({ job, customers, onClose, onSuccess }) {
 
 // ── Jobs page ─────────────────────────────────────────────────────────────────
 export function Jobs() {
+  const { t } = useLanguage();
   const { company } = useAuth();
   const [customers, setCustomers] = useState([]);
   const [modal,     setModal]     = useState(null);
@@ -277,7 +282,7 @@ export function Jobs() {
     try {
       await generateFaktura(invoice, company);
     } catch {
-      setToast({ message: 'Kunde inte generera PDF', variant: 'error' });
+      setToast({ message: t.jobs.invoiceFailed, variant: 'error' });
     }
   }
 
@@ -302,13 +307,13 @@ export function Jobs() {
   }
 
   const COLS = [
-    { label: '#',               w: '8%'  },
-    { label: 'Rutt / Route',    w: '25%' },
-    { label: 'Last / Cargo',    w: '14%' },
-    { label: 'Belopp / Amount', w: '12%', right: true },
-    { label: 'Datum / Date',    w: '11%' },
-    { label: 'Status',          w: '14%' },
-    { label: '',                w: '16%' },
+    { label: '#',              w: '8%'  },
+    { label: t.jobs.route,     w: '25%' },
+    { label: t.jobs.cargo,     w: '14%' },
+    { label: t.jobs.amount,    w: '12%', right: true },
+    { label: t.jobs.date,      w: '11%' },
+    { label: t.jobs.status,    w: '14%' },
+    { label: '',               w: '16%' },
   ];
 
   return (
@@ -317,10 +322,10 @@ export function Jobs() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
         <div>
           <h1 style={{ fontFamily: INTER, fontSize: 20, fontWeight: 700, color: TEXT, margin: '0 0 4px' }}>
-            Jobs / Uppdrag
+            {t.jobs.heading}
           </h1>
           <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: 0 }}>
-            {loading ? 'Laddar…' : `${jobs.length} uppdrag`}
+            {loading ? t.jobs.loading : t.jobs.count(jobs.length)}
           </p>
         </div>
       </div>
@@ -353,7 +358,7 @@ export function Jobs() {
                     fontFamily: INTER, fontSize: 13, textAlign: 'center',
                     color: MUTED, fontStyle: 'italic', padding: 40,
                   }}>
-                    Laddar uppdrag…
+                    {t.jobs.loading}
                   </td>
                 </tr>
               )}
@@ -363,7 +368,7 @@ export function Jobs() {
                     fontFamily: INTER, fontSize: 13, textAlign: 'center',
                     color: MUTED, fontStyle: 'italic', padding: 40,
                   }}>
-                    Inga uppdrag ännu — skapa en offert för att börja / No jobs yet — create a quote to start
+                    {t.jobs.noJobs}
                   </td>
                 </tr>
               )}
@@ -422,7 +427,7 @@ export function Jobs() {
                       {job.totalpris_sek != null ? (
                         <div>
                           <div style={{ fontSize: 14, fontWeight: 600 }}>{fmtSEK(job.totalpris_sek)}</div>
-                          <div style={{ fontSize: 11, color: FAINT }}>exkl. moms</div>
+                          <div style={{ fontSize: 11, color: FAINT }}>{t.jobs.exclVat}</div>
                         </div>
                       ) : '—'}
                     </td>
@@ -462,7 +467,7 @@ export function Jobs() {
                           onMouseLeave={(e) => e.currentTarget.style.background = BLUE}
                         >
                           <FileText size={13} />
-                          Generera Faktura
+                          {t.jobs.generateInvoice}
                         </button>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -478,7 +483,7 @@ export function Jobs() {
                               }}
                             >
                               <Download size={13} />
-                              Ladda ned PDF
+                              {t.jobs.downloadPdf}
                             </button>
                           )}
                           <button
@@ -492,7 +497,7 @@ export function Jobs() {
                             }}
                           >
                             <Mail size={13} />
-                            Skicka via e-post
+                            {t.jobs.sendEmail}
                           </button>
                         </div>
                       )}
@@ -506,7 +511,7 @@ export function Jobs() {
       </div>
 
       <div style={{ fontFamily: INTER, fontSize: 12, color: FAINT, marginTop: 12 }}>
-        * E-postknappen öppnar din e-postklient med ett förberett meddelande. Bifoga den nedladdade PDF-filen manuellt.
+        {t.jobs.emailNote}
       </div>
 
       {modal && (
@@ -516,7 +521,7 @@ export function Jobs() {
           onClose={() => setModal(null)}
           onSuccess={(invoice) => {
             setModal(null);
-            setToast({ message: `Faktura ${invoice.faktura_nr} genererad / Invoice ${invoice.faktura_nr} generated`, variant: 'success' });
+            setToast({ message: t.jobs.invoiceCreated(invoice.faktura_nr), variant: 'success' });
           }}
         />
       )}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { S } from '../constants/strings.js';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 const INTER   = "'Inter', sans-serif";
 const BLUE    = '#4361ee';
@@ -9,6 +9,7 @@ const TEXT    = '#1a1a2e';
 const MUTED   = '#6c757d';
 
 export function InquiryInput({ onAnalyse, loading, apiError, isOnline = true }) {
+  const { t, lang } = useLanguage();
   const [text, setText] = useState('');
 
   const empty    = !text.trim();
@@ -16,12 +17,12 @@ export function InquiryInput({ onAnalyse, loading, apiError, isOnline = true }) 
 
   function handleSubmit(e) {
     e.preventDefault();
-    if (!disabled) onAnalyse(text.trim());
+    if (!disabled) onAnalyse(text.trim(), lang);
   }
 
   const errorMsg =
-    apiError === 'parse'   ? S.errors.parse   :
-    apiError === 'network' ? S.errors.network  :
+    apiError === 'parse'   ? t.errors.parse   :
+    apiError === 'network' ? t.errors.network  :
     null;
 
   return (
@@ -29,7 +30,7 @@ export function InquiryInput({ onAnalyse, loading, apiError, isOnline = true }) 
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder={S.inquiry.placeholder}
+        placeholder={t.inquiry.placeholder}
         disabled={loading}
         style={{
           fontFamily: INTER,
@@ -96,7 +97,7 @@ export function InquiryInput({ onAnalyse, loading, apiError, isOnline = true }) 
               />
             ))}
           </span>
-        ) : S.inquiry.submit}
+        ) : t.inquiry.submit}
       </button>
 
       {!isOnline && (
@@ -110,7 +111,7 @@ export function InquiryInput({ onAnalyse, loading, apiError, isOnline = true }) 
             color: '#e74c3c', lineHeight: 1.5, flexShrink: 0,
           }}
         >
-          AI kräver internetanslutning / AI requires connection
+          {t.inquiry.offline}
         </div>
       )}
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 const INTER  = "'Inter', sans-serif";
 const BLUE   = '#4361ee';
@@ -11,6 +12,7 @@ const MUTED  = '#6c757d';
 const SURF   = '#f8f9fa';
 
 export function DpaModal({ onAccepted }) {
+  const { t } = useLanguage();
   const [dpa,       setDpa]       = useState(null);
   const [scrolled,  setScrolled]  = useState(false);
   const [accepting, setAccepting] = useState(false);
@@ -21,7 +23,7 @@ export function DpaModal({ onAccepted }) {
     apiFetch('/api/data-privacy/dpa')
       .then((r) => r.json())
       .then(setDpa)
-      .catch(() => setError('Could not load DPA'));
+      .catch(() => setError(t.dpa.loadError));
   }, []);
 
   function handleScroll() {
@@ -40,7 +42,7 @@ export function DpaModal({ onAccepted }) {
       if (!res.ok) throw new Error();
       onAccepted();
     } catch {
-      setError('Failed to record acceptance. Please try again.');
+      setError(t.dpa.acceptError);
     } finally {
       setAccepting(false);
     }
@@ -77,15 +79,7 @@ export function DpaModal({ onAccepted }) {
             letterSpacing: '0.06em', textTransform: 'uppercase',
             color: BLUE, marginBottom: 6,
           }}>
-            Personuppgiftsbiträdesavtal / Data Processing Agreement
-          </div>
-          <div style={{ fontFamily: INTER, fontSize: 16, fontWeight: 700, color: TEXT }}>
-            Granska och acceptera PUB-avtal
-          </div>
-          <div style={{ fontFamily: INTER, fontSize: 13, color: MUTED, marginTop: 4, lineHeight: 1.5 }}>
-            Du måste acceptera detta avtal för att använda Åkaren. Avtalet krävs enligt GDPR artikel 28.
-            <br />
-            You must accept this agreement to use Åkaren. Required under GDPR Article 28.
+            {t.dpa.heading}
           </div>
         </div>
 
@@ -108,7 +102,7 @@ export function DpaModal({ onAccepted }) {
         >
           {dpa ? dpa.text : (
             <div style={{ color: MUTED, fontStyle: 'italic', fontFamily: INTER }}>
-              Laddar avtal… / Loading agreement…
+              {t.dpa.loading}
             </div>
           )}
         </div>
@@ -123,7 +117,7 @@ export function DpaModal({ onAccepted }) {
             color: MUTED,
             flexShrink: 0,
           }}>
-            ↓ Scrolla ned för att läsa hela avtalet / Scroll down to read the full agreement
+            {t.dpa.scrollHint}
           </div>
         )}
 
@@ -149,12 +143,12 @@ export function DpaModal({ onAccepted }) {
 
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
             <div style={{ flex: 1, fontFamily: INTER, fontSize: 12, color: MUTED, lineHeight: 1.5 }}>
-              {dpa ? `Version ${dpa.version}` : ''} · Signeras digitalt med IP-adress och tidsstämpel
+              {dpa ? `Version ${dpa.version}` : ''} · {t.dpa.footer}
             </div>
             <button
               onClick={handleAccept}
               disabled={!scrolled || accepting || !dpa}
-              title={!scrolled ? 'Scrolla ned för att läsa hela avtalet' : undefined}
+              title={!scrolled ? t.dpa.scrollHint : undefined}
               style={{
                 fontFamily: INTER,
                 fontSize: 13,
@@ -171,7 +165,7 @@ export function DpaModal({ onAccepted }) {
               onMouseEnter={(e) => { if (scrolled && dpa) e.currentTarget.style.background = BLUE_DK; }}
               onMouseLeave={(e) => { if (scrolled && dpa) e.currentTarget.style.background = BLUE; }}
             >
-              {accepting ? 'Sparar…' : 'Jag accepterar / I Accept'}
+              {accepting ? t.dpa.accepting : t.dpa.accept}
             </button>
           </div>
         </div>

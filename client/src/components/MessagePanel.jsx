@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
-const INTER  = "'Inter', sans-serif";
-const BLUE   = '#4361ee';
+const INTER   = "'Inter', sans-serif";
+const BLUE    = '#4361ee';
 const BLUE_DK = '#3451d1';
-const WHITE  = '#ffffff';
-const BORDER = '#e9ecef';
-const TEXT   = '#1a1a2e';
-const MUTED  = '#6c757d';
-const SURF   = '#f8f9fa';
+const WHITE   = '#ffffff';
+const BORDER  = '#e9ecef';
+const TEXT    = '#1a1a2e';
+const MUTED   = '#6c757d';
+const SURF    = '#f8f9fa';
 
 const fmtSEK = (n) =>
   n == null ? '—' : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n) + ' kr';
@@ -24,188 +25,6 @@ function fmtTs(str) {
       + ' ' + d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
   } catch { return ''; }
 }
-
-// ─── Counter-offer card ───────────────────────────────────────────────────────
-function CounterOfferCard({ co, rawId, onResponded }) {
-  const [mode,      setMode]      = useState(null);    // null | 'accept' | 'decline' | 'revise'
-  const [note,      setNote]      = useState('');
-  const [revisedPx, setRevisedPx] = useState('');
-  const [loading,   setLoading]   = useState(false);
-
-  const statusColors = {
-    pending:  { text: '#d97706', bg: '#fff7ed',  border: '#fde68a',  label: 'Väntande / Pending' },
-    accepted: { text: '#16a34a', bg: '#e8fdf0',  border: '#bbf7d0',  label: 'Accepterat / Accepted' },
-    declined: { text: '#e74c3c', bg: '#fff0f0',  border: '#fca5a5',  label: 'Avböjt / Declined' },
-    revised:  { text: '#4361ee', bg: '#eff6ff',  border: '#bfdbfe',  label: 'Reviderat / Revised' },
-  };
-  const sc = statusColors[co.status] ?? statusColors.pending;
-
-  async function respond(status, extra = {}) {
-    setLoading(true);
-    try {
-      const r = await fetch(`/api/quotes/${rawId}/counter-offers/${co.id}`, {
-        method:  'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ status, dispatcher_note: note.trim() || null, ...extra }),
-      });
-      if (r.ok) { setMode(null); onResponded?.(); }
-    } finally { setLoading(false); }
-  }
-
-  return (
-    <div style={{
-      background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 8,
-      overflow: 'hidden', flexShrink: 0,
-    }}>
-      {/* Header */}
-      <div style={{
-        padding: '10px 14px', borderBottom: `1px solid ${BORDER}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
-      }}>
-        <div>
-          <span style={{
-            fontFamily: INTER, fontSize: 11, textTransform: 'uppercase',
-            fontWeight: 600, color: MUTED, letterSpacing: '0.3px',
-          }}>
-            Motbud / Counter-offer
-          </span>
-          <div style={{ fontFamily: INTER, fontSize: 20, fontWeight: 700, color: TEXT, marginTop: 2 }}>
-            {fmtSEK(co.proposed_price_sek)}
-          </div>
-        </div>
-        <span style={{
-          fontFamily: INTER, fontSize: 11, fontWeight: 600,
-          color: sc.text, background: sc.bg,
-          border: `1px solid ${sc.border}`,
-          padding: '3px 8px', borderRadius: 4,
-        }}>
-          {sc.label}
-        </span>
-      </div>
-
-      {/* Note from customer */}
-      {co.note && (
-        <div style={{ padding: '10px 14px', borderBottom: `1px solid ${BORDER}` }}>
-          <div style={{
-            fontFamily: INTER, fontSize: 11, color: MUTED,
-            marginBottom: 4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.3px',
-          }}>
-            ANLEDNING / REASON
-          </div>
-          <p style={{ fontFamily: INTER, fontSize: 13, color: TEXT, margin: 0, lineHeight: 1.6 }}>
-            {co.note}
-          </p>
-        </div>
-      )}
-
-      {/* Respond buttons — only when pending */}
-      {co.status === 'pending' && (
-        <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {mode === null && (
-            <div style={{ display: 'flex', gap: 6 }}>
-              <button onClick={() => setMode('accept')}  style={primaryBtnStyle}>Acceptera / Accept</button>
-              <button onClick={() => setMode('revise')}  style={secondaryBtnStyle}>Reviderat pris / Revise</button>
-              <button onClick={() => setMode('decline')} style={dangerBtnStyle}>Avböj / Decline</button>
-            </div>
-          )}
-
-          {mode === 'accept' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <p style={{ fontFamily: INTER, fontSize: 13, color: TEXT, margin: 0 }}>
-                Acceptera motbud på {fmtSEK(co.proposed_price_sek)}? Offertpriset uppdateras och uppdraget bekräftas automatiskt.
-              </p>
-              <NoteInput value={note} onChange={setNote} placeholder="Valfri notering till kunden…" />
-              <ActionRow
-                onConfirm={() => respond('accepted')}
-                onCancel={() => setMode(null)}
-                loading={loading}
-                confirmLabel="Bekräfta / Confirm"
-                confirmVariant="primary"
-              />
-            </div>
-          )}
-
-          {mode === 'decline' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <p style={{ fontFamily: INTER, fontSize: 13, color: TEXT, margin: 0 }}>
-                Avböj motbudet. Ursprungspriset gäller kvar.
-              </p>
-              <NoteInput value={note} onChange={setNote} placeholder="Förklaring till kunden (valfritt)…" />
-              <ActionRow
-                onConfirm={() => respond('declined')}
-                onCancel={() => setMode(null)}
-                loading={loading}
-                confirmLabel="Avböj / Decline"
-                confirmVariant="danger"
-              />
-            </div>
-          )}
-
-          {mode === 'revise' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <input
-                  type="number"
-                  value={revisedPx}
-                  onChange={(e) => setRevisedPx(e.target.value)}
-                  placeholder="Reviderat pris i kr…"
-                  style={{
-                    flex: 1, fontFamily: INTER, fontSize: 13, color: TEXT,
-                    background: WHITE, border: `1.5px solid ${BORDER}`, borderRadius: 8,
-                    padding: '9px 14px', outline: 'none',
-                  }}
-                />
-                <span style={{ fontFamily: INTER, fontSize: 13, color: MUTED }}>kr</span>
-              </div>
-              <NoteInput value={note} onChange={setNote} placeholder="Motivering till kunden…" />
-              <ActionRow
-                onConfirm={() => respond('revised', { revised_price_sek: Number(revisedPx) })}
-                onCancel={() => setMode(null)}
-                loading={loading}
-                disabled={!Number(revisedPx) || Number(revisedPx) <= 0}
-                confirmLabel="Skicka reviderat pris"
-                confirmVariant="primary"
-              />
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Dispatcher response (already responded) */}
-      {co.status !== 'pending' && co.dispatcher_note && (
-        <div style={{ padding: '10px 14px', borderTop: `1px solid ${BORDER}` }}>
-          <div style={{
-            fontFamily: INTER, fontSize: 11, color: MUTED,
-            marginBottom: 4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.3px',
-          }}>
-            DIN NOTERING / YOUR NOTE
-          </div>
-          <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: 0, fontStyle: 'italic' }}>
-            "{co.dispatcher_note}"
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-const primaryBtnStyle = {
-  flex: 1, fontFamily: INTER, fontSize: 13, fontWeight: 600,
-  padding: '9px 18px', border: 'none', borderRadius: 8,
-  background: '#4361ee', color: '#ffffff', cursor: 'pointer',
-};
-
-const secondaryBtnStyle = {
-  flex: 1, fontFamily: INTER, fontSize: 13, fontWeight: 500,
-  padding: '9px 18px', border: '1.5px solid #e9ecef', borderRadius: 8,
-  background: '#ffffff', color: '#374151', cursor: 'pointer',
-};
-
-const dangerBtnStyle = {
-  flex: 1, fontFamily: INTER, fontSize: 13, fontWeight: 500,
-  padding: '9px 18px', border: '1.5px solid #fca5a5', borderRadius: 8,
-  background: '#fff0f0', color: '#e74c3c', cursor: 'pointer',
-};
 
 function NoteInput({ value, onChange, placeholder }) {
   return (
@@ -224,7 +43,7 @@ function NoteInput({ value, onChange, placeholder }) {
   );
 }
 
-function ActionRow({ onConfirm, onCancel, loading, disabled, confirmLabel, confirmVariant = 'primary' }) {
+function ActionRow({ onConfirm, onCancel, loading, disabled, confirmLabel, confirmVariant = 'primary', cancelLabel }) {
   const isDisabled = loading || disabled;
 
   const confirmStyle = {
@@ -255,21 +74,198 @@ function ActionRow({ onConfirm, onCancel, loading, disabled, confirmLabel, confi
           background: WHITE, color: MUTED, cursor: 'pointer',
         }}
       >
-        Avbryt
+        {cancelLabel}
       </button>
-      <button
-        onClick={onConfirm}
-        disabled={isDisabled}
-        style={confirmStyle}
-      >
+      <button onClick={onConfirm} disabled={isDisabled} style={confirmStyle}>
         {loading ? '…' : confirmLabel}
       </button>
     </div>
   );
 }
 
-// ─── Main MessagePanel ────────────────────────────────────────────────────────
+function CounterOfferCard({ co, rawId, onResponded, t }) {
+  const co_t = t.messagePanel.counterOffer;
+  const [mode,      setMode]      = useState(null);
+  const [note,      setNote]      = useState('');
+  const [revisedPx, setRevisedPx] = useState('');
+  const [loading,   setLoading]   = useState(false);
+
+  const statusColors = {
+    pending:  { text: '#d97706', bg: '#fff7ed', border: '#fde68a'  },
+    accepted: { text: '#16a34a', bg: '#e8fdf0', border: '#bbf7d0'  },
+    declined: { text: '#e74c3c', bg: '#fff0f0', border: '#fca5a5'  },
+    revised:  { text: '#4361ee', bg: '#eff6ff', border: '#bfdbfe'  },
+  };
+  const sc = statusColors[co.status] ?? statusColors.pending;
+  const statusLabel = co_t.statuses[co.status] ?? co.status;
+
+  async function respond(status, extra = {}) {
+    setLoading(true);
+    try {
+      const r = await fetch(`/api/quotes/${rawId}/counter-offers/${co.id}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ status, dispatcher_note: note.trim() || null, ...extra }),
+      });
+      if (r.ok) { setMode(null); onResponded?.(); }
+    } finally { setLoading(false); }
+  }
+
+  const primaryBtnStyle = {
+    flex: 1, fontFamily: INTER, fontSize: 13, fontWeight: 600,
+    padding: '9px 18px', border: 'none', borderRadius: 8,
+    background: '#4361ee', color: '#ffffff', cursor: 'pointer',
+  };
+  const secondaryBtnStyle = {
+    flex: 1, fontFamily: INTER, fontSize: 13, fontWeight: 500,
+    padding: '9px 18px', border: '1.5px solid #e9ecef', borderRadius: 8,
+    background: '#ffffff', color: '#374151', cursor: 'pointer',
+  };
+  const dangerBtnStyle = {
+    flex: 1, fontFamily: INTER, fontSize: 13, fontWeight: 500,
+    padding: '9px 18px', border: '1.5px solid #fca5a5', borderRadius: 8,
+    background: '#fff0f0', color: '#e74c3c', cursor: 'pointer',
+  };
+
+  return (
+    <div style={{
+      background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 8,
+      overflow: 'hidden', flexShrink: 0,
+    }}>
+      <div style={{
+        padding: '10px 14px', borderBottom: `1px solid ${BORDER}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+      }}>
+        <div>
+          <span style={{
+            fontFamily: INTER, fontSize: 11, textTransform: 'uppercase',
+            fontWeight: 600, color: MUTED, letterSpacing: '0.3px',
+          }}>
+            {co_t.label}
+          </span>
+          <div style={{ fontFamily: INTER, fontSize: 20, fontWeight: 700, color: TEXT, marginTop: 2 }}>
+            {fmtSEK(co.proposed_price_sek)}
+          </div>
+        </div>
+        <span style={{
+          fontFamily: INTER, fontSize: 11, fontWeight: 600,
+          color: sc.text, background: sc.bg,
+          border: `1px solid ${sc.border}`,
+          padding: '3px 8px', borderRadius: 4,
+        }}>
+          {statusLabel}
+        </span>
+      </div>
+
+      {co.note && (
+        <div style={{ padding: '10px 14px', borderBottom: `1px solid ${BORDER}` }}>
+          <div style={{
+            fontFamily: INTER, fontSize: 11, color: MUTED,
+            marginBottom: 4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.3px',
+          }}>
+            {co_t.reason}
+          </div>
+          <p style={{ fontFamily: INTER, fontSize: 13, color: TEXT, margin: 0, lineHeight: 1.6 }}>
+            {co.note}
+          </p>
+        </div>
+      )}
+
+      {co.status === 'pending' && (
+        <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {mode === null && (
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button onClick={() => setMode('accept')}  style={primaryBtnStyle}>{co_t.accept}</button>
+              <button onClick={() => setMode('revise')}  style={secondaryBtnStyle}>{co_t.revise}</button>
+              <button onClick={() => setMode('decline')} style={dangerBtnStyle}>{co_t.decline}</button>
+            </div>
+          )}
+
+          {mode === 'accept' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <p style={{ fontFamily: INTER, fontSize: 13, color: TEXT, margin: 0 }}>
+                {co_t.acceptConfirm(fmtSEK(co.proposed_price_sek))}
+              </p>
+              <NoteInput value={note} onChange={setNote} placeholder={co_t.notePlaceholder} />
+              <ActionRow
+                onConfirm={() => respond('accepted')}
+                onCancel={() => setMode(null)}
+                loading={loading}
+                confirmLabel={co_t.confirm}
+                cancelLabel={co_t.cancel}
+                confirmVariant="primary"
+              />
+            </div>
+          )}
+
+          {mode === 'decline' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <p style={{ fontFamily: INTER, fontSize: 13, color: TEXT, margin: 0 }}>
+                {co_t.declineConfirm}
+              </p>
+              <NoteInput value={note} onChange={setNote} placeholder={co_t.declinePlaceholder} />
+              <ActionRow
+                onConfirm={() => respond('declined')}
+                onCancel={() => setMode(null)}
+                loading={loading}
+                confirmLabel={co_t.decline}
+                cancelLabel={co_t.cancel}
+                confirmVariant="danger"
+              />
+            </div>
+          )}
+
+          {mode === 'revise' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input
+                  type="number"
+                  value={revisedPx}
+                  onChange={(e) => setRevisedPx(e.target.value)}
+                  placeholder={co_t.revisePlaceholder}
+                  style={{
+                    flex: 1, fontFamily: INTER, fontSize: 13, color: TEXT,
+                    background: WHITE, border: `1.5px solid ${BORDER}`, borderRadius: 8,
+                    padding: '9px 14px', outline: 'none',
+                  }}
+                />
+                <span style={{ fontFamily: INTER, fontSize: 13, color: MUTED }}>kr</span>
+              </div>
+              <NoteInput value={note} onChange={setNote} placeholder={co_t.motivationPlaceholder} />
+              <ActionRow
+                onConfirm={() => respond('revised', { revised_price_sek: Number(revisedPx) })}
+                onCancel={() => setMode(null)}
+                loading={loading}
+                disabled={!Number(revisedPx) || Number(revisedPx) <= 0}
+                confirmLabel={co_t.sendRevised}
+                cancelLabel={co_t.cancel}
+                confirmVariant="primary"
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {co.status !== 'pending' && co.dispatcher_note && (
+        <div style={{ padding: '10px 14px', borderTop: `1px solid ${BORDER}` }}>
+          <div style={{
+            fontFamily: INTER, fontSize: 11, color: MUTED,
+            marginBottom: 4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.3px',
+          }}>
+            {co_t.yourNote}
+          </div>
+          <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: 0, fontStyle: 'italic' }}>
+            "{co.dispatcher_note}"
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function MessagePanel({ rawId, quoteLabel, quoteId, onClose }) {
+  const { t } = useLanguage();
+  const mp = t.messagePanel;
   const [messages,      setMessages]      = useState([]);
   const [counterOffers, setCounterOffers] = useState([]);
   const [reply,         setReply]         = useState('');
@@ -323,14 +319,12 @@ export function MessagePanel({ rawId, quoteLabel, quoteId, onClose }) {
       padding: 16,
     }}>
       <div style={{
-        width: '100%', maxWidth: 520,
-        maxHeight: '90vh',
+        width: '100%', maxWidth: 520, maxHeight: '90vh',
         background: WHITE, border: `1px solid ${BORDER}`,
         borderRadius: 12, display: 'flex', flexDirection: 'column',
         overflow: 'hidden',
       }}>
 
-        {/* ── Top bar ─────────────────────────────────────────────── */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '16px 20px', borderBottom: `1px solid ${BORDER}`, flexShrink: 0,
@@ -340,7 +334,7 @@ export function MessagePanel({ rawId, quoteLabel, quoteId, onClose }) {
               fontFamily: INTER, fontSize: 11, textTransform: 'uppercase',
               fontWeight: 600, color: MUTED, letterSpacing: '0.3px',
             }}>
-              Meddelanden / Messages
+              {mp.heading}
             </div>
             <div style={{ fontFamily: INTER, fontSize: 14, fontWeight: 600, color: TEXT, marginTop: 2 }}>
               {quoteId} {quoteLabel ? `· ${quoteLabel}` : ''}
@@ -359,7 +353,6 @@ export function MessagePanel({ rawId, quoteLabel, quoteId, onClose }) {
           </button>
         </div>
 
-        {/* ── Scrollable body ──────────────────────────────────────── */}
         <div style={{
           flex: 1, overflowY: 'auto', padding: '16px 20px',
           display: 'flex', flexDirection: 'column', gap: 12,
@@ -367,37 +360,34 @@ export function MessagePanel({ rawId, quoteLabel, quoteId, onClose }) {
 
           {loading && (
             <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, textAlign: 'center', margin: '24px 0' }}>
-              Laddar…
+              {mp.loading}
             </p>
           )}
 
-          {/* Counter-offer cards — pending */}
           {pendingCos.length > 0 && (
             <div style={{ flexShrink: 0 }}>
               <div style={{
                 fontFamily: INTER, fontSize: 11, textTransform: 'uppercase',
                 fontWeight: 600, color: '#d97706', letterSpacing: '0.3px', marginBottom: 8,
               }}>
-                ● Motbud inväntar svar / Counter-offer pending
+                ● {mp.counterOffer.pending}
               </div>
               {pendingCos.map((co) => (
-                <CounterOfferCard key={co.id} co={co} rawId={rawId} onResponded={fetchData} />
+                <CounterOfferCard key={co.id} co={co} rawId={rawId} onResponded={fetchData} t={t} />
               ))}
             </div>
           )}
 
-          {/* Past counter-offers (responded) */}
           {counterOffers.filter((c) => c.status !== 'pending').map((co) => (
-            <CounterOfferCard key={co.id} co={co} rawId={rawId} onResponded={fetchData} />
+            <CounterOfferCard key={co.id} co={co} rawId={rawId} onResponded={fetchData} t={t} />
           ))}
 
-          {/* Message thread */}
           {messages.length === 0 && !loading && (
             <p style={{
               fontFamily: INTER, fontSize: 13, color: MUTED,
               textAlign: 'center', margin: '24px 0', fontStyle: 'italic',
             }}>
-              Inga meddelanden ännu / No messages yet
+              {mp.noMessages}
             </p>
           )}
 
@@ -410,8 +400,8 @@ export function MessagePanel({ rawId, quoteLabel, quoteId, onClose }) {
               }}>
                 <div style={{
                   maxWidth: '80%',
-                  background:   isDispatcher ? BLUE   : SURF,
-                  color:        isDispatcher ? WHITE  : TEXT,
+                  background:   isDispatcher ? BLUE  : SURF,
+                  color:        isDispatcher ? WHITE : TEXT,
                   borderRadius: isDispatcher ? '8px 8px 0 8px' : '8px 8px 8px 0',
                   padding: '9px 13px',
                   fontFamily: INTER, fontSize: 14, lineHeight: 1.5,
@@ -419,7 +409,7 @@ export function MessagePanel({ rawId, quoteLabel, quoteId, onClose }) {
                   {m.message}
                 </div>
                 <span style={{ fontFamily: INTER, fontSize: 11, color: MUTED }}>
-                  {isDispatcher ? 'Du / You' : 'Kund / Customer'} · {fmtTs(m.created_at)}
+                  {isDispatcher ? mp.senderYou : mp.senderCustomer} · {fmtTs(m.created_at)}
                 </span>
               </div>
             );
@@ -428,14 +418,13 @@ export function MessagePanel({ rawId, quoteLabel, quoteId, onClose }) {
           <div ref={bottomRef} />
         </div>
 
-        {/* ── Reply box ────────────────────────────────────────────── */}
         <div style={{ flexShrink: 0, padding: '12px 20px 16px', borderTop: `1px solid ${BORDER}` }}>
           <textarea
             value={reply}
             onChange={(e) => setReply(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSend(); }}
             rows={2}
-            placeholder="Svara kunden… / Reply to customer… (Ctrl+Enter)"
+            placeholder={mp.replyPlaceholder}
             style={{
               width: '100%', boxSizing: 'border-box', resize: 'none',
               fontFamily: INTER, fontSize: 13, color: TEXT,
@@ -450,14 +439,13 @@ export function MessagePanel({ rawId, quoteLabel, quoteId, onClose }) {
               style={{
                 fontFamily: INTER, fontSize: 13, fontWeight: 600,
                 background: canSend ? BLUE : '#a0aec0',
-                color: WHITE,
-                border: 'none',
+                color: WHITE, border: 'none',
                 borderRadius: 8, padding: '9px 20px',
                 cursor: canSend ? 'pointer' : 'not-allowed',
                 transition: 'background 0.15s',
               }}
             >
-              {sending ? '…' : 'Skicka / Send'}
+              {sending ? mp.sending : mp.send}
             </button>
           </div>
         </div>

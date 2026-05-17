@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { COMPANY as COMPANY_INFO } from '../constants/company.js';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 const INTER = "'Inter', sans-serif";
 const BLUE  = '#4361ee';
@@ -13,12 +14,11 @@ const BDR2  = '#f0efe9';
 
 const COMPANY_NAME = COMPANY_INFO.name;
 
-// ─── Formatters ───────────────────────────────────────────────────────────────
 const fmtSEK = (n) =>
-  n == null ? '—' : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n) + ' kr';
+  n == null ? '—' : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n) + ' kr';
 
 const fmtKm = (n) =>
-  n == null ? '—' : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n) + ' km';
+  n == null ? '—' : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n) + ' km';
 
 function fmtTs(str) {
   if (!str) return '';
@@ -40,44 +40,6 @@ function fmtDate(str) {
   } catch { return str; }
 }
 
-// ─── Status helpers ───────────────────────────────────────────────────────────
-const STATUS_MAP = {
-  väntande:  { label: 'Väntande / Pending',   color: '#92400E', bg: '#FFFBEB', bdr: 'rgba(245,158,11,0.35)' },
-  godkänd:   { label: 'Godkänd / Accepted',   color: '#14532D', bg: '#F0FDF4', bdr: 'rgba(34,197,94,0.3)'  },
-  avböjd:    { label: 'Avböjd / Declined',    color: '#991B1B', bg: '#FEF2F2', bdr: 'rgba(239,68,68,0.3)'  },
-  avslutad:  { label: 'Avslutad / Completed', color: '#14532D', bg: '#F0FDF4', bdr: 'rgba(34,197,94,0.3)'  },
-  fakturerad:{ label: 'Fakturerad / Invoiced', color: '#1e3a5f', bg: '#EFF6FF', bdr: 'rgba(59,130,246,0.3)' },
-};
-
-function StatusBadge({ status, small }) {
-  const s = STATUS_MAP[status] ?? STATUS_MAP.väntande;
-  return (
-    <span style={{
-      fontFamily: INTER,
-      fontSize:   small ? '0.5rem' : '0.5625rem',
-      letterSpacing: '0.06em',
-      fontWeight: 500,
-      color:      s.color,
-      background: s.bg,
-      border:     `1px solid ${s.bdr}`,
-      borderRadius: 3,
-      padding:    small ? '1px 5px' : '2px 7px',
-      whiteSpace: 'nowrap',
-    }}>
-      {s.label}
-    </span>
-  );
-}
-
-// ─── Counter-offer status ─────────────────────────────────────────────────────
-const CO_MAP = {
-  pending:  { label: 'Under behandling / Under review', color: '#92400E', bg: '#FFFBEB', dot: '#f59e0b' },
-  accepted: { label: 'Accepterat / Accepted',            color: '#14532D', bg: '#F0FDF4', dot: '#16a34a' },
-  declined: { label: 'Avböjt / Declined',                color: '#991B1B', bg: '#FEF2F2', dot: '#dc2626' },
-  revised:  { label: 'Reviderat pris / Revised price',  color: '#1e3a5f', bg: '#EFF6FF', dot: '#3b82f6' },
-};
-
-// ─── Shell & Card primitives ──────────────────────────────────────────────────
 function Shell({ children }) {
   return (
     <div style={{
@@ -140,34 +102,32 @@ function FieldRow({ label, value }) {
   );
 }
 
-// ─── Loading / error screens ──────────────────────────────────────────────────
-function Loading() {
+function Loading({ t }) {
   return (
     <Shell>
       <Card style={{ padding: 32 }}>
         <p style={{ fontFamily: INTER, fontSize: '0.875rem', color: MUTED, margin: 0, textAlign: 'center' }}>
-          Laddar offert…
+          {t.publicQuote.loading}
         </p>
       </Card>
     </Shell>
   );
 }
 
-function NotFound() {
+function NotFound({ t }) {
   return (
     <Shell>
       <Card style={{ padding: 40, textAlign: 'center' }}>
-        <p style={{ fontFamily: INTER, fontSize: 24, color: TEXT, margin: '0 0 12px' }}>Offerten hittades inte</p>
+        <p style={{ fontFamily: INTER, fontSize: 24, color: TEXT, margin: '0 0 12px' }}>{t.publicQuote.notFound}</p>
         <p style={{ fontFamily: INTER, fontSize: '0.9375rem', color: MUTED, margin: 0, lineHeight: 1.6 }}>
-          Länken är ogiltig eller har gått ut. Kontakta oss om du behöver hjälp.
+          {t.publicQuote.notFoundDesc}
         </p>
       </Card>
     </Shell>
   );
 }
 
-// ─── Confirmation screens ─────────────────────────────────────────────────────
-function Accepted({ formattedId }) {
+function Accepted({ formattedId, t }) {
   return (
     <Shell>
       <Card style={{ padding: 40, textAlign: 'center' }}>
@@ -176,10 +136,10 @@ function Accepted({ formattedId }) {
             <path d="M6 14L11.5 19.5L22 9" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
-        <p style={{ fontFamily: INTER, fontSize: 26, color: TEXT, margin: '0 0 10px', letterSpacing: '0.02em' }}>Offert godkänd</p>
+        <p style={{ fontFamily: INTER, fontSize: 26, color: TEXT, margin: '0 0 10px', letterSpacing: '0.02em' }}>{t.publicQuote.accepted}</p>
         <p style={{ fontFamily: INTER, fontSize: '0.6875rem', color: MUTED, margin: '0 0 20px', letterSpacing: '0.08em' }}>{formattedId}</p>
         <p style={{ fontFamily: INTER, fontSize: '0.9375rem', color: '#3a3a36', margin: 0, lineHeight: 1.7 }}>
-          Tack! Din godkännande har registrerats. Vi återkommer med en orderbekräftelse och uppdrag inom kort.
+          {t.publicQuote.acceptedDesc}
         </p>
         <div style={{ marginTop: 28, paddingTop: 24, borderTop: `1px solid ${BDR}` }}>
           <p style={{ fontFamily: INTER, fontSize: '0.6875rem', color: MUTED, margin: 0, letterSpacing: '0.06em' }}>{COMPANY_NAME}</p>
@@ -189,7 +149,7 @@ function Accepted({ formattedId }) {
   );
 }
 
-function Declined({ formattedId }) {
+function Declined({ formattedId, t }) {
   return (
     <Shell>
       <Card style={{ padding: 40, textAlign: 'center' }}>
@@ -198,10 +158,10 @@ function Declined({ formattedId }) {
             <path d="M5 5L19 19M19 5L5 19" stroke="#b91c1c" strokeWidth="2.2" strokeLinecap="round" />
           </svg>
         </div>
-        <p style={{ fontFamily: INTER, fontSize: 26, color: TEXT, margin: '0 0 10px', letterSpacing: '0.02em' }}>Offert avböjd</p>
+        <p style={{ fontFamily: INTER, fontSize: 26, color: TEXT, margin: '0 0 10px', letterSpacing: '0.02em' }}>{t.publicQuote.declined}</p>
         <p style={{ fontFamily: INTER, fontSize: '0.6875rem', color: MUTED, margin: '0 0 20px', letterSpacing: '0.08em' }}>{formattedId}</p>
         <p style={{ fontFamily: INTER, fontSize: '0.9375rem', color: '#3a3a36', margin: 0, lineHeight: 1.7 }}>
-          Vi har noterat att du avböjt offerten. Hör gärna av dig om du har frågor.
+          {t.publicQuote.declinedDesc}
         </p>
         <div style={{ marginTop: 28, paddingTop: 24, borderTop: `1px solid ${BDR}` }}>
           <p style={{ fontFamily: INTER, fontSize: '0.6875rem', color: MUTED, margin: 0, letterSpacing: '0.06em' }}>{COMPANY_NAME}</p>
@@ -211,46 +171,65 @@ function Declined({ formattedId }) {
   );
 }
 
-// ─── History section ──────────────────────────────────────────────────────────
-function HistoryCard({ history }) {
+function HistoryCard({ history, t }) {
   if (!history?.length) return null;
+  const pq = t.publicQuote;
   return (
     <Card style={{ marginTop: 16 }}>
-      <SectionHead title={`Er historik med ${COMPANY_NAME} / Your history`} count={`${history.length} offert${history.length !== 1 ? 'er' : ''}`} />
+      <SectionHead
+        title={pq.history.heading(COMPANY_NAME)}
+        count={pq.history.count(history.length)}
+      />
       <div>
-        {history.map((h, i) => (
-          <div key={h.id} style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-            padding: '12px 24px',
-            borderBottom: i < history.length - 1 ? `1px solid ${BDR2}` : 'none',
-          }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: INTER, fontSize: '0.8125rem', color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {h.lasttyp ?? '—'}
+        {history.map((h, i) => {
+          const s = pq.statuses[h.status ?? 'pending'] ?? pq.statuses.pending;
+          return (
+            <div key={h.id} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+              padding: '12px 24px',
+              borderBottom: i < history.length - 1 ? `1px solid ${BDR2}` : 'none',
+            }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: INTER, fontSize: '0.8125rem', color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {h.lasttyp ?? '—'}
+                </div>
+                <div style={{ fontFamily: INTER, fontSize: '0.5625rem', color: MUTED, marginTop: 2 }}>
+                  {fmtDate(h.created_at)}
+                </div>
               </div>
-              <div style={{ fontFamily: INTER, fontSize: '0.5625rem', color: MUTED, marginTop: 2 }}>
-                {fmtDate(h.created_at)}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+                <span style={{ fontFamily: INTER, fontSize: '0.875rem', fontWeight: 600, color: BLUE }}>
+                  {fmtSEK(h.totalpris_sek)}
+                </span>
+                <span style={{
+                  fontFamily: INTER,
+                  fontSize: '0.5rem',
+                  letterSpacing: '0.06em',
+                  fontWeight: 500,
+                  color: s.color ?? MUTED,
+                  background: s.bg ?? BG,
+                  border: `1px solid ${s.bdr ?? BDR}`,
+                  borderRadius: 3,
+                  padding: '1px 5px',
+                  whiteSpace: 'nowrap',
+                }}>
+                  {s.label}
+                </span>
               </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
-              <span style={{ fontFamily: INTER, fontSize: '0.875rem', fontWeight: 600, color: BLUE }}>
-                {fmtSEK(h.totalpris_sek)}
-              </span>
-              <StatusBadge status={h.status ?? 'väntande'} small />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </Card>
   );
 }
 
-// ─── Message thread ───────────────────────────────────────────────────────────
-function MessageThread({ messages, onSend }) {
+function MessageThread({ messages, onSend, t }) {
   const [text,    setText]    = useState('');
   const [sending, setSending] = useState(false);
   const [sent,    setSent]    = useState(false);
   const bottomRef = useRef(null);
+  const pm = t.publicQuote.messages;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -272,9 +251,8 @@ function MessageThread({ messages, onSend }) {
 
   return (
     <Card style={{ marginTop: 16 }}>
-      <SectionHead title="Frågor / Ask a question" />
+      <SectionHead title={pm.heading} />
 
-      {/* Thread */}
       {messages.length > 0 && (
         <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 14, maxHeight: 360, overflowY: 'auto' }}>
           {messages.map((m) => {
@@ -295,7 +273,7 @@ function MessageThread({ messages, onSend }) {
                   {m.message}
                 </div>
                 <span style={{ fontFamily: INTER, fontSize: '0.5rem', color: MUTED, letterSpacing: '0.04em' }}>
-                  {isCustomer ? 'Du / You' : COMPANY_NAME} · {fmtTs(m.created_at)}
+                  {isCustomer ? pm.you : COMPANY_NAME} · {fmtTs(m.created_at)}
                 </span>
               </div>
             );
@@ -304,11 +282,10 @@ function MessageThread({ messages, onSend }) {
         </div>
       )}
 
-      {/* Input */}
       <div style={{ padding: '16px 24px 24px', borderTop: messages.length > 0 ? `1px solid ${BDR}` : 'none' }}>
         {messages.length === 0 && (
           <p style={{ fontFamily: INTER, fontSize: '0.875rem', color: MUTED, margin: '0 0 12px', lineHeight: 1.5 }}>
-            Har du frågor om offerten? Skriv ett meddelande så svarar vi så snart vi kan.
+            {pm.noMsgPrompt}
           </p>
         )}
         <textarea
@@ -316,7 +293,7 @@ function MessageThread({ messages, onSend }) {
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSend(); }}
           rows={3}
-          placeholder="Skriv din fråga här… / Type your question here…"
+          placeholder={pm.placeholder}
           style={{
             width: '100%', boxSizing: 'border-box', resize: 'vertical',
             fontFamily: INTER, fontSize: '0.9375rem', color: TEXT,
@@ -327,7 +304,7 @@ function MessageThread({ messages, onSend }) {
         />
         <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontFamily: INTER, fontSize: '0.5rem', color: MUTED }}>
-            {sent ? '✓ Meddelande skickat / Message sent' : 'Ctrl+Enter för att skicka / Ctrl+Enter to send'}
+            {sent ? pm.sent : pm.sendHint}
           </span>
           <button
             onClick={handleSend}
@@ -342,7 +319,7 @@ function MessageThread({ messages, onSend }) {
               transition: 'background 0.15s',
             }}
           >
-            {sending ? '…' : 'Skicka / Send'}
+            {sending ? pm.sending : pm.send}
           </button>
         </div>
       </div>
@@ -350,15 +327,15 @@ function MessageThread({ messages, onSend }) {
   );
 }
 
-// ─── Counter-offer section ────────────────────────────────────────────────────
-function CounterOfferCard({ quote, counterOffers, onSubmit }) {
+function CounterOfferCard({ quote, counterOffers, onSubmit, t }) {
   const [open,    setOpen]    = useState(false);
   const [price,   setPrice]   = useState('');
   const [note,    setNote]    = useState('');
   const [sending, setSending] = useState(false);
   const [done,    setDone]    = useState(false);
+  const pq = t.publicQuote;
+  const co = pq.co;
 
-  // Most recent counter-offer
   const latest = counterOffers[0] ?? null;
 
   async function handleSubmit() {
@@ -374,17 +351,16 @@ function CounterOfferCard({ quote, counterOffers, onSubmit }) {
     }
   }
 
-  // If dispatcher has responded 'revised', show the revised price prominently
   if (latest?.status === 'revised') {
     return (
       <Card style={{ marginTop: 16 }}>
-        <SectionHead title="Motbud / Counter-offer" />
+        <SectionHead title={co.heading} />
         <div style={{ padding: '20px 24px' }}>
-          <div style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.1em', color: CO_MAP.revised.color, background: CO_MAP.revised.bg, border: `1px solid rgba(59,130,246,0.25)`, borderRadius: 4, padding: '8px 12px', marginBottom: 16 }}>
-            {CO_MAP.revised.label}
+          <div style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.1em', color: '#1e3a5f', background: '#EFF6FF', border: `1px solid rgba(59,130,246,0.25)`, borderRadius: 4, padding: '8px 12px', marginBottom: 16 }}>
+            {co.revised}
           </div>
           <p style={{ fontFamily: INTER, fontSize: '0.9375rem', color: TEXT, margin: '0 0 8px', lineHeight: 1.5 }}>
-            {COMPANY_NAME} har föreslagit ett reviderat pris / has proposed a revised price:
+            {co.revisedDesc(COMPANY_NAME)}
           </p>
           <div style={{ fontFamily: INTER, fontSize: '1.5rem', fontWeight: 700, color: BLUE, margin: '8px 0' }}>
             {fmtSEK(latest.revised_price_sek)}
@@ -395,7 +371,7 @@ function CounterOfferCard({ quote, counterOffers, onSubmit }) {
             </p>
           )}
           <p style={{ fontFamily: INTER, fontSize: '0.5625rem', color: MUTED, margin: '16px 0 0', lineHeight: 1.6 }}>
-            Vill du acceptera? Klicka på "Godkänn offert" ovan för att bekräfta det reviderade priset. / To accept, click "Accept quote" above.
+            {co.revisedAcceptNote}
           </p>
         </div>
       </Card>
@@ -405,13 +381,13 @@ function CounterOfferCard({ quote, counterOffers, onSubmit }) {
   if (latest?.status === 'accepted') {
     return (
       <Card style={{ marginTop: 16 }}>
-        <SectionHead title="Motbud / Counter-offer" />
+        <SectionHead title={co.heading} />
         <div style={{ padding: '20px 24px' }}>
-          <div style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.1em', color: CO_MAP.accepted.color, background: CO_MAP.accepted.bg, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: 4, padding: '8px 12px', marginBottom: 12 }}>
-            {CO_MAP.accepted.label}
+          <div style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.1em', color: '#14532D', background: '#F0FDF4', border: `1px solid rgba(34,197,94,0.25)`, borderRadius: 4, padding: '8px 12px', marginBottom: 12 }}>
+            {co.accepted}
           </div>
           <p style={{ fontFamily: INTER, fontSize: '0.875rem', color: TEXT, margin: 0, lineHeight: 1.5 }}>
-            Ditt motbud på {fmtSEK(latest.proposed_price_sek)} har accepterats. Uppdraget är bekräftat. / Your counter-offer of {fmtSEK(latest.proposed_price_sek)} has been accepted.
+            {co.acceptedDesc(fmtSEK(latest.proposed_price_sek))}
           </p>
         </div>
       </Card>
@@ -421,15 +397,13 @@ function CounterOfferCard({ quote, counterOffers, onSubmit }) {
   if (latest?.status === 'declined') {
     return (
       <Card style={{ marginTop: 16 }}>
-        <SectionHead title="Motbud / Counter-offer" />
+        <SectionHead title={co.heading} />
         <div style={{ padding: '20px 24px' }}>
-          <div style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.1em', color: CO_MAP.declined.color, background: CO_MAP.declined.bg, border: `1px solid rgba(239,68,68,0.25)`, borderRadius: 4, padding: '8px 12px', marginBottom: 12 }}>
-            {CO_MAP.declined.label}
+          <div style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.1em', color: '#991B1B', background: '#FEF2F2', border: `1px solid rgba(239,68,68,0.25)`, borderRadius: 4, padding: '8px 12px', marginBottom: 12 }}>
+            {co.declined}
           </div>
           <p style={{ fontFamily: INTER, fontSize: '0.875rem', color: TEXT, margin: 0, lineHeight: 1.5 }}>
-            {latest.dispatcher_note
-              ? `"${latest.dispatcher_note}"`
-              : 'Det ursprungliga priset gäller. Du kan fortfarande godkänna eller avböja offerten ovan. / The original price stands.'}
+            {latest.dispatcher_note ? `"${latest.dispatcher_note}"` : co.declinedDefault}
           </p>
         </div>
       </Card>
@@ -439,28 +413,27 @@ function CounterOfferCard({ quote, counterOffers, onSubmit }) {
   if (latest?.status === 'pending' || done) {
     return (
       <Card style={{ marginTop: 16 }}>
-        <SectionHead title="Motbud / Counter-offer" />
+        <SectionHead title={co.heading} />
         <div style={{ padding: '20px 24px' }}>
-          <div style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.1em', color: CO_MAP.pending.color, background: CO_MAP.pending.bg, border: `1px solid rgba(245,158,11,0.25)`, borderRadius: 4, padding: '8px 12px', marginBottom: 12 }}>
-            {CO_MAP.pending.label}
+          <div style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.1em', color: '#92400E', background: '#FFFBEB', border: `1px solid rgba(245,158,11,0.25)`, borderRadius: 4, padding: '8px 12px', marginBottom: 12 }}>
+            {co.pending}
           </div>
           <p style={{ fontFamily: INTER, fontSize: '0.875rem', color: TEXT, margin: 0, lineHeight: 1.5 }}>
-            Ditt motbud på {fmtSEK(latest?.proposed_price_sek)} är under behandling. Vi återkommer snart. / Your counter-offer is under review.
+            {co.pendingDesc(fmtSEK(latest?.proposed_price_sek))}
           </p>
         </div>
       </Card>
     );
   }
 
-  // No counter-offer yet — show button / form
   return (
     <Card style={{ marginTop: 16 }}>
-      <SectionHead title="Motbud / Counter-offer" />
+      <SectionHead title={co.heading} />
       <div style={{ padding: '16px 24px 24px' }}>
         {!open ? (
           <>
             <p style={{ fontFamily: INTER, fontSize: '0.875rem', color: '#3a3a36', margin: '0 0 16px', lineHeight: 1.5 }}>
-              Vill du föreslå ett annat pris? Du kan lämna ett motbud med en anledning, så granskar vi det. / Want to propose a different price? Submit a counter-offer with your reason.
+              {co.proposeDesc}
             </p>
             <button
               onClick={() => setOpen(true)}
@@ -471,14 +444,14 @@ function CounterOfferCard({ quote, counterOffers, onSubmit }) {
                 borderRadius: 6, padding: '10px 20px', cursor: 'pointer',
               }}
             >
-              Lämna motbud / Submit counter-offer
+              {co.proposeBtn}
             </button>
           </>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <label>
               <div style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: MUTED, marginBottom: 5 }}>
-                Föreslagen summa / Proposed price (kr) *
+                {co.proposedPrice}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <input
@@ -498,13 +471,13 @@ function CounterOfferCard({ quote, counterOffers, onSubmit }) {
             </label>
             <label>
               <div style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: MUTED, marginBottom: 5 }}>
-                Anledning / Reason (valfritt / optional)
+                {co.reason}
               </div>
               <textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 rows={3}
-                placeholder="Beskriv varför du föreslår detta pris… / Describe why you're proposing this price…"
+                placeholder={co.reason}
                 style={{
                   width: '100%', boxSizing: 'border-box', resize: 'vertical',
                   fontFamily: INTER, fontSize: '0.875rem', color: TEXT,
@@ -522,7 +495,7 @@ function CounterOfferCard({ quote, counterOffers, onSubmit }) {
                   background: WHITE, color: MUTED, cursor: 'pointer',
                 }}
               >
-                Avbryt
+                {co.cancel}
               </button>
               <button
                 onClick={handleSubmit}
@@ -536,7 +509,7 @@ function CounterOfferCard({ quote, counterOffers, onSubmit }) {
                   padding: '9px 16px', cursor: Number(price) > 0 && !sending ? 'pointer' : 'not-allowed',
                 }}
               >
-                {sending ? '…' : 'Skicka motbud / Submit'}
+                {sending ? '…' : co.submitBtn}
               </button>
             </div>
           </div>
@@ -546,17 +519,10 @@ function CounterOfferCard({ quote, counterOffers, onSubmit }) {
   );
 }
 
-// ─── Main portal ──────────────────────────────────────────────────────────────
-const FIELDS = [
-  { key: 'lasttyp',     label: 'Lasttyp'    },
-  { key: 'upphämtning', label: 'Upphämtning' },
-  { key: 'leverans',    label: 'Leverans'   },
-  { key: 'datum',       label: 'Datum'      },
-  { key: 'fordon_id',   label: 'Fordon'     },
-  { key: 'avstand_km',  label: 'Avstånd', fmt: fmtKm },
-];
-
 export function PublicQuote({ token }) {
+  const { t } = useLanguage();
+  const pq = t.publicQuote;
+
   const [phase,         setPhase]         = useState('loading');
   const [quote,         setQuote]         = useState(null);
   const [messages,      setMessages]      = useState([]);
@@ -625,28 +591,36 @@ export function PublicQuote({ token }) {
     setCounterOffers([{ ...co, proposed_price_sek, note, created_at: new Date().toISOString() }]);
   }
 
-  if (phase === 'loading')   return <Loading />;
-  if (phase === 'not-found') return <NotFound />;
-  if (phase === 'accepted')  return <Accepted formattedId={quote?.formattedId} />;
-  if (phase === 'declined')  return <Declined formattedId={quote?.formattedId} />;
+  if (phase === 'loading')   return <Loading t={t} />;
+  if (phase === 'not-found') return <NotFound t={t} />;
+  if (phase === 'accepted')  return <Accepted formattedId={quote?.formattedId} t={t} />;
+  if (phase === 'declined')  return <Declined formattedId={quote?.formattedId} t={t} />;
   if (phase === 'error') {
     return (
       <Shell>
         <Card style={{ padding: 32, textAlign: 'center' }}>
           <p style={{ fontFamily: INTER, fontSize: '0.9375rem', color: '#b91c1c', margin: 0 }}>
-            Något gick fel. Försök ladda om sidan.
+            {pq.error}
           </p>
         </Card>
       </Shell>
     );
   }
 
-  // ── phase === 'ready' ──────────────────────────────────────────────────────
+  const FIELDS = [
+    { key: 'lasttyp',     label: pq.fields.lasttyp     },
+    { key: 'upphämtning', label: pq.fields.upphämtning },
+    { key: 'leverans',    label: pq.fields.leverans    },
+    { key: 'datum',       label: pq.fields.datum       },
+    { key: 'fordon_id',   label: pq.fields.fordon_id   },
+    { key: 'avstand_km',  label: pq.fields.avstand_km, fmt: fmtKm },
+  ];
+
+  const statusDef = pq.statuses[quote.status] ?? pq.statuses.pending;
+
   return (
     <Shell>
-      {/* ── Quote card ──────────────────────────────────────────────── */}
       <Card>
-        {/* Header */}
         <div style={{ padding: '28px 24px 18px', borderBottom: `1px solid ${BDR}` }}>
           <p style={{ fontFamily: INTER, fontSize: 22, color: TEXT, margin: '0 0 4px', letterSpacing: '0.03em' }}>
             {COMPANY_NAME}
@@ -655,23 +629,34 @@ export function PublicQuote({ token }) {
             <p style={{ fontFamily: INTER, fontSize: '0.6875rem', color: MUTED, margin: 0, letterSpacing: '0.08em' }}>
               {quote.formattedId}
             </p>
-            <StatusBadge status={quote.status} />
+            <span style={{
+              fontFamily: INTER,
+              fontSize: '0.5625rem',
+              letterSpacing: '0.06em',
+              fontWeight: 500,
+              color: statusDef.color ?? MUTED,
+              background: statusDef.bg ?? BG,
+              border: `1px solid ${statusDef.bdr ?? BDR}`,
+              borderRadius: 3,
+              padding: '2px 7px',
+              whiteSpace: 'nowrap',
+            }}>
+              {statusDef.label}
+            </span>
           </div>
         </div>
 
-        {/* Field rows */}
         <div style={{ padding: '4px 24px 8px' }}>
           {FIELDS.map(({ key, label, fmt }) => (
             <FieldRow key={key} label={label} value={fmt ? fmt(quote[key]) : quote[key]} />
           ))}
         </div>
 
-        {/* Banners */}
         {quote.lez_varning && (
           <div style={{ margin: '0 24px 12px', background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 4, padding: '10px 14px', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
             <span>⚠</span>
             <span style={{ fontFamily: INTER, fontSize: '0.6875rem', color: '#991B1B', lineHeight: 1.5 }}>
-              Destinationen ligger inom miljözon (LEZ). Fordonskrav gäller.
+              {pq.lez}
             </span>
           </div>
         )}
@@ -679,26 +664,24 @@ export function PublicQuote({ token }) {
           <div style={{ margin: '0 24px 12px', background: '#FFFBEB', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 4, padding: '10px 14px', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
             <span>⚡</span>
             <span style={{ fontFamily: INTER, fontSize: '0.6875rem', color: '#92400E', lineHeight: 1.5 }}>
-              Dispensansökan kan krävas för detta uppdrag.
+              {pq.tillstand}
             </span>
           </div>
         )}
 
-        {/* Total */}
         <div style={{ padding: '18px 24px', background: BG, borderTop: `1px solid ${BDR}`, borderBottom: `1px solid ${BDR}`, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 16 }}>
           <span style={{ fontFamily: INTER, fontSize: '0.6875rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: MUTED }}>
-            Totalt exkl. moms
+            {pq.totalExclVat}
           </span>
           <span style={{ fontFamily: INTER, fontSize: '1.75rem', fontWeight: 700, color: BLUE, letterSpacing: '-0.01em' }}>
             {fmtSEK(quote.totalpris_sek)}
           </span>
         </div>
 
-        {/* Notes */}
         {quote.noteringar && (
           <div style={{ padding: '14px 24px', borderBottom: `1px solid ${BDR2}` }}>
             <p style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.1em', color: MUTED, margin: '0 0 5px', textTransform: 'uppercase' }}>
-              Noteringar
+              {pq.notes}
             </p>
             <p style={{ fontFamily: INTER, fontSize: '0.875rem', color: '#3a3a36', margin: 0, lineHeight: 1.6 }}>
               {quote.noteringar}
@@ -706,7 +689,6 @@ export function PublicQuote({ token }) {
           </div>
         )}
 
-        {/* Actions */}
         <div style={{ padding: '20px 24px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           <button
             onClick={handleAccept}
@@ -719,7 +701,7 @@ export function PublicQuote({ token }) {
               cursor: working ? 'wait' : 'pointer', transition: 'background 0.15s',
             }}
           >
-            {working ? '…' : 'ACCEPT QUOTE / GODKÄNN OFFERT'}
+            {working ? pq.working : pq.accept}
           </button>
           <button
             onClick={handleDecline}
@@ -731,29 +713,25 @@ export function PublicQuote({ token }) {
               borderRadius: 6, cursor: working ? 'wait' : 'pointer',
             }}
           >
-            DECLINE / AVBÖJ
+            {pq.decline}
           </button>
         </div>
       </Card>
 
-      {/* ── History ─────────────────────────────────────────────────── */}
-      <HistoryCard history={history} />
+      <HistoryCard history={history} t={t} />
+      <MessageThread messages={messages} onSend={handleSendMessage} t={t} />
 
-      {/* ── Messages ────────────────────────────────────────────────── */}
-      <MessageThread messages={messages} onSend={handleSendMessage} />
-
-      {/* ── Counter-offer ───────────────────────────────────────────── */}
       {quote.status === 'väntande' && (
         <CounterOfferCard
           quote={quote}
           counterOffers={counterOffers}
           onSubmit={handleCounterOffer}
+          t={t}
         />
       )}
 
-      {/* Footer */}
       <p style={{ fontFamily: INTER, fontSize: '0.625rem', color: MUTED, textAlign: 'center', marginTop: 24, letterSpacing: '0.06em' }}>
-        {COMPANY_NAME} · Offert {quote.formattedId} · {fmtDate(quote.created_at)}
+        {pq.footer(COMPANY_NAME, quote.formattedId, fmtDate(quote.created_at))}
       </p>
     </Shell>
   );

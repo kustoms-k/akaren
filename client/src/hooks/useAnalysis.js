@@ -34,7 +34,7 @@ export function useAnalysis() {
   const [extractionId,      setExtractionId]      = useState(null);
   const [extractionModel,   setExtractionModel]   = useState(null);
 
-  const analyse = useCallback(async (inquiry) => {
+  const analyse = useCallback(async (inquiry, lang = 'sv') => {
     setStatus('streaming');
     setRawText('');
     setError(null);
@@ -59,7 +59,7 @@ export function useAnalysis() {
       const res = await apiFetch('/api/analyse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inquiry }),
+        body: JSON.stringify({ inquiry, lang }),
       });
 
       if (!res.ok) throw new Error('network');

@@ -38,7 +38,7 @@ const stmtSaveExtraction = db.prepare(`
 
 function hoursEst(km) { return (Number(km) || 0) / 70 + 1.5; }
 
-function buildFleetStatsBlock(companyId) {
+function buildFleetStatsBlock(companyId, lang) {
   try {
     const fleet = getActiveFleet(companyId);
     const month = new Date().toISOString().slice(0, 7);
@@ -54,6 +54,25 @@ function buildFleetStatsBlock(companyId) {
       revenue[key] = (revenue[key] ?? 0) + (Number(r.totalpris_sek) || 0);
       cost[key]    = (cost[key]    ?? 0) + c;
       hours[key]   = (hours[key]   ?? 0) + h;
+    }
+
+    if (lang === 'en') {
+      const lines = fleet.map((v) => {
+        const h   = hours[v.id];
+        const pph = h ? Math.round(((revenue[v.id] ?? 0) - (cost[v.id] ?? 0)) / h) : null;
+        const hrs = h ? (Math.round(h * 10) / 10) : 0;
+        return pph != null
+          ? `${v.id} (${v.namn}, ${v.typ}): ${pph} kr/hr profit — ${hrs} hrs this month`
+          : `${v.id} (${v.namn}, ${v.typ}): no data this month`;
+      }).join('\n');
+      return `
+
+Fleet profitability this month (${month}):
+${lines}
+
+Vehicle selection rule for fordon_rekommenderat: Choose the vehicle that (1) meets the load requirements (cargo type, weight, LEZ zone, permits) AND (2) has the highest profit per hour above. If a vehicle has no data, select based on suitability for the load.
+In the fordon_orsak field: write exactly one line in the format "[VEHICLE-ID] valt — [reason in Swedish] / [VEHICLE-ID] chosen — [reason in English]"
+Example: "KEM-05 valt — högst vinst per timme för kranlaster denna månad / KEM-05 chosen — highest profit per hour for crane loads this month"`;
     }
 
     const lines = fleet.map((v) => {
@@ -78,12 +97,69 @@ Exempel: "KEM-05 valt — högst vinst per timme för kranlaster denna månad / 
   }
 }
 
-function buildSystemPrompt(dieselPriceSek, weatherRow, companyId) {
+function buildSystemPrompt(dieselPriceSek, weatherRow, companyId, lang) {
+  const fleetStats = buildFleetStatsBlock(companyId, lang);
+
+  if (lang === 'en') {
+    const weatherLine = weatherRow?.is_winter
+      ? `\nWeather Stockholm: ${weatherRow.temp_c}°C, ${weatherRow.condition_sv}. Winter conditions — include a weather surcharge (5–15% of base price) in the total and mention it briefly in the noteringar field.`
+      : '';
+
+    return `You are a Swedish freight transport assistant for a haulage company in Stockholm.
+Current diesel price: ${dieselPriceSek.toFixed(2)} SEK/litre. Use this for fuel cost calculations.${weatherLine}${fleetStats}
+
+Read the customer inquiry and return ONLY a valid JSON object with exactly these fields.
+
+For seven fields return an object with "value" and "confidence".
+Confidence levels:
+- "high"   = information clear and complete
+- "medium" = approximate or partially missing
+- "low"    = AI is guessing (vague address, unclear date, unknown cargo type)
+- "none"   = information entirely absent — set value to null
+
+Rules per confidence field:
+- lasttyp:              high = clearly stated, medium = described but imprecise, low = vague, none = not mentioned
+- upphämtning:          high = full street address, medium = district/street without number, low = city only, none = missing entirely
+- leverans:             same rules as upphämtning
+- datum:                high = specific date, medium = relative ("next Monday"), low = vague ("soon"), none = not mentioned
+- fordon_rekommenderat: high = cargo/weight matches clearly, medium = approximate match, low = cargo type unclear, none = impossible to determine
+- avstand_km:           high = both addresses precise, medium = one address approximate, low = addresses vague, none = addresses missing
+- totalpris_sek:        high = all components certain, medium = something uncertain, low = many factors unclear, none = cannot be calculated
+
+IMPORTANT: If confidence is "none", set value to null — never return a guessed value for none fields.
+
+Return EXACTLY this JSON format:
+
+{
+  "lasttyp": { "value": "cargo type", "confidence": "high" },
+  "vikt": "weight in kg or tonnes",
+  "upphämtning": { "value": "pickup address", "confidence": "high" },
+  "leverans": { "value": "delivery address", "confidence": "high" },
+  "datum": { "value": "transport date", "confidence": "high" },
+  "fordon_rekommenderat": { "value": "recommended vehicle ID from fleet", "confidence": "high" },
+  "avstand_km": { "value": 0, "confidence": "high" },
+  "bränsle_kostnad": 0,
+  "arbetstid_timmar": 0,
+  "arbetstid_kostnad": 0,
+  "lez_varning": false,
+  "lez_zon": null,
+  "tillstånd_krävs": false,
+  "totalpris_sek": { "value": 0, "confidence": "high" },
+  "noteringar": "any notes",
+  "fordon_orsak": "[VEHICLE-ID] valt — [reason in Swedish] / [VEHICLE-ID] chosen — [reason in English]"
+}
+
+Rules:
+- lez_varning: set to true if any address is in Södermalm, Norrmalm, Östermalm, Kungsholmen or Gamla Stan in Stockholm
+- lez_zon: name of the zone (e.g. "Södermalm") if lez_varning is true, otherwise null
+- tillstånd_krävs: set to true if the load is oversized or weighs over 10 tonnes
+- bränsle_kostnad: calculate using ${dieselPriceSek.toFixed(2)} SEK/litre and approx 0.35–0.50 l/km for truck, 0.12–0.20 l/km for van
+- No markdown, no explanations, no code blocks — only the raw JSON object`;
+  }
+
   const weatherLine = weatherRow?.is_winter
     ? `\nVäder Stockholm: ${weatherRow.temp_c}°C, ${weatherRow.condition_sv}. Vinterförhållanden råder — inkludera ett vädertillägg (5–15% av grundpriset) i totalpriset och nämn det kortfattat i noteringar-fältet.`
     : '';
-
-  const fleetStats = buildFleetStatsBlock(companyId);
 
   return `Du är en svensk transportassistent för ett åkeri i Stockholm.
 Aktuellt dieselpris: ${dieselPriceSek.toFixed(2)} kr/liter. Använd detta pris för bränslekostnadsberäkningar.${weatherLine}${fleetStats}
@@ -138,7 +214,7 @@ Regler:
 }
 
 router.post('/', async (req, res) => {
-  const { inquiry } = req.body;
+  const { inquiry, lang = 'sv' } = req.body;
   if (!inquiry) return res.status(400).json({ error: 'inquiry saknas' });
 
   const fuelRow     = getLatestFuelPrice.get();
@@ -153,7 +229,7 @@ router.post('/', async (req, res) => {
     const stream = client.messages.stream({
       model:      MODEL,
       max_tokens: 1024,
-      system:     buildSystemPrompt(dieselPrice, weatherRow, req.companyId),
+      system:     buildSystemPrompt(dieselPrice, weatherRow, req.companyId, lang),
       messages:   [{ role: 'user', content: inquiry }],
     });
 

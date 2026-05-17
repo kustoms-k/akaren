@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { generateFaktura } from '../utils/generateFaktura.js';
 import { Toast } from '../components/Toast.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const BLUE    = '#4361ee';
@@ -15,27 +16,22 @@ const FAINT   = '#9ca3af';
 const INTER   = "'Inter', sans-serif";
 const SURF    = '#f8f9fa';
 
-const MONTHS_SV = [
-  'Januari','Februari','Mars','April','Maj','Juni',
-  'Juli','Augusti','September','Oktober','November','December',
-];
-
 function currentMonth() {
   return new Date().toISOString().slice(0, 7);
 }
 
-function buildMonthOptions() {
+function buildMonthOptions(lang) {
   const out = [];
   const now = new Date();
+  const locale = lang === 'sv' ? 'sv-SE' : 'en-GB';
   for (let i = 0; i < 12; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    out.push({ value, label: `${MONTHS_SV[d.getMonth()]} ${d.getFullYear()}` });
+    const label = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(d);
+    out.push({ value, label: label.charAt(0).toUpperCase() + label.slice(1) });
   }
   return out;
 }
-
-const MONTH_OPTIONS = buildMonthOptions();
 
 const fmtSEK = (n) =>
   n == null ? '—' : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n) + ' kr';
@@ -45,7 +41,6 @@ function truncate(str, max = 24) {
   return str.slice(0, max - 1) + '…';
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
 function prevMonthOf(ym) {
   const [y, m] = ym.split('-').map(Number);
   const d = new Date(y, m - 2, 1);
@@ -65,9 +60,10 @@ function avgByKey(jobs, keyFn) {
 
 const COMPLETED = new Set(['avslutad', 'slutförd', 'fakturerad']);
 
-function generateRecommendations(data, stats, prevData) {
+function generateRecommendations(data, stats, prevData, lang) {
   const recs = [];
   const jobs = (data?.jobs ?? []).filter((j) => COMPLETED.has(j.job_status));
+  const sv = lang === 'sv';
 
   const marginByKund = avgByKey(jobs, (j) => j.kund);
   const worstKund = Object.entries(marginByKund)
@@ -79,10 +75,11 @@ function generateRecommendations(data, stats, prevData) {
     recs.push({
       id: 'raise-rate',
       type: 'warning',
-      en: `Raise rates for ${dk} — current margin ${worstKund.avg.toFixed(1)}%, recommended +${increase}% to hit 20%`,
-      sv: `Höj priserna för ${dk} — nuvarande marginal ${worstKund.avg.toFixed(1)}%, rekommenderad +${increase}% för att nå 20%`,
-      applyLabel: 'Mark for review / Markera',
-      toastMsg: `Prisjustering noterad / Rate review noted`,
+      text: sv
+        ? `Höj priserna för ${dk} — nuvarande marginal ${worstKund.avg.toFixed(1)}%, rekommenderad +${increase}% för att nå 20%`
+        : `Raise rates for ${dk} — current margin ${worstKund.avg.toFixed(1)}%, recommended +${increase}% to hit 20%`,
+      applyLabel: sv ? 'Markera för granskning' : 'Mark for review',
+      toastMsg: sv ? 'Prisjustering noterad' : 'Rate review noted',
     });
   }
 
@@ -93,10 +90,11 @@ function generateRecommendations(data, stats, prevData) {
     recs.push({
       id: `truck-${underused.id}`,
       type: 'info',
-      en: `Truck ${underused.id} is underused at ${underused.pct}% utilisation — consider offering it on ${underused.typ ?? 'flatbed'} jobs`,
-      sv: `Lastbil ${underused.id} är underutnyttjad vid ${underused.pct}% — erbjud den på ${underused.typ ?? 'flaklast'}-uppdrag`,
-      applyLabel: 'Noted / Noterat',
-      toastMsg: `Noterat — ${underused.id} / Noted — ${underused.id}`,
+      text: sv
+        ? `Lastbil ${underused.id} är underutnyttjad vid ${underused.pct}% — erbjud den på ${underused.typ ?? 'flaklast'}-uppdrag`
+        : `Truck ${underused.id} is underused at ${underused.pct}% utilisation — consider offering it on ${underused.typ ?? 'flatbed'} jobs`,
+      applyLabel: sv ? 'Noterat' : 'Noted',
+      toastMsg: sv ? `Noterat — ${underused.id}` : `Noted — ${underused.id}`,
     });
   }
 
@@ -109,10 +107,11 @@ function generateRecommendations(data, stats, prevData) {
     recs.push({
       id: `cargo-${bestType.type}`,
       type: 'opportunity',
-      en: `Cargo type '${bestType.type}' has ${bestType.avg.toFixed(0)}% margin — pitch this service to new customers`,
-      sv: `Lasttyp '${bestType.type}' har ${bestType.avg.toFixed(0)}% marginal — erbjud till nya kunder`,
-      applyLabel: 'Copy pitch / Kopiera pitch',
-      toastMsg: `Pitchtext kopierad / Pitch text copied`,
+      text: sv
+        ? `Lasttyp '${bestType.type}' har ${bestType.avg.toFixed(0)}% marginal — erbjud till nya kunder`
+        : `Cargo type '${bestType.type}' has ${bestType.avg.toFixed(0)}% margin — pitch this service to new customers`,
+      applyLabel: sv ? 'Kopiera pitch' : 'Copy pitch',
+      toastMsg: sv ? 'Pitchtext kopierad' : 'Pitch text copied',
       pitchText: `Hej! Vi erbjuder ${bestType.type} med snabb leverans och konkurrenskraftiga priser. Kontakta oss för en offert idag!`,
     });
   }
@@ -121,10 +120,11 @@ function generateRecommendations(data, stats, prevData) {
     recs.push({
       id: 'high-acceptance',
       type: 'opportunity',
-      en: `Acceptance rate is ${stats.acceptansgrad.pct.toFixed(0)}% — consider raising base rates by 5–10%`,
-      sv: `Acceptansgraden är ${stats.acceptansgrad.pct.toFixed(0)}% — överväg att höja grundpriset med 5–10%`,
-      applyLabel: 'Noted / Noterat',
-      toastMsg: `Noterat / Noted`,
+      text: sv
+        ? `Acceptansgraden är ${stats.acceptansgrad.pct.toFixed(0)}% — överväg att höja grundpriset med 5–10%`
+        : `Acceptance rate is ${stats.acceptansgrad.pct.toFixed(0)}% — consider raising base rates by 5–10%`,
+      applyLabel: sv ? 'Noterat' : 'Noted',
+      toastMsg: sv ? 'Noterat' : 'Noted',
     });
   }
 
@@ -137,10 +137,11 @@ function generateRecommendations(data, stats, prevData) {
       recs.push({
         id: 'revenue-drop',
         type: 'warning',
-        en: `Revenue down ${drop}% vs last month — consider proactive outreach to existing customers`,
-        sv: `Intäkter ner ${drop}% jämfört med förra månaden — överväg att kontakta befintliga kunder`,
-        applyLabel: 'Acknowledged / Bekräftad',
-        toastMsg: `Noterat / Noted`,
+        text: sv
+          ? `Intäkter ner ${drop}% jämfört med förra månaden — överväg att kontakta befintliga kunder`
+          : `Revenue down ${drop}% vs last month — consider proactive outreach to existing customers`,
+        applyLabel: sv ? 'Bekräftad' : 'Acknowledged',
+        toastMsg: sv ? 'Noterat' : 'Noted',
       });
     }
   }
@@ -163,16 +164,11 @@ function KpiCard({ label, value, unit, sublabel }) {
         {label}
       </div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
-        <span style={{
-          fontFamily: INTER, fontSize: 26, fontWeight: 700,
-          color: TEXT, lineHeight: 1,
-        }}>
+        <span style={{ fontFamily: INTER, fontSize: 26, fontWeight: 700, color: TEXT, lineHeight: 1 }}>
           {value ?? '—'}
         </span>
         {unit && value != null && (
-          <span style={{ fontFamily: INTER, fontSize: 15, color: MUTED }}>
-            {unit}
-          </span>
+          <span style={{ fontFamily: INTER, fontSize: 15, color: MUTED }}>{unit}</span>
         )}
       </div>
       {sublabel && (
@@ -184,7 +180,6 @@ function KpiCard({ label, value, unit, sublabel }) {
   );
 }
 
-// ── Margin colour ──────────────────────────────────────────────────────────────
 function marginColor(pct) {
   if (pct == null) return { text: FAINT,     bg: 'transparent' };
   if (pct < 20)    return { text: '#e74c3c', bg: '#fff0f0' };
@@ -192,28 +187,27 @@ function marginColor(pct) {
   return             { text: '#16a34a', bg: '#e8fdf0' };
 }
 
-// ── Status badge ───────────────────────────────────────────────────────────────
-function StatusBadge({ status }) {
+function StatusBadge({ status, t }) {
   const MAP = {
-    planerad:   { label: 'Planerad',   color: '#d97706', bg: '#fff7ed' },
-    aktiv:      { label: 'Aktiv',      color: '#15803d', bg: '#f0fdf4' },
-    avslutad:   { label: 'Avslutad',   color: '#16a34a', bg: '#e8fdf0' },
-    slutförd:   { label: 'Slutförd',   color: '#16a34a', bg: '#e8fdf0' },
-    fakturerad: { label: 'Fakturerad', color: '#3b82f6', bg: '#eff6ff' },
+    planerad:   { color: '#d97706', bg: '#fff7ed' },
+    aktiv:      { color: '#15803d', bg: '#f0fdf4' },
+    avslutad:   { color: '#16a34a', bg: '#e8fdf0' },
+    slutförd:   { color: '#16a34a', bg: '#e8fdf0' },
+    fakturerad: { color: '#3b82f6', bg: '#eff6ff' },
   };
   const s = MAP[status] ?? MAP.planerad;
+  const label = t.jobs.statuses[status] ?? status;
   return (
     <span style={{
       fontFamily: INTER, fontSize: 11, fontWeight: 600,
       textTransform: 'uppercase', color: s.color, background: s.bg,
       padding: '3px 10px', borderRadius: 6, whiteSpace: 'nowrap',
     }}>
-      {s.label}
+      {label}
     </span>
   );
 }
 
-// ── Trend arrow ────────────────────────────────────────────────────────────────
 function TrendArrow({ current, prev, showDiff = true, threshold = 0.5 }) {
   if (current == null || prev == null) {
     return <span style={{ color: FAINT, fontFamily: INTER, fontSize: 12 }}>—</span>;
@@ -230,42 +224,31 @@ function TrendArrow({ current, prev, showDiff = true, threshold = 0.5 }) {
   );
 }
 
-// ── Recommendation cards ───────────────────────────────────────────────────────
 const REC_COLORS = {
-  warning:     { border: '#f59e0b', bg: '#fffbeb',   dot: '#f59e0b' },
-  opportunity: { border: '#16a34a', bg: '#f0fdf4',   dot: '#16a34a' },
-  info:        { border: '#3b82f6', bg: '#eff6ff',   dot: '#3b82f6' },
+  warning:     { border: '#f59e0b', bg: '#fffbeb', dot: '#f59e0b' },
+  opportunity: { border: '#16a34a', bg: '#f0fdf4', dot: '#16a34a' },
+  info:        { border: '#3b82f6', bg: '#eff6ff', dot: '#3b82f6' },
 };
 
-function RecommendationCards({ recs, onApply, onDismiss }) {
+function RecommendationCards({ recs, onApply, onDismiss, t }) {
   if (recs.length === 0) return null;
   return (
     <div style={{ marginBottom: 32 }}>
-      <SectionLabel>Recommendations / Rekommendationer</SectionLabel>
+      <SectionLabel>{t.profitability.section.recommendations}</SectionLabel>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {recs.map((rec) => {
           const c = REC_COLORS[rec.type] ?? REC_COLORS.info;
           return (
             <div key={rec.id} style={{
-              background: c.bg,
-              border: '1px solid #e9ecef',
+              background: c.bg, border: '1px solid #e9ecef',
               borderLeft: `3px solid ${c.border}`,
-              borderRadius: 10,
-              padding: '12px 16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 14,
+              borderRadius: 10, padding: '12px 16px',
+              display: 'flex', alignItems: 'center', gap: 14,
             }}>
-              <span style={{
-                width: 7, height: 7, borderRadius: '50%',
-                background: c.dot, flexShrink: 0,
-              }} />
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: c.dot, flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: INTER, fontSize: 13, color: TEXT, lineHeight: 1.45 }}>
-                  {rec.en}
-                </div>
-                <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED, marginTop: 2, lineHeight: 1.4 }}>
-                  {rec.sv}
+                  {rec.text}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
@@ -299,8 +282,7 @@ function RecommendationCards({ recs, onApply, onDismiss }) {
   );
 }
 
-// ── Job profitability table ────────────────────────────────────────────────────
-function JobsTable({ jobs, prevJobs, onFakturaClick }) {
+function JobsTable({ jobs, prevJobs, onFakturaClick, t }) {
   const rows = jobs.filter((j) => COMPLETED.has(j.job_status));
 
   if (rows.length === 0) {
@@ -311,7 +293,7 @@ function JobsTable({ jobs, prevJobs, onFakturaClick }) {
         padding: 32, textAlign: 'center',
         fontFamily: INTER, fontSize: 14, color: MUTED, fontStyle: 'italic',
       }}>
-        No jobs yet — create a quote to start / Inga uppdrag än — skapa en offert för att börja
+        {t.profitability.noJobs}
       </div>
     );
   }
@@ -323,13 +305,13 @@ function JobsTable({ jobs, prevJobs, onFakturaClick }) {
   const curAvgByType = avgByKey(rows, (j) => j.lasttyp);
 
   const COLS = [
-    { label: 'Kund / Customer',   w: '20%' },
-    { label: 'Last / Cargo',      w: '14%' },
-    { label: 'Intäkt / Revenue',  w: '14%', right: true },
-    { label: 'Kostnad / Cost',    w: '14%', right: true },
-    { label: 'Marginal / Margin', w: '12%', right: true },
-    { label: 'Trend',             w: '11%', center: true },
-    { label: '',                  w: '15%' },
+    { label: t.profitability.tableHeaders.route,   w: '20%' },
+    { label: t.profitability.tableHeaders.cargo,   w: '14%' },
+    { label: t.profitability.tableHeaders.revenue, w: '14%', right: true },
+    { label: t.profitability.tableHeaders.cost,    w: '14%', right: true },
+    { label: t.profitability.tableHeaders.margin,  w: '12%', right: true },
+    { label: 'Trend',                              w: '11%', center: true },
+    { label: '',                                   w: '15%' },
   ];
 
   return (
@@ -400,7 +382,7 @@ function JobsTable({ jobs, prevJobs, onFakturaClick }) {
                   </td>
                   <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'flex-start' }}>
-                      <StatusBadge status={j.job_status} />
+                      <StatusBadge status={j.job_status} t={t} />
                       {(j.job_status === 'avslutad' || j.job_status === 'slutförd') && (
                         <button
                           onClick={() => onFakturaClick(j)}
@@ -413,7 +395,7 @@ function JobsTable({ jobs, prevJobs, onFakturaClick }) {
                           onMouseEnter={(e) => e.currentTarget.style.background = BLUE_DK}
                           onMouseLeave={(e) => e.currentTarget.style.background = BLUE}
                         >
-                          Generate Invoice / Skapa Faktura
+                          {t.profitability.generateInvoice}
                         </button>
                       )}
                       {j.job_status === 'fakturerad' && j.faktura_nr && (
@@ -431,30 +413,27 @@ function JobsTable({ jobs, prevJobs, onFakturaClick }) {
       </div>
       <div style={{ display: 'flex', gap: 20, padding: '10px 16px', borderTop: '1px solid #e9ecef', background: SURF }}>
         {[
-          { color: '#e74c3c', bg: '#fff0f0',  label: '< 20%' },
-          { color: '#d97706', bg: '#fff7ed',  label: '20–40%' },
-          { color: '#16a34a', bg: '#e8fdf0',  label: '> 40%' },
+          { color: '#e74c3c', bg: '#fff0f0', label: t.profitability.legend.low  },
+          { color: '#d97706', bg: '#fff7ed', label: t.profitability.legend.mid  },
+          { color: '#16a34a', bg: '#e8fdf0', label: t.profitability.legend.high },
         ].map(({ color, bg, label }) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{
               display: 'inline-block', width: 10, height: 10, borderRadius: 2,
               background: bg, border: `1px solid ${color}`, flexShrink: 0,
             }} />
-            <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>
-              {label}
-            </span>
+            <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>{label}</span>
           </div>
         ))}
         <span style={{ fontFamily: INTER, fontSize: 12, color: FAINT, marginLeft: 'auto', fontStyle: 'italic' }}>
-          * Kostnad beräknad från fordonsdata · Trend = denna vs föregående månad per lasttyp
+          {t.profitability.legend.note}
         </span>
       </div>
     </div>
   );
 }
 
-// ── Top customers ──────────────────────────────────────────────────────────────
-function CustomerBars({ ranking, prevRanking }) {
+function CustomerBars({ ranking, prevRanking, t }) {
   if (ranking.length === 0) {
     return (
       <div style={{
@@ -463,7 +442,7 @@ function CustomerBars({ ranking, prevRanking }) {
         padding: 28, textAlign: 'center',
         fontFamily: INTER, fontSize: 14, color: MUTED, fontStyle: 'italic',
       }}>
-        No jobs yet — create a quote to start / Inga uppdrag än — skapa en offert för att börja
+        {t.profitability.noJobs}
       </div>
     );
   }
@@ -506,10 +485,7 @@ function CustomerBars({ ranking, prevRanking }) {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                 <TrendArrow current={r.profit} prev={prev} showDiff={false} threshold={100} />
-                <span style={{
-                  fontFamily: INTER, fontSize: 16, fontWeight: 700,
-                  color: isLoss ? '#e74c3c' : BLUE,
-                }}>
+                <span style={{ fontFamily: INTER, fontSize: 16, fontWeight: 700, color: isLoss ? '#e74c3c' : BLUE }}>
                   {isLoss ? '−' : ''}{fmtSEK(Math.abs(r.profit))}
                 </span>
               </div>
@@ -521,13 +497,11 @@ function CustomerBars({ ranking, prevRanking }) {
   );
 }
 
-// ── Section label ──────────────────────────────────────────────────────────────
 function SectionLabel({ children }) {
   return (
     <div style={{
       fontFamily: INTER, fontSize: 11, fontWeight: 600, letterSpacing: '0.5px',
-      textTransform: 'uppercase', color: MUTED,
-      marginBottom: 12,
+      textTransform: 'uppercase', color: MUTED, marginBottom: 12,
     }}>
       {children}
     </div>
@@ -536,6 +510,7 @@ function SectionLabel({ children }) {
 
 // ── Main ───────────────────────────────────────────────────────────────────────
 export function Profitability() {
+  const { t, lang } = useLanguage();
   const [month,          setMonth]          = useState(currentMonth);
   const [data,           setData]           = useState(null);
   const [prevData,       setPrevData]       = useState(null);
@@ -549,6 +524,8 @@ export function Profitability() {
   const [fakturaLoading, setFakturaLoading] = useState(false);
   const [toast,          setToast]          = useState(null);
   const [dismissed,      setDismissed]      = useState(new Set());
+
+  const MONTH_OPTIONS = buildMonthOptions(lang);
 
   useEffect(() => {
     setLoading(true);
@@ -588,10 +565,10 @@ export function Profitability() {
       await generateFaktura(invoice, invoice.company);
       setFakturaJob(null);
       setRefresh((r) => r + 1);
-      setToast({ message: `Faktura ${invoice.faktura_nr} genererad och nedladdad`, variant: 'success' });
+      setToast({ message: t.profitability.faktura.created(invoice.faktura_nr), variant: 'success' });
     } catch (e) {
       console.error('[Faktura] Fel:', e);
-      setToast({ message: 'Kunde inte skapa faktura', variant: 'error' });
+      setToast({ message: t.profitability.faktura.failed, variant: 'error' });
     } finally {
       setFakturaLoading(false);
     }
@@ -617,8 +594,10 @@ export function Profitability() {
   })();
 
   const allRecs = data
-    ? generateRecommendations(data, stats, prevData).filter((r) => !dismissed.has(r.id))
+    ? generateRecommendations(data, stats, prevData, lang).filter((r) => !dismissed.has(r.id))
     : [];
+
+  const monthLabel = MONTH_OPTIONS.find((o) => o.value === month)?.label ?? '';
 
   const inputStyle = {
     width: '100%', fontFamily: INTER, fontSize: 13, color: TEXT,
@@ -632,14 +611,13 @@ export function Profitability() {
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px 48px', background: BG, minHeight: 0 }}>
-      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
         <div>
           <h1 style={{ fontFamily: INTER, fontSize: 20, fontWeight: 700, color: TEXT, margin: '0 0 4px' }}>
-            Profitability / Lönsamhet
+            {t.profitability.heading}
           </h1>
           <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: 0 }}>
-            {MONTH_OPTIONS.find((o) => o.value === month)?.label}
+            {monthLabel}
           </p>
         </div>
         <select
@@ -659,81 +637,79 @@ export function Profitability() {
 
       {loading && (
         <div style={{ fontFamily: INTER, fontSize: 14, color: MUTED, textAlign: 'center', padding: 48 }}>
-          Laddar…
+          {t.profitability.loading}
         </div>
       )}
       {error && (
         <div style={{ fontFamily: INTER, fontSize: 14, color: '#e74c3c', textAlign: 'center', padding: 48 }}>
-          Kunde inte hämta data. Kontrollera att servern är igång.
+          {t.profitability.error}
         </div>
       )}
 
       {data && !loading && (
         <>
-          {/* ── Recommendations ──────────────────────────────────────────── */}
           <RecommendationCards
             recs={allRecs}
             onApply={handleApply}
             onDismiss={handleDismiss}
+            t={t}
           />
 
-          {/* ── Section 1: KPI cards ─────────────────────────────────────── */}
           <div style={{ marginBottom: 32 }}>
-            <SectionLabel>KPI — {MONTH_OPTIONS.find((o) => o.value === month)?.label}</SectionLabel>
+            <SectionLabel>{t.profitability.section.kpi(monthLabel)}</SectionLabel>
             <div style={{ display: 'flex', gap: 12 }}>
               <KpiCard
-                label="Acceptance Rate / Acceptansgrad"
+                label={t.profitability.acceptanceRate}
                 value={stats?.acceptansgrad?.pct != null ? stats.acceptansgrad.pct.toFixed(1) : null}
                 unit="%"
                 sublabel={
                   stats?.acceptansgrad?.actioned > 0
-                    ? `${stats.acceptansgrad.godkand} av ${stats.acceptansgrad.actioned} besvarade`
-                    : 'Inga besvarade offerter'
+                    ? t.profitability.kpi.acceptanceSublabel(stats.acceptansgrad.godkand, stats.acceptansgrad.actioned)
+                    : t.profitability.kpi.noAnswered
                 }
               />
               <KpiCard
-                label="Average Quote / Snittoffert"
+                label={t.profitability.avgQuote}
                 value={
                   stats?.snittoffert?.avgSek != null
                     ? new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(stats.snittoffert.avgSek)
                     : null
                 }
                 unit="kr"
-                sublabel={`${stats?.acceptansgrad?.total ?? 0} offerter denna period`}
+                sublabel={t.profitability.kpi.quotesSublabel(stats?.acceptansgrad?.total ?? 0)}
               />
               <KpiCard
-                label="Average Margin / Snittmarginal"
+                label={t.profitability.avgMargin}
                 value={avgMargin != null ? avgMargin.toFixed(1) : null}
                 unit="%"
-                sublabel={`${data.jobs.filter((j) => j.marginal_pct != null).length} uppdrag med marginaldata`}
+                sublabel={t.profitability.kpi.marginSublabel(data.jobs.filter((j) => j.marginal_pct != null).length)}
               />
             </div>
           </div>
 
-          {/* ── Section 2: Job profitability table ───────────────────────── */}
           <div style={{ marginBottom: 32 }}>
-            <SectionLabel>Completed Jobs / Avslutade uppdrag — marginal stigande</SectionLabel>
+            <SectionLabel>{t.profitability.section.completedJobs}</SectionLabel>
             <JobsTable
               jobs={data.jobs}
               prevJobs={prevData?.jobs}
               onFakturaClick={openFakturaModal}
+              t={t}
             />
           </div>
 
-          {/* ── Section 3: Top 5 customers ───────────────────────────────── */}
           <div style={{ marginBottom: 32 }}>
             <SectionLabel>
-              Top {Math.min(data.customerRanking.length, 5)} Customers / Kundplatser — bruttovinst denna månad
+              {t.profitability.section.topCustomers(Math.min(data.customerRanking.length, 5))}
             </SectionLabel>
             <CustomerBars
               ranking={data.customerRanking}
               prevRanking={prevData?.customerRanking}
+              t={t}
             />
           </div>
         </>
       )}
 
-      {/* Faktura modal */}
       {fakturaJob && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 1000,
@@ -745,20 +721,20 @@ export function Profitability() {
             boxShadow: '0 8px 40px rgba(0,0,0,0.13)', padding: 28, width: 420,
           }}>
             <div style={{ fontFamily: INTER, fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: FAINT, marginBottom: 4 }}>
-              Generate Invoice / Skapa Faktura
+              {t.profitability.faktura.title}
             </div>
             <div style={{ fontFamily: INTER, fontSize: 13, color: MUTED, marginBottom: 16 }}>
-              Fakturanummer genereras automatiskt / Invoice number generated automatically
+              {t.profitability.faktura.autoNumber}
             </div>
             <div style={{ fontFamily: INTER, fontSize: 13, color: MUTED, marginBottom: 20 }}>
               {fakturaJob.lasttyp} · {fakturaJob.kund} → {fakturaJob.leverans}
               {fakturaJob.intakt != null && (
-                <span style={{ color: BLUE, marginLeft: 8, fontWeight: 600 }}>{fmtSEK(fakturaJob.intakt)} exkl. moms</span>
+                <span style={{ color: BLUE, marginLeft: 8, fontWeight: 600 }}>{fmtSEK(fakturaJob.intakt)} {t.jobs.exclVat}</span>
               )}
             </div>
 
             <label style={{ display: 'block', marginBottom: 14 }}>
-              <span style={labelStyle}>Kundnamn *</span>
+              <span style={labelStyle}>{t.jobs.invoiceModal.customerName}</span>
               <input
                 autoFocus
                 value={kundNamn}
@@ -769,7 +745,7 @@ export function Profitability() {
             </label>
 
             <label style={{ display: 'block', marginBottom: 22 }}>
-              <span style={labelStyle}>Kundadress</span>
+              <span style={labelStyle}>{t.jobs.invoiceModal.address}</span>
               <textarea
                 value={kundAdress}
                 onChange={(e) => setKundAdress(e.target.value)}
@@ -789,7 +765,7 @@ export function Profitability() {
                   background: WHITE, color: '#374151', cursor: 'pointer',
                 }}
               >
-                Avbryt
+                {t.profitability.faktura.cancel}
               </button>
               <button
                 onClick={handleGenerateFaktura}
@@ -804,7 +780,7 @@ export function Profitability() {
                 onMouseEnter={(e) => { if (!fakturaLoading && kundNamn.trim()) e.currentTarget.style.background = BLUE_DK; }}
                 onMouseLeave={(e) => { if (!fakturaLoading && kundNamn.trim()) e.currentTarget.style.background = BLUE; }}
               >
-                {fakturaLoading ? 'Genererar…' : 'Generera & ladda ned PDF'}
+                {fakturaLoading ? t.profitability.faktura.generating : t.profitability.faktura.generate}
               </button>
             </div>
           </div>

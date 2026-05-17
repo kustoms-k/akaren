@@ -1,6 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useAuth }  from '../context/AuthContext.jsx';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 const BLUE  = '#4361ee';
 const WHITE = '#ffffff';
@@ -8,45 +9,19 @@ const TEXT  = '#1a1a2e';
 const MUTED = '#6c757d';
 const INTER = "'Inter', sans-serif";
 
-const TOUR_STEPS = [
-  {
-    navId: 'new-quote',
-    title: 'AI Quote Builder',
-    titleSv: 'AI-offertverktyg',
-    desc: 'Paste any Swedish transport inquiry — the AI extracts all details and builds a fully priced, confidence-scored quote in seconds.',
-    descSv: 'Klistra in valfri förfrågan — AI:n extraherar alla detaljer och skapar en komplett offert på sekunder.',
-    emoji: '⚡',
-  },
-  {
-    navId: 'customers',
-    title: 'Customer Portals',
-    titleSv: 'Kundportaler',
-    desc: 'Every customer gets a unique private link to view their quotes, invoices, and message you directly.',
-    descSv: 'Varje kund får en unik privat länk för att se offerter, fakturor och skicka meddelanden.',
-    emoji: '🔗',
-  },
-  {
-    navId: 'lonsamhet',
-    title: 'Profitability',
-    titleSv: 'Lönsamhet',
-    desc: 'Track revenue and margin per route, vehicle, and time period. Know exactly where you make money.',
-    descSv: 'Följ intäkt och marginal per rutt, fordon och tidsperiod. Vet exakt var du tjänar pengar.',
-    emoji: '📈',
-  },
-  {
-    navId: 'jobs',
-    title: 'Jobs & Invoices',
-    titleSv: 'Uppdrag & Fakturor',
-    desc: 'Convert accepted quotes to jobs, assign drivers, and generate invoices — with optional Fortnox sync.',
-    descSv: 'Omvandla accepterade offerter till uppdrag, tilldela förare och generera fakturor — med Fortnox-synk.',
-    emoji: '📋',
-  },
+const TOUR_NAV = [
+  { navId: 'new-quote',  emoji: '⚡', key: 'newQuote'      },
+  { navId: 'customers',  emoji: '🔗', key: 'customers'     },
+  { navId: 'lonsamhet',  emoji: '📈', key: 'profitability' },
+  { navId: 'jobs',       emoji: '📋', key: 'jobs'          },
 ];
 
 const STORAGE_KEY = (userId) => `tour_dismissed_${userId}`;
 
 export function TourOverlay() {
   const { user } = useAuth();
+  const { t } = useLanguage();
+  const TOUR_STEPS = TOUR_NAV.map((n) => ({ ...n, ...t.tour.steps[n.key] }));
   const [step,    setStep]    = useState(0);
   const [visible, setVisible] = useState(false);
   const [rect,    setRect]    = useState(null);
@@ -183,7 +158,6 @@ export function TourOverlay() {
             <span style={{ fontSize: 20 }}>{current.emoji}</span>
             <div>
               <div style={{ color: WHITE, fontWeight: 700, fontSize: 14 }}>{current.title}</div>
-              <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 11 }}>{current.titleSv}</div>
             </div>
           </div>
           <button
@@ -194,14 +168,13 @@ export function TourOverlay() {
               fontFamily: INTER, fontSize: 12, fontWeight: 500,
             }}
           >
-            Skip / Hoppa
+            {t.tour.skip}
           </button>
         </div>
 
         {/* Body */}
         <div style={{ padding: '14px 18px' }}>
-          <p style={{ fontSize: 13, color: TEXT, margin: '0 0 6px', lineHeight: 1.6 }}>{current.desc}</p>
-          <p style={{ fontSize: 12, color: MUTED, margin: 0, lineHeight: 1.6 }}>{current.descSv}</p>
+          <p style={{ fontSize: 13, color: TEXT, margin: 0, lineHeight: 1.6 }}>{current.desc}</p>
         </div>
 
         {/* Footer */}
@@ -228,7 +201,7 @@ export function TourOverlay() {
               borderRadius: 7, padding: '7px 18px',
             }}
           >
-            {step < TOUR_STEPS.length - 1 ? 'Next / Nästa →' : 'Done / Klar ✓'}
+            {step < TOUR_STEPS.length - 1 ? t.tour.next : t.tour.done}
           </button>
         </div>
       </div>

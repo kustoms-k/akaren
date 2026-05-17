@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently --names \"server,client\" --prefix-colors \"yellow,cyan\" \"npm run server\" \"npm run client\"",
+    "start": "node server/index.js",
+    "build": "cd client && npm install && npm run build",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "node server/index.js",
-    "client": "npm run dev --prefix client"
+    "client": "cd client && npm run dev"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

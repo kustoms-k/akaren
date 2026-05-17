@@ -1,3 +1,5 @@
+import { useLanguage } from '../context/LanguageContext.jsx';
+
 const INTER = "'Inter', sans-serif";
 const BLUE  = '#4361ee';
 const WHITE = '#ffffff';
@@ -66,10 +68,11 @@ function VehicleRow({ v }) {
 }
 
 export function FleetPanel({ fleet }) {
+  const { t } = useLanguage();
   if (fleet.length === 0) {
     return (
       <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: 0, flexShrink: 0 }}>
-        Laddar fordon…
+        {t.fleetPanel.loading}
       </p>
     );
   }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { S } from '../constants/strings.js';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 const INTER   = "'Inter', sans-serif";
 const BLUE    = '#4361ee';
@@ -15,15 +15,17 @@ const ERROR   = '#e74c3c';
 
 const STAGGER = 120; // ms
 
-const FIELDS = [
-  { key: 'lasttyp',              label: 'LASTTYP'     },
-  { key: 'upphämtning',          label: 'UPPHÄMTNING' },
-  { key: 'leverans',             label: 'LEVERANS'    },
-  { key: 'datum',                label: 'DATUM'       },
-  { key: 'fordon_rekommenderat', label: 'FORDON'      },
-  { key: 'avstand_km',           label: 'AVSTÅND',    unit: ' km' },
-  { key: 'totalpris_sek',        label: 'TOTALPRIS',  unit: ' kr' },
-];
+function getFields(t) {
+  return [
+    { key: 'lasttyp',              label: t.newQuote.fields.lasttyp              },
+    { key: 'upphämtning',          label: t.newQuote.fields.upphämtning          },
+    { key: 'leverans',             label: t.newQuote.fields.leverans             },
+    { key: 'datum',                label: t.newQuote.fields.datum                },
+    { key: 'fordon_rekommenderat', label: t.newQuote.fields.fordon_rekommenderat },
+    { key: 'avstand_km',           label: t.newQuote.fields.avstand_km,    unit: ' km' },
+    { key: 'totalpris_sek',        label: t.newQuote.fields.totalpris_sek, unit: ' kr' },
+  ];
+}
 
 const isMock = (v) => v === '…';
 
@@ -32,7 +34,7 @@ function InfoButton({ active, onClick }) {
   return (
     <button
       onClick={onClick}
-      title="Why this truck / Varför denna lastbil"
+      title="Why this truck"
       style={{
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         width: 16, height: 16, borderRadius: '50%',
@@ -58,6 +60,7 @@ export function AnalysisStream({
   routeLive = false,
   routeLoading = false,
 }) {
+  const { t } = useLanguage();
   const [whyOpen, setWhyOpen] = useState(false);
 
   if (status === 'idle') {
@@ -67,7 +70,7 @@ export function AnalysisStream({
         padding: 16, minHeight: 48, display: 'flex', alignItems: 'center', flexShrink: 0,
       }}>
         <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: 0, fontStyle: 'italic' }}>
-          Väntar på förfrågan…
+          {t.newQuote.analysis.idle}
         </p>
       </div>
     );
@@ -84,7 +87,7 @@ export function AnalysisStream({
 
   // Show none-confidence fields even when value is null
   const visibleFields = showFields
-    ? FIELDS.filter(({ key }) => {
+    ? getFields(t).filter(({ key }) => {
         const v = parsed[key];
         const c = confidence?.[key];
         return (v != null && v !== '') || c === 'none';
@@ -183,7 +186,7 @@ export function AnalysisStream({
                         color: FAINT,
                         animation: 'text-pulse 1.2s ease-in-out infinite',
                       }}>
-                        ● routing…
+                        {t.newQuote.analysis.routeCalc}
                       </span>
                     )}
                     {key === 'avstand_km' && routeLive && !routeLoading && !mock && (
@@ -196,7 +199,7 @@ export function AnalysisStream({
                         padding: '1px 6px',
                         whiteSpace: 'nowrap',
                       }}>
-                        ● Live route
+                        ● {t.newQuote.analysis.routeLive}
                       </span>
                     )}
                   </span>
@@ -206,7 +209,7 @@ export function AnalysisStream({
                     {/* Missing (none) placeholder */}
                     {isNone && !mock && val == null && !onFieldChange && (
                       <span style={{ fontFamily: INTER, fontSize: 12, color: WARNING, fontStyle: 'italic' }}>
-                        Missing — needs input
+                        {t.newQuote.analysis.idle}
                       </span>
                     )}
 
@@ -215,7 +218,7 @@ export function AnalysisStream({
                       <span style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
                         <input
                           value={val == null ? '' : String(val)}
-                          placeholder={isNone ? 'Saknas — ange värde / Missing — enter value' : undefined}
+                          placeholder={isNone ? t.newQuote.analysis.idle : undefined}
                           onChange={(e) => onFieldChange(key, e.target.value)}
                           style={{
                             fontFamily: INTER, fontSize: 14,
@@ -289,12 +292,12 @@ export function AnalysisStream({
                     />
                     <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>
                       {isNone
-                        ? 'Fältet kan lämnas tomt / Field may be left blank'
-                        : 'Värdet är korrekt / Value is correct'}
+                        ? t.newQuote.flags.confirmFields
+                        : t.newQuote.flags.reviewAcknowledged}
                     </span>
                     {isEdited && (
                       <span style={{ fontFamily: INTER, fontSize: 11, color: '#16a34a' }}>
-                        ✓ redigerat
+                        {t.newQuote.flags.reviewAcknowledged}
                       </span>
                     )}
                   </label>
@@ -339,7 +342,7 @@ export function AnalysisStream({
       {/* Error */}
       {status === 'error' && (
         <p style={{ fontFamily: INTER, fontSize: 13, color: ERROR, margin: 0 }}>
-          {error === 'parse' ? S.errors.parse : S.errors.network}
+          {error === 'parse' ? t.errors.parse : t.errors.network}
         </p>
       )}
     </div>

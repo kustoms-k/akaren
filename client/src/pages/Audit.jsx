@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useAuth }  from '../context/AuthContext.jsx';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 const INTER  = "'Inter', sans-serif";
 const BLUE   = '#4361ee';
@@ -10,14 +11,6 @@ const BORDER = '#e9ecef';
 const TEXT   = '#1a1a2e';
 const MUTED  = '#6c757d';
 const SURF   = '#f8f9fa';
-
-const ENTITY_LABELS = {
-  quote:            'Quote / Offert',
-  job:              'Job / Uppdrag',
-  template:         'Template / Mall',
-  driver:           'Driver / Förare',
-  financial_report: 'Financial Report / Ekonomirapport',
-};
 
 const ACTION_COLORS = {
   create: { bg: 'rgba(46,204,113,0.10)',  color: '#1a7a47' },
@@ -32,7 +25,7 @@ function tryParse(s) {
   try { return JSON.parse(s); } catch { return null; }
 }
 
-function DiffView({ before, after, action }) {
+function DiffView({ before, after, action, t }) {
   const b = tryParse(before);
   const a = tryParse(after);
 
@@ -50,7 +43,7 @@ function DiffView({ before, after, action }) {
     return lines.length ? (
       <div style={{ fontFamily: INTER, fontSize: 12, lineHeight: 1.8 }}>{lines}</div>
     ) : (
-      <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>created</span>
+      <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>{t.audit.row.created}</span>
     );
   }
 
@@ -96,7 +89,7 @@ function DiffView({ before, after, action }) {
   return lines.length ? (
     <div style={{ fontFamily: INTER, fontSize: 12, lineHeight: 1.8 }}>{lines}</div>
   ) : (
-    <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>no field changes</span>
+    <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>{t.audit.row.noChanges}</span>
   );
 }
 
@@ -127,6 +120,7 @@ function fmtTs(s) {
 }
 
 export function Audit() {
+  const { t } = useLanguage();
   const { user } = useAuth();
 
   const [rows,       setRows]       = useState([]);
@@ -153,9 +147,9 @@ export function Audit() {
 
     apiFetch(`/api/audit?${params}`)
       .then((r) => r.json())
-      .then(({ rows: r, total: t, users: u }) => {
+      .then(({ rows: r, total: tl, users: u }) => {
         setRows(r ?? []);
-        setTotal(t ?? 0);
+        setTotal(tl ?? 0);
         setUsers(u ?? []);
       })
       .catch(() => {})
@@ -176,8 +170,9 @@ export function Audit() {
         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: BG, flexDirection: 'column', gap: 10,
       }}>
-        <div style={{ fontFamily: INTER, fontSize: 14, color: '#e74c3c', fontWeight: 600 }}>Access restricted to owner role.</div>
-        <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>Åtkomst kräver ägarbehörighet.</div>
+        <div style={{ fontFamily: INTER, fontSize: 14, color: '#e74c3c', fontWeight: 600 }}>
+          {t.audit.accessDenied}
+        </div>
       </div>
     );
   }
@@ -191,38 +186,44 @@ export function Audit() {
     padding: '6px 10px', outline: 'none',
   };
 
+  const TABLE_HEADERS = [
+    t.audit.table.timestamp,
+    t.audit.table.user,
+    t.audit.table.entity,
+    t.audit.table.id,
+    t.audit.table.action,
+    t.audit.table.changes,
+  ];
+
   return (
     <div style={{ flex: 1, overflowY: 'auto', background: BG, padding: '20px 24px' }}>
 
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontFamily: INTER, fontSize: 20, fontWeight: 700, color: TEXT, marginBottom: 4 }}>
-          Revisionslogg / Audit Log
+          {t.audit.heading}
         </div>
         <div style={{ fontFamily: INTER, fontSize: 13, color: MUTED }}>
-          {total.toLocaleString('sv-SE')} händelser totalt · Ägarvy / Owner-only view
+          {t.audit.eventsTotal(total)} · {t.audit.ownerOnly}
         </div>
       </div>
 
-      {/* Filter bar */}
       <form onSubmit={applyFilters} style={{
-        background: WHITE,
-        border: `1px solid ${BORDER}`,
-        borderRadius: 12,
+        background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12,
         boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
         padding: '14px 18px', marginBottom: 16,
         display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end',
       }}>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <span style={{ fontFamily: INTER, fontSize: 11, color: MUTED, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Entity
+            {t.audit.filters.entity}
           </span>
           <select
             value={entityType}
             onChange={(e) => setEntityType(e.target.value)}
             style={{ ...inputStyle, width: 180 }}
           >
-            <option value="">All entities</option>
-            {Object.entries(ENTITY_LABELS).map(([k, v]) => (
+            <option value="">{t.audit.filters.allEntities}</option>
+            {Object.entries(t.audit.entities).map(([k, v]) => (
               <option key={k} value={k}>{v}</option>
             ))}
           </select>
@@ -230,14 +231,14 @@ export function Audit() {
 
         <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <span style={{ fontFamily: INTER, fontSize: 11, color: MUTED, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            User
+            {t.audit.filters.user}
           </span>
           <select
             value={userId}
             onChange={(e) => setUserId(e.target.value)}
             style={{ ...inputStyle, width: 180 }}
           >
-            <option value="">All users</option>
+            <option value="">{t.audit.filters.allUsers}</option>
             {users.map((u) => (
               <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
             ))}
@@ -246,7 +247,7 @@ export function Audit() {
 
         <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <span style={{ fontFamily: INTER, fontSize: 11, color: MUTED, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            From
+            {t.audit.filters.from}
           </span>
           <input
             type="date"
@@ -258,7 +259,7 @@ export function Audit() {
 
         <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <span style={{ fontFamily: INTER, fontSize: 11, color: MUTED, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            To
+            {t.audit.filters.to}
           </span>
           <input
             type="date"
@@ -277,7 +278,7 @@ export function Audit() {
             borderRadius: 6, cursor: 'pointer', alignSelf: 'flex-end',
           }}
         >
-          Filter
+          {t.audit.filters.filterBtn}
         </button>
 
         {(entityType || userId || dateFrom || dateTo) && (
@@ -291,12 +292,11 @@ export function Audit() {
               color: MUTED, cursor: 'pointer', alignSelf: 'flex-end',
             }}
           >
-            Clear
+            {t.audit.filters.clearBtn}
           </button>
         )}
       </form>
 
-      {/* Table */}
       <div style={{
         background: WHITE, border: `1px solid ${BORDER}`,
         borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
@@ -305,7 +305,7 @@ export function Audit() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: SURF, borderBottom: `1px solid ${BORDER}` }}>
-              {['Timestamp', 'User', 'Entity', 'ID', 'Action', 'Changes'].map((h) => (
+              {TABLE_HEADERS.map((h) => (
                 <th key={h} style={{
                   textAlign: 'left', padding: '10px 14px',
                   fontFamily: INTER, fontSize: 11,
@@ -321,14 +321,14 @@ export function Audit() {
             {loading && rows.length === 0 && (
               <tr>
                 <td colSpan={6} style={{ padding: 32, textAlign: 'center', fontFamily: INTER, fontSize: 13, color: MUTED }}>
-                  Loading…
+                  {t.audit.loading}
                 </td>
               </tr>
             )}
             {!loading && rows.length === 0 && (
               <tr>
                 <td colSpan={6} style={{ padding: 32, textAlign: 'center', fontFamily: INTER, fontSize: 13, color: MUTED, fontStyle: 'italic' }}>
-                  No audit events yet.
+                  {t.audit.noEntries}
                 </td>
               </tr>
             )}
@@ -357,7 +357,7 @@ export function Audit() {
                     </div>
                   </td>
                   <td style={{ padding: '9px 14px', fontFamily: INTER, fontSize: 12, color: MUTED, whiteSpace: 'nowrap' }}>
-                    {ENTITY_LABELS[row.entity_type] ?? row.entity_type}
+                    {t.audit.entities[row.entity_type] ?? row.entity_type}
                   </td>
                   <td style={{ padding: '9px 14px', fontFamily: INTER, fontSize: 12, color: BLUE, fontWeight: 600, whiteSpace: 'nowrap' }}>
                     {row.entity_id ?? '—'}
@@ -367,11 +367,11 @@ export function Audit() {
                   </td>
                   <td style={{ padding: '9px 14px', maxWidth: 400 }}>
                     {isExp ? (
-                      <DiffView before={row.before_value} after={row.after_value} action={row.action} />
+                      <DiffView before={row.before_value} after={row.after_value} action={row.action} t={t} />
                     ) : (
                       <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>
-                        {row.action === 'view' ? '— view only —'
-                         : row.after_value ? 'click to expand'
+                        {row.action === 'view' ? t.audit.row.viewOnly
+                         : row.after_value ? t.audit.row.clickExpand
                          : '—'}
                       </span>
                     )}
@@ -383,14 +383,13 @@ export function Audit() {
         </table>
       </div>
 
-      {/* Pagination */}
       {total > LIMIT && (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           marginTop: 14, padding: '0 2px',
         }}>
           <span style={{ fontFamily: INTER, fontSize: 13, color: MUTED }}>
-            Sida {currentPage} av {totalPages} · {total} händelser
+            {t.audit.pagination.summary(currentPage, totalPages, total)}
           </span>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
@@ -402,7 +401,7 @@ export function Audit() {
                 color: offset === 0 ? MUTED : TEXT, cursor: offset === 0 ? 'not-allowed' : 'pointer',
               }}
             >
-              ← Prev
+              {t.audit.pagination.prev}
             </button>
             <button
               disabled={offset + LIMIT >= total}
@@ -414,7 +413,7 @@ export function Audit() {
                 cursor: offset + LIMIT >= total ? 'not-allowed' : 'pointer',
               }}
             >
-              Next →
+              {t.audit.pagination.next}
             </button>
           </div>
         </div>

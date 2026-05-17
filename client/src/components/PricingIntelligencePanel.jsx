@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/dexie.js';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 const INTER  = "'Inter', sans-serif";
 const BLUE   = '#4361ee';
@@ -48,6 +49,7 @@ function TierBar({ label, rate, count, highlight }) {
 }
 
 export function PricingIntelligencePanel({ lasttyp, currentPrice, onApplyPrice }) {
+  const { t } = useLanguage();
   const insights = useLiveQuery(() => db.pricingInsights.toArray(), [], null);
 
   // Not yet loaded from IndexedDB
@@ -71,15 +73,12 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, onApplyPrice }
           fontFamily: INTER, fontSize: 11, fontWeight: 600,
           textTransform: 'uppercase', color: MUTED, letterSpacing: '0.3px', marginBottom: 8,
         }}>
-          Prisunderrättelse
+          {t.pricingIntel.heading}
         </div>
         <div style={{
           fontFamily: INTER, fontSize: 13, color: MUTED, lineHeight: 1.6, marginBottom: 10,
         }}>
-          <span style={{ color: TEXT, fontWeight: 600 }}>{accepted_count}</span>
-          {' / '}
-          <span style={{ color: TEXT, fontWeight: 600 }}>{threshold}</span>
-          {' '}godkända offertar · låses upp vid {threshold} accepted quotes
+          {t.pricingIntel.unlockProgress(accepted_count, threshold)}
         </div>
         <div style={{ height: 4, background: BG, borderRadius: 2 }}>
           <div style={{
@@ -87,13 +86,6 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, onApplyPrice }
             background: BLUE,
             transition: 'width 0.5s ease',
           }} />
-        </div>
-        <div style={{
-          fontFamily: INTER, fontSize: 11, color: FAINT,
-          marginTop: 6,
-        }}>
-          Ju längre du använder Åkaren, desto mer värdefull blir datan ·{' '}
-          The longer you use Åkaren, the more valuable your private intelligence becomes
         </div>
       </div>
     );
@@ -116,11 +108,10 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, onApplyPrice }
           fontFamily: INTER, fontSize: 11, fontWeight: 600,
           textTransform: 'uppercase', color: MUTED, letterSpacing: '0.3px', marginBottom: 6,
         }}>
-          Prisunderrättelse
+          {t.pricingIntel.heading}
         </div>
         <div style={{ fontFamily: INTER, fontSize: 13, color: MUTED, lineHeight: 1.6 }}>
-          Inte tillräckligt med {lasttyp}-data ännu ({cargoItem?.n ?? 0} jobb) ·{' '}
-          Not enough {lasttyp} data yet ({cargoItem?.n ?? 0} jobs logged)
+          {t.pricingIntel.notEnoughData(lasttyp, cargoItem?.n ?? 0)}
         </div>
       </div>
     );
@@ -142,23 +133,28 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, onApplyPrice }
     else                       recommendedPrice = Math.round(avgPrice           / 100) * 100;
   }
 
+  const absPct = Math.abs(Math.round(pctDiff * 100));
   const priceDiffColor = isBelow ? '#e74c3c' : isAbove ? '#16a34a' : MUTED;
   const priceDiffLabel = isBelow
-    ? `↓ ${Math.abs(Math.round(pctDiff * 100))}% under ditt snitt`
+    ? t.pricingIntel.belowAvg(absPct)
     : isAbove
-    ? `↑ ${Math.abs(Math.round(pctDiff * 100))}% över ditt snitt`
-    : 'Vid ditt snitt / At your average';
+    ? t.pricingIntel.aboveAvg(absPct)
+    : t.pricingIntel.atAvg;
 
   // Highlight whichever tier has the best acceptance rate
   const bestTier = tierData
     ? ['below', 'at', 'above'].reduce(
-        (best, t) => (tierData[t]?.acceptance_rate ?? 0) > (tierData[best]?.acceptance_rate ?? 0) ? t : best,
+        (best, k) => (tierData[k]?.acceptance_rate ?? 0) > (tierData[best]?.acceptance_rate ?? 0) ? k : best,
         'at',
       )
     : null;
 
   const confidenceColor = cargoItem.n >= 20 ? '#16a34a' : cargoItem.n >= 8 ? '#d97706' : '#e74c3c';
-  const confidenceLabel = cargoItem.n >= 20 ? 'Hög / High' : cargoItem.n >= 8 ? 'Medium' : 'Låg / Low';
+  const confidenceLabel = cargoItem.n >= 20
+    ? t.pricingIntel.confidence.high
+    : cargoItem.n >= 8
+    ? t.pricingIntel.confidence.medium
+    : t.pricingIntel.confidence.low;
 
   return (
     <div style={{
@@ -172,11 +168,11 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, onApplyPrice }
           fontFamily: INTER, fontSize: 11, fontWeight: 600,
           textTransform: 'uppercase', color: MUTED, letterSpacing: '0.3px',
         }}>
-          Prisunderrättelse
+          {t.pricingIntel.heading}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ fontFamily: INTER, fontSize: 11, color: FAINT }}>
-            {cargoItem.n} {lasttyp}-jobb · Konfidens:
+            {t.pricingIntel.nJobs(cargoItem.n, lasttyp)} · {t.pricingIntel.confidence.label}:
           </span>
           <span style={{ fontFamily: INTER, fontSize: 11, fontWeight: 600, color: confidenceColor }}>
             {confidenceLabel}
@@ -188,7 +184,7 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, onApplyPrice }
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
           <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>
-            Ditt snitt / Your avg
+            {t.pricingIntel.yourAvg}
           </span>
           <span style={{ fontFamily: INTER, fontSize: 16, fontWeight: 600, color: TEXT }}>
             {fmtSEK(avgPrice)}
@@ -197,7 +193,7 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, onApplyPrice }
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
           <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>
-            Denna offert / This quote
+            {t.pricingIntel.thisQuote}
           </span>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
             <span style={{ fontFamily: INTER, fontSize: 11, color: priceDiffColor }}>
@@ -213,7 +209,7 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, onApplyPrice }
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontFamily: INTER, fontSize: 12, color: BLUE, fontWeight: 500 }}>
-            Rekommenderat / Recommended
+            {t.pricingIntel.recommended}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontFamily: INTER, fontSize: 18, fontWeight: 700, color: BLUE }}>
@@ -231,7 +227,7 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, onApplyPrice }
               onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(67,97,238,0.20)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(67,97,238,0.10)'; }}
             >
-              Tillämpa / Apply
+              {t.pricingIntel.apply}
             </button>
           </div>
         </div>
@@ -244,22 +240,22 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, onApplyPrice }
             fontFamily: INTER, fontSize: 11, fontWeight: 600,
             textTransform: 'uppercase', color: MUTED, letterSpacing: '0.3px', marginBottom: 4,
           }}>
-            Acceptansfrekvens per prisnivå
+            {t.pricingIntel.acceptanceByTier}
           </div>
           <TierBar
-            label="Under snitt <-10%"
+            label={t.pricingIntel.tierBelow}
             rate={tierData.below?.acceptance_rate ?? 0}
             count={tierData.below?.n ?? 0}
             highlight={bestTier === 'below'}
           />
           <TierBar
-            label="Vid snitt ±10%"
+            label={t.pricingIntel.tierAt}
             rate={tierData.at?.acceptance_rate ?? 0}
             count={tierData.at?.n ?? 0}
             highlight={bestTier === 'at'}
           />
           <TierBar
-            label="Över snitt >+10%"
+            label={t.pricingIntel.tierAbove}
             rate={tierData.above?.acceptance_rate ?? 0}
             count={tierData.above?.n ?? 0}
             highlight={bestTier === 'above'}

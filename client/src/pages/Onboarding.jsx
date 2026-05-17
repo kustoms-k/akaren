@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useAuth }  from '../context/AuthContext.jsx';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 const BLUE    = '#4361ee';
 const BLUE_DK = '#3451d1';
@@ -13,13 +14,7 @@ const MUTED   = '#6c757d';
 const GREEN   = '#2ecc71';
 const INTER   = "'Inter', sans-serif";
 
-const STEPS = [
-  { id: 'company',  label: 'Company',   sv: 'Företag'    },
-  { id: 'fleet',    label: 'Fleet',     sv: 'Fordon'     },
-  { id: 'pricing',  label: 'Pricing',   sv: 'Prissättning'},
-  { id: 'customer', label: 'Customer',  sv: 'Kund'       },
-  { id: 'demo',     label: 'Demo',      sv: 'Demo'       },
-];
+const STEP_IDS = ['company', 'fleet', 'pricing', 'customer', 'demo'];
 
 const FLEET_PRESETS = [
   { typ: 'Skåpbil',          lasttyp: 'Styckegods',    icon: '🚐', timkostnad_sek: 550,  priskm_sek: 16,  startavgift_sek: 350,  max_last_kg: 2500,  volym_m3: 18,  lez_godkand: true,  euro_klass: 6, desc: 'Lättare leveranser, LEZ-godkänd.' },
@@ -124,10 +119,12 @@ function Btn({ onClick, disabled, children, variant = 'primary', small }) {
 
 // ── Step progress bar ─────────────────────────────────────────────────────────
 function StepBar({ current }) {
+  const { t } = useLanguage();
+  const steps = t.onboarding.steps;
   return (
     <div style={{ display: 'flex', gap: 8, marginBottom: 36 }}>
-      {STEPS.map((s, i) => (
-        <div key={s.id} style={{ flex: 1 }}>
+      {STEP_IDS.map((id, i) => (
+        <div key={id} style={{ flex: 1 }}>
           <div style={{
             height: 4, borderRadius: 2,
             background: i < current ? GREEN : i === current ? BLUE : BORDER,
@@ -138,7 +135,7 @@ function StepBar({ current }) {
             color: i <= current ? TEXT : MUTED,
             textAlign: 'center',
           }}>
-            {i + 1}. {s.label}
+            {i + 1}. {steps[id]}
           </div>
         </div>
       ))}
@@ -148,6 +145,8 @@ function StepBar({ current }) {
 
 // ── Step 1: Company details ───────────────────────────────────────────────────
 function StepCompany({ data, onChange, onNext }) {
+  const { t } = useLanguage();
+  const s1 = t.onboarding.step1;
   const [looking, setLooking] = useState(false);
   const [logoPreview, setLogoPreview] = useState(null);
 
@@ -167,7 +166,7 @@ function StepCompany({ data, onChange, onNext }) {
   function handleLogoFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 300_000) { alert('Logo max 300 KB'); return; }
+    if (file.size > 300_000) { alert(s1.logoError); return; }
     const reader = new FileReader();
     reader.onload = (ev) => {
       setLogoPreview(ev.target.result);
@@ -180,20 +179,20 @@ function StepCompany({ data, onChange, onNext }) {
   return (
     <div>
       <h2 style={{ fontFamily: INTER, fontSize: 22, fontWeight: 700, color: TEXT, margin: '0 0 6px' }}>
-        Company details / Företagsuppgifter
+        {s1.heading}
       </h2>
       <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: '0 0 28px' }}>
-        Tell us about your company. / Berätta om ditt företag.
+        {s1.sub}
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
         <div style={{ gridColumn: 'span 2' }}>
-          <Label>Company name / Företagsnamn *</Label>
-          <TextInput value={data.name} onChange={(e) => onChange('name', e.target.value)} placeholder="Svensson Åkeri AB" />
+          <Label>{s1.nameLabel}</Label>
+          <TextInput value={data.name} onChange={(e) => onChange('name', e.target.value)} placeholder={s1.namePlaceholder} />
         </div>
 
         <div>
-          <Label>Org.nr</Label>
+          <Label>{s1.orgNrLabel}</Label>
           <div style={{ display: 'flex', gap: 8 }}>
             <TextInput
               value={data.org_nr}
@@ -201,33 +200,33 @@ function StepCompany({ data, onChange, onNext }) {
               placeholder="556789-0123"
             />
             <Btn onClick={handleLookup} disabled={looking || !data.org_nr?.trim()} small variant="ghost">
-              {looking ? '…' : 'Hämta / Fetch'}
+              {looking ? s1.fetching : s1.fetchBtn}
             </Btn>
           </div>
           <div style={{ fontFamily: INTER, fontSize: 11, color: MUTED, marginTop: 4 }}>
-            Auto-fill from Bolagsverket / Autofyll från Bolagsverket
+            {s1.orgNrHint}
           </div>
         </div>
 
         <div>
-          <Label>Phone / Telefon</Label>
+          <Label>{s1.phoneLabel}</Label>
           <TextInput value={data.phone} onChange={(e) => onChange('phone', e.target.value)} placeholder="+46 8 123 456 78" />
         </div>
 
         <div style={{ gridColumn: 'span 2' }}>
-          <Label>Address / Adress</Label>
+          <Label>{s1.addressLabel}</Label>
           <TextInput value={data.address} onChange={(e) => onChange('address', e.target.value)} placeholder="Industrivägen 12, 117 43 Stockholm" />
         </div>
 
         <div style={{ gridColumn: 'span 2' }}>
-          <Label>Company email / Företagsmail</Label>
+          <Label>{s1.emailLabel}</Label>
           <TextInput type="email" value={data.email} onChange={(e) => onChange('email', e.target.value)} placeholder="info@svenssons.se" />
         </div>
       </div>
 
       {/* Logo upload */}
       <div style={{ marginBottom: 28 }}>
-        <Label>Logo (optional / valfritt, max 300 KB)</Label>
+        <Label>{s1.logoLabel}</Label>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           {logoPreview ? (
             <img src={logoPreview} alt="logo" style={{ height: 48, objectFit: 'contain', borderRadius: 6, border: `1px solid ${BORDER}` }} />
@@ -246,14 +245,14 @@ function StepCompany({ data, onChange, onNext }) {
               fontFamily: INTER, fontSize: 12, fontWeight: 500, color: BLUE,
               border: `1px solid ${BLUE}`, borderRadius: 6, padding: '5px 12px',
             }}>
-              Upload logo / Ladda upp logga
+              {s1.logoUpload}
             </span>
           </label>
         </div>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <Btn onClick={onNext} disabled={!canNext}>Next: Fleet / Nästa: Fordon →</Btn>
+        <Btn onClick={onNext} disabled={!canNext}>{s1.next}</Btn>
       </div>
     </div>
   );
@@ -261,10 +260,11 @@ function StepCompany({ data, onChange, onNext }) {
 
 // ── Step 2: Fleet ─────────────────────────────────────────────────────────────
 function StepFleet({ trucks, onAdd, onRemove, onUpdate, onNext, onBack }) {
-  const [adding, setAdding] = useState(null); // preset index being added
+  const { t } = useLanguage();
+  const s2 = t.onboarding.step2;
 
   function handleTogglePreset(preset) {
-    const exists = trucks.find((t) => t.typ === preset.typ);
+    const exists = trucks.find((tr) => tr.typ === preset.typ);
     if (exists) {
       onRemove(exists._key);
     } else {
@@ -289,16 +289,16 @@ function StepFleet({ trucks, onAdd, onRemove, onUpdate, onNext, onBack }) {
   return (
     <div>
       <h2 style={{ fontFamily: INTER, fontSize: 22, fontWeight: 700, color: TEXT, margin: '0 0 6px' }}>
-        Your fleet / Din fordonspark
+        {s2.heading}
       </h2>
       <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: '0 0 24px' }}>
-        Select the truck types you operate. You can add more later. / Välj de fordonstyper du kör. Du kan lägga till fler senare.
+        {s2.sub}
       </p>
 
       {/* Preset grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10, marginBottom: 24 }}>
         {FLEET_PRESETS.map((preset) => {
-          const selected = trucks.some((t) => t.typ === preset.typ);
+          const selected = trucks.some((tr) => tr.typ === preset.typ);
           return (
             <button
               key={preset.typ}
@@ -315,7 +315,7 @@ function StepFleet({ trucks, onAdd, onRemove, onUpdate, onNext, onBack }) {
               <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, marginBottom: 2 }}>{preset.typ}</div>
               <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.4 }}>{preset.desc}</div>
               {selected && (
-                <div style={{ marginTop: 6, fontSize: 11, color: BLUE, fontWeight: 600 }}>✓ Vald / Selected</div>
+                <div style={{ marginTop: 6, fontSize: 11, color: BLUE, fontWeight: 600 }}>{s2.selectedMark}</div>
               )}
             </button>
           );
@@ -329,25 +329,25 @@ function StepFleet({ trucks, onAdd, onRemove, onUpdate, onNext, onBack }) {
           padding: '14px 16px', marginBottom: 24,
         }}>
           <div style={{ fontFamily: INTER, fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
-            Selected vehicles / Valda fordon ({trucks.length})
+            {s2.selectedLabel(trucks.length)}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {trucks.map((t) => (
-              <div key={t._key} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {trucks.map((tr) => (
+              <div key={tr._key} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED, width: 90, flexShrink: 0 }}>
-                  {FLEET_PRESETS.find((p) => p.typ === t.typ)?.icon ?? '🚛'} {t.typ}
+                  {FLEET_PRESETS.find((p) => p.typ === tr.typ)?.icon ?? '🚛'} {tr.typ}
                 </span>
                 <TextInput
-                  value={t.namn}
-                  onChange={(e) => onUpdate(t._key, 'namn', e.target.value)}
-                  placeholder="Vehicle name / Fordonsnamn"
+                  value={tr.namn}
+                  onChange={(e) => onUpdate(tr._key, 'namn', e.target.value)}
+                  placeholder={s2.namePlaceholder}
                 />
                 <TextInput
-                  value={t.reg}
-                  onChange={(e) => onUpdate(t._key, 'reg', e.target.value)}
+                  value={tr.reg}
+                  onChange={(e) => onUpdate(tr._key, 'reg', e.target.value)}
                   placeholder="Reg.nr"
                 />
-                <Btn onClick={() => onRemove(t._key)} variant="ghost" small>✕</Btn>
+                <Btn onClick={() => onRemove(tr._key)} variant="ghost" small>✕</Btn>
               </div>
             ))}
           </div>
@@ -359,15 +359,15 @@ function StepFleet({ trucks, onAdd, onRemove, onUpdate, onNext, onBack }) {
           fontFamily: INTER, fontSize: 13, color: MUTED,
           textAlign: 'center', padding: '20px 0', marginBottom: 16,
         }}>
-          Select at least one truck type above / Välj minst en fordonstyp ovan
+          {s2.emptyWarning}
         </div>
       )}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Btn onClick={onBack} variant="ghost">← Back</Btn>
+        <Btn onClick={onBack} variant="ghost">{s2.back}</Btn>
         <div style={{ display: 'flex', gap: 10 }}>
-          <Btn onClick={onNext} variant="ghost">Skip for now / Hoppa över</Btn>
-          <Btn onClick={onNext} disabled={trucks.length === 0}>Next: Pricing / Nästa: Prissättning →</Btn>
+          <Btn onClick={onNext} variant="ghost">{s2.skip}</Btn>
+          <Btn onClick={onNext} disabled={trucks.length === 0}>{s2.next}</Btn>
         </div>
       </div>
     </div>
@@ -376,13 +376,15 @@ function StepFleet({ trucks, onAdd, onRemove, onUpdate, onNext, onBack }) {
 
 // ── Step 3: Pricing ───────────────────────────────────────────────────────────
 function StepPricing({ pricing, onChange, onNext, onBack }) {
+  const { t } = useLanguage();
+  const s3 = t.onboarding.step3;
   return (
     <div>
       <h2 style={{ fontFamily: INTER, fontSize: 22, fontWeight: 700, color: TEXT, margin: '0 0 6px' }}>
-        Pricing settings / Prissättning
+        {s3.heading}
       </h2>
       <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: '0 0 28px', lineHeight: 1.6 }}>
-        These defaults drive the AI quote engine. You can always adjust per quote. / Dessa standardvärden styr AI:ns offertberäkning. Du kan alltid justera per offert.
+        {s3.sub}
       </p>
 
       {/* How it works callout */}
@@ -393,34 +395,33 @@ function StepPricing({ pricing, onChange, onNext, onBack }) {
       }}>
         <span style={{ fontSize: 20, flexShrink: 0 }}>🤖</span>
         <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT, lineHeight: 1.7 }}>
-          <strong>How the AI calculates quotes / Hur AI:n räknar:</strong><br />
-          Total price = (Distance × per-km rate) + (Hours × hourly rate) + start fee, then multiplied by (1 + markup %).<br />
-          <span style={{ color: MUTED }}>Pris = (Distans × kr/km) + (Timmar × timkostnad) + startavgift, sedan multiplicerat med (1 + påslag %).</span>
+          <strong>{s3.howItWorks}</strong><br />
+          {s3.formula}
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
         <div>
-          <Label>Default fuel cost / km (kr)</Label>
+          <Label>{s3.fuelCost}</Label>
           <TextInput
             type="number" value={pricing.fuel_cost_km}
             onChange={(e) => onChange('fuel_cost_km', parseFloat(e.target.value) || 0)}
             placeholder="2.50"
           />
           <div style={{ fontFamily: INTER, fontSize: 11, color: MUTED, marginTop: 4 }}>
-            Bränslekostnad per km · Typically 2.00–3.50 kr
+            {s3.fuelHint}
           </div>
         </div>
 
         <div>
-          <Label>Default markup % / Påslag %</Label>
+          <Label>{s3.markup}</Label>
           <TextInput
             type="number" value={pricing.markup_pct}
             onChange={(e) => onChange('markup_pct', parseFloat(e.target.value) || 0)}
             placeholder="35"
           />
           <div style={{ fontFamily: INTER, fontSize: 11, color: MUTED, marginTop: 4 }}>
-            Vinstmarginal · Typically 25–45%
+            {s3.markupHint}
           </div>
         </div>
       </div>
@@ -431,19 +432,20 @@ function StepPricing({ pricing, onChange, onNext, onBack }) {
         padding: '14px 18px', marginBottom: 28,
       }}>
         <div style={{ fontFamily: INTER, fontSize: 11, color: MUTED, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
-          Example quote / Exempeloffert (50 km, lastbil, 3 h)
+          {s3.preview}
         </div>
         {(() => {
           const km = 50, h = 3, timkostnad = 750, start = 600;
           const base = km * 22 + h * timkostnad + start + km * (pricing.fuel_cost_km || 0);
           const total = Math.round(base * (1 + (pricing.markup_pct || 0) / 100));
+          const el = s3.exampleLabels;
           return (
             <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
               {[
-                { label: 'Distance cost', value: `${km * 22} kr` },
-                { label: 'Labour cost',  value: `${h * timkostnad} kr` },
-                { label: 'Fuel add-on',  value: `${Math.round(km * (pricing.fuel_cost_km || 0))} kr` },
-                { label: 'Start fee',    value: `${start} kr` },
+                { label: el.distance, value: `${km * 22} kr` },
+                { label: el.labour,   value: `${h * timkostnad} kr` },
+                { label: el.fuel,     value: `${Math.round(km * (pricing.fuel_cost_km || 0))} kr` },
+                { label: el.start,    value: `${start} kr` },
               ].map(({ label, value }) => (
                 <div key={label}>
                   <div style={{ fontFamily: INTER, fontSize: 11, color: MUTED }}>{label}</div>
@@ -451,7 +453,7 @@ function StepPricing({ pricing, onChange, onNext, onBack }) {
                 </div>
               ))}
               <div style={{ borderLeft: `1px solid ${BORDER}`, paddingLeft: 24 }}>
-                <div style={{ fontFamily: INTER, fontSize: 11, color: MUTED }}>Total ({pricing.markup_pct || 0}% markup)</div>
+                <div style={{ fontFamily: INTER, fontSize: 11, color: MUTED }}>{el.total(pricing.markup_pct || 0)}</div>
                 <div style={{ fontFamily: INTER, fontSize: 18, color: BLUE, fontWeight: 700 }}>{new Intl.NumberFormat('sv-SE').format(total)} kr</div>
               </div>
             </div>
@@ -460,8 +462,8 @@ function StepPricing({ pricing, onChange, onNext, onBack }) {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <Btn onClick={onBack} variant="ghost">← Back</Btn>
-        <Btn onClick={onNext}>Next: First customer / Nästa: Första kund →</Btn>
+        <Btn onClick={onBack} variant="ghost">{s3.back}</Btn>
+        <Btn onClick={onNext}>{s3.next}</Btn>
       </div>
     </div>
   );
@@ -469,19 +471,21 @@ function StepPricing({ pricing, onChange, onNext, onBack }) {
 
 // ── Step 4: First customer ────────────────────────────────────────────────────
 function StepCustomer({ customer, onChange, onNext, onBack, onSkip, saving }) {
+  const { t } = useLanguage();
+  const s4 = t.onboarding.step4;
   const canSave = customer.name?.trim();
   return (
     <div>
       <h2 style={{ fontFamily: INTER, fontSize: 22, fontWeight: 700, color: TEXT, margin: '0 0 6px' }}>
-        Add your first customer / Lägg till din första kund
+        {s4.heading}
       </h2>
       <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: '0 0 28px', lineHeight: 1.6 }}>
-        Every customer gets a private portal link for quotes and messages. / Varje kund får en privat portallänk för offerter och meddelanden.
+        {s4.sub}
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 28 }}>
         <div>
-          <Label>Customer / company name *</Label>
+          <Label>{s4.nameLabel}</Label>
           <TextInput
             value={customer.name}
             onChange={(e) => onChange('name', e.target.value)}
@@ -490,7 +494,7 @@ function StepCustomer({ customer, onChange, onNext, onBack, onSkip, saving }) {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div>
-            <Label>Phone / Telefon</Label>
+            <Label>{s4.phoneLabel}</Label>
             <TextInput
               value={customer.phone}
               onChange={(e) => onChange('phone', e.target.value)}
@@ -498,7 +502,7 @@ function StepCustomer({ customer, onChange, onNext, onBack, onSkip, saving }) {
             />
           </div>
           <div>
-            <Label>Email</Label>
+            <Label>{s4.emailLabel}</Label>
             <TextInput
               type="email" value={customer.email}
               onChange={(e) => onChange('email', e.target.value)}
@@ -507,11 +511,11 @@ function StepCustomer({ customer, onChange, onNext, onBack, onSkip, saving }) {
           </div>
         </div>
         <div>
-          <Label>Notes / Noteringar</Label>
+          <Label>{s4.notesLabel}</Label>
           <textarea
             value={customer.notes ?? ''}
             onChange={(e) => onChange('notes', e.target.value)}
-            placeholder="Regular customer — building materials / Stamkund — byggmaterial"
+            placeholder={s4.notesPlaceholder}
             rows={2}
             style={{
               fontFamily: INTER, fontSize: 13, color: TEXT,
@@ -524,11 +528,11 @@ function StepCustomer({ customer, onChange, onNext, onBack, onSkip, saving }) {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Btn onClick={onBack} variant="ghost">← Back</Btn>
+        <Btn onClick={onBack} variant="ghost">{s4.back}</Btn>
         <div style={{ display: 'flex', gap: 10 }}>
-          <Btn onClick={onSkip} variant="ghost">Skip / Hoppa över</Btn>
+          <Btn onClick={onSkip} variant="ghost">{s4.skip}</Btn>
           <Btn onClick={onNext} disabled={!canSave || saving}>
-            {saving ? 'Saving…' : 'Next: Demo quote / Nästa: Demooffert →'}
+            {saving ? s4.saving : s4.next}
           </Btn>
         </div>
       </div>
@@ -538,13 +542,14 @@ function StepCustomer({ customer, onChange, onNext, onBack, onSkip, saving }) {
 
 // ── Step 5: Demo quote ────────────────────────────────────────────────────────
 function StepDemo({ onComplete, loadingComplete }) {
-  const [inquiry,    setInquiry]    = useState(DEMO_INQUIRY);
-  const [streaming,  setStreaming]  = useState(false);
-  const [rawText,    setRawText]    = useState('');
-  const [done,       setDone]       = useState(false);
-  const [confetti,   setConfetti]   = useState(false);
-  const [parsed,     setParsed]     = useState(null);
-  const esRef = useRef(null);
+  const { t, lang } = useLanguage();
+  const s5 = t.onboarding.step5;
+  const [inquiry,   setInquiry]   = useState(DEMO_INQUIRY);
+  const [streaming, setStreaming] = useState(false);
+  const [rawText,   setRawText]   = useState('');
+  const [done,      setDone]      = useState(false);
+  const [confetti,  setConfetti]  = useState(false);
+  const [parsed,    setParsed]    = useState(null);
 
   const runDemo = useCallback(async () => {
     if (streaming || !inquiry.trim()) return;
@@ -558,7 +563,7 @@ function StepDemo({ onComplete, loadingComplete }) {
       const res = await fetch('/api/analyse', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body:    JSON.stringify({ inquiry }),
+        body:    JSON.stringify({ inquiry, lang }),
       });
       const reader = res.body.getReader();
       const dec    = new TextDecoder();
@@ -580,7 +585,6 @@ function StepDemo({ onComplete, loadingComplete }) {
           } catch { /* ignore */ }
         }
       }
-      // Parse result
       try {
         const match = full.match(/\{[\s\S]*\}/);
         if (match) {
@@ -607,10 +611,10 @@ function StepDemo({ onComplete, loadingComplete }) {
     <div>
       {confetti && <Confetti />}
       <h2 style={{ fontFamily: INTER, fontSize: 22, fontWeight: 700, color: TEXT, margin: '0 0 6px' }}>
-        Generate your first quote / Generera din första offert
+        {s5.heading}
       </h2>
       <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: '0 0 24px', lineHeight: 1.6 }}>
-        Paste a real or example customer inquiry below and watch the AI build a complete quote. / Klistra in en riktig eller exempelförfrågan och se AI:n skapa en komplett offert.
+        {s5.sub}
       </p>
 
       <textarea
@@ -628,7 +632,7 @@ function StepDemo({ onComplete, loadingComplete }) {
 
       {!done && (
         <Btn onClick={runDemo} disabled={streaming || !inquiry.trim()}>
-          {streaming ? '⚡ Generating… / Genererar…' : '⚡ Generate quote / Generera offert'}
+          {streaming ? s5.generating : s5.generate}
         </Btn>
       )}
 
@@ -654,10 +658,10 @@ function StepDemo({ onComplete, loadingComplete }) {
             <span style={{ fontSize: 24 }}>🎉</span>
             <div>
               <div style={{ fontFamily: INTER, fontSize: 15, fontWeight: 700, color: '#1a7a47' }}>
-                You're ready / Du är redo!
+                {s5.readyTitle}
               </div>
               <div style={{ fontFamily: INTER, fontSize: 12, color: '#1a7a47', marginTop: 2 }}>
-                Your first AI quote is done. Welcome to Åkaren! / Din första AI-offert är klar. Välkommen till Åkaren!
+                {s5.readyDesc}
               </div>
             </div>
           </div>
@@ -672,16 +676,16 @@ function StepDemo({ onComplete, loadingComplete }) {
               fontFamily: INTER, fontSize: 11, fontWeight: 600, color: MUTED,
               textTransform: 'uppercase', letterSpacing: '0.06em',
             }}>
-              Quote summary / Offertsammanfattning
+              {s5.summaryHeading}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 0 }}>
               {[
-                { label: 'Cargo / Last',        value: parsed.lasttyp         ?? '—' },
-                { label: 'Pickup / Upphämtning', value: parsed.upphämtning    ?? '—' },
-                { label: 'Delivery / Leverans',  value: parsed.leverans        ?? '—' },
-                { label: 'Distance / Distans',   value: parsed.avstand_km != null ? `${parsed.avstand_km} km` : '—' },
-                { label: 'Vehicle / Fordon',      value: parsed.fordon_rekommenderat ?? '—' },
-                { label: 'Total price / Pris',   value: fmtSEK(parsed.totalpris_sek), highlight: true },
+                { label: s5.fields.cargo,    value: parsed.lasttyp                ?? '—' },
+                { label: s5.fields.pickup,   value: parsed.upphämtning            ?? '—' },
+                { label: s5.fields.delivery, value: parsed.leverans               ?? '—' },
+                { label: s5.fields.distance, value: parsed.avstand_km != null ? `${parsed.avstand_km} km` : '—' },
+                { label: s5.fields.vehicle,  value: parsed.fordon_rekommenderat   ?? '—' },
+                { label: s5.fields.total,    value: fmtSEK(parsed.totalpris_sek), highlight: true },
               ].map(({ label, value, highlight }) => (
                 <div key={label} style={{ padding: '12px 18px', borderRight: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}` }}>
                   <div style={{ fontFamily: INTER, fontSize: 11, color: MUTED, marginBottom: 3 }}>{label}</div>
@@ -695,7 +699,7 @@ function StepDemo({ onComplete, loadingComplete }) {
 
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <Btn onClick={onComplete} disabled={loadingComplete}>
-              {loadingComplete ? 'Opening dashboard…' : 'Go to dashboard / Till dashboard →'}
+              {loadingComplete ? s5.loadingDashboard : s5.finish}
             </Btn>
           </div>
         </div>
@@ -704,7 +708,7 @@ function StepDemo({ onComplete, loadingComplete }) {
       {!done && !streaming && (
         <div style={{ marginTop: 16 }}>
           <Btn onClick={onComplete} disabled={loadingComplete} variant="ghost" small>
-            {loadingComplete ? '…' : 'Skip demo, go to dashboard / Hoppa över demo →'}
+            {loadingComplete ? '…' : s5.skipDemo}
           </Btn>
         </div>
       )}
@@ -715,6 +719,8 @@ function StepDemo({ onComplete, loadingComplete }) {
 // ── Main Onboarding wizard ────────────────────────────────────────────────────
 export function Onboarding({ onComplete }) {
   const { company, updateCompany } = useAuth();
+  const { t } = useLanguage();
+  const to = t.onboarding;
   const [step, setStep]     = useState(0);
   const [saving, setSaving] = useState(false);
   const [loadingDemo, setLoadingDemo] = useState(false);
@@ -727,24 +733,17 @@ export function Onboarding({ onComplete }) {
     email:   company?.email   ?? '',
     logo_url: company?.logo_url ?? null,
   });
-  const [trucks,  setTrucks]  = useState([]);
-  const [pricing, setPricing] = useState({ fuel_cost_km: 2.50, markup_pct: 35 });
+  const [trucks,   setTrucks]   = useState([]);
+  const [pricing,  setPricing]  = useState({ fuel_cost_km: 2.50, markup_pct: 35 });
   const [customer, setCustomer] = useState({ name: '', phone: '', email: '', notes: '' });
 
-  function changeCompany(key, val) {
-    setCompanyData((p) => ({ ...p, [key]: val }));
-  }
-  function changePricing(key, val) {
-    setPricing((p) => ({ ...p, [key]: val }));
-  }
-  function changeCustomer(key, val) {
-    setCustomer((p) => ({ ...p, [key]: val }));
-  }
+  function changeCompany(key, val)  { setCompanyData((p) => ({ ...p, [key]: val })); }
+  function changePricing(key, val)  { setPricing((p) => ({ ...p, [key]: val })); }
+  function changeCustomer(key, val) { setCustomer((p) => ({ ...p, [key]: val })); }
 
-  // Fleet helpers
-  function addTruck(t)           { setTrucks((p) => [...p, t]); }
-  function removeTruck(key)      { setTrucks((p) => p.filter((t) => t._key !== key)); }
-  function updateTruck(key, k, v){ setTrucks((p) => p.map((t) => t._key === key ? { ...t, [k]: v } : t)); }
+  function addTruck(tr)            { setTrucks((p) => [...p, tr]); }
+  function removeTruck(key)        { setTrucks((p) => p.filter((tr) => tr._key !== key)); }
+  function updateTruck(key, k, v)  { setTrucks((p) => p.map((tr) => tr._key === key ? { ...tr, [k]: v } : tr)); }
 
   async function saveStep1() {
     setSaving(true);
@@ -763,9 +762,9 @@ export function Onboarding({ onComplete }) {
     if (trucks.length === 0) { setStep(2); return; }
     setSaving(true);
     try {
-      await Promise.all(trucks.map((t) => {
-        const { _key, ...body } = t;
-        const extId = (t.reg?.trim() || t.namn?.trim()?.slice(0, 6).toUpperCase().replace(/\s/g, '') || 'V01');
+      await Promise.all(trucks.map((tr) => {
+        const { _key, ...body } = tr;
+        const extId = (tr.reg?.trim() || tr.namn?.trim()?.slice(0, 6).toUpperCase().replace(/\s/g, '') || 'V01');
         return apiFetch('/api/fleet', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -817,7 +816,7 @@ export function Onboarding({ onComplete }) {
   }
 
   async function handleLoadDemoData() {
-    if (!window.confirm('Load realistic demo data? This will add vehicles, customers, and sample quotes.\n\nLadda demodata? Detta lägger till fordon, kunder och exempelofferter.')) return;
+    if (!window.confirm(to.loadDemoConfirm)) return;
     setSaving(true);
     try {
       const r    = await apiFetch('/api/onboarding/load-demo-data', { method: 'POST' });
@@ -827,7 +826,7 @@ export function Onboarding({ onComplete }) {
         onComplete(data.company);
       }
     } catch (err) {
-      alert('Demo data load failed / Misslyckades: ' + err.message);
+      alert(to.loadDemoError + ': ' + err.message);
     } finally { setSaving(false); }
   }
 
@@ -852,7 +851,7 @@ export function Onboarding({ onComplete }) {
             <span style={{ color: WHITE, fontSize: 14, fontWeight: 700 }}>Å</span>
           </div>
           <span style={{ fontFamily: INTER, fontWeight: 700, fontSize: 17, color: TEXT }}>Åkaren</span>
-          <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED, marginLeft: 8 }}>Setup wizard / Installationsguide</span>
+          <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED, marginLeft: 8 }}>{to.setup}</span>
         </div>
         <button
           onClick={handleLoadDemoData}
@@ -863,7 +862,7 @@ export function Onboarding({ onComplete }) {
             padding: '6px 14px', cursor: saving ? 'not-allowed' : 'pointer',
           }}
         >
-          {saving ? '…' : '🎭 Load demo data / Ladda demodata'}
+          {saving ? '…' : to.loadDemo}
         </button>
       </div>
 

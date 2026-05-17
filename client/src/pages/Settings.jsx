@@ -491,7 +491,7 @@ export function Settings({ onFortnoxResult }) {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: SURF, borderBottom: `1px solid ${BORDER}` }}>
-                  {['Fordon', 'Namn / Name', 'Telefon / Phone', ''].map((h) => (
+                  {[t.settings.drivers.truck, t.settings.drivers.name, t.settings.drivers.phone, ''].map((h) => (
                     <th key={h} style={{
                       padding: '9px 14px', textAlign: h === '' ? 'right' : 'left',
                       fontFamily: INTER, fontSize: 11, fontWeight: 600,

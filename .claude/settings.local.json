@@ -60,7 +60,8 @@
       "Bash(Remove-Item \"c:\\\\Users\\\\PC\\\\Åkaren Offert AI\\\\client\\\\src\\\\pages\\\\LoginPage.jsx\" -Force)",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\PC\\\\Åkaren Offert AI\" -Force)",
       "Bash(Select-Object Name, PSIsContainer)",
-      "Bash(xargs grep -l \"plan_tier\\\\|planTier\\\\|starter\\\\|enterprise\\\\|billing\\\\|subscription\\\\|upgrade\")"
+      "Bash(xargs grep -l \"plan_tier\\\\|planTier\\\\|starter\\\\|enterprise\\\\|billing\\\\|subscription\\\\|upgrade\")",
+      "Bash(git add *)"
     ],
     "additionalDirectories": [
       "\\tmp"
