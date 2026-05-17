@@ -276,8 +276,17 @@ router.post('/', async (req, res) => {
     res.write('data: [DONE]\n\n');
     res.end();
   } catch (err) {
-    res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
-    res.end();
+    console.error('[analyse] Anthropic API error:');
+    console.error('  message:', err.message);
+    console.error('  status: ', err.status ?? err.statusCode ?? 'n/a');
+    console.error('  stack:  ', err.stack);
+    // If headers already sent (streaming started), send error event and close
+    if (res.headersSent) {
+      res.write(`data: ${JSON.stringify({ error: err.message || 'API call failed' })}\n\n`);
+      res.end();
+    } else {
+      res.status(500).json({ error: err.message || 'API call failed' });
+    }
   }
 });
 

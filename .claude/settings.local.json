@@ -61,7 +61,10 @@
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\PC\\\\Åkaren Offert AI\" -Force)",
       "Bash(Select-Object Name, PSIsContainer)",
       "Bash(xargs grep -l \"plan_tier\\\\|planTier\\\\|starter\\\\|enterprise\\\\|billing\\\\|subscription\\\\|upgrade\")",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git commit *)"
     ],
     "additionalDirectories": [
       "\\tmp"
