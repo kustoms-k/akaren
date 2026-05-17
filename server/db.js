@@ -6,7 +6,13 @@ import path from 'node:path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = path.join(__dirname, 'data', 'kemoffs.db');
 
-const db = new DatabaseSync(DB_PATH);
+let db;
+try {
+  db = new DatabaseSync(DB_PATH);
+} catch (err) {
+  console.error('Database failed to initialize:', err.message);
+  process.exit(1);
+}
 
 db.exec('PRAGMA journal_mode = WAL');
 db.exec('PRAGMA foreign_keys = ON');
