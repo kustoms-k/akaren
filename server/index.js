@@ -1,3 +1,12 @@
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err.message)
+  console.error(err.stack)
+})
+
+process.on('unhandledRejection', (reason) => {
+  console.error('UNHANDLED REJECTION:', reason)
+})
+
 import 'dotenv/config';
 import express from 'express';
 import cors    from 'cors';
@@ -38,19 +47,13 @@ import db                    from './db.js';
 const app  = express();
 const PORT = process.env.PORT || 3002;
 
-process.on('uncaughtException', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`Port already in use — kill the existing process or set a different PORT in .env`);
-    process.exit(1);
-  }
-  throw err;
-});
+// ── Health check (first route — Railway needs this) ───────────────────────────
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
 app.use(cors());
 app.use(express.json());
 
 // ── Public routes (no auth) ───────────────────────────────────────────────────
-app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 app.use('/api/auth',         authRouter);
 app.use('/api/public/quote', publicQuoteRouter);
 app.use('/api/portal',       portalRouter);
@@ -97,7 +100,6 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Åkaren server running on port ${PORT}`);
-  // Run immediately at startup, then every 24 h
   setTimeout(runPricingInsightsJob, 5_000);
   setInterval(runPricingInsightsJob, 24 * 60 * 60 * 1_000);
   scheduleDailyBackup();
