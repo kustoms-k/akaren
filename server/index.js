@@ -96,7 +96,7 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Åkaren API running on http://0.0.0.0:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
   // Run immediately at startup, then every 24 h
   setTimeout(runPricingInsightsJob, 5_000);
   setInterval(runPricingInsightsJob, 24 * 60 * 60 * 1_000);
