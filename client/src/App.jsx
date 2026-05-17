@@ -25,7 +25,9 @@ import { DpaModal }       from './components/DpaModal.jsx';
 import { Customers }      from './pages/Customers.jsx';
 import { Onboarding }     from './pages/Onboarding.jsx';
 import { TourOverlay }    from './components/TourOverlay.jsx';
-import { useAnalysis }    from './hooks/useAnalysis.js';
+import { SplashScreen }  from './components/SplashScreen.jsx';
+import { LogoFull }      from './assets/Logo.jsx';
+import { useAnalysis }   from './hooks/useAnalysis.js';
 import { generatePdf }    from './utils/generatePdf.js';
 import { apiFetch }       from './utils/apiFetch.js';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
@@ -146,25 +148,14 @@ function Sidebar({ activePage, onNavigate, company, onLogout, userRole }) {
     }}>
       {/* Logo */}
       <div style={{
-        padding: '18px 16px',
+        padding: '16px 16px 12px',
         display: 'flex', flexDirection: 'column', gap: 4,
         borderBottom: `1px solid ${BORDER}`,
         flexShrink: 0,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 32, height: 32, background: BLUE, borderRadius: 8,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-          }}>
-            <span style={{ color: WHITE, fontSize: 14, fontWeight: 700, fontFamily: INTER }}>Å</span>
-          </div>
-          <span style={{ color: TEXT, fontSize: 18, fontWeight: 700, fontFamily: INTER }}>
-            Åkaren
-          </span>
-        </div>
-        <div style={{ fontSize: 11, color: FAINT, fontFamily: INTER, paddingLeft: 42 }}>
-          {company?.name ?? 'Åkaren'}
+        <LogoFull markSize={28} />
+        <div style={{ fontSize: 11, color: FAINT, fontFamily: INTER, paddingLeft: 40, marginTop: 2 }}>
+          {company?.name ?? ''}
         </div>
       </div>
 
@@ -1762,8 +1753,10 @@ function AppShell() {
 
 // ─── Default export — wraps inner app with auth + sync contexts ──────────────
 export default function App() {
+  const [splashDone, setSplashDone] = useState(false);
   return (
     <ErrorBoundary>
+      {!splashDone && <SplashScreen onDone={() => setSplashDone(true)} />}
       <AuthProvider>
         <SyncProvider>
           <AppShell />

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useAuth }  from '../context/AuthContext.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
+import { LogoFull } from '../assets/Logo.jsx';
 
 const BLUE    = '#4361ee';
 const BLUE_DK = '#3451d1';
@@ -843,15 +844,9 @@ export function Onboarding({ onComplete }) {
         padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         flexShrink: 0,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 30, height: 30, background: BLUE, borderRadius: 7,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <span style={{ color: WHITE, fontSize: 14, fontWeight: 700 }}>Å</span>
-          </div>
-          <span style={{ fontFamily: INTER, fontWeight: 700, fontSize: 17, color: TEXT }}>Åkaren</span>
-          <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED, marginLeft: 8 }}>{to.setup}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <LogoFull markSize={26} />
+          <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED, borderLeft: `1px solid ${BORDER}`, paddingLeft: 16 }}>{to.setup}</span>
         </div>
         <button
           onClick={handleLoadDemoData}

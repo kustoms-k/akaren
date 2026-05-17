@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
+import { LogoFull } from '../assets/Logo.jsx';
 
 const INTER = "'Inter', sans-serif";
 const BLUE  = '#4361ee';
@@ -147,15 +148,7 @@ export function Login() {
       }}>
         {/* Brand + language toggle */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{
-              background: BLUE, width: 32, height: 32, borderRadius: 8,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              <span style={{ color: WHITE, fontSize: 14, fontWeight: 700 }}>Å</span>
-            </div>
-            <span style={{ fontWeight: 700, fontSize: 20, color: TEXT }}>{t.login.brand}</span>
-          </div>
+          <LogoFull markSize={28} />
           <div style={{ display: 'flex', gap: 2 }}>
             {['en', 'sv'].map((l) => (
               <button
