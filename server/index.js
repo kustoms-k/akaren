@@ -1,3 +1,6 @@
+// Railway deployment - Node version check
+console.log('Starting server, Node:', process.version, 'PORT:', process.env.PORT)
+
 console.log('=== ÅKAREN SERVER STARTING ===')
 console.log('Node version:', process.version)
 console.log('PORT:', process.env.PORT)
@@ -105,8 +108,9 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Åkaren server running on port ${PORT}`);
-  setTimeout(runPricingInsightsJob, 5_000);
-  setInterval(runPricingInsightsJob, 24 * 60 * 60 * 1_000);
-  scheduleDailyBackup();
-});
+  console.log(`Server running on port ${PORT}`)
+})
+
+setTimeout(runPricingInsightsJob, 5_000);
+setInterval(runPricingInsightsJob, 24 * 60 * 60 * 1_000);
+scheduleDailyBackup();

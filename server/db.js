@@ -4,14 +4,15 @@ import bcrypt from 'bcryptjs';
 import path from 'node:path';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = path.join(__dirname, 'data', 'kemoffs.db');
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data', 'kemoffs.db');
 
 let db;
 try {
   db = new DatabaseSync(DB_PATH);
+  console.log('Database initialized')
 } catch (err) {
-  console.error('Database failed to initialize:', err.message);
-  process.exit(1);
+  console.error('Database error:', err.message)
+  process.exit(1)
 }
 
 db.exec('PRAGMA journal_mode = WAL');
