@@ -62,45 +62,12 @@ export function useAnalysis() {
         body: JSON.stringify({ inquiry, lang }),
       });
 
-      if (!res.ok) throw new Error('network');
-
-      const reader  = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buf  = '';
-      let full = '';
-
-      outer: while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buf += decoder.decode(value, { stream: true });
-        const lines = buf.split('\n');
-        buf = lines.pop() ?? '';
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const payload = line.slice(6).trim();
-          if (payload === '[DONE]') break outer;
-          const msg = JSON.parse(payload);
-          if (msg.error) throw new Error('network');
-          if (msg.extraction_id) {
-            setExtractionId(msg.extraction_id);
-            setExtractionModel(msg.model ?? null);
-            continue;
-          }
-          if (msg.delta) {
-            full += msg.delta;
-            setRawText(full);
-          }
-        }
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || 'network');
       }
 
-      const match = full.match(/\{[\s\S]*\}/);
-      if (!match) throw new Error('parse');
-
-      let data;
-      try { data = JSON.parse(match[0]); }
-      catch { throw new Error('parse'); }
+      const data = await res.json();
 
       // Normalise: extract { value, confidence } pairs into flat objects
       const flat = { ...data };
@@ -109,7 +76,6 @@ export function useAnalysis() {
         const field = data[key];
         if (field && typeof field === 'object' && 'value' in field) {
           const level = field.confidence ?? 'high';
-          // none → value is null (missing), not a guessed value
           flat[key] = level === 'none' ? null : field.value;
           conf[key] = level;
         }
