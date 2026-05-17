@@ -1,4 +1,4 @@
-import { DatabaseSync } from 'node:sqlite';
+import Database from 'better-sqlite3';
 import { fileURLToPath } from 'node:url';
 import bcrypt from 'bcryptjs';
 import path from 'node:path';
@@ -8,7 +8,7 @@ const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data', 'kemoffs.db'
 
 let db;
 try {
-  db = new DatabaseSync(DB_PATH);
+  db = new Database(DB_PATH);
   console.log('Database initialized')
 } catch (err) {
   console.error('Database error:', err.message)
