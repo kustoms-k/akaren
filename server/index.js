@@ -1,7 +1,12 @@
 import 'dotenv/config';
 import express from 'express';
 import cors    from 'cors';
+import { fileURLToPath } from 'url';
+import { dirname, join }  from 'path';
 import './db.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = dirname(__filename);
 
 import authRouter            from './routes/auth.js';
 import fleetRouter           from './routes/fleet.js';
@@ -83,6 +88,12 @@ app.use('/api/pricing-insights',  requireAuth, pricingInsightsRouter);
 app.use('/api/data-privacy',      requireAuth, requireOwner, dataPrivacyRouter);
 app.use('/api/customers',         requireAuth, auditMutation('customer_portal'), customersRouter);
 app.use('/api/onboarding',        requireAuth, onboardingRouter);
+
+app.use(express.static(join(__dirname, '../client/dist')));
+
+app.get('*', (req, res) => {
+  res.sendFile(join(__dirname, '../client/dist/index.html'));
+});
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Åkaren API running on http://0.0.0.0:${PORT}`);
