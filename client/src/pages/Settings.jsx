@@ -17,6 +17,7 @@ const MUTED  = '#6c757d';
 const SURF   = '#f8f9fa';
 
 function SmsStatusPill({ enabled }) {
+  const { t } = useLanguage();
   if (enabled === null) return null;
   return (
     <div style={{
@@ -31,9 +32,7 @@ function SmsStatusPill({ enabled }) {
         background: enabled ? '#2ecc71' : '#adb5bd',
       }} />
       <span style={{ fontFamily: INTER, fontSize: 12, color: enabled ? '#1a7a47' : MUTED }}>
-        {enabled
-          ? '46elks ansluten / connected'
-          : 'SMS inaktiverat — lägg till ELKS_USERNAME och ELKS_PASSWORD i .env'}
+        {enabled ? t.settings.drivers.smsEnabled : t.settings.drivers.smsDisabled}
       </span>
     </div>
   );
@@ -41,6 +40,7 @@ function SmsStatusPill({ enabled }) {
 
 function DriverRow({ driver }) {
   const { enqueue } = useSync();
+  const { t } = useLanguage();
   const [name,   setName]   = useState(driver.name);
   const [phone,  setPhone]  = useState(driver.phone);
   const [saving, setSaving] = useState(false);
@@ -100,7 +100,7 @@ function DriverRow({ driver }) {
       <td style={{ padding: '8px 14px', textAlign: 'right', whiteSpace: 'nowrap' }}>
         {flash ? (
           <span style={{ fontFamily: INTER, fontSize: 12, color: '#2ecc71', fontWeight: 600 }}>
-            ✓ Sparat
+            {t.settings.drivers.saved}
           </span>
         ) : (
           <button
@@ -115,7 +115,7 @@ function DriverRow({ driver }) {
               transition: 'background 0.15s',
             }}
           >
-            {saving ? '…' : 'Spara'}
+            {saving ? '…' : t.settings.drivers.save}
           </button>
         )}
       </td>
@@ -124,6 +124,7 @@ function DriverRow({ driver }) {
 }
 
 function BillingCard({ company }) {
+  const { t } = useLanguage();
   const fmtDate = (s) => {
     if (!s) return '—';
     try { return new Intl.DateTimeFormat('sv-SE', { dateStyle: 'long' }).format(new Date(s)); }
@@ -133,10 +134,10 @@ function BillingCard({ company }) {
   const mailto = [
     'mailto:admin@akaren.se',
     '?subject=',
-    encodeURIComponent(`Avsluta prenumeration — ${company?.name ?? ''}`),
+    encodeURIComponent(`${t.settings.billing.cancelSubject} — ${company?.name ?? ''}`),
     '&body=',
     encodeURIComponent(
-      `Hej,\n\nVi önskar avsluta vår prenumeration på Åkaren.\n\nFöretagsnamn: ${company?.name ?? ''}\nOrg.nr: ${company?.org_nr ?? ''}\n\nMed vänliga hälsningar`
+      `${t.settings.billing.cancelSubject}\n\n${company?.name ?? ''}\n${company?.org_nr ?? ''}`
     ),
   ].join('');
 
@@ -151,11 +152,10 @@ function BillingCard({ company }) {
             Åkaren
           </div>
           <div style={{ fontFamily: INTER, fontSize: 22, fontWeight: 700, color: BLUE }}>
-            2 990 kr
-            <span style={{ fontSize: 13, fontWeight: 400, color: MUTED }}> / månad</span>
+            {t.settings.billing.price}
           </div>
           <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED, marginTop: 4 }}>
-            Alla funktioner ingår · All features included
+            {t.settings.billing.plan}
           </div>
         </div>
         <div style={{
@@ -167,7 +167,7 @@ function BillingCard({ company }) {
         }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#2ecc71', flexShrink: 0 }} />
           <span style={{ fontFamily: INTER, fontSize: 12, color: '#1a7a47', fontWeight: 500 }}>
-            Aktiv / Active
+            {t.settings.fortnox.connected}
           </span>
         </div>
       </div>
@@ -177,7 +177,7 @@ function BillingCard({ company }) {
       }}>
         <div style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '10px 14px' }}>
           <div style={{ fontFamily: INTER, fontSize: 11, color: MUTED, marginBottom: 4, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Nästa förnyelse / Next renewal
+            {t.settings.billing.renewal}
           </div>
           <div style={{ fontFamily: INTER, fontSize: 14, color: TEXT, fontWeight: 600 }}>
             {fmtDate(company?.subscription_renews_at)}
@@ -205,7 +205,7 @@ function BillingCard({ company }) {
             textDecoration: 'none', display: 'inline-block',
           }}
         >
-          Avsluta prenumeration / Cancel subscription
+          {t.settings.billing.cancel}
         </a>
         <p style={{ fontFamily: INTER, fontSize: 11, color: MUTED, margin: '10px 0 0', lineHeight: 1.6 }}>
           Skickar ett e-postmeddelande till admin@akaren.se. Din prenumeration avslutas inte automatiskt.
@@ -217,6 +217,7 @@ function BillingCard({ company }) {
 }
 
 function FortnoxPanel({ toast, setToast }) {
+  const { t } = useLanguage();
   const [status,        setStatus]        = useState(null);
   const [loading,       setLoading]       = useState(true);
   const [connecting,    setConnecting]    = useState(false);
@@ -301,7 +302,7 @@ function FortnoxPanel({ toast, setToast }) {
             background: status?.connected ? '#2ecc71' : '#adb5bd',
           }} />
           <span style={{ fontFamily: INTER, fontSize: 12, color: status?.connected ? '#1a7a47' : MUTED }}>
-            {status?.connected ? 'Fortnox ansluten / connected' : 'Fortnox ej ansluten / not connected'}
+            {status?.connected ? t.settings.fortnox.connected : t.settings.fortnox.notConnected}
           </span>
         </div>
 
@@ -315,7 +316,7 @@ function FortnoxPanel({ toast, setToast }) {
               background: BLUE, color: WHITE, cursor: 'pointer',
             }}
           >
-            {connecting ? '…' : 'Anslut till Fortnox / Connect'}
+            {connecting ? '…' : t.settings.fortnox.connect}
           </button>
         )}
       </div>
@@ -369,7 +370,7 @@ function FortnoxPanel({ toast, setToast }) {
                 color: '#e74c3c', cursor: 'pointer',
               }}
             >
-              {disconnecting ? '…' : 'Koppla från / Disconnect'}
+              {disconnecting ? '…' : t.settings.fortnox.disconnect}
             </button>
           </div>
         </>
@@ -387,6 +388,7 @@ function FortnoxPanel({ toast, setToast }) {
 
 export function Settings({ onFortnoxResult }) {
   const { user, company } = useAuth();
+  const { t } = useLanguage();
   const [smsEnabled, setSmsEnabled] = useState(null);
   const [toast,      setToast]      = useState(null);
 
@@ -426,7 +428,7 @@ export function Settings({ onFortnoxResult }) {
         fontFamily: INTER, fontSize: 20, fontWeight: 700,
         color: TEXT, margin: '0 0 24px',
       }}>
-        Inställningar / Settings
+        {t.settings.heading}
       </h1>
 
       {toast && (
@@ -452,7 +454,7 @@ export function Settings({ onFortnoxResult }) {
         <div style={section}>
           <div style={sectionHead}>
             <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
-              Prenumeration / Billing
+              {t.settings.billing.heading}
             </span>
             <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>2 990 kr/mån</span>
           </div>
@@ -464,7 +466,7 @@ export function Settings({ onFortnoxResult }) {
         <div style={section}>
           <div style={sectionHead}>
             <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
-              Integrationer / Integrations
+              {t.settings.fortnox.heading}
             </span>
             <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>Fortnox</span>
           </div>
@@ -475,7 +477,7 @@ export function Settings({ onFortnoxResult }) {
       <div style={section}>
         <div style={sectionHead}>
           <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
-            Förare / Drivers
+            {t.settings.drivers.heading}
           </span>
           <SmsStatusPill enabled={smsEnabled} />
         </div>
