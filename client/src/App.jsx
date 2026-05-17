@@ -105,6 +105,11 @@ function getStatusBadge(status, t) {
 }
 
 // ─── NavItem ──────────────────────────────────────────────────────────────────
+const NAV_DARK   = '#1a1a2e';
+const NAV_HOVER  = 'rgba(255,255,255,0.07)';
+const NAV_TEXT   = 'rgba(255,255,255,0.62)';
+const NAV_ACTIVE_TEXT = '#ffffff';
+
 function NavItem({ id, label, Icon, isActive, onClick }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -116,23 +121,33 @@ function NavItem({ id, label, Icon, isActive, onClick }) {
       style={{
         width: '100%',
         display: 'flex', alignItems: 'center', gap: 10,
-        padding: '10px 16px',
-        background: isActive ? BLUE : hovered ? BG : 'transparent',
+        padding: '9px 14px',
+        background: isActive
+          ? 'linear-gradient(90deg, rgba(67,97,238,0.90) 0%, rgba(52,81,209,0.85) 100%)'
+          : hovered ? NAV_HOVER : 'transparent',
         border: 'none',
         borderRadius: 8,
-        color: isActive ? WHITE : hovered ? TEXT : MUTED,
-        fontSize: 13, fontFamily: INTER, fontWeight: 500,
+        color: isActive ? NAV_ACTIVE_TEXT : hovered ? 'rgba(255,255,255,0.85)' : NAV_TEXT,
+        fontSize: 13, fontFamily: INTER, fontWeight: isActive ? 600 : 500,
         cursor: 'pointer', textAlign: 'left',
         transition: 'background 0.15s, color 0.15s',
         lineHeight: 1.3,
         margin: '1px 0',
+        boxShadow: isActive ? '0 2px 10px rgba(67,97,238,0.30)' : 'none',
       }}
     >
-      <Icon size={15} strokeWidth={1.5} style={{ flexShrink: 0 }} />
+      <Icon size={15} strokeWidth={1.5} style={{ flexShrink: 0, opacity: isActive ? 1 : 0.8 }} />
       <span>{label}</span>
     </button>
   );
 }
+
+// Dot-grid noise background for the main app surface
+const DOT_BG = {
+  backgroundColor: '#edf0f7',
+  backgroundImage: `radial-gradient(circle, rgba(67,97,238,0.09) 1px, transparent 1px)`,
+  backgroundSize: '22px 22px',
+};
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 function Sidebar({ activePage, onNavigate, company, onLogout, userRole }) {
@@ -140,27 +155,33 @@ function Sidebar({ activePage, onNavigate, company, onLogout, userRole }) {
   const visibleItems = getNavItems(t).filter((n) => !n.ownerOnly || userRole === 'owner');
   return (
     <aside style={{
-      width: 220, flexShrink: 0,
-      background: WHITE,
-      borderRight: `1px solid ${BORDER}`,
+      width: 224, flexShrink: 0,
+      background: 'linear-gradient(180deg, #1a1a2e 0%, #141428 100%)',
+      borderRight: 'none',
       display: 'flex', flexDirection: 'column',
       height: '100vh',
+      boxShadow: '4px 0 24px rgba(0,0,0,0.18)',
     }}>
       {/* Logo */}
       <div style={{
-        padding: '16px 16px 12px',
+        padding: '20px 16px 16px',
         display: 'flex', flexDirection: 'column', gap: 4,
-        borderBottom: `1px solid ${BORDER}`,
+        borderBottom: '1px solid rgba(255,255,255,0.07)',
         flexShrink: 0,
       }}>
-        <LogoFull markSize={28} />
-        <div style={{ fontSize: 11, color: FAINT, fontFamily: INTER, paddingLeft: 40, marginTop: 2 }}>
+        <LogoFull markSize={28} variant="light" />
+        <div style={{
+          fontSize: 10, color: 'rgba(255,255,255,0.32)',
+          fontFamily: INTER, paddingLeft: 40, marginTop: 3,
+          letterSpacing: '0.03em', textTransform: 'uppercase',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
           {company?.name ?? ''}
         </div>
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: '8px 10px', overflowY: 'auto' }}>
+      <nav style={{ flex: 1, padding: '10px 10px', overflowY: 'auto' }}>
         {visibleItems.map(({ id, label, Icon }) => (
           <NavItem
             key={id}
@@ -174,10 +195,13 @@ function Sidebar({ activePage, onNavigate, company, onLogout, userRole }) {
       </nav>
 
       {/* Footer + Log out */}
-      <div style={{ borderTop: `1px solid ${BORDER}`, padding: '12px 16px 10px', flexShrink: 0 }}>
+      <div style={{
+        borderTop: '1px solid rgba(255,255,255,0.07)',
+        padding: '12px 16px 14px', flexShrink: 0,
+      }}>
         <div style={{
-          fontFamily: INTER, fontSize: 11, color: FAINT,
-          letterSpacing: '0.02em', lineHeight: 1.6, marginBottom: 10,
+          fontFamily: INTER, fontSize: 10, color: 'rgba(255,255,255,0.22)',
+          letterSpacing: '0.04em', marginBottom: 10,
         }}>
           v1.0
         </div>
@@ -185,12 +209,16 @@ function Sidebar({ activePage, onNavigate, company, onLogout, userRole }) {
           onClick={onLogout}
           style={{
             display: 'flex', alignItems: 'center', gap: 10,
-            color: MUTED, fontSize: 13, fontFamily: INTER,
+            color: 'rgba(255,255,255,0.45)', fontSize: 13, fontFamily: INTER,
             background: 'none', border: 'none', cursor: 'pointer',
-            padding: '6px 0', width: '100%',
+            padding: '6px 4px', width: '100%',
+            borderRadius: 6,
+            transition: 'color 0.15s',
           }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.85)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.45)'; }}
         >
-          <LogOut size={15} strokeWidth={1.5} />
+          <LogOut size={14} strokeWidth={1.5} />
           <span>{t.nav.logOut}</span>
         </button>
       </div>
@@ -422,15 +450,26 @@ function TopBar({ fuelPrice, weather, company }) {
 function KpiCard({ Icon, iconBg, iconColor, label, value, change, changeUp }) {
   return (
     <div style={{
-      background: WHITE, border: `1px solid ${BORDER}`,
-      borderRadius: 12, padding: '20px 24px',
+      background: WHITE,
+      border: `1px solid ${BORDER}`,
+      borderRadius: 14,
+      padding: '20px 22px',
+      boxShadow: '0 1px 8px rgba(0,0,0,0.05), 0 4px 16px rgba(67,97,238,0.04)',
+      position: 'relative',
+      overflow: 'hidden',
     }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
+      {/* Subtle top-left colour accent */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0,
+        height: 3, borderRadius: '14px 14px 0 0',
+        background: `linear-gradient(90deg, ${iconColor}55 0%, transparent 80%)`,
+      }} />
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
         <div style={{
-          width: 36, height: 36, borderRadius: 10, background: iconBg,
+          width: 38, height: 38, borderRadius: 10, background: iconBg,
           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
         }}>
-          <Icon size={16} color={iconColor} strokeWidth={1.8} />
+          <Icon size={17} color={iconColor} strokeWidth={1.8} />
         </div>
         <span style={{
           fontSize: 11, fontFamily: INTER, fontWeight: 600,
@@ -473,7 +512,8 @@ function Dashboard({ quotes, fuelPrice, onNewQuote }) {
   return (
     <div style={{
       flex: 1, overflowY: 'auto',
-      padding: '20px 24px', background: BG,
+      padding: '20px 24px',
+      ...DOT_BG,
       display: 'flex', flexDirection: 'column', gap: 20,
     }}>
 
@@ -511,7 +551,7 @@ function Dashboard({ quotes, fuelPrice, onNewQuote }) {
       <div style={{ display: 'grid', gridTemplateColumns: '62fr 38fr', gap: 16, minHeight: 280 }}>
 
         {/* Bar chart */}
-        <div style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12, padding: '20px 24px' }}>
+        <div style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 14, padding: '20px 24px', boxShadow: '0 1px 8px rgba(0,0,0,0.05)' }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, fontFamily: INTER, marginBottom: 4 }}>
             {t.dashboard.monthlyRevenue}
           </div>
@@ -583,7 +623,7 @@ function Dashboard({ quotes, fuelPrice, onNewQuote }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
         {/* Recent Activity */}
-        <div style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12, padding: '20px 24px' }}>
+        <div style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 14, padding: '20px 24px', boxShadow: '0 1px 8px rgba(0,0,0,0.05)' }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, fontFamily: INTER, marginBottom: 18 }}>
             {t.dashboard.recentActivity}
           </div>
@@ -605,7 +645,7 @@ function Dashboard({ quotes, fuelPrice, onNewQuote }) {
         </div>
 
         {/* Recent Quotes */}
-        <div style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12, padding: '20px 24px' }}>
+        <div style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 14, padding: '20px 24px', boxShadow: '0 1px 8px rgba(0,0,0,0.05)' }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, fontFamily: INTER, marginBottom: 18 }}>
             {t.dashboard.recentQuotes}
           </div>
@@ -681,7 +721,7 @@ function PlaceholderPage({ label }) {
   return (
     <div style={{
       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: BG, flexDirection: 'column', gap: 10,
+      ...DOT_BG, flexDirection: 'column', gap: 10,
     }}>
       <div style={{ fontSize: 13, color: MUTED, fontFamily: INTER }}>{label}</div>
       <div style={{ fontSize: 11, color: FAINT, fontFamily: INTER }}>{t.placeholderPage.comingSoon}</div>
@@ -971,7 +1011,7 @@ function AppInner() {
   const tillstandKravs = parsed?.['tillstånd_krävs'] ?? parsed?.tillstand_kravs ?? false;
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: BG }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', ...DOT_BG }}>
 
       <Sidebar activePage={activePage} onNavigate={handleNavigate} company={company} onLogout={logout} userRole={user?.role} />
 
