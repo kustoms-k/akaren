@@ -9,6 +9,9 @@
     "server": "node server/index.js",
     "client": "cd client && npm run dev"
   },
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "devDependencies": {
     "concurrently": "^9.1.2"
   }
