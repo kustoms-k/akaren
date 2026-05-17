@@ -1,0 +1,13 @@
+{
+  "name": "akaren",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently --names \"server,client\" --prefix-colors \"yellow,cyan\" \"npm run server\" \"npm run client\"",
+    "server": "node server/index.js",
+    "client": "npm run dev --prefix client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

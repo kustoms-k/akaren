@@ -1,0 +1,328 @@
+import { useState, useEffect } from 'react';
+import { useLiveQuery }  from 'dexie-react-hooks';
+import { db }            from '../db/dexie.js';
+import { syncFleetStats } from '../db/sync.js';
+import { useSync }       from '../context/SyncContext.jsx';
+
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const BLUE    = '#4361ee';
+const BLUE_DK = '#3451d1';
+const BG      = '#f0f2f5';
+const WHITE   = '#ffffff';
+const BORDER  = '#e9ecef';
+const TEXT    = '#1a1a2e';
+const MUTED   = '#6c757d';
+const FAINT   = '#9ca3af';
+const INTER   = "'Inter', sans-serif";
+const SURF    = '#f8f9fa';
+
+const MONTHS_SV = [
+  'Januari','Februari','Mars','April','Maj','Juni',
+  'Juli','Augusti','September','Oktober','November','December',
+];
+
+function currentMonth() {
+  return new Date().toISOString().slice(0, 7);
+}
+
+function buildMonthOptions() {
+  const out = [];
+  const now = new Date();
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    out.push({ value, label: `${MONTHS_SV[d.getMonth()]} ${d.getFullYear()}` });
+  }
+  return out;
+}
+
+const MONTH_OPTIONS = buildMonthOptions();
+
+const fmtSEK = (n) =>
+  n == null ? '—' : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n) + ' kr';
+
+const fmtNum = (n) =>
+  n == null ? '—' : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n);
+
+const EURO_BADGE = {
+  6: { label: 'E6', color: '#16a34a', bg: '#e8fdf0' },
+  5: { label: 'E5', color: '#d97706', bg: '#fff7ed' },
+  4: { label: 'E4', color: '#e74c3c', bg: '#fff0f0' },
+};
+
+const COLS = [
+  { key: 'id',              label: 'Fordon',           width: '7%',  align: 'left'   },
+  { key: 'namn',            label: 'Namn / Name',      width: '14%', align: 'left'   },
+  { key: 'typ',             label: 'Typ / Type',       width: '11%', align: 'left'   },
+  { key: 'maxLast_kg',      label: 'Max last',         width: '9%',  align: 'right'  },
+  { key: 'monthly_revenue', label: 'Intäkt / Revenue', width: '12%', align: 'right'  },
+  { key: 'monthly_hours',   label: 'Tim / Hours',      width: '8%',  align: 'right'  },
+  { key: 'profit_per_hour', label: 'Vinst/tim',        width: '10%', align: 'right'  },
+  { key: 'timkostnad_sek',  label: 'Kostnad/tim',      width: '10%', align: 'right'  },
+  { key: 'euro_klass',      label: 'Euro',             width: '7%',  align: 'center' },
+  { key: 'lez_godkänd',     label: 'LEZ',              width: '7%',  align: 'center' },
+  { key: 'tillstånd',       label: 'Tillstånd',        width: '5%',  align: 'center' },
+];
+
+function SortIndicator({ active, dir }) {
+  if (!active) return <span style={{ color: FAINT, marginLeft: 3, fontSize: 10 }}>↕</span>;
+  return <span style={{ color: BLUE, marginLeft: 3, fontSize: 10 }}>{dir === 'asc' ? '↑' : '↓'}</span>;
+}
+
+function ProfitCell({ value }) {
+  if (value == null) return <span style={{ color: FAINT }}>—</span>;
+  const isLow = value < 200;
+  return (
+    <span style={{
+      display: 'inline-block', padding: '3px 10px', borderRadius: 6,
+      fontSize: 12, fontWeight: 600, textAlign: 'center', minWidth: 70,
+      color: isLow ? '#d97706' : '#16a34a',
+      background: isLow ? '#fff7ed' : '#e8fdf0',
+    }}>
+      {fmtNum(value)} kr/h
+    </span>
+  );
+}
+
+function EuroBadge({ klass }) {
+  const b = EURO_BADGE[klass] ?? EURO_BADGE[4];
+  return (
+    <span style={{
+      fontFamily: INTER, fontSize: 11, fontWeight: 600,
+      letterSpacing: '0.02em', textTransform: 'uppercase',
+      color: b.color, background: b.bg, padding: '3px 10px', borderRadius: 6,
+    }}>
+      {b.label}
+    </span>
+  );
+}
+
+export function Fleet() {
+  const { isOnline } = useSync();
+  const [month,   setMonth]   = useState(currentMonth);
+  const [sortKey, setSortKey] = useState('id');
+  const [sortDir, setSortDir] = useState('asc');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const cachedFleet = useLiveQuery(
+    () => db.fleetStats.where('month').equals(month).toArray(),
+    [month],
+    null,
+  );
+
+  const fleet   = cachedFleet ?? [];
+  const loading = cachedFleet === null;
+
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    if (!token || !isOnline) return;
+    setRefreshing(true);
+    syncFleetStats(token, month)
+      .catch(() => {})
+      .finally(() => setRefreshing(false));
+  }, [month, isOnline]);
+
+  function handleSort(key) {
+    if (sortKey === key) setSortDir((d) => d === 'asc' ? 'desc' : 'asc');
+    else { setSortKey(key); setSortDir('asc'); }
+  }
+
+  const sorted = [...fleet].sort((a, b) => {
+    let av = a[sortKey];
+    let bv = b[sortKey];
+    if (typeof av === 'boolean') av = av ? 1 : 0;
+    if (typeof bv === 'boolean') bv = bv ? 1 : 0;
+    if (Array.isArray(av)) av = av.length;
+    if (Array.isArray(bv)) bv = bv.length;
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    if (typeof av === 'string') return sortDir === 'asc' ? av.localeCompare(bv, 'sv') : bv.localeCompare(av, 'sv');
+    return sortDir === 'asc' ? av - bv : bv - av;
+  });
+
+  const lowCount = fleet.filter((v) => v.profit_per_hour != null && v.profit_per_hour < 200).length;
+
+  const thStyle = (col) => ({
+    fontFamily: INTER, fontSize: 11, fontWeight: 600,
+    letterSpacing: '0.5px', textTransform: 'uppercase', color: MUTED,
+    padding: '10px 16px', textAlign: col.align, width: col.width,
+    whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none',
+    background: sortKey === col.key ? '#eef0f7' : SURF,
+    transition: 'background 0.1s',
+    borderBottom: '1px solid #e9ecef',
+  });
+
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px 48px', background: BG, minHeight: 0 }}>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+        <div>
+          <h1 style={{ fontFamily: INTER, fontSize: 20, fontWeight: 700, color: TEXT, margin: '0 0 4px' }}>
+            Fleet / Fordonspark
+          </h1>
+          {!loading && lowCount > 0 && (
+            <div style={{ fontFamily: INTER, fontSize: 13, color: '#d97706' }}>
+              {lowCount} fordon under 200 kr/tim vinst — {lowCount} vehicle{lowCount !== 1 ? 's' : ''} below 200 kr/h profit
+            </div>
+          )}
+          {refreshing && (
+            <div style={{ fontFamily: INTER, fontSize: 12, color: FAINT }}>
+              Uppdaterar… / Refreshing…
+            </div>
+          )}
+        </div>
+        <select
+          value={month}
+          onChange={(e) => setMonth(e.target.value)}
+          style={{
+            fontFamily: INTER, fontSize: 13, color: TEXT,
+            background: WHITE, border: '1.5px solid #e9ecef', borderRadius: 8,
+            padding: '9px 14px', cursor: 'pointer', outline: 'none',
+          }}
+        >
+          {MONTH_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+      </div>
+
+      {loading && (
+        <div style={{ fontFamily: INTER, fontSize: 14, color: MUTED, textAlign: 'center', padding: 48 }}>
+          Laddar…
+        </div>
+      )}
+
+      {!loading && (
+        <>
+          <div style={{
+            background: WHITE, border: '1px solid #e9ecef', borderRadius: 12,
+            boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden', marginBottom: 20,
+          }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 1020 }}>
+                <thead>
+                  <tr>
+                    {COLS.map((col) => (
+                      <th key={col.key} style={thStyle(col)} onClick={() => handleSort(col.key)} title={`Sortera efter ${col.label}`}>
+                        {col.label}
+                        <SortIndicator active={sortKey === col.key} dir={sortDir} />
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {sorted.map((v, i) => {
+                    const isUnderperforming = v.profit_per_hour != null && v.profit_per_hour < 200;
+                    return (
+                      <tr
+                        key={v.id}
+                        style={{
+                          background: WHITE,
+                          borderBottom: i < sorted.length - 1 ? '1px solid #f0f2f5' : 'none',
+                          borderLeft: isUnderperforming ? '3px solid #f59e0b' : '3px solid transparent',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = SURF}
+                        onMouseLeave={(e) => e.currentTarget.style.background = WHITE}
+                      >
+                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: BLUE, fontWeight: 600, verticalAlign: 'middle' }}>{v.id}</td>
+                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT, verticalAlign: 'middle' }}>{v.namn}</td>
+                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: MUTED, verticalAlign: 'middle' }}>{v.typ}</td>
+                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: MUTED, verticalAlign: 'middle' }}>{fmtNum(v.maxLast_kg)} kg</td>
+                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: TEXT, verticalAlign: 'middle' }}>
+                          {v.monthly_revenue > 0 ? fmtSEK(v.monthly_revenue) : <span style={{ color: FAINT }}>—</span>}
+                        </td>
+                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: TEXT, verticalAlign: 'middle' }}>
+                          {v.monthly_hours > 0 ? <span>{v.monthly_hours.toFixed(1)} h</span> : <span style={{ color: FAINT }}>—</span>}
+                        </td>
+                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', textAlign: 'right', verticalAlign: 'middle' }}>
+                          <ProfitCell value={v.profit_per_hour} />
+                        </td>
+                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: MUTED, verticalAlign: 'middle' }}>{fmtNum(v.timkostnad_sek)} kr/h</td>
+                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', textAlign: 'center', verticalAlign: 'middle' }}>
+                          <EuroBadge klass={v.euro_klass} />
+                        </td>
+                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', textAlign: 'center', verticalAlign: 'middle' }}>
+                          {v.lez_godkänd
+                            ? <span style={{ color: '#16a34a', fontSize: 14, fontWeight: 700 }}>✓</span>
+                            : <span style={{ color: FAINT, fontSize: 14 }}>—</span>}
+                        </td>
+                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', textAlign: 'center', verticalAlign: 'middle' }}>
+                          {v.tillstånd?.length > 0 ? (
+                            <span title={v.tillstånd.join(', ')} style={{
+                              fontFamily: INTER, fontSize: 11, fontWeight: 600,
+                              color: '#3b82f6', background: '#eff6ff',
+                              padding: '3px 10px', borderRadius: 6, cursor: 'default', whiteSpace: 'nowrap',
+                            }}>
+                              {v.tillstånd.length} tillst.
+                            </span>
+                          ) : <span style={{ color: FAINT, fontSize: 13 }}>—</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap',
+              padding: '10px 16px', borderTop: '1px solid #e9ecef', background: SURF,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{
+                  display: 'inline-block', width: 10, height: 10,
+                  borderLeft: '3px solid #f59e0b', background: '#fff7ed', flexShrink: 0,
+                }} />
+                <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>
+                  &lt; 200 kr/tim vinst — underpresterande / underperforming
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{
+                  display: 'inline-block', width: 10, height: 10,
+                  background: '#e8fdf0', border: '1px solid #16a34a', borderRadius: 2, flexShrink: 0,
+                }} />
+                <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>≥ 200 kr/tim vinst / profit</span>
+              </div>
+              <span style={{ fontFamily: INTER, fontSize: 12, color: FAINT, marginLeft: 'auto', fontStyle: 'italic' }}>
+                * Vinst/tim beräknas från faktiska uppdrag denna månad · hover på tillstånd för detaljer
+              </span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 12 }}>
+            {[
+              { label: 'Fordon i flottan / Total vehicles',           value: fleet.length,                                          unit: 'st' },
+              { label: 'LEZ-godkända / LEZ approved',                 value: fleet.filter((v) => v.lez_godkänd).length,             unit: `av ${fleet.length}` },
+              { label: 'Med data denna månad / With data this month', value: fleet.filter((v) => v.monthly_hours > 0).length,       unit: `av ${fleet.length}` },
+              { label: 'Under 200 kr/tim / Below 200 kr/h',          value: lowCount,                                              unit: 'fordon', warn: lowCount > 0 },
+            ].map((card) => (
+              <div key={card.label} style={{
+                flex: 1, background: WHITE,
+                border: `1px solid ${card.warn ? '#f59e0b' : BORDER}`,
+                borderRadius: 12, padding: '20px 22px',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+              }}>
+                <div style={{
+                  fontFamily: INTER, fontSize: 11, fontWeight: 600,
+                  letterSpacing: '0.5px', textTransform: 'uppercase',
+                  color: FAINT, marginBottom: 10,
+                }}>
+                  {card.label}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                  <span style={{
+                    fontFamily: INTER, fontSize: 26, fontWeight: 700,
+                    color: card.warn ? '#d97706' : TEXT, lineHeight: 1,
+                  }}>
+                    {card.value}
+                  </span>
+                  <span style={{ fontFamily: INTER, fontSize: 14, color: MUTED }}>{card.unit}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

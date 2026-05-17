@@ -1,0 +1,170 @@
+@import "tailwindcss";
+
+/* ── Palette ─────────────────────────────────────────────────────────────── */
+:root {
+  --bg:              #f0f2f5;
+  --surface:         #ffffff;
+  --border:          #e9ecef;
+  --text-primary:    #1a1a2e;
+  --text-secondary:  #6c757d;
+  --accent-blue:     #4361ee;
+  --accent-blue-dim: rgba(67,97,238,0.08);
+  --accent-blue-mid: rgba(67,97,238,0.25);
+  --accent-red:      #e74c3c;
+  --accent-green:    #2ecc71;
+  --surface-hover:   #f8f9fa;
+  --border-highlight:#4361ee;
+  --lez-bg:          rgba(231,76,60,0.08);
+  --lez-text:        #e74c3c;
+  --tillstand-bg:    rgba(67,97,238,0.08);
+  --tillstand-text:  #4361ee;
+}
+
+/* ── Reset & base ────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100vh;
+  overflow: hidden;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+textarea::placeholder { color: var(--text-secondary); opacity: 1; }
+textarea:focus        { outline: none; border-color: var(--border-highlight) !important; }
+input::placeholder    { color: var(--text-secondary); opacity: 1; }
+
+/* ── Column panels (used in New Quote overlay) ───────────────────────────── */
+.panel-col {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+  padding: 16px;
+  gap: 10px;
+  min-height: 0;
+}
+.panel-col:last-child { border-right: none; }
+
+/* ── Column headings ─────────────────────────────────────────────────────── */
+.col-heading {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+/* ── Result rows (analysis column) ──────────────────────────────────────── */
+.result-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+.result-row:last-child { border-bottom: none; }
+
+.result-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.6875rem;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.result-value {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  text-align: right;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Icon buttons ────────────────────────────────────────────────────────── */
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 5px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background-color 0.15s;
+}
+.icon-btn:hover {
+  color: var(--text-primary);
+  background-color: var(--surface-hover);
+}
+
+/* ── QuoteCard ───────────────────────────────────────────────────────────── */
+.qcard-pad         { padding-left: 28px; padding-right: 28px; }
+.qcard-table-wrap  { overflow-x: auto; }
+
+/* ── History list ────────────────────────────────────────────────────────── */
+.history-list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* ── Keyframes ───────────────────────────────────────────────────────────── */
+@keyframes ping {
+  75%, 100% { transform: scale(2); opacity: 0; }
+}
+
+@keyframes progress-fill {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+@keyframes quote-card-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes text-pulse {
+  0%, 100% { opacity: 0.35; }
+  50%       { opacity: 0.85; }
+}
+
+@keyframes dot-bounce {
+  0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+  30%           { opacity: 1;    transform: translateY(-5px); }
+}
+
+@keyframes field-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(calc(100% + 24px)); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes card-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
