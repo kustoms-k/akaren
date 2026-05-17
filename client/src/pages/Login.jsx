@@ -407,12 +407,12 @@ export function Login() {
                     fontFamily: INTER, width: '100%', fontWeight: 700, fontSize: 14,
                     padding: '13px', borderRadius: 9, border: 'none', marginTop: 4,
                     background: canLogin
-                      ? 'linear-gradient(135deg, #818cf8 0%, #6366f1 50%, #4f46e5 100%)'
+                      ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
                       : '#c8cfea',
                     color: WHITE,
                     cursor: canLogin ? 'pointer' : 'not-allowed',
                     letterSpacing: '0.02em',
-                    boxShadow: canLogin ? '0 4px 20px rgba(99,102,241,0.45)' : 'none',
+                    boxShadow: canLogin ? '0 2px 6px rgba(99,102,241,0.28)' : 'none',
                     transition: 'box-shadow 0.15s',
                   }}
                 >
@@ -456,11 +456,11 @@ export function Login() {
                     fontFamily: INTER, width: '100%', fontWeight: 700, fontSize: 14,
                     padding: '13px', borderRadius: 9, border: 'none', marginTop: 4,
                     background: canReg
-                      ? 'linear-gradient(135deg, #818cf8 0%, #6366f1 50%, #4f46e5 100%)'
+                      ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
                       : '#c8cfea',
                     color: WHITE,
                     cursor: canReg ? 'pointer' : 'not-allowed',
-                    boxShadow: canReg ? '0 4px 20px rgba(99,102,241,0.45)' : 'none',
+                    boxShadow: canReg ? '0 2px 6px rgba(99,102,241,0.28)' : 'none',
                   }}
                 >
                   {regLoading ? t.login.creating : t.login.createBtn}

@@ -76,8 +76,9 @@ export function LogoMark({ size = 32, glow = false }) {
         stroke="rgba(255,255,255,0.15)"
         strokeWidth="0.7"
       />
-      {/* Glint sparkle near top */}
-      <circle cx="13" cy="10" r="1.4" fill="rgba(255,255,255,0.75)" />
+      {/* Edge highlight on left face */}
+      <line x1="8.5" y1="8.5" x2="13" y2="14"
+        stroke="rgba(255,255,255,0.25)" strokeWidth="0.7" />
     </svg>
   );
 }

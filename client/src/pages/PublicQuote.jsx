@@ -709,11 +709,11 @@ export function PublicQuote({ token }) {
               fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
               background: working
                 ? 'rgba(99,102,241,0.5)'
-                : 'linear-gradient(135deg, #818cf8 0%, #6366f1 50%, #4f46e5 100%)',
+                : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
               color: '#ffffff', border: 'none', borderRadius: 8,
               cursor: working ? 'wait' : 'pointer',
-              transition: 'all 0.15s',
-              boxShadow: working ? 'none' : '0 4px 20px rgba(99,102,241,0.40)',
+              transition: 'opacity 0.15s',
+              boxShadow: working ? 'none' : '0 2px 6px rgba(99,102,241,0.25)',
             }}
           >
             {working ? pq.working : pq.accept}

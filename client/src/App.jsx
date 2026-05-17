@@ -146,11 +146,11 @@ function NavItem({ id, label, Icon, isActive, onClick }) {
   );
 }
 
-// Dot-grid noise background for the main app surface
+// Subtle dot grid for the main app surface
 const DOT_BG = {
-  backgroundColor: '#edf0f7',
-  backgroundImage: `radial-gradient(circle, rgba(99,102,241,0.10) 1px, transparent 1px)`,
-  backgroundSize: '22px 22px',
+  backgroundColor: '#f5f6fa',
+  backgroundImage: `radial-gradient(circle, rgba(99,102,241,0.07) 1px, transparent 1px)`,
+  backgroundSize: '26px 26px',
 };
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
@@ -451,51 +451,35 @@ function TopBar({ fuelPrice, weather, company }) {
 }
 
 // ─── KpiCard ──────────────────────────────────────────────────────────────────
-function KpiCard({ Icon, label, value, change, changeUp, gradStart, gradEnd, glowColor }) {
+function KpiCard({ Icon, label, value, change, changeUp, accentColor }) {
   return (
     <div style={{
-      background: `linear-gradient(140deg, ${gradStart} 0%, ${gradEnd} 100%)`,
-      border: `1px solid ${glowColor}44`,
-      borderRadius: 16,
-      padding: '22px 22px 20px',
-      boxShadow: `0 8px 32px ${glowColor}30, 0 1px 0 rgba(255,255,255,0.07) inset`,
+      background: WHITE,
+      borderRadius: 12,
+      padding: '20px 20px 18px',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05)',
+      border: '1px solid rgba(0,0,0,0.06)',
       position: 'relative',
       overflow: 'hidden',
     }}>
-      {/* Corner glow orb */}
+      {/* Thin coloured top accent */}
       <div style={{
-        position: 'absolute', top: -55, right: -55,
-        width: 170, height: 170, borderRadius: '50%',
-        background: `radial-gradient(circle, ${glowColor}55 0%, transparent 68%)`,
-        filter: 'blur(22px)', pointerEvents: 'none',
-      }} />
-      {/* Dot texture overlay */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: `radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)`,
-        backgroundSize: '18px 18px',
-      }} />
-      {/* Noise grain */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: NOISE_URI, backgroundSize: '200px 200px', opacity: 0.5,
+        position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+        background: accentColor, borderRadius: '12px 12px 0 0',
       }} />
 
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16, position: 'relative' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14, marginTop: 4 }}>
         <div style={{
-          width: 42, height: 42, borderRadius: 12,
-          background: 'rgba(255,255,255,0.13)',
-          backdropFilter: 'blur(8px)',
-          border: '1px solid rgba(255,255,255,0.20)',
+          width: 38, height: 38, borderRadius: 10,
+          background: `${accentColor}18`,
           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
         }}>
-          <Icon size={18} color="rgba(255,255,255,0.90)" strokeWidth={1.8} />
+          <Icon size={17} color={accentColor} strokeWidth={1.8} />
         </div>
         <span style={{
           fontSize: 11, fontFamily: INTER, fontWeight: 600,
-          color: changeUp ? '#4ade80' : '#f87171',
-          background: changeUp ? 'rgba(74,222,128,0.18)' : 'rgba(248,113,113,0.18)',
-          border: `1px solid ${changeUp ? 'rgba(74,222,128,0.35)' : 'rgba(248,113,113,0.35)'}`,
+          color: changeUp ? '#16a34a' : '#dc2626',
+          background: changeUp ? '#f0fdf4' : '#fef2f2',
           padding: '3px 8px', borderRadius: 6,
           display: 'flex', alignItems: 'center', gap: 3, whiteSpace: 'nowrap',
         }}>
@@ -503,14 +487,14 @@ function KpiCard({ Icon, label, value, change, changeUp, gradStart, gradEnd, glo
         </span>
       </div>
       <div style={{
-        fontSize: 11, color: 'rgba(255,255,255,0.52)', fontFamily: INTER, marginBottom: 8,
-        fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.7px', position: 'relative',
+        fontSize: 11, color: '#94a3b8', fontFamily: INTER, marginBottom: 6,
+        fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.8px',
       }}>
         {label}
       </div>
       <div style={{
-        fontSize: 27, fontWeight: 800, color: '#ffffff', fontFamily: INTER,
-        lineHeight: 1, letterSpacing: '-0.02em', position: 'relative',
+        fontSize: 24, fontWeight: 700, color: TEXT, fontFamily: INTER,
+        lineHeight: 1.1, letterSpacing: '-0.025em',
       }}>
         {value}
       </div>
@@ -544,34 +528,30 @@ function Dashboard({ quotes, fuelPrice, onNewQuote }) {
       {/* ── KPI row ──────────────────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
         <KpiCard
-          Icon={DollarSign}
+          Icon={DollarSign} accentColor="#6366f1"
           label={t.dashboard.totalRevenue}
           value={totalRevenue > 0
             ? new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(totalRevenue) + ' kr'
             : '284 500 kr'}
           change={`12% ${t.dashboard.vsYesterday}`} changeUp
-          gradStart="#0f1640" gradEnd="#1e3a8a" glowColor="#6366f1"
         />
         <KpiCard
-          Icon={FileText}
+          Icon={FileText} accentColor="#10b981"
           label={t.dashboard.quotes}
           value={quotes.length > 0 ? String(quotes.length) : '23'}
           change={`3 ${t.dashboard.vsYesterday}`} changeUp
-          gradStart="#052e16" gradEnd="#166534" glowColor="#22c55e"
         />
         <KpiCard
-          Icon={AlertTriangle}
+          Icon={AlertTriangle} accentColor="#ef4444"
           label={t.dashboard.lezAlerts}
           value={quotes.length > 0 ? String(lezCount) : '2'}
           change={`1 ${t.dashboard.vsYesterday}`} changeUp={false}
-          gradStart="#2a0a0a" gradEnd="#7f1d1d" glowColor="#ef4444"
         />
         <KpiCard
-          Icon={Fuel}
+          Icon={Fuel} accentColor="#f59e0b"
           label={t.dashboard.dieselPrice}
           value={dieselValue}
           change={`0.12 ${t.dashboard.vsYesterday}`} changeUp={false}
-          gradStart="#1c0f00" gradEnd="#78350f" glowColor="#f59e0b"
         />
       </div>
 
@@ -635,74 +615,35 @@ function Dashboard({ quotes, fuelPrice, onNewQuote }) {
           </ResponsiveContainer>
         </div>
 
-        {/* Blue CTA */}
+        {/* CTA card */}
         <div style={{
-          background: 'linear-gradient(145deg, #0c0e40 0%, #1e1b6e 40%, #312e81 70%, #1a1650 100%)',
-          borderRadius: 16, padding: '26px',
+          background: 'linear-gradient(145deg, #1e1b4b 0%, #312e81 100%)',
+          borderRadius: 14, padding: '26px',
           display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-          position: 'relative', overflow: 'hidden',
-          border: '1px solid rgba(99,102,241,0.35)',
-          boxShadow: '0 8px 32px rgba(99,102,241,0.25)',
+          border: '1px solid rgba(99,102,241,0.18)',
+          boxShadow: '0 4px 16px rgba(30,27,75,0.18)',
         }}>
-          {/* Noise grain */}
-          <div style={{
-            position: 'absolute', inset: 0, pointerEvents: 'none',
-            backgroundImage: NOISE_URI, backgroundSize: '200px 200px', opacity: 0.55,
-          }} />
-          {/* Dot grid */}
-          <div style={{
-            position: 'absolute', inset: 0, pointerEvents: 'none',
-            backgroundImage: `radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)`,
-            backgroundSize: '20px 20px',
-          }} />
-          {/* Top-right glow orb */}
-          <div style={{
-            position: 'absolute', top: -60, right: -60,
-            width: 220, height: 220, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(139,92,246,0.45) 0%, transparent 68%)',
-            filter: 'blur(30px)', pointerEvents: 'none',
-          }} />
-          {/* Bottom-left glow orb */}
-          <div style={{
-            position: 'absolute', bottom: -40, left: -40,
-            width: 160, height: 160, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(34,211,238,0.25) 0%, transparent 68%)',
-            filter: 'blur(25px)', pointerEvents: 'none',
-          }} />
-
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.18)',
-              borderRadius: 20, padding: '4px 12px', marginBottom: 16,
-            }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', display: 'inline-block', boxShadow: '0 0 6px rgba(74,222,128,0.8)' }} />
-              <span style={{ fontFamily: INTER, fontSize: 10, color: 'rgba(255,255,255,0.75)', letterSpacing: '0.06em' }}>AI-DRIVEN</span>
-            </div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: WHITE, fontFamily: INTER, marginBottom: 12, lineHeight: 1.25, letterSpacing: '-0.01em' }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: WHITE, fontFamily: INTER, marginBottom: 10, lineHeight: 1.35, letterSpacing: '-0.01em' }}>
               {t.dashboard.newQuoteCta}
             </div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.70)', fontFamily: INTER, lineHeight: 1.65 }}>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', fontFamily: INTER, lineHeight: 1.65 }}>
               {t.dashboard.newQuoteCtaSub}
             </div>
           </div>
           <button
             onClick={onNewQuote}
             style={{
-              position: 'relative', zIndex: 1,
               marginTop: 28,
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%)',
-              color: '#312e81',
-              border: 'none', borderRadius: 10,
-              padding: '14px 20px',
-              fontSize: 12, fontWeight: 800, fontFamily: INTER,
-              letterSpacing: '0.1em', textTransform: 'uppercase',
-              cursor: 'pointer',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
-              transition: 'transform 0.15s, box-shadow 0.15s',
+              background: WHITE, color: '#312e81',
+              border: 'none', borderRadius: 8,
+              padding: '13px 20px',
+              fontSize: 12, fontWeight: 700, fontFamily: INTER,
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              cursor: 'pointer', transition: 'opacity 0.15s',
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 28px rgba(0,0,0,0.35)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.25)'; }}
+            onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.88'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
           >
             {t.dashboard.analyseBtn}
           </button>
@@ -1169,18 +1110,11 @@ function AppInner() {
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '0 24px',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <LogoMark size={28} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ color: TEXT, fontSize: 14, fontWeight: 700, fontFamily: INTER, letterSpacing: '0.02em' }}>
-                  {t.newQuote.title}
-                </span>
-                <span style={{
-                  fontSize: 9, fontFamily: INTER, fontWeight: 600, letterSpacing: '0.08em',
-                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                  color: WHITE, borderRadius: 4, padding: '2px 7px', textTransform: 'uppercase',
-                }}>AI</span>
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <LogoMark size={26} />
+              <span style={{ color: TEXT, fontSize: 14, fontWeight: 600, fontFamily: INTER }}>
+                {t.newQuote.title}
+              </span>
             </div>
             <button
               onClick={() => setShowNewQuote(false)}
@@ -1455,21 +1389,21 @@ function AppInner() {
                       disabled={saving || !canSave}
                       title={!allLowResolved ? t.newQuote.flags.confirmFields : belowThreshold && !reviewAcknowledged ? t.newQuote.flags.reviewFirst : undefined}
                       style={{
-                        flex: 1, fontFamily: INTER, fontSize: '0.6875rem', fontWeight: 700,
-                        letterSpacing: '0.08em', textTransform: 'uppercase',
+                        flex: 1, fontFamily: INTER, fontSize: '0.6875rem', fontWeight: 600,
+                        letterSpacing: '0.06em', textTransform: 'uppercase',
                         background: canSave
-                          ? 'linear-gradient(135deg, #818cf8 0%, #6366f1 45%, #4f46e5 100%)'
+                          ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
                           : '#e9ecef',
                         color: canSave ? WHITE : MUTED,
                         border: 'none',
                         borderRadius: 8, padding: '11px 14px',
                         cursor: (saving || !canSave) ? 'not-allowed' : 'pointer',
                         opacity: saving ? 0.55 : 1,
-                        transition: 'all 0.2s',
-                        boxShadow: canSave ? '0 4px 18px rgba(99,102,241,0.45)' : 'none',
+                        transition: 'opacity 0.15s',
+                        boxShadow: canSave ? '0 1px 4px rgba(99,102,241,0.22)' : 'none',
                       }}
-                      onMouseEnter={(e) => { if (canSave && !saving) { e.currentTarget.style.boxShadow = '0 6px 24px rgba(99,102,241,0.6)'; e.currentTarget.style.transform = 'translateY(-1px)'; } }}
-                      onMouseLeave={(e) => { if (canSave && !saving) { e.currentTarget.style.boxShadow = '0 4px 18px rgba(99,102,241,0.45)'; e.currentTarget.style.transform = 'translateY(0)'; } }}
+                      onMouseEnter={(e) => { if (canSave && !saving) e.currentTarget.style.opacity = '0.88'; }}
+                      onMouseLeave={(e) => { if (canSave && !saving) e.currentTarget.style.opacity = '1'; }}
                     >
                       {saving ? t.newQuote.saving : t.newQuote.confirmQuote}
                     </button>
