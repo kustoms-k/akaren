@@ -1,9 +1,6 @@
 const INTER = "'Inter', sans-serif";
 
-// ── 3-D diamond mark ─────────────────────────────────────────────────────────
-// Two rhombuses, front one extruded with a right-side face for depth.
-// IDs are document-scoped in SVG; identical instances use the same defs (same colours).
-export function LogoMark({ size = 32 }) {
+export function LogoMark({ size = 32, glow = false }) {
   return (
     <svg
       width={size}
@@ -11,29 +8,29 @@ export function LogoMark({ size = 32 }) {
       viewBox="0 0 32 32"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      style={{ flexShrink: 0, overflow: 'visible' }}
+      style={{ flexShrink: 0, overflow: 'visible', filter: glow ? 'drop-shadow(0 0 10px rgba(99,102,241,0.7)) drop-shadow(0 0 24px rgba(99,102,241,0.35))' : undefined }}
     >
       <defs>
-        {/* Front face — bright top-left to deep bottom-right */}
-        <linearGradient id="lm-fg" x1="0.15" y1="0" x2="0.85" y2="1">
-          <stop offset="0%"   stopColor="#8ba7ff" />
-          <stop offset="45%"  stopColor="#4361ee" />
-          <stop offset="100%" stopColor="#2840c0" />
+        <linearGradient id="lm-fg" x1="0.1" y1="0" x2="0.9" y2="1">
+          <stop offset="0%"   stopColor="#a5b4fc" />
+          <stop offset="38%"  stopColor="#6366f1" />
+          <stop offset="100%" stopColor="#3730a3" />
         </linearGradient>
-        {/* Back diamond — lighter periwinkle */}
         <linearGradient id="lm-bg" x1="0.15" y1="0" x2="0.85" y2="1">
-          <stop offset="0%"   stopColor="#d4dcfd" />
-          <stop offset="100%" stopColor="#8fa8f8" />
+          <stop offset="0%"   stopColor="#e0e7ff" />
+          <stop offset="100%" stopColor="#a5b4fc" />
         </linearGradient>
-        {/* Right extrusion face — darker, for depth */}
         <linearGradient id="lm-side" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="#1e30a8" />
-          <stop offset="100%" stopColor="#0f1f6e" />
+          <stop offset="0%"   stopColor="#2825a8" />
+          <stop offset="100%" stopColor="#1e1b6e" />
         </linearGradient>
-        {/* Drop shadow */}
-        <filter id="lm-shadow" x="-40%" y="-40%" width="180%" height="180%">
-          <feDropShadow dx="0" dy="3" stdDeviation="2.5"
-            floodColor="#0d1240" floodOpacity="0.38" />
+        <linearGradient id="lm-shine" x1="0" y1="0" x2="0.8" y2="1">
+          <stop offset="0%"   stopColor="rgba(255,255,255,0.75)" />
+          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+        </linearGradient>
+        <filter id="lm-shadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="4" stdDeviation="3"
+            floodColor="#1e1b6e" floodOpacity="0.55" />
         </filter>
       </defs>
 
@@ -41,7 +38,7 @@ export function LogoMark({ size = 32 }) {
       <polygon
         points="18,6 27,17 18,28 9,17"
         fill="url(#lm-bg)"
-        opacity="0.88"
+        opacity="0.80"
       />
 
       {/* Front diamond face */}
@@ -51,33 +48,40 @@ export function LogoMark({ size = 32 }) {
         filter="url(#lm-shadow)"
       />
 
-      {/* Right-side extrusion — gives the 3-D depth */}
+      {/* Right-side extrusion */}
       <polygon
-        points="22,14 25,16 16,27 13,25"
+        points="22,14 25.5,16.5 16.5,27 13,25"
         fill="url(#lm-side)"
       />
 
-      {/* Specular highlight along top-left edges */}
+      {/* Shine on upper-left face */}
+      <polygon
+        points="4,14 8.5,8.5 13,3 17.5,8.5 13,14"
+        fill="url(#lm-shine)"
+        opacity="0.22"
+      />
+
+      {/* Specular highlight — top-left edges */}
       <polyline
         points="4,14 13,3 22,14"
-        stroke="rgba(255,255,255,0.50)"
-        strokeWidth="0.9"
+        stroke="rgba(255,255,255,0.65)"
+        strokeWidth="1"
         fill="none"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      {/* Subtle inner glow on left face edge */}
+      {/* Left edge */}
       <line
         x1="4" y1="14" x2="13" y2="25"
-        stroke="rgba(255,255,255,0.12)"
-        strokeWidth="0.6"
+        stroke="rgba(255,255,255,0.15)"
+        strokeWidth="0.7"
       />
+      {/* Glint sparkle near top */}
+      <circle cx="13" cy="10" r="1.4" fill="rgba(255,255,255,0.75)" />
     </svg>
   );
 }
 
-// ── Full lockup: mark + wordmark + tagline ────────────────────────────────────
-// variant="light" flips wordmark/tagline to white for dark backgrounds
 export function LogoFull({ markSize = 32, variant = 'dark' }) {
   const isLight = variant === 'light';
   return (
@@ -86,9 +90,9 @@ export function LogoFull({ markSize = 32, variant = 'dark' }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         <span style={{
           fontFamily: INTER,
-          fontWeight: 800,
+          fontWeight: 900,
           fontSize: 18,
-          letterSpacing: '2px',
+          letterSpacing: '2.5px',
           color: isLight ? '#ffffff' : '#1a1a2e',
           lineHeight: 1,
           userSelect: 'none',
@@ -99,10 +103,11 @@ export function LogoFull({ markSize = 32, variant = 'dark' }) {
           fontFamily: INTER,
           fontWeight: 500,
           fontSize: 8,
-          letterSpacing: '3px',
-          color: isLight ? 'rgba(255,255,255,0.55)' : '#6c757d',
+          letterSpacing: '3.5px',
+          color: isLight ? 'rgba(255,255,255,0.50)' : '#6c757d',
           lineHeight: 1,
           userSelect: 'none',
+          textTransform: 'uppercase',
         }}>
           OFFERT AI
         </span>

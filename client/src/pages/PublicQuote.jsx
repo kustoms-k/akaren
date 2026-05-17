@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { COMPANY as COMPANY_INFO } from '../constants/company.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
+import { LogoFull } from '../assets/Logo.jsx';
 
 const INTER = "'Inter', sans-serif";
 const BLUE  = '#4361ee';
@@ -45,9 +46,19 @@ function Shell({ children }) {
     <div style={{
       minHeight: '100vh', background: BG,
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      justifyContent: 'flex-start', padding: '32px 16px 80px',
+      justifyContent: 'flex-start', padding: '0 16px 80px',
       boxSizing: 'border-box',
     }}>
+      {/* Branded header bar */}
+      <div style={{
+        width: '100%',
+        background: 'linear-gradient(145deg, #080b1a 0%, #0f1640 50%, #1a1d6e 100%)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '20px 24px', marginBottom: 28, flexShrink: 0,
+        boxShadow: '0 4px 24px rgba(0,0,0,0.20)',
+      }}>
+        <LogoFull markSize={26} variant="light" />
+      </div>
       <div style={{ width: '100%', maxWidth: 520, display: 'flex', flexDirection: 'column', gap: 0 }}>
         {children}
       </div>
@@ -696,9 +707,13 @@ export function PublicQuote({ token }) {
             style={{
               width: '100%', minHeight: 52, fontFamily: INTER, fontSize: '0.8125rem',
               fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
-              background: working ? 'rgba(67,97,238,0.5)' : BLUE,
-              color: '#ffffff', border: 'none', borderRadius: 6,
-              cursor: working ? 'wait' : 'pointer', transition: 'background 0.15s',
+              background: working
+                ? 'rgba(99,102,241,0.5)'
+                : 'linear-gradient(135deg, #818cf8 0%, #6366f1 50%, #4f46e5 100%)',
+              color: '#ffffff', border: 'none', borderRadius: 8,
+              cursor: working ? 'wait' : 'pointer',
+              transition: 'all 0.15s',
+              boxShadow: working ? 'none' : '0 4px 20px rgba(99,102,241,0.40)',
             }}
           >
             {working ? pq.working : pq.accept}

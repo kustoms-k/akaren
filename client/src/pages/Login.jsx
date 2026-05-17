@@ -4,7 +4,7 @@ import { useLanguage } from '../context/LanguageContext.jsx';
 import { LogoFull, LogoMark } from '../assets/Logo.jsx';
 
 const INTER  = "'Inter', sans-serif";
-const BLUE   = '#4361ee';
+const BLUE   = '#6366f1';
 const TEXT   = '#1a1a2e';
 const MUTED  = '#6c757d';
 const BG     = '#f4f5f9';
@@ -22,7 +22,7 @@ function inputStyle(focused) {
     borderRadius: 9, fontSize: 14, color: TEXT,
     background: focused ? WHITE : '#fafbff',
     outline: 'none', boxSizing: 'border-box',
-    boxShadow: focused ? '0 0 0 3px rgba(67,97,238,0.12)' : 'none',
+    boxShadow: focused ? '0 0 0 3px rgba(99,102,241,0.14)' : 'none',
     transition: 'border-color 0.15s, box-shadow 0.15s, background 0.15s',
   };
 }
@@ -407,12 +407,12 @@ export function Login() {
                     fontFamily: INTER, width: '100%', fontWeight: 700, fontSize: 14,
                     padding: '13px', borderRadius: 9, border: 'none', marginTop: 4,
                     background: canLogin
-                      ? 'linear-gradient(135deg, #4361ee 0%, #3451d1 100%)'
+                      ? 'linear-gradient(135deg, #818cf8 0%, #6366f1 50%, #4f46e5 100%)'
                       : '#c8cfea',
                     color: WHITE,
                     cursor: canLogin ? 'pointer' : 'not-allowed',
                     letterSpacing: '0.02em',
-                    boxShadow: canLogin ? '0 4px 14px rgba(67,97,238,0.35)' : 'none',
+                    boxShadow: canLogin ? '0 4px 20px rgba(99,102,241,0.45)' : 'none',
                     transition: 'box-shadow 0.15s',
                   }}
                 >
@@ -456,11 +456,11 @@ export function Login() {
                     fontFamily: INTER, width: '100%', fontWeight: 700, fontSize: 14,
                     padding: '13px', borderRadius: 9, border: 'none', marginTop: 4,
                     background: canReg
-                      ? 'linear-gradient(135deg, #4361ee 0%, #3451d1 100%)'
+                      ? 'linear-gradient(135deg, #818cf8 0%, #6366f1 50%, #4f46e5 100%)'
                       : '#c8cfea',
                     color: WHITE,
                     cursor: canReg ? 'pointer' : 'not-allowed',
-                    boxShadow: canReg ? '0 4px 14px rgba(67,97,238,0.35)' : 'none',
+                    boxShadow: canReg ? '0 4px 20px rgba(99,102,241,0.45)' : 'none',
                   }}
                 >
                   {regLoading ? t.login.creating : t.login.createBtn}
