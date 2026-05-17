@@ -1,3 +1,9 @@
+console.log('=== ÅKAREN SERVER STARTING ===')
+console.log('Node version:', process.version)
+console.log('PORT:', process.env.PORT)
+console.log('NODE_ENV:', process.env.NODE_ENV)
+console.log('DB_PATH:', process.env.DB_PATH)
+
 process.on('uncaughtException', (err) => {
   console.error('UNCAUGHT EXCEPTION:', err.message)
   console.error(err.stack)
