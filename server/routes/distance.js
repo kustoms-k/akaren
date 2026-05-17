@@ -5,8 +5,10 @@ const router = Router();
 const ORS_KEY = process.env.ORS_API_KEY ?? '';
 
 async function geocode(address) {
+  // neighbourhood layer handles Stockholm district names (Kungsholmen, Södermalm, etc.)
+  const layers = 'address,venue,locality,neighbourhood,localadmin';
   const url = `https://api.openrouteservice.org/geocode/search?api_key=${ORS_KEY}`
-    + `&text=${encodeURIComponent(address)}&boundary.country=SE&size=1&layers=address,venue,locality`;
+    + `&text=${encodeURIComponent(address)}&boundary.country=SE&size=1&layers=${layers}`;
   const r = await fetch(url, {
     signal:  AbortSignal.timeout(7000),
     headers: { Accept: 'application/json' },
