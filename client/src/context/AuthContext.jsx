@@ -34,6 +34,14 @@ export function AuthProvider({ children }) {
     setCompany(data);
   }, []);
 
+  const updateUser = useCallback((patch) => {
+    setUser((prev) => {
+      const next = { ...prev, ...patch };
+      localStorage.setItem('auth_user', JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
   return (
     <AuthContext.Provider value={{
       token,
@@ -43,6 +51,7 @@ export function AuthProvider({ children }) {
       login,
       logout,
       updateCompany,
+      updateUser,
     }}>
       {children}
     </AuthContext.Provider>

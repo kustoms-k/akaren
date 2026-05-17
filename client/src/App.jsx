@@ -1810,15 +1810,170 @@ class ErrorBoundary extends Component {
   }
 }
 
+// ─── ToS acceptance gate ──────────────────────────────────────────────────────
+function TosGate({ onAccepted }) {
+  const { token, company } = useAuth();
+  const [checked,  setChecked]  = useState(false);
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState(null);
+
+  async function handleAccept() {
+    if (!checked || loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/auth/accept-tos', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Kunde inte spara godkännande');
+      const data = await res.json();
+      onAccepted({ tos_accepted_at: data.tos_accepted_at });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const INDIGO = '#6366f1';
+
+  return (
+    <div style={{
+      minHeight: '100vh', background: '#f5f6fa',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '24px 16px', fontFamily: "'Inter', sans-serif",
+    }}>
+      <div style={{
+        background: '#fff', borderRadius: 16, width: '100%', maxWidth: 600,
+        boxShadow: '0 4px 32px rgba(0,0,0,0.10)', overflow: 'hidden',
+      }}>
+        {/* Header */}
+        <div style={{
+          background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
+          padding: '28px 32px 24px',
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', color: '#a5b4fc', marginBottom: 8 }}>
+            ÅKAREN · JURIDISKA VILLKOR
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#fff', marginBottom: 4 }}>
+            Godkänn villkoren för att fortsätta
+          </div>
+          <div style={{ fontSize: 13, color: '#c7d2fe', lineHeight: 1.5 }}>
+            Innan du kan använda plattformen behöver{company?.name ? ` ${company.name}` : ''} godkänna
+            Allmänna Villkoren och Personuppgiftsbiträdesavtalet.
+          </div>
+        </div>
+
+        {/* Summary cards */}
+        <div style={{ padding: '24px 32px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {[
+            {
+              icon: '📄',
+              title: 'Allmänna Villkor (ToS)',
+              points: [
+                'Abonnemang faktureras månadsvis i förskott, 30 dagars netto',
+                'En månads ömsesidig uppsägningstid',
+                'Åkarens ansvar är begränsat till 3 månaders avgifter',
+                'AI-analys är beslutsstöd — ni godkänner offerter',
+              ],
+            },
+            {
+              icon: '🔒',
+              title: 'Personuppgiftsbiträdesavtal (GDPR art. 28)',
+              points: [
+                'Åkaren behandlar personuppgifter för er räkning',
+                'Data lagras inom EU (Hetzner, Frankfurt)',
+                'AI-behandling under EU-standardavtalsklausuler (SCC)',
+                'Data raderas inom 30 dagar efter avtalets upphörande',
+              ],
+            },
+          ].map(({ icon, title, points }) => (
+            <div key={title} style={{
+              border: '1px solid #e5e7eb', borderRadius: 10, padding: '16px 18px',
+              background: '#f9fafb',
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e', marginBottom: 10 }}>
+                {icon}  {title}
+              </div>
+              <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {points.map((p) => (
+                  <li key={p} style={{ fontSize: 12, color: '#4b5563', lineHeight: 1.5 }}>{p}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        {/* Checkbox + CTA */}
+        <div style={{ padding: '20px 32px 28px' }}>
+          <label style={{
+            display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', marginBottom: 18,
+          }}>
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={(e) => setChecked(e.target.checked)}
+              style={{ marginTop: 2, width: 16, height: 16, accentColor: INDIGO, cursor: 'pointer', flexShrink: 0 }}
+            />
+            <span style={{ fontSize: 13, color: '#374151', lineHeight: 1.55 }}>
+              Jag har läst och godkänner Åkarens{' '}
+              <strong>Allmänna Villkor</strong> och{' '}
+              <strong>Personuppgiftsbiträdesavtal</strong> (version 2026-05-17).
+              Godkännandet gäller för hela organisationen.
+            </span>
+          </label>
+
+          {error && (
+            <div style={{
+              marginBottom: 14, padding: '9px 14px', borderRadius: 7,
+              background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.25)',
+              fontSize: 12, color: '#dc2626',
+            }}>
+              {error}
+            </div>
+          )}
+
+          <button
+            onClick={handleAccept}
+            disabled={!checked || loading}
+            style={{
+              width: '100%', padding: '13px 0', borderRadius: 9, border: 'none',
+              background: checked
+                ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
+                : '#e5e7eb',
+              color: checked ? '#fff' : '#9ca3af',
+              fontFamily: "'Inter', sans-serif",
+              fontSize: 14, fontWeight: 700, cursor: checked ? 'pointer' : 'default',
+              letterSpacing: '0.02em',
+              boxShadow: checked ? '0 2px 8px rgba(99,102,241,0.30)' : 'none',
+              transition: 'all 0.15s',
+            }}
+          >
+            {loading ? 'Sparar…' : 'Godkänn och fortsätt'}
+          </button>
+
+          <div style={{ marginTop: 12, fontSize: 11, color: '#9ca3af', textAlign: 'center', lineHeight: 1.5 }}>
+            Du kan ladda ner båda dokumenten som PDF under Inställningar → Juridik & Avtal.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Auth gate — keeps hook count stable across auth transitions ─────────────
 function AppShell() {
-  const { isAuthenticated, company, logout, updateCompany } = useAuth();
+  const { isAuthenticated, user, company, logout, updateCompany, updateUser } = useAuth();
   if (!isAuthenticated) return <Login />;
   if (company?.active === 0 || company?.active === false) {
     return <SubscriptionPaused company={company} onLogout={logout} />;
   }
   if (!company?.onboarding_completed_at) {
     return <Onboarding onComplete={updateCompany} />;
+  }
+  if (!user?.tos_accepted_at) {
+    return <TosGate onAccepted={updateUser} />;
   }
   return <AppInner />;
 }

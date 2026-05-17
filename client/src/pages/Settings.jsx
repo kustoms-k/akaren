@@ -5,6 +5,8 @@ import { useAuth }      from '../context/AuthContext.jsx';
 import { useSync }      from '../context/SyncContext.jsx';
 import { useLanguage }  from '../context/LanguageContext.jsx';
 import { db }           from '../db/dexie.js';
+import { generateDpa }  from '../utils/generateDpa.js';
+import { generateTos }  from '../utils/generateTos.js';
 
 const INTER  = "'Inter', sans-serif";
 const BLUE   = '#4361ee';
@@ -517,6 +519,85 @@ export function Settings({ onFortnoxResult }) {
             Telefonnummer måste vara i E.164-format (t.ex. <code style={{ fontFamily: 'monospace', color: TEXT }}>+46701234001</code>).
             Ändringar träder i kraft direkt på nästa uppdrag.
           </p>
+        </div>
+      </div>
+
+      {/* ── Legal ─────────────────────────────────────────────────────────── */}
+      <div style={section}>
+        <div style={sectionHead}>
+          <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
+            Juridik & Avtal
+          </span>
+          <span style={{
+            fontFamily: INTER, fontSize: 11, fontWeight: 500,
+            padding: '3px 10px', borderRadius: 20,
+            background: user?.tos_accepted_at ? 'rgba(46,204,113,0.08)' : 'rgba(245,158,11,0.08)',
+            border: `1px solid ${user?.tos_accepted_at ? 'rgba(46,204,113,0.3)' : 'rgba(245,158,11,0.3)'}`,
+            color: user?.tos_accepted_at ? '#1a7a47' : '#92400e',
+          }}>
+            {user?.tos_accepted_at
+              ? `Villkor godkända ${new Date(user.tos_accepted_at).toLocaleDateString('sv-SE')}`
+              : 'Villkor ej godkända'}
+          </span>
+        </div>
+
+        <div style={{ padding: '20px 20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: 0, lineHeight: 1.6, maxWidth: 560 }}>
+            Ladda ner de juridiska dokument som reglerar användningen av Åkaren. Personuppgiftsbiträdesavtalet
+            (GDPR art. 28) och Allmänna Villkor är en integrerad del av ert avtal med oss.
+          </p>
+
+          {/* Document rows */}
+          {[
+            {
+              title: 'Personuppgiftsbiträdesavtal',
+              subtitle: 'GDPR artikel 28 · Data Processing Agreement',
+              desc: 'Reglerar hur Åkaren behandlar personuppgifter för er räkning. Krävs enligt GDPR.',
+              onClick: () => generateDpa(company, user),
+            },
+            {
+              title: 'Allmänna Villkor',
+              subtitle: 'Terms of Service · Version 2026-05-17',
+              desc: 'Fullständiga villkor för användning av plattformen, inklusive pris, ansvar och uppsägning.',
+              onClick: () => generateTos(company, user),
+            },
+          ].map(({ title, subtitle, desc, onClick }) => (
+            <div
+              key={title}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                gap: 16, padding: '14px 16px',
+                background: SURF, border: `1px solid ${BORDER}`,
+                borderRadius: 10,
+              }}
+            >
+              <div>
+                <div style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
+                  {title}
+                </div>
+                <div style={{ fontFamily: INTER, fontSize: 11, color: '#6366f1', fontWeight: 500, marginTop: 1 }}>
+                  {subtitle}
+                </div>
+                <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED, marginTop: 4, lineHeight: 1.5 }}>
+                  {desc}
+                </div>
+              </div>
+              <button
+                onClick={onClick}
+                style={{
+                  flexShrink: 0,
+                  fontFamily: INTER, fontSize: 12, fontWeight: 600,
+                  padding: '8px 16px', borderRadius: 7,
+                  background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                  color: '#fff', border: 'none', cursor: 'pointer',
+                  boxShadow: '0 1px 4px rgba(99,102,241,0.22)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Ladda ner PDF
+              </button>
+            </div>
+          ))}
         </div>
       </div>
     </div>

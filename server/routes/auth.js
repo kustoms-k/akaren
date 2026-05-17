@@ -57,7 +57,7 @@ router.post('/login', async (req, res) => {
 
     res.json({
       token,
-      user:    { id: user.id, name: user.name, email: user.email, role: user.role },
+      user:    { id: user.id, name: user.name, email: user.email, role: user.role, tos_accepted_at: user.tos_accepted_at ?? null },
       company: safeCompany(company),
     });
   } catch (err) {
@@ -119,11 +119,27 @@ router.post('/register', async (req, res) => {
 
     res.status(201).json({
       token,
-      user:    { id: userId, name: user_name?.trim() || user_email.split('@')[0], email: user.email, role: 'owner' },
+      user:    { id: userId, name: user_name?.trim() || user_email.split('@')[0], email: user.email, role: 'owner', tos_accepted_at: null },
       company: safeCompany(company),
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/auth/accept-tos — record user's ToS acceptance ─────────────────
+router.post('/accept-tos', (req, res) => {
+  const auth = req.headers.authorization ?? '';
+  if (!auth.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const decoded = jwt.verify(auth.slice(7), JWT_SECRET);
+    const now = new Date().toISOString();
+    db.prepare(
+      "UPDATE users SET tos_accepted_at = ?, tos_version = ? WHERE id = ?",
+    ).run(now, '2026-05-17', decoded.userId);
+    res.json({ tos_accepted_at: now });
+  } catch {
+    res.status(401).json({ error: 'Invalid token' });
   }
 });
 

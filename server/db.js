@@ -332,6 +332,8 @@ const migrations = [
   `ALTER TABLE companies ADD COLUMN onboarding_completed_at  TEXT`,
   `ALTER TABLE companies ADD COLUMN pricing_config           TEXT`,
   `ALTER TABLE users     ADD COLUMN tour_dismissed_at        TEXT`,
+  `ALTER TABLE users     ADD COLUMN tos_accepted_at          TEXT`,
+  `ALTER TABLE users     ADD COLUMN tos_version              TEXT`,
 ];
 
 // Backfill: companies created before the onboarding feature launch are already set up
