@@ -258,12 +258,13 @@ router.post('/dpa/accept', (req, res) => {
       INSERT OR IGNORE INTO dpa_acceptances (company_id, user_id, dpa_version, ip_address)
       VALUES (?, ?, ?, ?)
     `).run(req.companyId, req.user.userId, DPA_VERSION, ip);
-    db.prepare(`UPDATE companies SET dpa_accepted_at = CURRENT_TIMESTAMP WHERE id = ?`).run(req.companyId);
+    const acceptedAt = new Date().toISOString();
+    db.prepare(`UPDATE companies SET dpa_accepted_at = ? WHERE id = ?`).run(acceptedAt, req.companyId);
     // Audit
     db.prepare(`INSERT INTO audit_log (company_id, user_id, entity_type, entity_id, action, ip_address)
                 VALUES (?, ?, 'dpa', ?, 'accept', ?)`
     ).run(req.companyId, req.user.userId, DPA_VERSION, ip);
-    res.json({ ok: true });
+    res.json({ ok: true, dpa_accepted_at: acceptedAt });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

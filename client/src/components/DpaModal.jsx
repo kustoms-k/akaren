@@ -40,7 +40,8 @@ export function DpaModal({ onAccepted }) {
     try {
       const res = await apiFetch('/api/data-privacy/dpa/accept', { method: 'POST' });
       if (!res.ok) throw new Error();
-      onAccepted();
+      const data = await res.json();
+      onAccepted(data.dpa_accepted_at ?? new Date().toISOString());
     } catch {
       setError(t.dpa.acceptError);
     } finally {

@@ -330,9 +330,9 @@ function FortnoxPanel({ toast, setToast }) {
             marginBottom: 16,
           }}>
             {[
-              { label: 'Ansluten / Connected', value: fmtDate(status.connected_at) },
-              { label: 'Senaste synk / Last sync', value: fmtDate(status.last_sync) },
-              { label: 'Kunder / Customers', value: status.customer_count ?? 0 },
+              { label: t.settings.fortnox.connectedAt, value: fmtDate(status.connected_at) },
+              { label: t.settings.fortnox.lastSync,    value: fmtDate(status.last_sync) },
+              { label: t.settings.fortnox.customers,   value: status.customer_count ?? 0 },
             ].map(({ label, value }) => (
               <div key={label} style={{
                 background: BG, border: `1px solid ${BORDER}`,
@@ -359,7 +359,7 @@ function FortnoxPanel({ toast, setToast }) {
                 color: TEXT, cursor: 'pointer',
               }}
             >
-              {syncing ? '…' : 'Synka kunder / Sync customers'}
+              {syncing ? t.settings.fortnox.syncing : t.settings.fortnox.syncBtn}
             </button>
             <button
               onClick={handleDisconnect}
@@ -379,10 +379,7 @@ function FortnoxPanel({ toast, setToast }) {
       )}
 
       <p style={{ fontFamily: INTER, fontSize: 12, color: MUTED, margin: '14px 0 0', lineHeight: 1.6 }}>
-        Kunder importeras automatiskt vid anslutning och kan synkas manuellt.
-        Fakturor skickas automatiskt till Fortnox när ett uppdrag faktureras. /
-        Customers are imported automatically on connect and can be manually re-synced.
-        Invoices are pushed to Fortnox automatically when a job is invoiced.
+        {t.settings.fortnox.note}
       </p>
     </div>
   );
@@ -526,7 +523,7 @@ export function Settings({ onFortnoxResult }) {
       <div style={section}>
         <div style={sectionHead}>
           <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
-            Juridik & Avtal
+            {t.settings.legal.heading}
           </span>
           <span style={{
             fontFamily: INTER, fontSize: 11, fontWeight: 500,
@@ -536,30 +533,29 @@ export function Settings({ onFortnoxResult }) {
             color: user?.tos_accepted_at ? '#1a7a47' : '#92400e',
           }}>
             {user?.tos_accepted_at
-              ? `Villkor godkända ${new Date(user.tos_accepted_at).toLocaleDateString('sv-SE')}`
-              : 'Villkor ej godkända'}
+              ? t.settings.legal.tosAccepted(new Date(user.tos_accepted_at).toLocaleDateString('sv-SE'))
+              : t.settings.legal.tosNotAccepted}
           </span>
         </div>
 
         <div style={{ padding: '20px 20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: 0, lineHeight: 1.6, maxWidth: 560 }}>
-            Ladda ner de juridiska dokument som reglerar användningen av Åkaren. Personuppgiftsbiträdesavtalet
-            (GDPR art. 28) och Allmänna Villkor är en integrerad del av ert avtal med oss.
+            {t.settings.legal.desc}
           </p>
 
           {/* Document rows */}
           {[
             {
-              title: 'Personuppgiftsbiträdesavtal',
-              subtitle: 'GDPR artikel 28 · Data Processing Agreement',
-              desc: 'Reglerar hur Åkaren behandlar personuppgifter för er räkning. Krävs enligt GDPR.',
-              onClick: () => generateDpa(company, user),
+              title:    t.settings.legal.dpa.title,
+              subtitle: t.settings.legal.dpa.subtitle,
+              desc:     t.settings.legal.dpa.desc,
+              onClick:  () => generateDpa(company, user),
             },
             {
-              title: 'Allmänna Villkor',
-              subtitle: 'Terms of Service · Version 2026-05-17',
-              desc: 'Fullständiga villkor för användning av plattformen, inklusive pris, ansvar och uppsägning.',
-              onClick: () => generateTos(company, user),
+              title:    t.settings.legal.tos.title,
+              subtitle: t.settings.legal.tos.subtitle('2026-05-17'),
+              desc:     t.settings.legal.tos.desc,
+              onClick:  () => generateTos(company, user),
             },
           ].map(({ title, subtitle, desc, onClick }) => (
             <div
@@ -594,7 +590,7 @@ export function Settings({ onFortnoxResult }) {
                   whiteSpace: 'nowrap',
                 }}
               >
-                Ladda ner PDF
+                {t.settings.legal.downloadPdf}
               </button>
             </div>
           ))}

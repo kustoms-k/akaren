@@ -283,6 +283,12 @@ db.exec(`
     created_at         TEXT    DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS road_alerts_cache (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    data       TEXT    NOT NULL,
+    updated_at TEXT    NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS company_fleet (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     company_id      INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,

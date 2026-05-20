@@ -22,6 +22,7 @@ import { Login }          from './pages/Login.jsx';
 import { Audit }          from './pages/Audit.jsx';
 import { Jobs }           from './pages/Jobs.jsx';
 import { DpaModal }       from './components/DpaModal.jsx';
+import { RouteMap }       from './components/RouteMap.jsx';
 import { Customers }      from './pages/Customers.jsx';
 import { Onboarding }     from './pages/Onboarding.jsx';
 import { TourOverlay }    from './components/TourOverlay.jsx';
@@ -77,12 +78,14 @@ const REVENUE_DATA = [
   { month: 'Jun', value: 284500 },
 ];
 
-const ACTIVITY = [
-  { dot: BLUE,      text: 'Quote created / Offert skapad',        sub: 'AGR-2024-031',          time: '2 min' },
-  { dot: '#2ecc71', text: 'Job saved / Uppdrag sparat',            sub: 'Stockholm → Göteborg',  time: '14 min' },
-  { dot: '#60a5fa', text: 'SMS sent / SMS skickat',                sub: 'Driver notified',       time: '1h' },
-  { dot: '#a78bfa', text: 'Invoice generated / Faktura genererad', sub: 'AGR-2024-030',          time: '2h' },
-];
+function getActivity(t) {
+  return [
+    { dot: BLUE,      text: t.dashboard.activity.quoteCreated,   sub: 'AGR-2024-031',         time: '2 min' },
+    { dot: '#2ecc71', text: t.dashboard.activity.jobSaved,       sub: 'Stockholm → Göteborg', time: '14 min' },
+    { dot: '#60a5fa', text: t.dashboard.activity.smsSent,        sub: t.dashboard.activity.driverNotified, time: '1h' },
+    { dot: '#a78bfa', text: t.dashboard.activity.invoiceGen,     sub: 'AGR-2024-030',         time: '2h' },
+  ];
+}
 
 function getNavItems(t) {
   return [
@@ -257,6 +260,7 @@ function FuelBadge({ fuelPrice }) {
 }
 
 function WeatherBadge({ weather }) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -309,7 +313,82 @@ function WeatherBadge({ weather }) {
           fontFamily: INTER, fontSize: '0.6875rem', color: '#d97706', lineHeight: 1.6,
           boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
         }}>
-          ⚠ Winter conditions — consider weather surcharge / Vinterförhållanden — överväg vädertillägg
+          {t.topbar.winterWarning}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Road alerts badge ────────────────────────────────────────────────────────
+function RoadAlertsBadge({ alerts }) {
+  const { t } = useLanguage();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDoc(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [open]);
+
+  if (!alerts || alerts.length === 0) return null;
+
+  return (
+    <div ref={ref} style={{ position: 'relative', flexShrink: 0 }}>
+      <div
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          background: 'rgba(239,68,68,0.07)', border: '1px solid #ef4444',
+          borderRadius: 6, padding: '4px 10px', cursor: 'pointer', userSelect: 'none',
+        }}
+      >
+        <AlertTriangle size={11} color="#dc2626" />
+        <span style={{ fontFamily: INTER, fontSize: '0.6875rem', fontWeight: 600, color: '#dc2626' }}>
+          {t.roadAlerts.label(alerts.length)}
+        </span>
+        <span style={{ fontFamily: INTER, fontSize: '0.5rem', letterSpacing: '0.06em', color: '#dc2626' }}>▾</span>
+      </div>
+
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)', left: '50%',
+          transform: 'translateX(-50%)', zIndex: 500, width: 340,
+          background: WHITE, border: '1px solid #fca5a5', borderRadius: 10,
+          padding: '10px 0', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', overflow: 'hidden',
+        }}>
+          <div style={{ padding: '2px 14px 8px', fontFamily: INTER, fontSize: '0.625rem', letterSpacing: '0.06em', color: MUTED, textTransform: 'uppercase' }}>
+            {t.roadAlerts.header}
+          </div>
+          <div style={{ maxHeight: 260, overflowY: 'auto' }}>
+            {alerts.slice(0, 8).map((a) => (
+              <div key={a.id} style={{
+                padding: '8px 14px',
+                borderTop: '1px solid #fee2e2',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                  <span style={{ fontFamily: INTER, fontSize: '0.6875rem', fontWeight: 700, color: '#dc2626' }}>
+                    {a.road}
+                  </span>
+                  <span style={{ fontFamily: INTER, fontSize: '0.625rem', color: TEXT, flex: 1 }}>
+                    {a.location}
+                  </span>
+                </div>
+                <div style={{ fontFamily: INTER, fontSize: '0.625rem', color: MUTED }}>
+                  {a.condition}{a.warnings?.length ? ' — ' + a.warnings.join(', ') : ''}
+                </div>
+              </div>
+            ))}
+          </div>
+          {alerts.length > 8 && (
+            <div style={{ padding: '6px 14px 2px', fontFamily: INTER, fontSize: '0.5625rem', color: MUTED }}>
+              +{alerts.length - 8} till…
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -362,7 +441,7 @@ function SyncDot() {
   );
 }
 
-function TopBar({ fuelPrice, weather, company }) {
+function TopBar({ fuelPrice, weather, roadAlerts, company }) {
   const { t, lang, setLang } = useLanguage();
   const now = new Date();
   const dateLocale = lang === 'sv' ? 'sv-SE' : 'en-GB';
@@ -398,6 +477,7 @@ function TopBar({ fuelPrice, weather, company }) {
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
         <FuelBadge fuelPrice={fuelPrice} />
         <WeatherBadge weather={weather} />
+        <RoadAlertsBadge alerts={roadAlerts} />
       </div>
 
       {/* Sync status */}
@@ -503,8 +583,9 @@ function KpiCard({ Icon, label, value, change, changeUp, accentColor }) {
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
-function Dashboard({ quotes, fuelPrice, onNewQuote }) {
+function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote }) {
   const { t } = useLanguage();
+  const ACTIVITY = getActivity(t);
   const totalRevenue = quotes.reduce((sum, q) => sum + (Number(q.totalpris_sek) || 0), 0);
   const dieselValue  = fuelPrice ? fmtPrice(fuelPrice.price_per_litre) + ' kr/L' : '18.45 kr/L';
   const lezCount     = quotes.filter((q) => q.lez_varning).length;
@@ -740,6 +821,65 @@ function Dashboard({ quotes, fuelPrice, onNewQuote }) {
         </div>
       </div>
 
+      {/* ── Road conditions panel ────────────────────────────────────────── */}
+      {roadAlerts !== undefined && (
+        <div style={{ background: WHITE, border: `1px solid ${roadAlerts.length > 0 ? '#fca5a5' : BORDER}`, borderRadius: 14, padding: '20px 24px', boxShadow: '0 1px 8px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <AlertTriangle size={14} color={roadAlerts.length > 0 ? '#dc2626' : '#2ecc71'} />
+            <span style={{ fontSize: 13, fontWeight: 600, color: TEXT, fontFamily: INTER }}>
+              {t.roadAlerts.sweden}
+            </span>
+            {roadAlerts.length === 0 && (
+              <span style={{ fontSize: 11, fontFamily: INTER, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 5, padding: '2px 8px' }}>
+                {t.roadAlerts.normal}
+              </span>
+            )}
+            {roadAlerts.length > 0 && (
+              <span style={{ fontSize: 11, fontFamily: INTER, color: '#dc2626', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 5, padding: '2px 8px' }}>
+                {t.roadAlerts.label(roadAlerts.length)}
+              </span>
+            )}
+          </div>
+
+          {roadAlerts.length === 0 ? (
+            <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED, fontStyle: 'italic' }}>
+              {t.roadAlerts.none}
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
+              {roadAlerts.map((a) => (
+                <div key={a.id} style={{
+                  border: '1px solid #fee2e2', borderRadius: 8, padding: '10px 14px',
+                  background: '#fff8f8',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontFamily: INTER, fontSize: 12, fontWeight: 700, color: '#dc2626', flexShrink: 0 }}>
+                      {a.road}
+                    </span>
+                    <span style={{ fontFamily: INTER, fontSize: 11, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {a.location}
+                    </span>
+                  </div>
+                  <div style={{ fontFamily: INTER, fontSize: 11, color: '#d97706', fontWeight: 500 }}>
+                    {a.condition}
+                  </div>
+                  {a.warnings?.length > 0 && (
+                    <div style={{ fontFamily: INTER, fontSize: 11, color: MUTED, marginTop: 2 }}>
+                      {a.warnings.join(' · ')}
+                    </div>
+                  )}
+                  {a.measurements?.length > 0 && (
+                    <div style={{ fontFamily: INTER, fontSize: 10, color: FAINT, marginTop: 2 }}>
+                      {a.measurements[0]}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* bottom spacer */}
       <div style={{ height: 4 }} />
     </div>
@@ -762,8 +902,8 @@ function PlaceholderPage({ label }) {
 
 // ─── App (inner — only rendered when authenticated) ──────────────────────────
 function AppInner() {
-  const { t } = useLanguage();
-  const { user, company, logout } = useAuth();
+  const { t, lang } = useLanguage();
+  const { user, company, logout, updateCompany } = useAuth();
 
   const {
     status, rawText, parsed, confidence, confidenceOverall, originalParsed, error, routeLive,
@@ -779,10 +919,13 @@ function AppInner() {
   const [showNewQuote,    setShowNewQuote]     = useState(false);
   const [fuelPrice,       setFuelPrice]       = useState(null);
   const [weather,         setWeather]         = useState(null);
+  const [roadAlerts,      setRoadAlerts]      = useState([]);
   const [quoteNumber,     setQuoteNumber]     = useState(null);
   const [shareToken,      setShareToken]      = useState(null);
   const [saving,          setSaving]          = useState(false);
   const [routeLoading,    setRouteLoading]    = useState(false);
+  const [routeAdvisory,   setRouteAdvisory]   = useState(null);
+  const [routeData,       setRouteData]       = useState(null);
   const [toast,           setToast]           = useState(null);    // { message, variant }
   const [smsResult,       setSmsResult]       = useState(null);   // { status, driverName, error }
   const [mallModal,       setMallModal]       = useState(null);
@@ -816,10 +959,11 @@ function AppInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fuel price + weather are external/real-time — still fetch live
+  // Fuel price + weather + road alerts are external/real-time — still fetch live
   useEffect(() => {
     apiFetch('/api/fuel-price').then((r) => r.json()).then(setFuelPrice).catch(() => {});
     apiFetch('/api/weather').then((r) => r.json()).then(setWeather).catch(() => {});
+    apiFetch('/api/road-alerts').then((r) => r.json()).then((d) => setRoadAlerts(d.alerts ?? [])).catch(() => {});
   }, []);
 
   // Reset approvals and review gate whenever a fresh analysis starts
@@ -827,27 +971,49 @@ function AppInner() {
     if (status === 'streaming') {
       setLowApproved(new Set());
       setReviewAcknowledged(false);
+      setRouteAdvisory(null);
+      setRouteData(null);
     }
   }, [status]);
 
   // Auto-route via ORS once analysis completes (or template loaded)
   useEffect(() => {
     if (status !== 'done' || routeLive) return;
-    const pickup   = parsed?.upphämtning;
-    const delivery = parsed?.leverans;
+    const pickup     = parsed?.upphämtning;
+    const delivery   = parsed?.leverans;
+    const weight_ton = parsed?.vikt ? parseFloat(String(parsed.vikt).replace(',', '.')) : undefined;
     if (!pickup || !delivery || pickup === '…' || delivery === '…') return;
     if (String(pickup).length < 4 || String(delivery).length < 4) return;
 
     setRouteLoading(true);
-    apiFetch('/api/distance', {
+    setRouteAdvisory(null);
+    setRouteData(null);
+
+    // Primary: /api/route — ORS HGV routing + Trafikverket disruptions + map data
+    const routeCall = apiFetch('/api/route', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ pickup, delivery }),
     })
-      .then((r) => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
-      .then((d) => { if (d.distance_km != null) applyRoute(d.distance_km); })
-      .catch((e) => console.warn('[ORS]', e.message))
-      .finally(() => setRouteLoading(false));
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (!d) return;
+        setRouteData(d);
+        if (d.distance_km != null) applyRoute(d.distance_km);
+      })
+      .catch(() => {});
+
+    // Advisory: LEZ check + road condition warnings + recommendations
+    const advisoryCall = apiFetch('/api/route-advisory', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ pickup, delivery, weight_ton, lang }),
+    })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setRouteAdvisory(d); })
+      .catch(() => {});
+
+    Promise.all([routeCall, advisoryCall]).finally(() => setRouteLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, parsed?.upphämtning, parsed?.leverans, routeLive]);
 
@@ -1048,13 +1214,14 @@ function AppInner() {
 
       {/* ── Right side ──────────────────────────────────────────────── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-        <TopBar fuelPrice={fuelPrice} weather={weather} company={company} />
+        <TopBar fuelPrice={fuelPrice} weather={weather} roadAlerts={roadAlerts} company={company} />
 
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           {activePage === 'dashboard' && (
             <Dashboard
               quotes={quotes}
               fuelPrice={fuelPrice}
+              roadAlerts={roadAlerts}
               onNewQuote={() => setShowNewQuote(true)}
             />
           )}
@@ -1253,6 +1420,58 @@ function AppInner() {
                     />
                   )}
 
+                  {/* Route advisory — road conditions + recommendations */}
+                  {routeAdvisory && (
+                    <div style={{
+                      flexShrink: 0,
+                      background: '#fafafa',
+                      border: `1px solid ${routeAdvisory.route_alerts?.length > 0 ? '#fca5a5' : '#d1fae5'}`,
+                      borderRadius: 8, padding: '10px 12px',
+                      display: 'flex', flexDirection: 'column', gap: 6,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <AlertTriangle size={12} color={routeAdvisory.route_alerts?.length > 0 ? '#dc2626' : '#15803d'} />
+                        <span style={{ fontFamily: INTER, fontSize: '0.6875rem', fontWeight: 700, color: TEXT }}>
+                          {t.newQuote.routeAdvisory.heading}
+                        </span>
+                        {routeAdvisory.distance_km && (
+                          <span style={{ fontFamily: INTER, fontSize: '0.625rem', color: MUTED, marginLeft: 4 }}>
+                            {t.newQuote.routeAdvisory.distanceTime(routeAdvisory.distance_km, routeAdvisory.duration_min)}
+                          </span>
+                        )}
+                      </div>
+
+                      {routeAdvisory.route_alerts?.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                          {routeAdvisory.route_alerts.slice(0, 3).map((a) => (
+                            <div key={a.id} style={{ fontFamily: INTER, fontSize: '0.625rem', color: '#dc2626', paddingLeft: 18 }}>
+                              <strong>{a.road}</strong> {a.location} — {a.condition}
+                              {a.warnings?.length > 0 && ` (${a.warnings.join(', ')})`}
+                            </div>
+                          ))}
+                          {routeAdvisory.route_alerts.length > 3 && (
+                            <div style={{ fontFamily: INTER, fontSize: '0.5625rem', color: MUTED, paddingLeft: 18 }}>
+                              +{routeAdvisory.route_alerts.length - 3} till…
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingLeft: 18 }}>
+                        {routeAdvisory.recommendations?.map((rec, i) => (
+                          <div key={i} style={{ fontFamily: INTER, fontSize: '0.625rem', color: MUTED, lineHeight: 1.5 }}>
+                            • {rec}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Route map — ORS HGV routing + Trafikverket disruptions */}
+                  {(routeData || routeLoading) && (
+                    <RouteMap routeData={routeData} loading={routeLoading} />
+                  )}
+
                   {lezVarning && (
                     <div style={{
                       flexShrink: 0,
@@ -1284,7 +1503,7 @@ function AppInner() {
                   {quoteNumber && (
                     <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                       <span style={{ fontFamily: INTER, fontSize: '0.6875rem', color: MUTED }}>
-                        Offert&nbsp;{quoteNumber}
+                        {t.newQuote.quotePrefix}&nbsp;{quoteNumber}
                       </span>
                       {shareToken && (
                         <button
@@ -1726,7 +1945,10 @@ function AppInner() {
 
       {/* DPA modal — shown on first login until accepted */}
       {!dpaAccepted && (
-        <DpaModal onAccepted={() => setDpaAccepted(true)} />
+        <DpaModal onAccepted={(accepted_at) => {
+          setDpaAccepted(true);
+          updateCompany({ ...company, dpa_accepted_at: accepted_at });
+        }} />
       )}
 
       <TourOverlay />

@@ -38,6 +38,9 @@ import driversRouter         from './routes/drivers.js';
 import statisticsRouter      from './routes/statistics.js';
 import templatesRouter       from './routes/templates.js';
 import weatherRouter         from './routes/weather.js';
+import roadAlertsRouter      from './routes/roadAlerts.js';
+import routeAdvisoryRouter   from './routes/routeAdvisory.js';
+import routeRouter           from './routes/route.js';
 import distanceRouter        from './routes/distance.js';
 import auditRouter           from './routes/audit.js';
 import fortnoxRouter         from './routes/fortnox.js';
@@ -68,6 +71,7 @@ app.use('/api/public/quote', publicQuoteRouter);
 app.use('/api/portal',       portalRouter);
 app.use('/api/fuel-price',   fuelPriceRouter);
 app.use('/api/weather',      weatherRouter);
+app.use('/api/road-alerts',  roadAlertsRouter);
 
 // ── Protected routes (require JWT) ───────────────────────────────────────────
 app.use('/api/company', requireAuth, (req, res) => {
@@ -96,6 +100,8 @@ app.use('/api/invoices',          requireAuth, auditMutation('invoice'), invoice
 app.use('/api/fleet',             requireAuth, fleetRouter);
 app.use('/api/analyse',           requireAuth, analyseRouter);
 app.use('/api/distance',          requireAuth, distanceRouter);
+app.use('/api/route',             requireAuth, routeRouter);
+app.use('/api/route-advisory',    requireAuth, routeAdvisoryRouter);
 app.use('/api/pricing-insights',  requireAuth, pricingInsightsRouter);
 app.use('/api/data-privacy',      requireAuth, requireOwner, dataPrivacyRouter);
 app.use('/api/customers',         requireAuth, auditMutation('customer_portal'), customersRouter);

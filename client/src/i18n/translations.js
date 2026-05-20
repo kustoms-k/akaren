@@ -120,8 +120,13 @@ export const EN = {
       avstand_km:          'DISTANCE',
       totalpris_sek:       'TOTAL PRICE',
     },
-    noHistory: 'No jobs yet — create a quote to start',
-    addMall:   '+ template',
+    noHistory:   'No jobs yet — create a quote to start',
+    addMall:     '+ template',
+    quotePrefix: 'Quote',
+    routeAdvisory: {
+      heading:      'Route Analysis',
+      distanceTime: (km, min) => `${km} km · ${min} min (HGV)`,
+    },
   },
 
   inquiry: {
@@ -637,6 +642,12 @@ export const EN = {
       disconnect:  'Disconnect',
       connected:   'Connected',
       notConnected:'Not connected',
+      connectedAt: 'Connected',
+      lastSync:    'Last sync',
+      customers:   'Customers',
+      syncBtn:     'Sync customers',
+      syncing:     '…',
+      note:        'Customers are imported automatically on connect and can be manually re-synced.',
     },
     company: {
       heading:  'Company Details',
@@ -648,6 +659,40 @@ export const EN = {
       save:     'Save changes',
       saved:    '✓ Saved',
     },
+    legal: {
+      heading:       'Legal Documents',
+      desc:          'Download the legal documents governing the use of Åkaren. The Data Processing Agreement (GDPR art. 28) and Terms of Service are an integral part of your contract with us.',
+      tosAccepted:   (date) => `Terms accepted ${date}`,
+      tosNotAccepted:'Terms not accepted',
+      downloadPdf:   'Download PDF',
+      dpa: {
+        title:    'Data Processing Agreement',
+        subtitle: 'GDPR Article 28 · Data Processing Agreement',
+        desc:     'Governs how Åkaren processes personal data on your behalf. Required under GDPR.',
+      },
+      tos: {
+        title:    'Terms of Service',
+        subtitle: (v) => `Terms of Service · Version ${v}`,
+        desc:     'Full terms for platform use, including pricing, liability, and cancellation.',
+      },
+    },
+  },
+
+  roadAlerts: {
+    label:  (n) => `${n} road warning${n !== 1 ? 's' : ''}`,
+    header: 'Active road warnings',
+    sweden: 'Road Conditions — Sweden',
+    normal: 'Normal conditions',
+    none:   'No active road warnings.',
+  },
+
+  map: {
+    pickup:     'Pickup',
+    delivery:   'Delivery',
+    alertTitle: 'Road Alert',
+    warnings:   (n) => `${n} warning${n !== 1 ? 's' : ''}`,
+    loading:    'Loading map…',
+    error:      'Could not load map',
   },
 
   onboarding: {
@@ -1010,8 +1055,13 @@ export const SV = {
       avstand_km:          'AVSTÅND',
       totalpris_sek:       'TOTALPRIS',
     },
-    noHistory: 'Inga uppdrag än — skapa en offert för att börja',
-    addMall:   '+ mall',
+    noHistory:   'Inga uppdrag än — skapa en offert för att börja',
+    addMall:     '+ mall',
+    quotePrefix: 'Offert',
+    routeAdvisory: {
+      heading:      'Ruttanalys',
+      distanceTime: (km, min) => `${km} km · ${min} min (HGV)`,
+    },
   },
 
   inquiry: {
@@ -1527,6 +1577,12 @@ export const SV = {
       disconnect:  'Koppla från',
       connected:   'Ansluten',
       notConnected:'Inte ansluten',
+      connectedAt: 'Ansluten',
+      lastSync:    'Senaste synk',
+      customers:   'Kunder',
+      syncBtn:     'Synka kunder',
+      syncing:     '…',
+      note:        'Kunder importeras automatiskt vid anslutning och kan synkas manuellt.',
     },
     company: {
       heading:  'Företagsuppgifter',
@@ -1538,6 +1594,40 @@ export const SV = {
       save:     'Spara ändringar',
       saved:    '✓ Sparat',
     },
+    legal: {
+      heading:       'Juridiska dokument',
+      desc:          'Ladda ner de juridiska dokument som reglerar användningen av Åkaren. Personuppgiftsbiträdesavtalet (GDPR art. 28) och Allmänna Villkor är en integrerad del av ert avtal med oss.',
+      tosAccepted:   (date) => `Villkor godkända ${date}`,
+      tosNotAccepted:'Villkor ej godkända',
+      downloadPdf:   'Ladda ner PDF',
+      dpa: {
+        title:    'Personuppgiftsbiträdesavtal',
+        subtitle: 'GDPR artikel 28 · Data Processing Agreement',
+        desc:     'Reglerar hur Åkaren behandlar personuppgifter för er räkning. Krävs enligt GDPR.',
+      },
+      tos: {
+        title:    'Allmänna Villkor',
+        subtitle: (v) => `Allmänna Villkor · Version ${v}`,
+        desc:     'Fullständiga villkor för användning av plattformen, inklusive pris, ansvar och uppsägning.',
+      },
+    },
+  },
+
+  roadAlerts: {
+    label:  (n) => `${n} vägvarning${n !== 1 ? 'ar' : ''}`,
+    header: 'Aktiva vägvarningar',
+    sweden: 'Vägläge Sverige',
+    normal: 'Normalt vägläge',
+    none:   'Inga aktiva vägvarningar just nu.',
+  },
+
+  map: {
+    pickup:     'Upphämtning',
+    delivery:   'Leverans',
+    alertTitle: 'Vägvarning',
+    warnings:   (n) => `${n} varning${n !== 1 ? 'ar' : ''}`,
+    loading:    'Laddar karta…',
+    error:      'Kunde inte ladda karta',
   },
 
   onboarding: {
