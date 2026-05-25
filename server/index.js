@@ -54,6 +54,7 @@ import dataPrivacyRouter                from './routes/dataPrivacy.js';
 import portalRouter                     from './routes/portal.js';
 import customersRouter                  from './routes/customers.js';
 import onboardingRouter                 from './routes/onboarding.js';
+import co2Router                        from './routes/co2.js';
 import db                    from './db.js';
 
 const app  = express();
@@ -106,6 +107,7 @@ app.use('/api/pricing-insights',  requireAuth, pricingInsightsRouter);
 app.use('/api/data-privacy',      requireAuth, requireOwner, dataPrivacyRouter);
 app.use('/api/customers',         requireAuth, auditMutation('customer_portal'), customersRouter);
 app.use('/api/onboarding',        requireAuth, onboardingRouter);
+app.use('/api/co2',               requireAuth, co2Router);
 
 app.use(express.static(join(__dirname, '../client/dist')));
 

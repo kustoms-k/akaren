@@ -5,7 +5,7 @@ import {
 import {
   LayoutDashboard, FilePlus, Briefcase, Truck, TrendingUp,
   Settings as SettingsIcon, LogOut, Bell, Search, X, DollarSign, FileText,
-  AlertTriangle, Fuel, Shield, Lock, Users,
+  AlertTriangle, Fuel, Shield, Lock, Users, Leaf,
 } from 'lucide-react';
 import { useLiveQuery }   from 'dexie-react-hooks';
 import { InquiryInput }              from './components/InquiryInput.jsx';
@@ -24,6 +24,7 @@ import { Jobs }           from './pages/Jobs.jsx';
 import { DpaModal }       from './components/DpaModal.jsx';
 import { RouteMap }       from './components/RouteMap.jsx';
 import { Customers }      from './pages/Customers.jsx';
+import { Co2 }            from './pages/Co2.jsx';
 import { Onboarding }     from './pages/Onboarding.jsx';
 import { TourOverlay }    from './components/TourOverlay.jsx';
 import { SplashScreen }  from './components/SplashScreen.jsx';
@@ -37,17 +38,20 @@ import { LanguageProvider, useLanguage } from './context/LanguageContext.jsx';
 import { db }             from './db/dexie.js';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
-const BLUE    = '#6366f1';
-const BLUE_DK = '#4f46e5';
-const VIOLET  = '#8b5cf6';
-const CYAN    = '#06b6d4';
-const BG      = '#f0f2f5';
+const AMBER   = '#c9a84c';
+const AMBER_DK= '#b8932a';
+const AMBER_LT= '#e4c978';
+const BG      = '#f5f3ee';
 const WHITE   = '#ffffff';
-const BORDER  = '#e9ecef';
-const TEXT    = '#1a1a2e';
-const MUTED   = '#6c757d';
-const FAINT   = '#9ca3af';
-const INTER   = "'Inter', sans-serif";
+const BORDER  = '#e6e2da';
+const TEXT    = '#17161a';
+const MUTED   = '#6b6574';
+const FAINT   = '#a09aa8';
+const OUTFIT  = "'Outfit', system-ui, sans-serif";
+// Legacy aliases kept for components not yet updated
+const BLUE    = AMBER;
+const BLUE_DK = AMBER_DK;
+const INTER   = OUTFIT;
 
 const NOISE_URI = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E")`;
 
@@ -95,6 +99,7 @@ function getNavItems(t) {
     { id: 'fleet',       label: t.nav.fleet,        Icon: Truck,           ownerOnly: false },
     { id: 'lonsamhet',   label: t.nav.profitability,Icon: TrendingUp,      ownerOnly: false },
     { id: 'customers',   label: t.nav.customers,    Icon: Users,           ownerOnly: false },
+    { id: 'co2',         label: t.nav.co2 ?? 'CO₂ & Utsläpp', Icon: Leaf, ownerOnly: false },
     { id: 'settings',    label: t.nav.settings,     Icon: SettingsIcon,    ownerOnly: false },
     { id: 'audit',       label: t.nav.audit,        Icon: Shield,          ownerOnly: true  },
     { id: 'dataprivacy', label: t.nav.dataPrivacy,  Icon: Lock,            ownerOnly: true  },
@@ -112,10 +117,9 @@ function getStatusBadge(status, t) {
 }
 
 // ─── NavItem ──────────────────────────────────────────────────────────────────
-const NAV_DARK   = '#1a1a2e';
-const NAV_HOVER  = 'rgba(255,255,255,0.07)';
-const NAV_TEXT   = 'rgba(255,255,255,0.62)';
-const NAV_ACTIVE_TEXT = '#ffffff';
+const NAV_HOVER  = 'rgba(255,255,255,0.06)';
+const NAV_TEXT   = 'rgba(255,255,255,0.52)';
+const NAV_ACTIVE_TEXT = '#17161a';
 
 function NavItem({ id, label, Icon, isActive, onClick }) {
   const [hovered, setHovered] = useState(false);
@@ -130,20 +134,20 @@ function NavItem({ id, label, Icon, isActive, onClick }) {
         display: 'flex', alignItems: 'center', gap: 10,
         padding: '9px 14px',
         background: isActive
-          ? 'linear-gradient(90deg, rgba(99,102,241,0.92) 0%, rgba(79,70,229,0.88) 100%)'
+          ? 'linear-gradient(90deg, #c9a84c 0%, #d4b55e 100%)'
           : hovered ? NAV_HOVER : 'transparent',
         border: 'none',
         borderRadius: 8,
         color: isActive ? NAV_ACTIVE_TEXT : hovered ? 'rgba(255,255,255,0.85)' : NAV_TEXT,
-        fontSize: 13, fontFamily: INTER, fontWeight: isActive ? 600 : 500,
+        fontSize: 13, fontFamily: OUTFIT, fontWeight: isActive ? 700 : 500,
         cursor: 'pointer', textAlign: 'left',
-        transition: 'background 0.15s, color 0.15s',
+        transition: 'background 0.18s cubic-bezier(0.22,1,0.36,1), color 0.15s',
         lineHeight: 1.3,
         margin: '1px 0',
-        boxShadow: isActive ? '0 2px 14px rgba(99,102,241,0.40)' : 'none',
+        boxShadow: isActive ? '0 2px 12px rgba(201,168,76,0.38)' : 'none',
       }}
     >
-      <Icon size={15} strokeWidth={1.5} style={{ flexShrink: 0, opacity: isActive ? 1 : 0.8 }} />
+      <Icon size={15} strokeWidth={isActive ? 2 : 1.5} style={{ flexShrink: 0, opacity: isActive ? 1 : 0.75 }} />
       <span>{label}</span>
     </button>
   );
@@ -151,9 +155,9 @@ function NavItem({ id, label, Icon, isActive, onClick }) {
 
 // Subtle dot grid for the main app surface
 const DOT_BG = {
-  backgroundColor: '#f5f6fa',
-  backgroundImage: `radial-gradient(circle, rgba(99,102,241,0.07) 1px, transparent 1px)`,
-  backgroundSize: '26px 26px',
+  backgroundColor: '#f5f3ee',
+  backgroundImage: `radial-gradient(circle, rgba(201,168,76,0.09) 1px, transparent 1px)`,
+  backgroundSize: '24px 24px',
 };
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
@@ -491,9 +495,9 @@ function TopBar({ fuelPrice, weather, roadAlerts, company }) {
             onClick={() => setLang(l)}
             style={{
               fontFamily: INTER, fontSize: 11, fontWeight: 600,
-              background: lang === l ? BLUE : '#f0f2f5',
-              color: lang === l ? WHITE : MUTED,
-              border: `1px solid ${lang === l ? BLUE : '#e9ecef'}`,
+              background: lang === l ? AMBER : '#eeebe4',
+              color: lang === l ? '#17161a' : MUTED,
+              border: `1px solid ${lang === l ? AMBER : BORDER}`,
               borderRadius: 6, padding: '4px 10px',
               cursor: 'pointer', transition: 'all 0.15s',
             }}
@@ -508,7 +512,7 @@ function TopBar({ fuelPrice, weather, roadAlerts, company }) {
         <span style={{ fontFamily: INTER, fontSize: '0.5rem', color: MUTED, letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>
           {todayStr}
         </span>
-        <span style={{ fontFamily: INTER, fontSize: '0.5rem', color: BLUE, letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
+        <span style={{ fontFamily: OUTFIT, fontSize: '0.5rem', color: AMBER, letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
           {company?.name ?? 'Åkaren'}
         </span>
       </div>
@@ -517,7 +521,7 @@ function TopBar({ fuelPrice, weather, roadAlerts, company }) {
         <Bell size={16} color={MUTED} style={{ cursor: 'pointer' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{
-            width: 32, height: 32, borderRadius: 16, background: BLUE,
+            width: 32, height: 32, borderRadius: 16, background: AMBER,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <span style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: INTER }}>SA</span>
@@ -609,7 +613,7 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote }) {
       {/* ── KPI row ──────────────────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
         <KpiCard
-          Icon={DollarSign} accentColor="#6366f1"
+          Icon={DollarSign} accentColor="#c9a84c"
           label={t.dashboard.totalRevenue}
           value={totalRevenue > 0
             ? new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(totalRevenue) + ' kr'
@@ -651,13 +655,13 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote }) {
             <BarChart data={REVENUE_DATA} barCategoryGap="35%" margin={{ top: 0, right: 4, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="barGradMain" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor="#a5b4fc" stopOpacity={1} />
-                  <stop offset="55%"  stopColor="#6366f1" stopOpacity={1} />
-                  <stop offset="100%" stopColor="#4f46e5" stopOpacity={0.85} />
+                  <stop offset="0%"   stopColor="#e4c978" stopOpacity={1} />
+                  <stop offset="55%"  stopColor="#c9a84c" stopOpacity={1} />
+                  <stop offset="100%" stopColor="#a07830" stopOpacity={0.88} />
                 </linearGradient>
                 <linearGradient id="barGradHover" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor="#c4b5fd" stopOpacity={1} />
-                  <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.9} />
+                  <stop offset="0%"   stopColor="#f0dfa0" stopOpacity={1} />
+                  <stop offset="100%" stopColor="#c9a84c" stopOpacity={0.9} />
                 </linearGradient>
                 <filter id="barGlow">
                   <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
@@ -679,7 +683,7 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote }) {
                 width={30}
               />
               <Tooltip
-                cursor={{ fill: 'rgba(99,102,241,0.06)' }}
+                cursor={{ fill: 'rgba(201,168,76,0.08)' }}
                 contentStyle={{
                   background: WHITE, border: `1px solid ${BORDER}`,
                   borderRadius: 8, fontSize: 11, fontFamily: INTER, color: TEXT,
@@ -691,40 +695,51 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote }) {
                 ]}
               />
               <Bar dataKey="value" fill="url(#barGradMain)" radius={[6, 6, 0, 0]}
-                style={{ filter: 'drop-shadow(0 2px 6px rgba(99,102,241,0.35))' }} />
+                style={{ filter: 'drop-shadow(0 2px 6px rgba(201,168,76,0.38))' }} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         {/* CTA card */}
         <div style={{
-          background: 'linear-gradient(145deg, #1e1b4b 0%, #312e81 100%)',
+          background: 'linear-gradient(145deg, #111118 0%, #1c1b22 100%)',
           borderRadius: 14, padding: '26px',
           display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-          border: '1px solid rgba(99,102,241,0.18)',
-          boxShadow: '0 4px 16px rgba(30,27,75,0.18)',
+          border: '1px solid rgba(201,168,76,0.18)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.22)',
+          position: 'relative', overflow: 'hidden',
         }}>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: WHITE, fontFamily: INTER, marginBottom: 10, lineHeight: 1.35, letterSpacing: '-0.01em' }}>
+          {/* Ambient amber glow */}
+          <div style={{
+            position: 'absolute', bottom: -40, right: -40,
+            width: 160, height: 160, borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(201,168,76,0.18) 0%, transparent 70%)',
+            pointerEvents: 'none',
+          }} />
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: WHITE, fontFamily: OUTFIT, marginBottom: 10, lineHeight: 1.35, letterSpacing: '-0.01em' }}>
               {t.dashboard.newQuoteCta}
             </div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', fontFamily: INTER, lineHeight: 1.65 }}>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.58)', fontFamily: OUTFIT, lineHeight: 1.65 }}>
               {t.dashboard.newQuoteCtaSub}
             </div>
           </div>
           <button
             onClick={onNewQuote}
             style={{
-              marginTop: 28,
-              background: WHITE, color: '#312e81',
+              marginTop: 28, position: 'relative', zIndex: 1,
+              background: 'linear-gradient(135deg, #c9a84c 0%, #d4b55e 100%)',
+              color: '#17161a',
               border: 'none', borderRadius: 8,
               padding: '13px 20px',
-              fontSize: 12, fontWeight: 700, fontFamily: INTER,
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-              cursor: 'pointer', transition: 'opacity 0.15s',
+              fontSize: 12, fontWeight: 800, fontFamily: OUTFIT,
+              letterSpacing: '0.1em', textTransform: 'uppercase',
+              cursor: 'pointer',
+              transition: 'transform 0.16s cubic-bezier(0.22,1,0.36,1), box-shadow 0.16s',
+              boxShadow: '0 3px 12px rgba(201,168,76,0.38)',
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.88'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(201,168,76,0.48)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 3px 12px rgba(201,168,76,0.38)'; }}
           >
             {t.dashboard.analyseBtn}
           </button>
@@ -1248,6 +1263,11 @@ function AppInner() {
           {activePage === 'customers' && (
             <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
               <Customers />
+            </div>
+          )}
+          {activePage === 'co2' && (
+            <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+              <Co2 />
             </div>
           )}
           {activePage === 'audit' && (
