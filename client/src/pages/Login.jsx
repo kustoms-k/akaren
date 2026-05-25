@@ -483,6 +483,53 @@ export function Login() {
                 >
                   {loginLoading ? t.login.signingIn : t.login.signInBtn}
                 </button>
+
+                {/* Quick-access bypass */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '4px 0' }}>
+                  <div style={{ flex: 1, height: 1, background: BORDER }} />
+                  <span style={{ fontFamily: OUTFIT, fontSize: 11, color: '#c8c3d0', letterSpacing: '0.05em' }}>ELLER</span>
+                  <div style={{ flex: 1, height: 1, background: BORDER }} />
+                </div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setLoginLoading(true);
+                    setLoginError(false);
+                    try {
+                      const res  = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: 'admin@kemoffs.se', password: 'admin123' }),
+                      });
+                      const data = await res.json();
+                      if (!res.ok) throw new Error();
+                      login(data);
+                    } catch {
+                      setLoginError(true);
+                    } finally {
+                      setLoginLoading(false);
+                    }
+                  }}
+                  disabled={loginLoading}
+                  style={{
+                    fontFamily: OUTFIT,
+                    width: '100%',
+                    fontWeight: 600,
+                    fontSize: 13,
+                    padding: '11px',
+                    borderRadius: 9,
+                    border: `1.5px solid ${BORDER}`,
+                    background: 'transparent',
+                    color: MUTED,
+                    cursor: loginLoading ? 'not-allowed' : 'pointer',
+                    letterSpacing: '0.03em',
+                    transition: 'border-color 0.15s, color 0.15s, background 0.15s',
+                  }}
+                  onMouseEnter={(e) => { if (!loginLoading) { e.currentTarget.style.borderColor = AMBER; e.currentTarget.style.color = '#8a6820'; e.currentTarget.style.background = 'rgba(201,168,76,0.05)'; } }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = MUTED; e.currentTarget.style.background = 'transparent'; }}
+                >
+                  Bypass — direktåtkomst
+                </button>
               </form>
             )}
 
