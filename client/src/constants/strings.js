@@ -1,9 +1,6 @@
 export const S = {
   app: {
     name: 'Åkaren Offert AI',
-    company: 'Kemoffs Åkeri AB',
-    companyLegal: 'Kemoffs Åkeri och Entreprenad AB',
-    orgnr: '556789-0123',
     tagline: 'AI-driven offertering för åkerinäringen',
   },
 

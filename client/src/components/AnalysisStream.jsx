@@ -1,19 +1,20 @@
 import { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const INTER   = "'Inter', sans-serif";
-const BLUE    = '#4361ee';
-const BG      = '#f0f2f5';
+const AMBER   = '#c9921e';
+const BG      = '#edeae1';
 const WHITE   = '#ffffff';
-const BORDER  = '#e9ecef';
-const TEXT    = '#1a1a2e';
-const MUTED   = '#6c757d';
-const FAINT   = '#9ca3af';
-const SURF    = '#f8f9fa';
-const WARNING = '#f59e0b';
-const ERROR   = '#e74c3c';
+const BORDER  = '#cfc9bb';
+const TEXT    = '#151210';
+const MUTED   = '#6a6050';
+const FAINT   = '#9a9082';
+const SURF    = '#f4f0e7';
+const OUTFIT  = "'Outfit', system-ui, sans-serif";
+const MONO    = "'DM Mono', monospace";
+const WARNING = '#b8600a';
+const ERROR   = '#c45454';
 
-const STAGGER = 120; // ms
+const STAGGER = 110;
 
 function getFields(t) {
   return [
@@ -22,14 +23,13 @@ function getFields(t) {
     { key: 'leverans',             label: t.newQuote.fields.leverans             },
     { key: 'datum',                label: t.newQuote.fields.datum                },
     { key: 'fordon_rekommenderat', label: t.newQuote.fields.fordon_rekommenderat },
-    { key: 'avstand_km',           label: t.newQuote.fields.avstand_km,    unit: ' km' },
-    { key: 'totalpris_sek',        label: t.newQuote.fields.totalpris_sek, unit: ' kr' },
+    { key: 'avstand_km',           label: t.newQuote.fields.avstand_km,    unit: ' km', mono: true },
+    { key: 'totalpris_sek',        label: t.newQuote.fields.totalpris_sek, unit: ' kr', mono: true },
   ];
 }
 
 const isMock = (v) => v === '…';
 
-// Small circle-i icon button
 function InfoButton({ active, onClick }) {
   return (
     <button
@@ -38,10 +38,10 @@ function InfoButton({ active, onClick }) {
       style={{
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         width: 16, height: 16, borderRadius: '50%',
-        border: `1px solid ${active ? BLUE : BORDER}`,
-        background: active ? 'rgba(67,97,238,0.10)' : 'transparent',
-        color: active ? BLUE : MUTED,
-        fontFamily: INTER, fontSize: '0.5rem', fontWeight: 700,
+        border: `1px solid ${active ? AMBER : BORDER}`,
+        background: active ? 'rgba(201,146,30,0.10)' : 'transparent',
+        color: active ? AMBER : MUTED,
+        fontFamily: OUTFIT, fontSize: '0.5rem', fontWeight: 700,
         cursor: 'pointer', flexShrink: 0,
         lineHeight: 1, padding: 0,
         transition: 'border-color 0.15s, color 0.15s, background 0.15s',
@@ -66,10 +66,11 @@ export function AnalysisStream({
   if (status === 'idle') {
     return (
       <div style={{
-        background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12,
-        padding: 16, minHeight: 48, display: 'flex', alignItems: 'center', flexShrink: 0,
+        background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 10,
+        padding: '14px 16px', minHeight: 48,
+        display: 'flex', alignItems: 'center', flexShrink: 0,
       }}>
-        <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: 0, fontStyle: 'italic' }}>
+        <p style={{ fontFamily: OUTFIT, fontSize: 13, color: FAINT, margin: 0, fontStyle: 'italic' }}>
           {t.newQuote.analysis.idle}
         </p>
       </div>
@@ -85,7 +86,6 @@ export function AnalysisStream({
     ? Number(parsed.totalpris_sek)
     : null;
 
-  // Show none-confidence fields even when value is null
   const visibleFields = showFields
     ? getFields(t).filter(({ key }) => {
         const v = parsed[key];
@@ -96,34 +96,31 @@ export function AnalysisStream({
 
   return (
     <div style={{
-      background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12,
-      padding: 16, display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0,
+      background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 10,
+      padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0,
     }}>
 
-      {/* Skeleton loading bars */}
+      {/* Skeleton */}
       {showSkeleton && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0 }}>
-          {[90, 70, 80].map((w, i) => (
-            <div
-              key={i}
-              style={{
-                height: 22, borderRadius: 4,
-                background: `linear-gradient(90deg, ${BG} 25%, ${BORDER} 50%, ${BG} 75%)`,
-                backgroundSize: '800px 100%',
-                animation: `skeleton-shimmer 1.4s ease-in-out ${i * 0.18}s infinite`,
-                width: `${w}%`,
-              }}
-            />
+          {[85, 65, 75].map((w, i) => (
+            <div key={i} style={{
+              height: 20, borderRadius: 4,
+              background: `linear-gradient(90deg, ${BG} 25%, ${BORDER} 50%, ${BG} 75%)`,
+              backgroundSize: '800px 100%',
+              animation: `skeleton-shimmer 1.4s ease-in-out ${i * 0.18}s infinite`,
+              width: `${w}%`,
+            }} />
           ))}
         </div>
       )}
 
       {/* Progress bar */}
       {showFields && (
-        <div style={{ height: 3, background: BG, borderRadius: 2, overflow: 'hidden', flexShrink: 0 }}>
+        <div style={{ height: 2, background: BG, borderRadius: 2, overflow: 'hidden', flexShrink: 0 }}>
           <div style={{
             height: '100%',
-            background: BLUE,
+            background: AMBER,
             width: isDone ? '100%' : undefined,
             animation: isStreaming ? 'progress-fill 2s ease-out forwards' : 'none',
             transition: isDone ? 'width 0.3s ease' : 'none',
@@ -131,16 +128,16 @@ export function AnalysisStream({
         </div>
       )}
 
-      {/* Field rows */}
+      {/* Fields */}
       {showFields && (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {visibleFields.map(({ key, label, unit }, i) => {
-            const val      = parsed[key];
-            const mock     = isMock(val);
-            const showUnit = unit && !mock && val != null;
-            const conf     = confidence?.[key];
-            const isNone   = conf === 'none';
-            const isLow    = conf === 'low';
+          {visibleFields.map(({ key, label, unit, mono }, i) => {
+            const val         = parsed[key];
+            const mock        = isMock(val);
+            const showUnit    = unit && !mock && val != null;
+            const conf        = confidence?.[key];
+            const isNone      = conf === 'none';
+            const isLow       = conf === 'low';
             const needsReview = isLow || isNone;
 
             const isEdited   = needsReview && originalParsed != null
@@ -148,7 +145,7 @@ export function AnalysisStream({
             const isApproved = needsReview && (lowApproved?.has(key) ?? false);
             const isResolved = isEdited || isApproved;
 
-            const isLast = i === visibleFields.length - 1;
+            const isLast  = i === visibleFields.length - 1;
             const isTruck = key === 'fordon_rekommenderat';
             const hasWhy  = isTruck && isDone && parsed?.fordon_orsak && !isMock(val) && val != null;
 
@@ -161,40 +158,33 @@ export function AnalysisStream({
                   animationDelay: `${i * STAGGER}ms`,
                   padding: '6px 0 6px 10px',
                   borderBottom: isLast ? 'none' : `1px solid ${BG}`,
-                  // Amber left border for fields needing review — functional indicator
                   borderLeft: needsReview && !mock
-                    ? `2px solid ${isResolved ? 'rgba(245,158,11,0.3)' : WARNING}`
+                    ? `2px solid ${isResolved ? 'rgba(184,96,10,0.25)' : WARNING}`
                     : '2px solid transparent',
                   marginLeft: -10,
                   transition: 'border-color 0.25s',
                 }}
               >
-                {/* Main row: label + value */}
                 <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 16 }}>
-
-                  {/* Label with live route badge */}
+                  {/* Label */}
                   <span style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
                     <span style={{
-                      fontFamily: INTER, fontSize: 11, color: MUTED,
-                      fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.3px',
+                      fontFamily: OUTFIT, fontSize: 11, color: MUTED,
+                      fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em',
                     }}>
                       {label}
                     </span>
                     {key === 'avstand_km' && routeLoading && !mock && (
-                      <span style={{
-                        fontFamily: INTER, fontSize: 10,
-                        color: FAINT,
-                        animation: 'text-pulse 1.2s ease-in-out infinite',
-                      }}>
+                      <span style={{ fontFamily: OUTFIT, fontSize: 10, color: FAINT, animation: 'text-pulse 1.2s ease-in-out infinite' }}>
                         {t.newQuote.analysis.routeCalc}
                       </span>
                     )}
                     {key === 'avstand_km' && routeLive && !routeLoading && !mock && (
                       <span style={{
-                        fontFamily: INTER, fontSize: 10,
-                        color: '#16a34a',
-                        background: 'rgba(22,163,74,0.08)',
-                        border: '1px solid rgba(22,163,74,0.2)',
+                        fontFamily: OUTFIT, fontSize: 10,
+                        color: '#1d6b45',
+                        background: 'rgba(29,107,69,0.08)',
+                        border: '1px solid rgba(29,107,69,0.2)',
                         borderRadius: 100,
                         padding: '1px 6px',
                         whiteSpace: 'nowrap',
@@ -204,16 +194,14 @@ export function AnalysisStream({
                     )}
                   </span>
 
-                  {/* Value area */}
+                  {/* Value */}
                   <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    {/* Missing (none) placeholder */}
                     {isNone && !mock && val == null && !onFieldChange && (
-                      <span style={{ fontFamily: INTER, fontSize: 12, color: WARNING, fontStyle: 'italic' }}>
+                      <span style={{ fontFamily: OUTFIT, fontSize: 12, color: WARNING, fontStyle: 'italic' }}>
                         {t.newQuote.analysis.idle}
                       </span>
                     )}
 
-                    {/* Editable input — for done state; none fields show empty editable */}
                     {onFieldChange && !mock ? (
                       <span style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
                         <input
@@ -221,11 +209,11 @@ export function AnalysisStream({
                           placeholder={isNone ? t.newQuote.analysis.idle : undefined}
                           onChange={(e) => onFieldChange(key, e.target.value)}
                           style={{
-                            fontFamily: INTER, fontSize: 14,
+                            fontFamily: mono ? MONO : OUTFIT, fontSize: 14,
                             color: val == null ? WARNING : TEXT,
                             background: WHITE,
                             border: `1.5px solid ${needsReview ? WARNING : BORDER}`,
-                            borderRadius: 6,
+                            borderRadius: 5,
                             outline: 'none', textAlign: 'right', padding: '2px 6px',
                             minWidth: isNone && val == null ? 120 : 40,
                             maxWidth: 200,
@@ -233,50 +221,42 @@ export function AnalysisStream({
                           }}
                         />
                         {showUnit && (
-                          <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>
+                          <span style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED }}>
                             {unit.trim()}
                           </span>
                         )}
                       </span>
                     ) : val != null && !isNone ? (
-                      <span
-                        style={{
-                          fontFamily: INTER, fontSize: 14, fontWeight: 500, color: TEXT,
-                          ...(mock ? {
-                            color: FAINT,
-                            animation: 'text-pulse 1.2s ease-in-out infinite',
-                          } : {}),
-                        }}
-                      >
+                      <span style={{
+                        fontFamily: mono ? MONO : OUTFIT,
+                        fontSize: 14, fontWeight: mono ? 500 : 500, color: TEXT,
+                        ...(mock ? { color: FAINT, animation: 'text-pulse 1.2s ease-in-out infinite' } : {}),
+                      }}>
                         {String(val)}{showUnit ? unit : ''}
                       </span>
                     ) : null}
 
-                    {/* Why this truck button */}
                     {hasWhy && (
-                      <InfoButton
-                        active={whyOpen}
-                        onClick={() => setWhyOpen((w) => !w)}
-                      />
+                      <InfoButton active={whyOpen} onClick={() => setWhyOpen((w) => !w)} />
                     )}
                   </span>
                 </div>
 
-                {/* Why this truck reveal */}
+                {/* Why this truck */}
                 {isTruck && whyOpen && parsed?.fordon_orsak && (
                   <div style={{
                     marginTop: 6,
-                    fontFamily: INTER, fontSize: 12, color: '#3b82f6',
+                    fontFamily: OUTFIT, fontSize: 12, color: '#1e4d35',
                     lineHeight: 1.55, padding: '8px 12px',
-                    background: '#eff6ff',
-                    border: '1px solid #bfdbfe',
-                    borderRadius: 8,
+                    background: 'rgba(29,107,69,0.06)',
+                    border: '1px solid rgba(29,107,69,0.15)',
+                    borderRadius: 7,
                   }}>
                     {parsed.fordon_orsak}
                   </div>
                 )}
 
-                {/* Approval checkbox — low and none fields */}
+                {/* Approval checkbox */}
                 {needsReview && !mock && (
                   <label style={{
                     display: 'flex', alignItems: 'center', gap: 6,
@@ -288,15 +268,13 @@ export function AnalysisStream({
                       type="checkbox"
                       checked={isApproved}
                       onChange={(e) => onApprove?.(key, e.target.checked)}
-                      style={{ accentColor: BLUE, cursor: 'pointer', width: 12, height: 12, flexShrink: 0 }}
+                      style={{ accentColor: AMBER, cursor: 'pointer', width: 12, height: 12, flexShrink: 0 }}
                     />
-                    <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>
-                      {isNone
-                        ? t.newQuote.flags.confirmFields
-                        : t.newQuote.flags.reviewAcknowledged}
+                    <span style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED }}>
+                      {isNone ? t.newQuote.flags.confirmFields : t.newQuote.flags.reviewAcknowledged}
                     </span>
                     {isEdited && (
-                      <span style={{ fontFamily: INTER, fontSize: 11, color: '#16a34a' }}>
+                      <span style={{ fontFamily: OUTFIT, fontSize: 11, color: '#1d6b45' }}>
                         {t.newQuote.flags.reviewAcknowledged}
                       </span>
                     )}
@@ -308,40 +286,74 @@ export function AnalysisStream({
         </div>
       )}
 
-      {/* Quote summary card */}
+      {/* Price readout — instrument panel style */}
       {isDone && realPrice != null && (
         <div style={{
           flexShrink: 0, opacity: 0,
-          animation: 'quote-card-up 0.2s ease-out forwards',
+          animation: 'quote-card-up 0.22s ease-out forwards',
           animationDelay: '80ms',
-          background: SURF, border: `1px solid ${BORDER}`,
-          borderRadius: 12, padding: '14px 16px',
-          display: 'flex', flexDirection: 'column', gap: 6,
+          background: '#17160e',
+          border: `1px solid #2e2c1a`,
+          borderRadius: 10,
+          padding: '16px 18px',
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16,
         }}>
-          <div style={{ fontFamily: INTER, fontSize: 11, textTransform: 'uppercase', color: MUTED, fontWeight: 600, letterSpacing: '0.3px' }}>
-            OFFERT / QUOTE
-          </div>
-          <div style={{ fontFamily: INTER, fontSize: 28, fontWeight: 700, color: TEXT, lineHeight: 1 }}>
-            {new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(realPrice)}&thinsp;kr
-          </div>
-          {(parsed.upphämtning || parsed.leverans) && (
-            <div style={{ fontFamily: INTER, fontSize: 13, color: TEXT, marginTop: 2 }}>
-              {[parsed.upphämtning, parsed.leverans].filter((v) => v && !isMock(v)).join(' → ')}
+          <div>
+            <div style={{
+              fontFamily: OUTFIT, fontSize: 10, fontWeight: 700,
+              textTransform: 'uppercase', letterSpacing: '0.12em',
+              color: 'rgba(201,146,30,0.6)',
+              marginBottom: 6,
+            }}>
+              Offert / Quote
             </div>
-          )}
-          <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>
+            <div style={{
+              fontFamily: MONO,
+              fontSize: 30,
+              fontWeight: 500,
+              color: AMBER,
+              lineHeight: 1,
+              letterSpacing: '-0.01em',
+            }}>
+              {new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(realPrice)}
+              <span style={{ fontSize: 16, marginLeft: 4, opacity: 0.7 }}>kr</span>
+            </div>
+            {(parsed.upphämtning || parsed.leverans) && (
+              <div style={{
+                fontFamily: OUTFIT, fontSize: 12,
+                color: 'rgba(230,225,210,0.55)',
+                marginTop: 7,
+              }}>
+                {[parsed.upphämtning, parsed.leverans].filter((v) => v && !isMock(v)).join(' → ')}
+              </div>
+            )}
+          </div>
+
+          {/* Right: meta tags */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end', flexShrink: 0 }}>
             {[
-              parsed.lasttyp            && !isMock(parsed.lasttyp)            ? parsed.lasttyp            : null,
-              parsed.fordon_rekommenderat && !isMock(parsed.fordon_rekommenderat) ? parsed.fordon_rekommenderat : null,
-              parsed.avstand_km         && !isMock(parsed.avstand_km)         ? `${parsed.avstand_km} km`  : null,
-            ].filter(Boolean).join(' · ')}
+              parsed.lasttyp             && !isMock(parsed.lasttyp)             ? parsed.lasttyp            : null,
+              parsed.avstand_km          && !isMock(parsed.avstand_km)          ? `${parsed.avstand_km} km` : null,
+            ].filter(Boolean).map((tag) => (
+              <span key={tag} style={{
+                fontFamily: OUTFIT, fontSize: 10, fontWeight: 600,
+                letterSpacing: '0.06em', textTransform: 'uppercase',
+                color: 'rgba(201,146,30,0.5)',
+                background: 'rgba(201,146,30,0.07)',
+                border: '1px solid rgba(201,146,30,0.15)',
+                borderRadius: 4,
+                padding: '3px 8px',
+              }}>
+                {tag}
+              </span>
+            ))}
           </div>
         </div>
       )}
 
       {/* Error */}
-      {status === 'error' && (
-        <p style={{ fontFamily: INTER, fontSize: 13, color: ERROR, margin: 0 }}>
+      {status === 'error' && error !== 'subscription_required' && (
+        <p style={{ fontFamily: OUTFIT, fontSize: 13, color: ERROR, margin: 0 }}>
           {error === 'parse' ? t.errors.parse : t.errors.network}
         </p>
       )}

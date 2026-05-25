@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import Anthropic   from '@anthropic-ai/sdk';
+import db          from '../db.js';
 import { generateMockQuote } from '../mockAnalysis.js';
 
 const router = Router();
@@ -7,6 +8,37 @@ const router = Router();
 const client = process.env.ANTHROPIC_API_KEY
   ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   : null;
+
+const getFleet = db.prepare(`
+  SELECT ext_id, namn, typ, max_last_kg, lez_godkand, euro_klass,
+         timkostnad_sek, startavgift_sek
+  FROM company_fleet
+  WHERE company_id = ?
+  ORDER BY ext_id ASC
+`);
+
+const getCachedFuel = db.prepare(
+  'SELECT price_per_litre FROM fuel_price_cache ORDER BY id DESC LIMIT 1'
+);
+
+const FALLBACK_DIESEL = 18.50;
+
+function buildSystemPrompt(fleetText, pricingText, fuelPerKm, dieselPrice) {
+  return `Du är ett specialiserat AI-system för ett svenskt transportföretag (åkeri). Din uppgift är att analysera transportförfrågningar och extrahera strukturerad information för offertberäkning.
+
+Fordon i flottan:
+${fleetText}
+
+Prisstruktur:
+${pricingText}
+- Bränsle: avstånd (km) × 2 × ${fuelPerKm} kr/km (aktuellt dieselpris ${dieselPrice} kr/L, förbrukning ~0.31 L/km inkl. tomkörning)
+- Tilläggsavgifter: tungt gods, krantimmar, lastning/lossning
+
+LEZ-zoner i Stockholm som kräver Euro VI eller tillstånd:
+Södermalm, Norrmalm, Östermalm, Kungsholmen, Gamla Stan, Vasastan, Hornsgatan-korridoren.
+
+Använd alltid Swedish för fältnamn och noteringar. Extrahera all tillgänglig information. Gissa rimliga värden om specifik information saknas baserat på kontexten.`;
+}
 
 // ── Tool definition for structured extraction ──────────────────────────────
 const EXTRACT_TOOL = {
@@ -97,31 +129,37 @@ const EXTRACT_TOOL = {
   },
 };
 
-// Cached system prompt — passed with cache_control so repeated calls hit the prefix cache
-const SYSTEM_PROMPT = `Du är ett specialiserat AI-system för ett svenskt transportföretag (åkeri). Din uppgift är att analysera transportförfrågningar och extrahera strukturerad information för offertberäkning.
 
-Fordon i flottan:
-- KEM-01 · Volvo FH 540 · Kranbil (max 40 ton, Euro VI, LEZ-godkänd)
-- KEM-02 · Scania R 500 · Lastväxlare (max 26 ton, Euro VI, LEZ-godkänd)
-- KEM-03 · Volvo FMX 460 · Dumper (max 22 ton, Euro V)
-- KEM-04 · Mercedes Actros · Flatbädd (max 18 ton, Euro VI, LEZ-godkänd)
-- KEM-05 · DAF XF 480 · Skåpbil (max 12 ton, Euro VI)
-- KEM-06 · Scania G 410 · Containerbil (max 30 ton, Euro V)
-
-Prisstruktur:
-- Startavgift: 500–1 500 kr beroende på fordon
-- Timkostnad: 750–1 100 kr/tim beroende på fordon
-- Bränsle: avstånd (km) × 2 × 4.60 kr/km (dieselförbrukning inkl. tomkörning)
-- Tilläggsavgifter: tungt gods, krantimmar, lastning/lossning
-
-LEZ-zoner i Stockholm som kräver Euro VI eller tillstånd:
-Södermalm, Norrmalm, Östermalm, Kungsholmen, Gamla Stan, Vasastan, Hornsgatan-korridoren.
-
-Använd alltid Swedish för fältnamn och noteringar. Extrahera all tillgänglig information. Gissa rimliga värden om specifik information saknas baserat på kontexten.`;
+const MAX_INQUIRY_LEN = 4000;
 
 router.post('/', async (req, res) => {
   const { inquiry } = req.body;
   if (!inquiry?.trim()) return res.status(400).json({ error: 'inquiry saknas' });
+  if (inquiry.length > MAX_INQUIRY_LEN) {
+    return res.status(400).json({ error: `inquiry för lång (max ${MAX_INQUIRY_LEN} tecken)` });
+  }
+
+  // ── Build dynamic context from DB ────────────────────────────────────────
+  const cachedFuel   = getCachedFuel.get();
+  const dieselPrice  = cachedFuel?.price_per_litre ?? FALLBACK_DIESEL;
+  const fuelPerKm    = (dieselPrice * 0.31).toFixed(2);
+
+  const fleetRows    = getFleet.all(req.companyId);
+  const fleetText    = fleetRows.length > 0
+    ? fleetRows.map((v) => {
+        const maxTon = v.max_last_kg  ? `max ${Math.round(v.max_last_kg / 1000)} ton` : '';
+        const euro   = v.euro_klass   ? `Euro ${v.euro_klass}` : '';
+        const lez    = v.lez_godkand  ? 'LEZ-godkänd' : '';
+        const attrs  = [maxTon, euro, lez].filter(Boolean).join(', ');
+        return `- ${v.ext_id} · ${v.namn} · ${v.typ}${attrs ? ` (${attrs})` : ''}`;
+      }).join('\n')
+    : '- (Inga fordon konfigurerade — uppskatta lämpligt fordon)';
+
+  const pricingText  = fleetRows.length > 0
+    ? fleetRows.map((v) => `- ${v.ext_id}: Startavgift ${v.startavgift_sek} kr, Timkostnad ${v.timkostnad_sek} kr/tim`).join('\n')
+    : '- Startavgift: 500–1 500 kr beroende på fordon\n- Timkostnad: 750–1 100 kr/tim beroende på fordon';
+
+  const SYSTEM_PROMPT = buildSystemPrompt(fleetText, pricingText, fuelPerKm, dieselPrice);
 
   // ── Fallback to mock if no API key ───────────────────────────────────────
   if (!client) {

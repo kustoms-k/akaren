@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const INTER   = "'Inter', sans-serif";
-const BLUE    = '#4361ee';
-const BLUE_DK = '#3451d1';
+const AMBER   = '#c9921e';
+const AMBER_DK= '#a87818';
 const WHITE   = '#ffffff';
-const BORDER  = '#e9ecef';
-const TEXT    = '#1a1a2e';
-const MUTED   = '#6c757d';
-const SURF    = '#f8f9fa';
+const BORDER  = '#cfc9bb';
+const TEXT    = '#151210';
+const MUTED   = '#6a6050';
+const FAINT   = '#9a9082';
+const OUTFIT  = "'Outfit', system-ui, sans-serif";
+const SURF    = '#f4f0e7';
+const MONO    = "'DM Mono', monospace";
 
 const fmtSEK = (n) =>
   n == null ? '—' : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n) + ' kr';
@@ -35,7 +37,7 @@ function NoteInput({ value, onChange, placeholder }) {
       placeholder={placeholder}
       style={{
         width: '100%', boxSizing: 'border-box', resize: 'vertical',
-        fontFamily: INTER, fontSize: 13, color: TEXT,
+        fontFamily: OUTFIT, fontSize: 13, color: TEXT,
         background: WHITE, border: `1.5px solid ${BORDER}`, borderRadius: 8,
         padding: '9px 14px', outline: 'none',
       }}
@@ -47,18 +49,18 @@ function ActionRow({ onConfirm, onCancel, loading, disabled, confirmLabel, confi
   const isDisabled = loading || disabled;
 
   const confirmStyle = {
-    fontFamily: INTER, fontSize: 13, fontWeight: 600,
+    fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
     padding: '9px 18px', border: 'none', borderRadius: 8,
     cursor: isDisabled ? 'not-allowed' : 'pointer',
     transition: 'background 0.15s',
     ...(confirmVariant === 'danger'
       ? {
-          background: isDisabled ? '#f0f2f5' : '#fff0f0',
+          background: isDisabled ? '#f4f0e7' : '#fff0f0',
           color:      isDisabled ? '#9ca3af' : '#e74c3c',
-          border:     `1.5px solid ${isDisabled ? '#e9ecef' : '#fca5a5'}`,
+          border:     `1.5px solid ${isDisabled ? '#cfc9bb' : '#fca5a5'}`,
         }
       : {
-          background: isDisabled ? '#a0aec0' : '#4361ee',
+          background: isDisabled ? '#a0aec0' : AMBER,
           color:      '#ffffff',
         }
     ),
@@ -69,7 +71,7 @@ function ActionRow({ onConfirm, onCancel, loading, disabled, confirmLabel, confi
       <button
         onClick={onCancel}
         style={{
-          fontFamily: INTER, fontSize: 13, padding: '9px 18px',
+          fontFamily: OUTFIT, fontSize: 13, padding: '9px 18px',
           border: `1.5px solid ${BORDER}`, borderRadius: 8,
           background: WHITE, color: MUTED, cursor: 'pointer',
         }}
@@ -94,7 +96,7 @@ function CounterOfferCard({ co, rawId, onResponded, t }) {
     pending:  { text: '#d97706', bg: '#fff7ed', border: '#fde68a'  },
     accepted: { text: '#16a34a', bg: '#e8fdf0', border: '#bbf7d0'  },
     declined: { text: '#e74c3c', bg: '#fff0f0', border: '#fca5a5'  },
-    revised:  { text: '#4361ee', bg: '#eff6ff', border: '#bfdbfe'  },
+    revised:  { text: AMBER, bg: '#fef3e2', border: '#fddba5'  },
   };
   const sc = statusColors[co.status] ?? statusColors.pending;
   const statusLabel = co_t.statuses[co.status] ?? co.status;
@@ -112,17 +114,17 @@ function CounterOfferCard({ co, rawId, onResponded, t }) {
   }
 
   const primaryBtnStyle = {
-    flex: 1, fontFamily: INTER, fontSize: 13, fontWeight: 600,
+    flex: 1, fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
     padding: '9px 18px', border: 'none', borderRadius: 8,
-    background: '#4361ee', color: '#ffffff', cursor: 'pointer',
+    background: AMBER, color: '#ffffff', cursor: 'pointer',
   };
   const secondaryBtnStyle = {
-    flex: 1, fontFamily: INTER, fontSize: 13, fontWeight: 500,
-    padding: '9px 18px', border: '1.5px solid #e9ecef', borderRadius: 8,
+    flex: 1, fontFamily: OUTFIT, fontSize: 13, fontWeight: 500,
+    padding: '9px 18px', border: '1.5px solid #cfc9bb', borderRadius: 8,
     background: '#ffffff', color: '#374151', cursor: 'pointer',
   };
   const dangerBtnStyle = {
-    flex: 1, fontFamily: INTER, fontSize: 13, fontWeight: 500,
+    flex: 1, fontFamily: OUTFIT, fontSize: 13, fontWeight: 500,
     padding: '9px 18px', border: '1.5px solid #fca5a5', borderRadius: 8,
     background: '#fff0f0', color: '#e74c3c', cursor: 'pointer',
   };
@@ -138,17 +140,17 @@ function CounterOfferCard({ co, rawId, onResponded, t }) {
       }}>
         <div>
           <span style={{
-            fontFamily: INTER, fontSize: 11, textTransform: 'uppercase',
+            fontFamily: OUTFIT, fontSize: 11, textTransform: 'uppercase',
             fontWeight: 600, color: MUTED, letterSpacing: '0.3px',
           }}>
             {co_t.label}
           </span>
-          <div style={{ fontFamily: INTER, fontSize: 20, fontWeight: 700, color: TEXT, marginTop: 2 }}>
+          <div style={{ fontFamily: OUTFIT, fontSize: 20, fontWeight: 700, color: TEXT, marginTop: 2 }}>
             {fmtSEK(co.proposed_price_sek)}
           </div>
         </div>
         <span style={{
-          fontFamily: INTER, fontSize: 11, fontWeight: 600,
+          fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
           color: sc.text, background: sc.bg,
           border: `1px solid ${sc.border}`,
           padding: '3px 8px', borderRadius: 4,
@@ -160,12 +162,12 @@ function CounterOfferCard({ co, rawId, onResponded, t }) {
       {co.note && (
         <div style={{ padding: '10px 14px', borderBottom: `1px solid ${BORDER}` }}>
           <div style={{
-            fontFamily: INTER, fontSize: 11, color: MUTED,
+            fontFamily: OUTFIT, fontSize: 11, color: MUTED,
             marginBottom: 4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.3px',
           }}>
             {co_t.reason}
           </div>
-          <p style={{ fontFamily: INTER, fontSize: 13, color: TEXT, margin: 0, lineHeight: 1.6 }}>
+          <p style={{ fontFamily: OUTFIT, fontSize: 13, color: TEXT, margin: 0, lineHeight: 1.6 }}>
             {co.note}
           </p>
         </div>
@@ -183,7 +185,7 @@ function CounterOfferCard({ co, rawId, onResponded, t }) {
 
           {mode === 'accept' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <p style={{ fontFamily: INTER, fontSize: 13, color: TEXT, margin: 0 }}>
+              <p style={{ fontFamily: OUTFIT, fontSize: 13, color: TEXT, margin: 0 }}>
                 {co_t.acceptConfirm(fmtSEK(co.proposed_price_sek))}
               </p>
               <NoteInput value={note} onChange={setNote} placeholder={co_t.notePlaceholder} />
@@ -200,7 +202,7 @@ function CounterOfferCard({ co, rawId, onResponded, t }) {
 
           {mode === 'decline' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <p style={{ fontFamily: INTER, fontSize: 13, color: TEXT, margin: 0 }}>
+              <p style={{ fontFamily: OUTFIT, fontSize: 13, color: TEXT, margin: 0 }}>
                 {co_t.declineConfirm}
               </p>
               <NoteInput value={note} onChange={setNote} placeholder={co_t.declinePlaceholder} />
@@ -224,12 +226,12 @@ function CounterOfferCard({ co, rawId, onResponded, t }) {
                   onChange={(e) => setRevisedPx(e.target.value)}
                   placeholder={co_t.revisePlaceholder}
                   style={{
-                    flex: 1, fontFamily: INTER, fontSize: 13, color: TEXT,
+                    flex: 1, fontFamily: OUTFIT, fontSize: 13, color: TEXT,
                     background: WHITE, border: `1.5px solid ${BORDER}`, borderRadius: 8,
                     padding: '9px 14px', outline: 'none',
                   }}
                 />
-                <span style={{ fontFamily: INTER, fontSize: 13, color: MUTED }}>kr</span>
+                <span style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED }}>kr</span>
               </div>
               <NoteInput value={note} onChange={setNote} placeholder={co_t.motivationPlaceholder} />
               <ActionRow
@@ -249,12 +251,12 @@ function CounterOfferCard({ co, rawId, onResponded, t }) {
       {co.status !== 'pending' && co.dispatcher_note && (
         <div style={{ padding: '10px 14px', borderTop: `1px solid ${BORDER}` }}>
           <div style={{
-            fontFamily: INTER, fontSize: 11, color: MUTED,
+            fontFamily: OUTFIT, fontSize: 11, color: MUTED,
             marginBottom: 4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.3px',
           }}>
             {co_t.yourNote}
           </div>
-          <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: 0, fontStyle: 'italic' }}>
+          <p style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED, margin: 0, fontStyle: 'italic' }}>
             "{co.dispatcher_note}"
           </p>
         </div>
@@ -331,19 +333,19 @@ export function MessagePanel({ rawId, quoteLabel, quoteId, onClose }) {
         }}>
           <div>
             <div style={{
-              fontFamily: INTER, fontSize: 11, textTransform: 'uppercase',
+              fontFamily: OUTFIT, fontSize: 11, textTransform: 'uppercase',
               fontWeight: 600, color: MUTED, letterSpacing: '0.3px',
             }}>
               {mp.heading}
             </div>
-            <div style={{ fontFamily: INTER, fontSize: 14, fontWeight: 600, color: TEXT, marginTop: 2 }}>
+            <div style={{ fontFamily: OUTFIT, fontSize: 14, fontWeight: 600, color: TEXT, marginTop: 2 }}>
               {quoteId} {quoteLabel ? `· ${quoteLabel}` : ''}
             </div>
           </div>
           <button
             onClick={onClose}
             style={{
-              fontFamily: INTER, fontSize: 14, background: WHITE,
+              fontFamily: OUTFIT, fontSize: 14, background: WHITE,
               border: `1.5px solid ${BORDER}`, borderRadius: 8,
               color: MUTED, width: 32, height: 32,
               display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
@@ -359,7 +361,7 @@ export function MessagePanel({ rawId, quoteLabel, quoteId, onClose }) {
         }}>
 
           {loading && (
-            <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, textAlign: 'center', margin: '24px 0' }}>
+            <p style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED, textAlign: 'center', margin: '24px 0' }}>
               {mp.loading}
             </p>
           )}
@@ -367,7 +369,7 @@ export function MessagePanel({ rawId, quoteLabel, quoteId, onClose }) {
           {pendingCos.length > 0 && (
             <div style={{ flexShrink: 0 }}>
               <div style={{
-                fontFamily: INTER, fontSize: 11, textTransform: 'uppercase',
+                fontFamily: OUTFIT, fontSize: 11, textTransform: 'uppercase',
                 fontWeight: 600, color: '#d97706', letterSpacing: '0.3px', marginBottom: 8,
               }}>
                 ● {mp.counterOffer.pending}
@@ -384,7 +386,7 @@ export function MessagePanel({ rawId, quoteLabel, quoteId, onClose }) {
 
           {messages.length === 0 && !loading && (
             <p style={{
-              fontFamily: INTER, fontSize: 13, color: MUTED,
+              fontFamily: OUTFIT, fontSize: 13, color: MUTED,
               textAlign: 'center', margin: '24px 0', fontStyle: 'italic',
             }}>
               {mp.noMessages}
@@ -400,15 +402,15 @@ export function MessagePanel({ rawId, quoteLabel, quoteId, onClose }) {
               }}>
                 <div style={{
                   maxWidth: '80%',
-                  background:   isDispatcher ? BLUE  : SURF,
+                  background:   isDispatcher ? AMBER : SURF,
                   color:        isDispatcher ? WHITE : TEXT,
                   borderRadius: isDispatcher ? '8px 8px 0 8px' : '8px 8px 8px 0',
                   padding: '9px 13px',
-                  fontFamily: INTER, fontSize: 14, lineHeight: 1.5,
+                  fontFamily: OUTFIT, fontSize: 14, lineHeight: 1.5,
                 }}>
                   {m.message}
                 </div>
-                <span style={{ fontFamily: INTER, fontSize: 11, color: MUTED }}>
+                <span style={{ fontFamily: OUTFIT, fontSize: 11, color: MUTED }}>
                   {isDispatcher ? mp.senderYou : mp.senderCustomer} · {fmtTs(m.created_at)}
                 </span>
               </div>
@@ -427,7 +429,7 @@ export function MessagePanel({ rawId, quoteLabel, quoteId, onClose }) {
             placeholder={mp.replyPlaceholder}
             style={{
               width: '100%', boxSizing: 'border-box', resize: 'none',
-              fontFamily: INTER, fontSize: 13, color: TEXT,
+              fontFamily: OUTFIT, fontSize: 13, color: TEXT,
               background: WHITE, border: `1.5px solid ${BORDER}`, borderRadius: 8,
               padding: '9px 14px', outline: 'none',
             }}
@@ -437,8 +439,8 @@ export function MessagePanel({ rawId, quoteLabel, quoteId, onClose }) {
               onClick={handleSend}
               disabled={!canSend}
               style={{
-                fontFamily: INTER, fontSize: 13, fontWeight: 600,
-                background: canSend ? BLUE : '#a0aec0',
+                fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
+                background: canSend ? AMBER : '#a0aec0',
                 color: WHITE, border: 'none',
                 borderRadius: 8, padding: '9px 20px',
                 cursor: canSend ? 'pointer' : 'not-allowed',

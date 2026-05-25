@@ -3,30 +3,34 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
 import { LogoFull, LogoMark } from '../assets/Logo.jsx';
 
-const OUTFIT = "'Outfit', system-ui, sans-serif";
-const AMBER  = '#c9a84c';
-const AMBER_DK = '#b8932a';
-const TEXT   = '#17161a';
-const MUTED  = '#6b6574';
-const BG     = '#f5f3ee';
-const WHITE  = '#ffffff';
-const BORDER = '#e6e2da';
-const NAV    = '#111118';
+const INTER   = "'Inter', 'Outfit', system-ui, sans-serif";
+const MONO    = "'DM Mono', monospace";
+const CYAN    = '#5eead4';
+const CYAN_BR = '#2dd4bf';
+const VIOLET  = '#a78bfa';
+const SUCCESS = '#4ade80';
+const DANGER  = '#f87171';
+const AMBER   = '#c9921e';
+const BG_BASE = '#080b14';
+const TEXT_PR = '#e8edf5';
+const TEXT_SEC= '#8b97ad';
+const TEXT_MU = '#5a6478';
+const BORDER  = 'rgba(255,255,255,0.06)';
 
 
-function inputStyle(focused) {
+function inputStyle(focused, error) {
   return {
-    fontFamily: OUTFIT,
+    fontFamily: INTER,
     width: '100%',
     padding: '11px 14px',
-    border: `1.5px solid ${focused ? AMBER : BORDER}`,
-    borderRadius: 9,
+    border: `1px solid ${error ? 'rgba(248,113,113,0.5)' : focused ? 'rgba(94,234,212,0.5)' : 'rgba(255,255,255,0.08)'}`,
+    borderRadius: 10,
     fontSize: 14,
-    color: TEXT,
-    background: focused ? WHITE : '#faf9f6',
+    color: TEXT_PR,
+    background: focused ? 'rgba(20,27,45,0.9)' : 'rgba(20,27,45,0.7)',
     outline: 'none',
     boxSizing: 'border-box',
-    boxShadow: focused ? `0 0 0 3px rgba(201,168,76,0.14)` : 'none',
+    boxShadow: focused ? '0 0 0 3px rgba(94,234,212,0.08)' : 'none',
     transition: 'border-color 0.15s, box-shadow 0.15s, background 0.15s',
   };
 }
@@ -34,7 +38,7 @@ function inputStyle(focused) {
 function Field({ label, children }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <label style={{ fontFamily: OUTFIT, fontSize: 12, fontWeight: 600, color: '#4a4550', letterSpacing: '0.03em' }}>
+      <label style={{ fontFamily: INTER, fontSize: 11, fontWeight: 700, color: TEXT_MU, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
         {label}
       </label>
       {children}
@@ -42,49 +46,49 @@ function Field({ label, children }) {
   );
 }
 
-function FocusInput({ type = 'text', value, onChange, placeholder, autoFocus }) {
+function FocusInput({ type = 'text', value, onChange, placeholder, autoFocus, error }) {
   const [focused, setFocused] = useState(false);
   return (
     <input
       type={type} value={value} onChange={onChange} placeholder={placeholder}
       autoFocus={autoFocus}
-      style={inputStyle(focused)}
+      style={inputStyle(focused, error)}
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
     />
   );
 }
 
-// ── Feature list icons (no emojis — SVG only) ────────────────────────────────
+// ── Feature list icons (SVG only) ────────────────────────────────────────────
 function IconAI() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <circle cx="8" cy="8" r="6.5" stroke="rgba(201,168,76,0.7)" strokeWidth="1.2" />
-      <path d="M5 8.5L7 10.5L11 6" stroke="#c9a84c" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="8" cy="8" r="6.5" stroke="rgba(94,234,212,0.5)" strokeWidth="1.2" />
+      <path d="M5 8.5L7 10.5L11 6" stroke={CYAN} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 function IconLink() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path d="M6 10L10 6M7 5.5H4.5a2 2 0 000 4h1M9 10.5h2.5a2 2 0 000-4H9" stroke="#c9a84c" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M6 10L10 6M7 5.5H4.5a2 2 0 000 4h1M9 10.5h2.5a2 2 0 000-4H9" stroke={CYAN} strokeWidth="1.4" strokeLinecap="round" />
     </svg>
   );
 }
 function IconChart() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <rect x="3" y="9" width="2.5" height="4" rx="1" fill="#c9a84c" opacity="0.7" />
-      <rect x="6.75" y="6" width="2.5" height="7" rx="1" fill="#c9a84c" />
-      <rect x="10.5" y="3" width="2.5" height="10" rx="1" fill="#c9a84c" opacity="0.7" />
+      <rect x="3" y="9" width="2.5" height="4" rx="1" fill={CYAN} opacity="0.7" />
+      <rect x="6.75" y="6" width="2.5" height="7" rx="1" fill={CYAN} />
+      <rect x="10.5" y="3" width="2.5" height="10" rx="1" fill={CYAN} opacity="0.7" />
     </svg>
   );
 }
 function IconShield() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path d="M8 2L3 4.5v4C3 11.5 5.5 14 8 14s5-2.5 5-5.5v-4L8 2z" stroke="#c9a84c" strokeWidth="1.3" strokeLinejoin="round" fill="none" />
-      <path d="M6 8l1.5 1.5L10 6.5" stroke="#c9a84c" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M8 2L3 4.5v4C3 11.5 5.5 14 8 14s5-2.5 5-5.5v-4L8 2z" stroke={CYAN} strokeWidth="1.3" strokeLinejoin="round" fill="none" />
+      <path d="M6 8l1.5 1.5L10 6.5" stroke={CYAN} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -108,54 +112,65 @@ function HeroPanel({ lang }) {
   return (
     <div style={{
       flex: '0 0 54%',
-      background: '#0d0d0f',
+      background: 'rgba(8,11,20,0.95)',
       borderRight: '1px solid rgba(255,255,255,0.06)',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'center',
       padding: '56px 52px',
       minHeight: '100%',
+      position: 'relative',
+      overflow: 'hidden',
     }}>
-      {/* Content */}
-      <div>
+      {/* Subtle radial glow */}
+      <div style={{
+        position: 'absolute', top: '-20%', left: '-10%',
+        width: '60%', height: '60%',
+        background: 'radial-gradient(circle, rgba(94,234,212,0.06) 0%, transparent 70%)',
+        pointerEvents: 'none',
+      }} />
+
+      <div style={{ position: 'relative', zIndex: 1 }}>
         <div style={{ marginBottom: 36 }}>
           <LogoMark size={60} glow />
         </div>
 
         <div style={{
-          fontFamily: OUTFIT,
+          fontFamily: INTER,
           fontWeight: 800,
           fontSize: 38,
           letterSpacing: '0.08em',
-          color: WHITE,
+          background: 'linear-gradient(135deg, #5eead4, #ffffff)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
           lineHeight: 1,
           marginBottom: 6,
         }}>
           ÅKAREN
         </div>
         <div style={{
-          fontFamily: "'DM Mono', monospace",
+          fontFamily: MONO,
           fontWeight: 400,
           fontSize: 10,
           letterSpacing: '0.22em',
-          color: 'rgba(255,255,255,0.28)',
+          color: TEXT_MU,
           marginBottom: 28,
           textTransform: 'uppercase',
         }}>
           TRANSPORTHANTERING
         </div>
 
-        {/* Amber divider */}
+        {/* Cyan divider */}
         <div style={{
           width: 40, height: 2,
-          background: `linear-gradient(90deg, ${AMBER} 0%, transparent 100%)`,
+          background: `linear-gradient(90deg, ${CYAN} 0%, transparent 100%)`,
           marginBottom: 28,
         }} />
 
         <p style={{
-          fontFamily: OUTFIT,
+          fontFamily: INTER,
           fontSize: 16,
-          color: 'rgba(255,255,255,0.72)',
+          color: TEXT_SEC,
           lineHeight: 1.7,
           marginBottom: 40,
           maxWidth: 340,
@@ -172,18 +187,18 @@ function HeroPanel({ lang }) {
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{
                 width: 30, height: 30,
-                borderRadius: 7,
-                background: 'rgba(201,168,76,0.12)',
-                border: '1px solid rgba(201,168,76,0.18)',
+                borderRadius: 8,
+                background: 'rgba(94,234,212,0.1)',
+                border: '1px solid rgba(94,234,212,0.2)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0,
               }}>
                 <f.Icon />
               </div>
               <span style={{
-                fontFamily: OUTFIT,
+                fontFamily: INTER,
                 fontSize: 13,
-                color: 'rgba(255,255,255,0.68)',
+                color: TEXT_SEC,
                 fontWeight: 400,
                 lineHeight: 1.45,
               }}>
@@ -195,9 +210,9 @@ function HeroPanel({ lang }) {
 
         <div style={{
           marginTop: 52,
-          fontFamily: OUTFIT,
+          fontFamily: INTER,
           fontSize: 10,
-          color: 'rgba(255,255,255,0.22)',
+          color: TEXT_MU,
           letterSpacing: '0.05em',
         }}>
           15 000 kr/månad · Obegränsat antal offerter
@@ -285,13 +300,13 @@ export function Login() {
           flex: 1,
           padding: '10px 0',
           border: 'none',
+          borderBottom: `2px solid ${isActive ? CYAN : 'rgba(255,255,255,0.08)'}`,
           cursor: 'pointer',
-          fontFamily: OUTFIT,
+          fontFamily: INTER,
           fontSize: 13,
           fontWeight: 700,
           background: 'transparent',
-          color: isActive ? AMBER_DK : MUTED,
-          borderBottom: `2px solid ${isActive ? AMBER : BORDER}`,
+          color: isActive ? CYAN : TEXT_MU,
           transition: 'all 0.15s',
           letterSpacing: '0.02em',
         }}
@@ -309,7 +324,7 @@ export function Login() {
       <style>{`
         @media (max-width: 768px) { .login-hero { display: none !important; } }
       `}</style>
-      <div style={{ fontFamily: OUTFIT, minHeight: '100vh', display: 'flex', background: BG }}>
+      <div style={{ fontFamily: INTER, minHeight: '100vh', display: 'flex', background: 'radial-gradient(circle at 50% 0%, #0d1424 0%, #080b14 60%)' }}>
 
         {/* ── Left editorial hero ── */}
         <div className="login-hero" style={{ display: 'flex', flex: '0 0 56%' }}>
@@ -324,7 +339,9 @@ export function Login() {
           alignItems: 'center',
           justifyContent: 'center',
           padding: '40px 36px',
-          background: WHITE,
+          background: 'rgba(14,20,36,0.95)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
           overflowY: 'auto',
           minHeight: '100vh',
         }}>
@@ -334,19 +351,19 @@ export function Login() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 32 }}>
               <div style={{
                 display: 'flex', gap: 2,
-                background: BG, borderRadius: 8, padding: 3,
-                border: `1px solid ${BORDER}`,
+                background: 'rgba(20,27,45,0.8)', borderRadius: 10, padding: 3,
+                border: '1px solid rgba(255,255,255,0.06)',
               }}>
                 {['en', 'sv'].map((l) => (
                   <button
                     key={l}
                     onClick={() => setLang(l)}
                     style={{
-                      fontFamily: OUTFIT, fontSize: 11, fontWeight: 700,
-                      background: lang === l ? AMBER : 'transparent',
-                      color: lang === l ? '#17161a' : MUTED,
+                      fontFamily: INTER, fontSize: 11, fontWeight: 700,
+                      background: lang === l ? CYAN : 'transparent',
+                      color: lang === l ? '#080b14' : TEXT_MU,
                       border: 'none',
-                      borderRadius: 6,
+                      borderRadius: 7,
                       padding: '5px 13px',
                       cursor: 'pointer',
                       transition: 'all 0.15s cubic-bezier(0.22,1,0.36,1)',
@@ -362,13 +379,13 @@ export function Login() {
             {/* Heading */}
             <div style={{ marginBottom: 28 }}>
               <div style={{
-                fontFamily: OUTFIT, fontWeight: 800, fontSize: 26,
-                color: TEXT, marginBottom: 6,
+                fontFamily: INTER, fontWeight: 700, fontSize: 26,
+                color: TEXT_PR, marginBottom: 6,
                 letterSpacing: '-0.02em', lineHeight: 1.2,
               }}>
                 {tab === 'login' ? t.login.signIn : t.login.register}
               </div>
-              <p style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED, margin: 0, lineHeight: 1.5 }}>
+              <p style={{ fontFamily: INTER, fontSize: 13, color: TEXT_SEC, margin: 0, lineHeight: 1.5 }}>
                 {t.login.tagline}
               </p>
             </div>
@@ -387,6 +404,7 @@ export function Login() {
                     type="email" value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     autoFocus
+                    error={loginError}
                   />
                 </Field>
 
@@ -396,6 +414,7 @@ export function Login() {
                       type={showPassword ? 'text' : 'password'}
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
+                      error={loginError}
                     />
                     <button
                       type="button" tabIndex={-1}
@@ -403,7 +422,7 @@ export function Login() {
                       style={{
                         position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
                         background: 'none', border: 'none', cursor: 'pointer',
-                        fontFamily: OUTFIT, fontSize: 11, fontWeight: 600, color: MUTED, padding: 0,
+                        fontFamily: INTER, fontSize: 11, fontWeight: 600, color: TEXT_MU, padding: 0,
                         letterSpacing: '0.04em',
                       }}
                     >
@@ -414,18 +433,18 @@ export function Login() {
 
                 {loginError && (
                   <div style={{
-                    background: 'rgba(244,63,94,0.06)',
-                    border: '1px solid rgba(244,63,94,0.25)',
-                    borderRadius: 8,
+                    background: 'rgba(248,113,113,0.08)',
+                    border: '1px solid rgba(248,113,113,0.25)',
+                    borderRadius: 10,
                     padding: '10px 14px',
-                    color: '#be123c',
+                    color: DANGER,
                     fontSize: 13,
-                    fontFamily: OUTFIT,
+                    fontFamily: INTER,
                     display: 'flex', alignItems: 'center', gap: 8,
                   }}>
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <circle cx="7" cy="7" r="6" stroke="#be123c" strokeWidth="1.3" />
-                      <path d="M7 4v3.5M7 9.5v.5" stroke="#be123c" strokeWidth="1.5" strokeLinecap="round" />
+                      <circle cx="7" cy="7" r="6" stroke={DANGER} strokeWidth="1.3" />
+                      <path d="M7 4v3.5M7 9.5v.5" stroke={DANGER} strokeWidth="1.5" strokeLinecap="round" />
                     </svg>
                     {t.login.wrongCreds}
                   </div>
@@ -435,34 +454,34 @@ export function Login() {
                   type="submit"
                   disabled={!canLogin}
                   style={{
-                    fontFamily: OUTFIT,
+                    fontFamily: INTER,
                     width: '100%',
-                    fontWeight: 800,
+                    fontWeight: 700,
                     fontSize: 13,
                     padding: '13px',
-                    borderRadius: 9,
+                    borderRadius: 10,
                     border: 'none',
                     marginTop: 4,
-                    letterSpacing: '0.06em',
+                    letterSpacing: '0.04em',
                     background: canLogin
-                      ? `linear-gradient(135deg, ${AMBER} 0%, #d4b55e 100%)`
-                      : '#ddd9d2',
-                    color: canLogin ? '#17161a' : '#a09aa8',
+                      ? `linear-gradient(135deg, ${CYAN_BR} 0%, ${CYAN} 100%)`
+                      : 'rgba(255,255,255,0.06)',
+                    color: canLogin ? '#080b14' : TEXT_MU,
                     cursor: canLogin ? 'pointer' : 'not-allowed',
-                    boxShadow: canLogin ? '0 3px 14px rgba(201,168,76,0.32)' : 'none',
+                    boxShadow: canLogin ? '0 0 20px rgba(94,234,212,0.3)' : 'none',
                     transition: 'transform 0.15s cubic-bezier(0.22,1,0.36,1), box-shadow 0.15s',
                   }}
-                  onMouseEnter={(e) => { if (canLogin) { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(201,168,76,0.40)'; } }}
-                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = canLogin ? '0 3px 14px rgba(201,168,76,0.32)' : 'none'; }}
+                  onMouseEnter={(e) => { if (canLogin) { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 0 30px rgba(94,234,212,0.45)'; } }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = canLogin ? '0 0 20px rgba(94,234,212,0.3)' : 'none'; }}
                 >
                   {loginLoading ? t.login.signingIn : t.login.signInBtn}
                 </button>
 
                 {/* Quick-access bypass */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '4px 0' }}>
-                  <div style={{ flex: 1, height: 1, background: BORDER }} />
-                  <span style={{ fontFamily: OUTFIT, fontSize: 11, color: '#c8c3d0', letterSpacing: '0.05em' }}>ELLER</span>
-                  <div style={{ flex: 1, height: 1, background: BORDER }} />
+                  <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
+                  <span style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU, letterSpacing: '0.05em' }}>ELLER</span>
+                  <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
                 </div>
                 <button
                   type="button"
@@ -486,21 +505,21 @@ export function Login() {
                   }}
                   disabled={loginLoading}
                   style={{
-                    fontFamily: OUTFIT,
+                    fontFamily: INTER,
                     width: '100%',
-                    fontWeight: 600,
+                    fontWeight: 500,
                     fontSize: 13,
                     padding: '11px',
-                    borderRadius: 9,
-                    border: `1.5px solid ${BORDER}`,
+                    borderRadius: 10,
+                    border: '1px solid rgba(94,234,212,0.25)',
                     background: 'transparent',
-                    color: MUTED,
+                    color: CYAN,
                     cursor: loginLoading ? 'not-allowed' : 'pointer',
                     letterSpacing: '0.03em',
-                    transition: 'border-color 0.15s, color 0.15s, background 0.15s',
+                    transition: 'border-color 0.15s, background 0.15s',
                   }}
-                  onMouseEnter={(e) => { if (!loginLoading) { e.currentTarget.style.borderColor = AMBER; e.currentTarget.style.color = '#8a6820'; e.currentTarget.style.background = 'rgba(201,168,76,0.05)'; } }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = MUTED; e.currentTarget.style.background = 'transparent'; }}
+                  onMouseEnter={(e) => { if (!loginLoading) { e.currentTarget.style.borderColor = CYAN; e.currentTarget.style.background = 'rgba(94,234,212,0.05)'; } }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(94,234,212,0.25)'; e.currentTarget.style.background = 'transparent'; }}
                 >
                   Bypass — direktåtkomst
                 </button>
@@ -528,9 +547,9 @@ export function Login() {
 
                 {regError && (
                   <div style={{
-                    background: 'rgba(244,63,94,0.06)', border: '1px solid rgba(244,63,94,0.25)',
-                    borderRadius: 8, padding: '10px 14px', color: '#be123c',
-                    fontSize: 13, fontFamily: OUTFIT,
+                    background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.25)',
+                    borderRadius: 10, padding: '10px 14px', color: DANGER,
+                    fontSize: 13, fontFamily: INTER,
                   }}>
                     {regError}
                   </div>
@@ -540,15 +559,15 @@ export function Login() {
                   type="submit"
                   disabled={!canReg}
                   style={{
-                    fontFamily: OUTFIT, width: '100%', fontWeight: 800, fontSize: 13,
-                    padding: '13px', borderRadius: 9, border: 'none', marginTop: 4,
-                    letterSpacing: '0.06em',
+                    fontFamily: INTER, width: '100%', fontWeight: 700, fontSize: 13,
+                    padding: '13px', borderRadius: 10, border: 'none', marginTop: 4,
+                    letterSpacing: '0.04em',
                     background: canReg
-                      ? `linear-gradient(135deg, ${AMBER} 0%, #d4b55e 100%)`
-                      : '#ddd9d2',
-                    color: canReg ? '#17161a' : '#a09aa8',
+                      ? `linear-gradient(135deg, ${CYAN_BR} 0%, ${CYAN} 100%)`
+                      : 'rgba(255,255,255,0.06)',
+                    color: canReg ? '#080b14' : TEXT_MU,
                     cursor: canReg ? 'pointer' : 'not-allowed',
-                    boxShadow: canReg ? '0 3px 14px rgba(201,168,76,0.32)' : 'none',
+                    boxShadow: canReg ? '0 0 20px rgba(94,234,212,0.3)' : 'none',
                     transition: 'transform 0.15s cubic-bezier(0.22,1,0.36,1), box-shadow 0.15s',
                   }}
                   onMouseEnter={(e) => { if (canReg) { e.currentTarget.style.transform = 'translateY(-1px)'; } }}
@@ -557,15 +576,15 @@ export function Login() {
                   {regLoading ? t.login.creating : t.login.createBtn}
                 </button>
 
-                <p style={{ fontSize: 11, color: '#b0aab8', margin: 0, textAlign: 'center', lineHeight: 1.6, fontFamily: OUTFIT }}>
+                <p style={{ fontSize: 11, color: TEXT_MU, margin: 0, textAlign: 'center', lineHeight: 1.6, fontFamily: INTER }}>
                   {t.login.setupNote}
                 </p>
               </form>
             )}
 
             <div style={{
-              fontSize: 11, color: '#c8c3d0', textAlign: 'center',
-              marginTop: 28, lineHeight: 1.6, fontFamily: OUTFIT,
+              fontSize: 11, color: TEXT_MU, textAlign: 'center',
+              marginTop: 28, lineHeight: 1.6, fontFamily: INTER,
             }}>
               {t.login.pricing}
             </div>

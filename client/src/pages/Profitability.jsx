@@ -5,16 +5,17 @@ import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const BLUE    = '#4361ee';
-const BLUE_DK = '#3451d1';
-const BG      = '#f0f2f5';
+const AMBER   = '#c9921e';
+const AMBER_DK= '#a87818';
+const BG      = '#edeae1';
 const WHITE   = '#ffffff';
-const BORDER  = '#e9ecef';
-const TEXT    = '#1a1a2e';
-const MUTED   = '#6c757d';
-const FAINT   = '#9ca3af';
-const INTER   = "'Inter', sans-serif";
-const SURF    = '#f8f9fa';
+const BORDER  = '#cfc9bb';
+const TEXT    = '#151210';
+const MUTED   = '#6a6050';
+const FAINT   = '#9a9082';
+const OUTFIT  = "'Outfit', system-ui, sans-serif";
+const SURF    = '#f4f0e7';
+const MONO    = "'DM Mono', monospace";
 
 function currentMonth() {
   return new Date().toISOString().slice(0, 7);
@@ -153,26 +154,26 @@ function generateRecommendations(data, stats, prevData, lang) {
 function KpiCard({ label, value, unit, sublabel }) {
   return (
     <div style={{
-      background: WHITE, border: '1px solid #e9ecef', borderRadius: 12,
+      background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12,
       boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
       padding: '22px 24px 18px', flex: 1,
     }}>
       <div style={{
-        fontFamily: INTER, fontSize: 12, fontWeight: 600,
+        fontFamily: OUTFIT, fontSize: 12, fontWeight: 600,
         letterSpacing: '0.5px', textTransform: 'uppercase', color: FAINT, marginBottom: 14,
       }}>
         {label}
       </div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
-        <span style={{ fontFamily: INTER, fontSize: 26, fontWeight: 700, color: TEXT, lineHeight: 1 }}>
+        <span style={{ fontFamily: OUTFIT, fontSize: 26, fontWeight: 700, color: TEXT, lineHeight: 1 }}>
           {value ?? '—'}
         </span>
         {unit && value != null && (
-          <span style={{ fontFamily: INTER, fontSize: 15, color: MUTED }}>{unit}</span>
+          <span style={{ fontFamily: OUTFIT, fontSize: 15, color: MUTED }}>{unit}</span>
         )}
       </div>
       {sublabel && (
-        <div style={{ fontFamily: INTER, fontSize: 12, color: FAINT, marginTop: 10 }}>
+        <div style={{ fontFamily: OUTFIT, fontSize: 12, color: FAINT, marginTop: 10 }}>
           {sublabel}
         </div>
       )}
@@ -199,7 +200,7 @@ function StatusBadge({ status, t }) {
   const label = t.jobs.statuses[status] ?? status;
   return (
     <span style={{
-      fontFamily: INTER, fontSize: 11, fontWeight: 600,
+      fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
       textTransform: 'uppercase', color: s.color, background: s.bg,
       padding: '3px 10px', borderRadius: 6, whiteSpace: 'nowrap',
     }}>
@@ -210,15 +211,15 @@ function StatusBadge({ status, t }) {
 
 function TrendArrow({ current, prev, showDiff = true, threshold = 0.5 }) {
   if (current == null || prev == null) {
-    return <span style={{ color: FAINT, fontFamily: INTER, fontSize: 12 }}>—</span>;
+    return <span style={{ color: FAINT, fontFamily: OUTFIT, fontSize: 12 }}>—</span>;
   }
   const diff = current - prev;
   if (Math.abs(diff) < threshold) {
-    return <span style={{ color: FAINT, fontFamily: INTER, fontSize: 12 }}>→</span>;
+    return <span style={{ color: FAINT, fontFamily: OUTFIT, fontSize: 12 }}>→</span>;
   }
   const up = diff > 0;
   return (
-    <span style={{ fontFamily: INTER, fontSize: 12, color: up ? '#16a34a' : '#e74c3c' }}>
+    <span style={{ fontFamily: OUTFIT, fontSize: 12, color: up ? '#16a34a' : '#e74c3c' }}>
       {up ? '▲' : '▼'}{showDiff ? ` ${up ? '+' : ''}${diff.toFixed(1)}%` : ''}
     </span>
   );
@@ -240,14 +241,14 @@ function RecommendationCards({ recs, onApply, onDismiss, t }) {
           const c = REC_COLORS[rec.type] ?? REC_COLORS.info;
           return (
             <div key={rec.id} style={{
-              background: c.bg, border: '1px solid #e9ecef',
+              background: c.bg, border: `1px solid ${BORDER}`,
               borderLeft: `3px solid ${c.border}`,
               borderRadius: 10, padding: '12px 16px',
               display: 'flex', alignItems: 'center', gap: 14,
             }}>
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: c.dot, flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: INTER, fontSize: 13, color: TEXT, lineHeight: 1.45 }}>
+                <div style={{ fontFamily: OUTFIT, fontSize: 13, color: TEXT, lineHeight: 1.45 }}>
                   {rec.text}
                 </div>
               </div>
@@ -255,7 +256,7 @@ function RecommendationCards({ recs, onApply, onDismiss, t }) {
                 <button
                   onClick={() => onApply(rec)}
                   style={{
-                    fontFamily: INTER, fontSize: 12, fontWeight: 600,
+                    fontFamily: OUTFIT, fontSize: 12, fontWeight: 600,
                     padding: '6px 12px', borderRadius: 8,
                     border: `1.5px solid ${c.border}`, background: WHITE,
                     color: c.border, cursor: 'pointer', whiteSpace: 'nowrap',
@@ -266,8 +267,8 @@ function RecommendationCards({ recs, onApply, onDismiss, t }) {
                 <button
                   onClick={() => onDismiss(rec.id)}
                   style={{
-                    fontFamily: INTER, fontSize: 13, fontWeight: 600, padding: '6px 10px', borderRadius: 8,
-                    border: '1.5px solid #e9ecef', background: WHITE,
+                    fontFamily: OUTFIT, fontSize: 13, fontWeight: 600, padding: '6px 10px', borderRadius: 8,
+                    border: `1.5px solid ${BORDER}`, background: WHITE,
                     color: MUTED, cursor: 'pointer',
                   }}
                 >
@@ -288,10 +289,10 @@ function JobsTable({ jobs, prevJobs, onFakturaClick, t }) {
   if (rows.length === 0) {
     return (
       <div style={{
-        background: WHITE, border: '1px solid #e9ecef', borderRadius: 12,
+        background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12,
         boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
         padding: 32, textAlign: 'center',
-        fontFamily: INTER, fontSize: 14, color: MUTED, fontStyle: 'italic',
+        fontFamily: OUTFIT, fontSize: 14, color: MUTED, fontStyle: 'italic',
       }}>
         {t.profitability.noJobs}
       </div>
@@ -316,7 +317,7 @@ function JobsTable({ jobs, prevJobs, onFakturaClick, t }) {
 
   return (
     <div style={{
-      background: WHITE, border: '1px solid #e9ecef', borderRadius: 12,
+      background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12,
       boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden',
     }}>
       <div style={{ overflowX: 'auto' }}>
@@ -325,12 +326,12 @@ function JobsTable({ jobs, prevJobs, onFakturaClick, t }) {
             <tr style={{ background: SURF }}>
               {COLS.map((c) => (
                 <th key={c.label} style={{
-                  fontFamily: INTER, fontSize: 11, fontWeight: 600,
+                  fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
                   letterSpacing: '0.5px', textTransform: 'uppercase', color: MUTED,
                   padding: '10px 16px',
                   textAlign: c.right ? 'right' : c.center ? 'center' : 'left',
                   width: c.w, whiteSpace: 'nowrap',
-                  borderBottom: '1px solid #e9ecef',
+                  borderBottom: `1px solid ${BORDER}`,
                 }}>
                   {c.label}
                 </th>
@@ -345,25 +346,25 @@ function JobsTable({ jobs, prevJobs, onFakturaClick, t }) {
                   key={j.job_id}
                   style={{
                     background: WHITE,
-                    borderBottom: i < rows.length - 1 ? '1px solid #f0f2f5' : 'none',
+                    borderBottom: i < rows.length - 1 ? `1px solid ${BG}` : 'none',
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.background = SURF}
                   onMouseLeave={(e) => e.currentTarget.style.background = WHITE}
                 >
-                  <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT, maxWidth: 200 }}>
+                  <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', color: TEXT, maxWidth: 200 }}>
                     <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {truncate(j.kund)}
                     </span>
                     {j.leverans && j.leverans !== '—' && (
-                      <span style={{ fontFamily: INTER, fontSize: 12, color: FAINT, display: 'block', marginTop: 1 }}>
+                      <span style={{ fontFamily: OUTFIT, fontSize: 12, color: FAINT, display: 'block', marginTop: 1 }}>
                         → {truncate(j.leverans, 20)}
                       </span>
                     )}
                   </td>
-                  <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT }}>{j.lasttyp}</td>
-                  <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: TEXT, fontWeight: 600 }}>{fmtSEK(j.intakt)}</td>
-                  <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: MUTED }}>{fmtSEK(j.kostnad)}</td>
-                  <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', textAlign: 'right' }}>
+                  <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', color: TEXT }}>{j.lasttyp}</td>
+                  <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: TEXT, fontWeight: 600 }}>{fmtSEK(j.intakt)}</td>
+                  <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: MUTED }}>{fmtSEK(j.kostnad)}</td>
+                  <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'right' }}>
                     {j.marginal_pct != null ? (
                       <span style={{
                         display: 'inline-block', padding: '3px 10px', borderRadius: 6,
@@ -374,32 +375,32 @@ function JobsTable({ jobs, prevJobs, onFakturaClick, t }) {
                       </span>
                     ) : '—'}
                   </td>
-                  <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', textAlign: 'center' }}>
+                  <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'center' }}>
                     <TrendArrow
                       current={curAvgByType[j.lasttyp]}
                       prev={prevAvgByType[j.lasttyp]}
                     />
                   </td>
-                  <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px' }}>
+                  <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'flex-start' }}>
                       <StatusBadge status={j.job_status} t={t} />
                       {(j.job_status === 'avslutad' || j.job_status === 'slutförd') && (
                         <button
                           onClick={() => onFakturaClick(j)}
                           style={{
-                            fontFamily: INTER, fontSize: 12, fontWeight: 600,
+                            fontFamily: OUTFIT, fontSize: 12, fontWeight: 600,
                             padding: '4px 10px', borderRadius: 6,
-                            border: 'none', background: BLUE, color: WHITE,
+                            border: 'none', background: AMBER, color: TEXT,
                             cursor: 'pointer', whiteSpace: 'nowrap',
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.background = BLUE_DK}
-                          onMouseLeave={(e) => e.currentTarget.style.background = BLUE}
+                          onMouseEnter={(e) => e.currentTarget.style.background = AMBER_DK}
+                          onMouseLeave={(e) => e.currentTarget.style.background = AMBER}
                         >
                           {t.profitability.generateInvoice}
                         </button>
                       )}
                       {j.job_status === 'fakturerad' && j.faktura_nr && (
-                        <span style={{ fontFamily: INTER, fontSize: 11, color: FAINT }}>
+                        <span style={{ fontFamily: OUTFIT, fontSize: 11, color: FAINT }}>
                           {j.faktura_nr}
                         </span>
                       )}
@@ -411,7 +412,7 @@ function JobsTable({ jobs, prevJobs, onFakturaClick, t }) {
           </tbody>
         </table>
       </div>
-      <div style={{ display: 'flex', gap: 20, padding: '10px 16px', borderTop: '1px solid #e9ecef', background: SURF }}>
+      <div style={{ display: 'flex', gap: 20, padding: '10px 16px', borderTop: `1px solid ${BORDER}`, background: SURF }}>
         {[
           { color: '#e74c3c', bg: '#fff0f0', label: t.profitability.legend.low  },
           { color: '#d97706', bg: '#fff7ed', label: t.profitability.legend.mid  },
@@ -422,10 +423,10 @@ function JobsTable({ jobs, prevJobs, onFakturaClick, t }) {
               display: 'inline-block', width: 10, height: 10, borderRadius: 2,
               background: bg, border: `1px solid ${color}`, flexShrink: 0,
             }} />
-            <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>{label}</span>
+            <span style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED }}>{label}</span>
           </div>
         ))}
-        <span style={{ fontFamily: INTER, fontSize: 12, color: FAINT, marginLeft: 'auto', fontStyle: 'italic' }}>
+        <span style={{ fontFamily: OUTFIT, fontSize: 12, color: FAINT, marginLeft: 'auto', fontStyle: 'italic' }}>
           {t.profitability.legend.note}
         </span>
       </div>
@@ -437,10 +438,10 @@ function CustomerBars({ ranking, prevRanking, t }) {
   if (ranking.length === 0) {
     return (
       <div style={{
-        background: WHITE, border: '1px solid #e9ecef', borderRadius: 12,
+        background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12,
         boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
         padding: 28, textAlign: 'center',
-        fontFamily: INTER, fontSize: 14, color: MUTED, fontStyle: 'italic',
+        fontFamily: OUTFIT, fontSize: 14, color: MUTED, fontStyle: 'italic',
       }}>
         {t.profitability.noJobs}
       </div>
@@ -452,7 +453,7 @@ function CustomerBars({ ranking, prevRanking, t }) {
 
   return (
     <div style={{
-      background: WHITE, border: '1px solid #e9ecef', borderRadius: 12,
+      background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12,
       boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden',
     }}>
       {ranking.map((r, i) => {
@@ -462,22 +463,22 @@ function CustomerBars({ ranking, prevRanking, t }) {
         return (
           <div key={r.kund} style={{
             padding: '14px 20px',
-            borderBottom: i < ranking.length - 1 ? '1px solid #f0f2f5' : 'none',
+            borderBottom: i < ranking.length - 1 ? `1px solid ${BG}` : 'none',
             position: 'relative', overflow: 'hidden',
           }}>
             <div style={{
               position: 'absolute', left: 0, top: 0, bottom: 0,
               width: `${pct}%`,
-              background: isLoss ? 'rgba(231,76,60,0.08)' : 'rgba(67,97,238,0.07)',
+              background: isLoss ? 'rgba(231,76,60,0.08)' : 'rgba(201,146,30,0.10)',
               transition: 'width 0.6s ease',
             }} />
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                <span style={{ fontFamily: INTER, fontSize: 12, fontWeight: 700, color: FAINT, flexShrink: 0, minWidth: 16 }}>
+                <span style={{ fontFamily: OUTFIT, fontSize: 12, fontWeight: 700, color: FAINT, flexShrink: 0, minWidth: 16 }}>
                   {i + 1}
                 </span>
                 <span style={{
-                  fontFamily: INTER, fontSize: 15, fontWeight: 500, color: TEXT,
+                  fontFamily: OUTFIT, fontSize: 15, fontWeight: 500, color: TEXT,
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>
                   {r.kund}
@@ -485,7 +486,7 @@ function CustomerBars({ ranking, prevRanking, t }) {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                 <TrendArrow current={r.profit} prev={prev} showDiff={false} threshold={100} />
-                <span style={{ fontFamily: INTER, fontSize: 16, fontWeight: 700, color: isLoss ? '#e74c3c' : BLUE }}>
+                <span style={{ fontFamily: OUTFIT, fontSize: 16, fontWeight: 700, color: isLoss ? '#e74c3c' : AMBER }}>
                   {isLoss ? '−' : ''}{fmtSEK(Math.abs(r.profit))}
                 </span>
               </div>
@@ -500,7 +501,7 @@ function CustomerBars({ ranking, prevRanking, t }) {
 function SectionLabel({ children }) {
   return (
     <div style={{
-      fontFamily: INTER, fontSize: 11, fontWeight: 600, letterSpacing: '0.5px',
+      fontFamily: OUTFIT, fontSize: 11, fontWeight: 600, letterSpacing: '0.5px',
       textTransform: 'uppercase', color: MUTED, marginBottom: 12,
     }}>
       {children}
@@ -600,12 +601,12 @@ export function Profitability() {
   const monthLabel = MONTH_OPTIONS.find((o) => o.value === month)?.label ?? '';
 
   const inputStyle = {
-    width: '100%', fontFamily: INTER, fontSize: 13, color: TEXT,
-    border: '1.5px solid #e9ecef', borderRadius: 8, padding: '9px 14px',
+    width: '100%', fontFamily: OUTFIT, fontSize: 13, color: TEXT,
+    border: `1.5px solid ${BORDER}`, borderRadius: 8, padding: '9px 14px',
     outline: 'none', boxSizing: 'border-box', background: WHITE,
   };
   const labelStyle = {
-    fontFamily: INTER, fontSize: 11, fontWeight: 600, letterSpacing: '0.04em',
+    fontFamily: OUTFIT, fontSize: 11, fontWeight: 600, letterSpacing: '0.04em',
     textTransform: 'uppercase', color: FAINT, display: 'block', marginBottom: 5,
   };
 
@@ -613,10 +614,10 @@ export function Profitability() {
     <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px 48px', background: BG, minHeight: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
         <div>
-          <h1 style={{ fontFamily: INTER, fontSize: 20, fontWeight: 700, color: TEXT, margin: '0 0 4px' }}>
+          <h1 style={{ fontFamily: OUTFIT, fontSize: 20, fontWeight: 700, color: TEXT, margin: '0 0 4px' }}>
             {t.profitability.heading}
           </h1>
-          <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: 0 }}>
+          <p style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED, margin: 0 }}>
             {monthLabel}
           </p>
         </div>
@@ -624,8 +625,8 @@ export function Profitability() {
           value={month}
           onChange={(e) => setMonth(e.target.value)}
           style={{
-            fontFamily: INTER, fontSize: 13, color: TEXT,
-            background: WHITE, border: '1.5px solid #e9ecef', borderRadius: 8,
+            fontFamily: OUTFIT, fontSize: 13, color: TEXT,
+            background: WHITE, border: `1.5px solid ${BORDER}`, borderRadius: 8,
             padding: '9px 14px', cursor: 'pointer', outline: 'none',
           }}
         >
@@ -636,12 +637,12 @@ export function Profitability() {
       </div>
 
       {loading && (
-        <div style={{ fontFamily: INTER, fontSize: 14, color: MUTED, textAlign: 'center', padding: 48 }}>
+        <div style={{ fontFamily: OUTFIT, fontSize: 14, color: MUTED, textAlign: 'center', padding: 48 }}>
           {t.profitability.loading}
         </div>
       )}
       {error && (
-        <div style={{ fontFamily: INTER, fontSize: 14, color: '#e74c3c', textAlign: 'center', padding: 48 }}>
+        <div style={{ fontFamily: OUTFIT, fontSize: 14, color: '#e74c3c', textAlign: 'center', padding: 48 }}>
           {t.profitability.error}
         </div>
       )}
@@ -713,23 +714,23 @@ export function Profitability() {
       {fakturaJob && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 1000,
-          background: 'rgba(26,26,46,0.45)',
+          background: 'rgba(21,18,16,0.45)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <div style={{
-            background: WHITE, border: '1px solid #e9ecef', borderRadius: 12,
+            background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12,
             boxShadow: '0 8px 40px rgba(0,0,0,0.13)', padding: 28, width: 420,
           }}>
-            <div style={{ fontFamily: INTER, fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: FAINT, marginBottom: 4 }}>
+            <div style={{ fontFamily: OUTFIT, fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: FAINT, marginBottom: 4 }}>
               {t.profitability.faktura.title}
             </div>
-            <div style={{ fontFamily: INTER, fontSize: 13, color: MUTED, marginBottom: 16 }}>
+            <div style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED, marginBottom: 16 }}>
               {t.profitability.faktura.autoNumber}
             </div>
-            <div style={{ fontFamily: INTER, fontSize: 13, color: MUTED, marginBottom: 20 }}>
+            <div style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED, marginBottom: 20 }}>
               {fakturaJob.lasttyp} · {fakturaJob.kund} → {fakturaJob.leverans}
               {fakturaJob.intakt != null && (
-                <span style={{ color: BLUE, marginLeft: 8, fontWeight: 600 }}>{fmtSEK(fakturaJob.intakt)} {t.jobs.exclVat}</span>
+                <span style={{ color: AMBER, marginLeft: 8, fontWeight: 600 }}>{fmtSEK(fakturaJob.intakt)} {t.jobs.exclVat}</span>
               )}
             </div>
 
@@ -760,8 +761,8 @@ export function Profitability() {
                 onClick={() => setFakturaJob(null)}
                 disabled={fakturaLoading}
                 style={{
-                  fontFamily: INTER, fontSize: 13, fontWeight: 600, padding: '9px 18px',
-                  border: '1.5px solid #e9ecef', borderRadius: 8,
+                  fontFamily: OUTFIT, fontSize: 13, fontWeight: 600, padding: '9px 18px',
+                  border: `1.5px solid ${BORDER}`, borderRadius: 8,
                   background: WHITE, color: '#374151', cursor: 'pointer',
                 }}
               >
@@ -771,14 +772,14 @@ export function Profitability() {
                 onClick={handleGenerateFaktura}
                 disabled={fakturaLoading || !kundNamn.trim()}
                 style={{
-                  fontFamily: INTER, fontSize: 13, fontWeight: 600, padding: '9px 18px',
+                  fontFamily: OUTFIT, fontSize: 13, fontWeight: 600, padding: '9px 18px',
                   border: 'none', borderRadius: 8,
-                  background: fakturaLoading || !kundNamn.trim() ? '#d1d5db' : BLUE,
-                  color: fakturaLoading || !kundNamn.trim() ? MUTED : WHITE,
+                  background: fakturaLoading || !kundNamn.trim() ? '#d1d5db' : AMBER,
+                  color: fakturaLoading || !kundNamn.trim() ? MUTED : TEXT,
                   cursor: fakturaLoading || !kundNamn.trim() ? 'not-allowed' : 'pointer',
                 }}
-                onMouseEnter={(e) => { if (!fakturaLoading && kundNamn.trim()) e.currentTarget.style.background = BLUE_DK; }}
-                onMouseLeave={(e) => { if (!fakturaLoading && kundNamn.trim()) e.currentTarget.style.background = BLUE; }}
+                onMouseEnter={(e) => { if (!fakturaLoading && kundNamn.trim()) e.currentTarget.style.background = AMBER_DK; }}
+                onMouseLeave={(e) => { if (!fakturaLoading && kundNamn.trim()) e.currentTarget.style.background = AMBER; }}
               >
                 {fakturaLoading ? t.profitability.faktura.generating : t.profitability.faktura.generate}
               </button>

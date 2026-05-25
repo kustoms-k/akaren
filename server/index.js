@@ -19,6 +19,7 @@ process.on('unhandledRejection', (reason) => {
 import 'dotenv/config';
 import express from 'express';
 import cors    from 'cors';
+import helmet  from 'helmet';
 import { fileURLToPath } from 'url';
 import { dirname, join }  from 'path';
 import './db.js';
@@ -55,7 +56,20 @@ import portalRouter                     from './routes/portal.js';
 import customersRouter                  from './routes/customers.js';
 import onboardingRouter                 from './routes/onboarding.js';
 import co2Router                        from './routes/co2.js';
-import db                    from './db.js';
+import stripeRouter, { handleStripeWebhook } from './routes/stripe.js';
+import { authLimiter, analyseLimiter, apiLimiter } from './middleware/rateLimit.js';
+import { requireSubscription } from './middleware/requireSubscription.js';
+import db from './db.js';
+
+// ── Startup security checks ───────────────────────────────────────────────────
+const JWT_SECRET = process.env.JWT_SECRET ?? '';
+if (JWT_SECRET.length < 32) {
+  console.error('[SECURITY] JWT_SECRET is missing or too short (need ≥32 chars). Server will not start in production.');
+  if (process.env.NODE_ENV === 'production') process.exit(1);
+}
+if (JWT_SECRET === 'dev-secret-change-in-production') {
+  console.warn('[SECURITY] Warning: default dev JWT_SECRET detected — set a real secret before deploying.');
+}
 
 const app  = express();
 const PORT = process.env.PORT || 3002;
@@ -63,11 +77,33 @@ const PORT = process.env.PORT || 3002;
 // ── Health check (first route — Railway needs this) ───────────────────────────
 app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
-app.use(cors());
-app.use(express.json());
+// ── Helmet — security headers ─────────────────────────────────────────────────
+app.use(helmet({
+  contentSecurityPolicy: false,  // disabled — SPA handles its own assets
+  crossOriginEmbedderPolicy: false,
+}));
+
+// ── CORS — whitelist only known origins ───────────────────────────────────────
+const allowedOrigins = new Set(
+  [process.env.APP_URL, 'http://localhost:5173', 'http://localhost:3002'].filter(Boolean),
+);
+app.use(cors({
+  origin(origin, cb) {
+    // Allow no-origin requests (mobile apps, curl, server-to-server)
+    if (!origin || allowedOrigins.has(origin)) return cb(null, true);
+    cb(new Error(`CORS: origin ${origin} not allowed`));
+  },
+  credentials: true,
+}));
+
+// ── Stripe webhook needs raw body — must be before express.json() ─────────────
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), handleStripeWebhook);
+
+// ── Body parsing — cap at 512 KB to prevent payload attacks ──────────────────
+app.use(express.json({ limit: '512kb' }));
 
 // ── Public routes (no auth) ───────────────────────────────────────────────────
-app.use('/api/auth',         authRouter);
+app.use('/api/auth',         authLimiter, authRouter);
 app.use('/api/public/quote', publicQuoteRouter);
 app.use('/api/portal',       portalRouter);
 app.use('/api/fuel-price',   fuelPriceRouter);
@@ -90,24 +126,25 @@ app.use('/api/fortnox', requireAuth, requireOwner, fortnoxRouter);
 app.use('/api/audit', requireAuth, requireOwner, auditRouter);
 
 // Mutations auto-logged; financial reads logged as 'view'
-app.use('/api/quotes',        requireAuth, auditMutation('quote'),            quotesRouter);
-app.use('/api/jobs',          requireAuth, auditMutation('job'),              jobsRouter);
-app.use('/api/templates',     requireAuth, auditMutation('template'),         templatesRouter);
-app.use('/api/drivers',       requireAuth, auditMutation('driver'),           driversRouter);
-app.use('/api/profitability', requireAuth, auditView('financial_report'),     profitabilityRouter);
-app.use('/api/statistics',    requireAuth, auditView('financial_report'),     statisticsRouter);
+app.use('/api/quotes',        apiLimiter, requireAuth, auditMutation('quote'),            quotesRouter);
+app.use('/api/jobs',          apiLimiter, requireAuth, auditMutation('job'),              jobsRouter);
+app.use('/api/templates',     apiLimiter, requireAuth, auditMutation('template'),         templatesRouter);
+app.use('/api/drivers',       apiLimiter, requireAuth, auditMutation('driver'),           driversRouter);
+app.use('/api/profitability', apiLimiter, requireAuth, auditView('financial_report'),     profitabilityRouter);
+app.use('/api/statistics',    apiLimiter, requireAuth, auditView('financial_report'),     statisticsRouter);
 
-app.use('/api/invoices',          requireAuth, auditMutation('invoice'), invoicesRouter);
-app.use('/api/fleet',             requireAuth, fleetRouter);
-app.use('/api/analyse',           requireAuth, analyseRouter);
-app.use('/api/distance',          requireAuth, distanceRouter);
-app.use('/api/route',             requireAuth, routeRouter);
-app.use('/api/route-advisory',    requireAuth, routeAdvisoryRouter);
-app.use('/api/pricing-insights',  requireAuth, pricingInsightsRouter);
-app.use('/api/data-privacy',      requireAuth, requireOwner, dataPrivacyRouter);
-app.use('/api/customers',         requireAuth, auditMutation('customer_portal'), customersRouter);
-app.use('/api/onboarding',        requireAuth, onboardingRouter);
-app.use('/api/co2',               requireAuth, co2Router);
+app.use('/api/invoices',          apiLimiter,     requireAuth, auditMutation('invoice'), invoicesRouter);
+app.use('/api/fleet',             apiLimiter,     requireAuth, fleetRouter);
+app.use('/api/analyse',           analyseLimiter, requireAuth, requireSubscription, analyseRouter);
+app.use('/api/distance',          apiLimiter,     requireAuth, distanceRouter);
+app.use('/api/route',             apiLimiter,     requireAuth, routeRouter);
+app.use('/api/route-advisory',    apiLimiter,     requireAuth, routeAdvisoryRouter);
+app.use('/api/pricing-insights',  apiLimiter,     requireAuth, requireSubscription, pricingInsightsRouter);
+app.use('/api/data-privacy',      apiLimiter,     requireAuth, requireOwner, dataPrivacyRouter);
+app.use('/api/customers',         apiLimiter,     requireAuth, auditMutation('customer_portal'), customersRouter);
+app.use('/api/onboarding',        apiLimiter,     requireAuth, onboardingRouter);
+app.use('/api/co2',               apiLimiter,     requireAuth, co2Router);
+app.use('/api/stripe',            apiLimiter,     requireAuth, requireOwner, stripeRouter);
 
 app.use(express.static(join(__dirname, '../client/dist')));
 

@@ -215,35 +215,37 @@ export function generatePdf(data, quoteNumber, fleet = [], meta = {}) {
   const perKm      = avstand > 0 ? transBase / avstand : 0;
   const perTim     = arbTim  > 0 ? arbKost   / arbTim  : 0;
 
+  // ── Company fields from caller (tenant-safe) ─────────────────────────────
+  const co         = meta.company ?? {};
+  const coName     = co.name      ?? 'Transportföretag';
+  const coEmail    = co.email     ?? '';
+  const coPhone    = co.phone     ?? '';
+  const coAddress  = co.address   ?? '';
+  const coOrgNr    = co.org_nr    ?? '';
+  const coBankgiro = co.bankgiro  ?? '';
+  const coMoms     = coOrgNr ? 'SE' + coOrgNr.replace(/[^0-9]/g, '') + '01' : '';
+
   let y = M;
 
   // ── LETTERHEAD ────────────────────────────────────────────────────────────
 
-  // Logo mark — indigo square
+  // Logo mark — first letter of company name
   fill(doc, INDIGO);
   strk(doc, INDIGO);
   doc.setLineWidth(0);
   doc.roundedRect(M, y, 14, 14, 2, 2, 'F');
   setf(doc, 'helvetica', 'bold', 11);
   col(doc, WHITE);
-  doc.text('K', M + 7, y + 9.8, { align: 'center' });
+  doc.text(coName.charAt(0).toUpperCase(), M + 7, y + 9.8, { align: 'center' });
 
   // Company name
-  setf(doc, 'times', 'bold', 20);
+  setf(doc, 'times', 'bold', 16);
   col(doc, BLACK);
-  doc.text('KEMOFFS AKERI', M + 18, y + 8.5);
-
-  setf(doc, 'helvetica', 'normal', 7);
-  col(doc, MID);
-  doc.text('och Entreprenad AB', M + 18, y + 14);
+  doc.text(coName.toUpperCase(), M + 18, y + 10);
 
   // Contact block — right-aligned
   const RX = PW - M;
-  for (const [i, line] of [
-    'info@kemoffs.se',
-    '08-123 456 78',
-    'Industrivägen 12, 117 43 Stockholm',
-  ].entries()) {
+  for (const [i, line] of [coEmail, coPhone, coAddress].filter(Boolean).entries()) {
     setf(doc, 'helvetica', 'normal', 6.5);
     col(doc, DARK);
     doc.text(line, RX, y + 4 + i * 5, { align: 'right' });
@@ -252,12 +254,14 @@ export function generatePdf(data, quoteNumber, fleet = [], meta = {}) {
   y += 20;
 
   // Org / VAT line
+  const orgLine = [
+    coOrgNr ? `Org.nr ${coOrgNr}` : null,
+    coMoms  ? `Momsreg.nr ${coMoms}` : null,
+    'Godkand for F-skatt',
+  ].filter(Boolean).join('  ·  ');
   setf(doc, 'helvetica', 'normal', 5.5);
   col(doc, LIGHT);
-  doc.text(
-    'Org.nr 556789-0123  ·  Momsreg.nr SE556789012301  ·  Godkand for F-skatt',
-    M, y,
-  );
+  doc.text(orgLine, M, y);
   y += 5;
   indigoDivider(doc, y);
   y += 9;
@@ -536,11 +540,11 @@ export function generatePdf(data, quoteNumber, fleet = [], meta = {}) {
   setf(doc, 'helvetica', 'normal', 6);
   col(doc, MID);
   doc.text(
-    'Betalningsvillkor: 30 dagar netto  ·  Drojsmalspanta: referensranta + 8%  ·  Bankgiro: 5050-1234',
+    ['Betalningsvillkor: 30 dagar netto', 'Drojsmalspanta: referensranta + 8%', coBankgiro ? `Bankgiro: ${coBankgiro}` : null].filter(Boolean).join('  ·  '),
     M, FY + 5.5,
   );
   doc.text(
-    'Kemoffs Akeri och Entreprenad AB  ·  Org.nr 556789-0123  ·  Momsreg.nr SE556789012301  ·  Godkand for F-skatt',
+    [coName, coOrgNr ? `Org.nr ${coOrgNr}` : null, coMoms ? `Momsreg.nr ${coMoms}` : null, 'Godkand for F-skatt'].filter(Boolean).join('  ·  '),
     M, FY + 10.5,
   );
 

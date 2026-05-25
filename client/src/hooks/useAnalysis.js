@@ -64,7 +64,7 @@ export function useAnalysis() {
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || 'network');
+        throw new Error(res.status === 402 ? 'subscription_required' : (body.error || 'network'));
       }
 
       const data = await res.json();
@@ -87,7 +87,8 @@ export function useAnalysis() {
       setConfidenceOverall(calcOverall(conf));
       setStatus('done');
     } catch (err) {
-      setError(err.message === 'parse' ? 'parse' : 'network');
+      const msg = err.message;
+      setError(msg === 'parse' ? 'parse' : msg === 'subscription_required' ? 'subscription_required' : 'network');
       setStatus('error');
     }
   }, []);

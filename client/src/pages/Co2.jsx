@@ -5,15 +5,15 @@ import { useLanguage } from '../context/LanguageContext.jsx';
 
 const OUTFIT = "'Outfit', system-ui, sans-serif";
 const MONO   = "'DM Mono', monospace";
-const AMBER  = '#c9a84c';
-const GREEN  = '#22c55e';
-const RED    = '#f43f5e';
-const BG     = '#f5f3ee';
+const AMBER  = '#c9921e';
+const GREEN  = '#1d6b45';
+const RED    = '#c45454';
+const BG     = '#edeae1';
 const WHITE  = '#ffffff';
-const BORDER = '#e6e2da';
-const TEXT   = '#17161a';
-const MUTED  = '#6b6574';
-const FAINT  = '#a09aa8';
+const BORDER = '#cfc9bb';
+const TEXT   = '#151210';
+const MUTED  = '#6a6050';
+const FAINT  = '#9a9082';
 
 const fmtNum = (n, dec = 0) =>
   n == null ? '—' : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: dec, minimumFractionDigits: dec }).format(n);

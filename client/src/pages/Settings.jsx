@@ -8,15 +8,18 @@ import { db }           from '../db/dexie.js';
 import { generateDpa }  from '../utils/generateDpa.js';
 import { generateTos }  from '../utils/generateTos.js';
 
-const INTER  = "'Inter', sans-serif";
-const BLUE   = '#4361ee';
-const BLUE_DK = '#3451d1';
-const BG     = '#f0f2f5';
-const WHITE  = '#ffffff';
-const BORDER = '#e9ecef';
-const TEXT   = '#1a1a2e';
-const MUTED  = '#6c757d';
-const SURF   = '#f8f9fa';
+const OUTFIT  = "'Outfit', system-ui, sans-serif";
+const INTER   = OUTFIT;  // alias — remove after full migration
+const AMBER   = '#c9921e';
+const BLUE    = AMBER;   // alias
+const BLUE_DK = '#a87818';
+const BG      = '#edeae1';
+const WHITE   = '#ffffff';
+const BORDER  = '#cfc9bb';
+const TEXT    = '#151210';
+const MUTED   = '#6a6050';
+const SURF    = '#f4f0e7';
+const MONO    = "'DM Mono', monospace";
 
 function SmsStatusPill({ enabled }) {
   const { t } = useLanguage();
@@ -125,94 +128,173 @@ function DriverRow({ driver }) {
   );
 }
 
-function BillingCard({ company }) {
+const STATUS_META = {
+  active:   { label: 'Aktiv',        color: '#1a7a47', bg: 'rgba(46,204,113,0.08)', border: 'rgba(46,204,113,0.3)',  dot: '#2ecc71' },
+  trialing: { label: 'Provperiod',   color: '#92400e', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.3)', dot: '#f59e0b' },
+  past_due: { label: 'Förfallen',    color: '#991b1b', bg: 'rgba(239,68,68,0.08)',  border: 'rgba(239,68,68,0.3)',  dot: '#ef4444' },
+  canceled: { label: 'Avslutad',     color: '#6b6574', bg: '#f5f3ee',               border: '#e6e2da',              dot: '#a09aa8' },
+  none:     { label: 'Ej aktiv',     color: '#6b6574', bg: '#f5f3ee',               border: '#e6e2da',              dot: '#a09aa8' },
+};
+
+function BillingCard() {
   const { t } = useLanguage();
+  const [sub,      setSub]      = useState(null);
+  const [loading,  setLoading]  = useState(true);
+  const [acting,   setActing]   = useState(false);
+  const [error,    setError]    = useState(null);
+
+  useEffect(() => {
+    apiFetch('/api/stripe/status')
+      .then((r) => r.json())
+      .then(setSub)
+      .catch(() => setSub({ status: 'none', stripe_enabled: false }))
+      .finally(() => setLoading(false));
+  }, []);
+
   const fmtDate = (s) => {
     if (!s) return '—';
     try { return new Intl.DateTimeFormat('sv-SE', { dateStyle: 'long' }).format(new Date(s)); }
     catch { return s; }
   };
 
-  const mailto = [
-    'mailto:admin@akaren.se',
-    '?subject=',
-    encodeURIComponent(`${t.settings.billing.cancelSubject} — ${company?.name ?? ''}`),
-    '&body=',
-    encodeURIComponent(
-      `${t.settings.billing.cancelSubject}\n\n${company?.name ?? ''}\n${company?.org_nr ?? ''}`
-    ),
-  ].join('');
+  async function handleCheckout() {
+    setActing(true); setError(null);
+    try {
+      const r = await apiFetch('/api/stripe/checkout', { method: 'POST' });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error);
+      window.location.href = data.url;
+    } catch (e) {
+      setError(e.message);
+      setActing(false);
+    }
+  }
+
+  async function handlePortal() {
+    setActing(true); setError(null);
+    try {
+      const r = await apiFetch('/api/stripe/portal', { method: 'POST' });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error);
+      window.location.href = data.url;
+    } catch (e) {
+      setError(e.message);
+      setActing(false);
+    }
+  }
+
+  const status = sub?.status ?? 'none';
+  const meta   = STATUS_META[status] ?? STATUS_META.none;
+  const isActive = status === 'active' || status === 'trialing';
+
+  const OUTFIT = "'Outfit', system-ui, sans-serif";
+  const AMBER  = '#c9a84c';
+  const BG2    = '#f5f3ee';
+  const TEXT2  = '#17161a';
+  const MUTED2 = '#6b6574';
+  const BORD   = '#e6e2da';
+
+  if (loading) {
+    return (
+      <div style={{ padding: 32, fontFamily: OUTFIT, fontSize: 13, color: MUTED2, textAlign: 'center' }}>
+        Laddar…
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: '20px 24px' }}>
-      <div style={{
-        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-        gap: 16, flexWrap: 'wrap',
-      }}>
+      {/* Header row */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontFamily: INTER, fontSize: 15, fontWeight: 700, color: TEXT, marginBottom: 4 }}>
-            Åkaren
+          <div style={{ fontFamily: OUTFIT, fontSize: 15, fontWeight: 700, color: TEXT2, marginBottom: 4 }}>
+            Åkaren TMS
           </div>
-          <div style={{ fontFamily: INTER, fontSize: 22, fontWeight: 700, color: BLUE }}>
+          <div style={{ fontFamily: OUTFIT, fontSize: 22, fontWeight: 700, color: AMBER }}>
             {t.settings.billing.price}
           </div>
-          <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED, marginTop: 4 }}>
+          <div style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED2, marginTop: 4 }}>
             {t.settings.billing.plan}
           </div>
         </div>
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
           padding: '5px 12px',
-          background: 'rgba(46,204,113,0.08)',
-          border: '1px solid rgba(46,204,113,0.3)',
+          background: meta.bg, border: `1px solid ${meta.border}`,
           borderRadius: 20, flexShrink: 0,
         }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#2ecc71', flexShrink: 0 }} />
-          <span style={{ fontFamily: INTER, fontSize: 12, color: '#1a7a47', fontWeight: 500 }}>
-            {t.settings.fortnox.connected}
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: meta.dot, flexShrink: 0 }} />
+          <span style={{ fontFamily: OUTFIT, fontSize: 12, color: meta.color, fontWeight: 500 }}>
+            {meta.label}
           </span>
         </div>
       </div>
 
-      <div style={{
-        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 20,
-      }}>
-        <div style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '10px 14px' }}>
-          <div style={{ fontFamily: INTER, fontSize: 11, color: MUTED, marginBottom: 4, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+      {/* Info grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 20 }}>
+        <div style={{ background: BG2, border: `1px solid ${BORD}`, borderRadius: 8, padding: '10px 14px' }}>
+          <div style={{ fontFamily: OUTFIT, fontSize: 11, color: MUTED2, marginBottom: 4, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             {t.settings.billing.renewal}
           </div>
-          <div style={{ fontFamily: INTER, fontSize: 14, color: TEXT, fontWeight: 600 }}>
-            {fmtDate(company?.subscription_renews_at)}
+          <div style={{ fontFamily: OUTFIT, fontSize: 14, color: TEXT2, fontWeight: 600 }}>
+            {fmtDate(sub?.renews_at)}
           </div>
         </div>
-        <div style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '10px 14px' }}>
-          <div style={{ fontFamily: INTER, fontSize: 11, color: MUTED, marginBottom: 4, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Betalningsmetod / Payment method
+        <div style={{ background: BG2, border: `1px solid ${BORD}`, borderRadius: 8, padding: '10px 14px' }}>
+          <div style={{ fontFamily: OUTFIT, fontSize: 11, color: MUTED2, marginBottom: 4, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Betalningsmetod
           </div>
-          <div style={{ fontFamily: INTER, fontSize: 14, color: TEXT, fontWeight: 600 }}>
-            Faktura / Invoice
+          <div style={{ fontFamily: OUTFIT, fontSize: 14, color: TEXT2, fontWeight: 600 }}>
+            {isActive ? 'Kort / kortbetalning' : '—'}
           </div>
         </div>
       </div>
 
-      <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${BORDER}` }}>
-        <a
-          href={mailto}
-          style={{
-            fontFamily: INTER, fontSize: 12, fontWeight: 500,
-            color: '#e74c3c',
-            background: 'rgba(231,76,60,0.06)',
-            border: '1px solid rgba(231,76,60,0.25)',
-            padding: '7px 16px', borderRadius: 6,
-            textDecoration: 'none', display: 'inline-block',
-          }}
-        >
-          {t.settings.billing.cancel}
-        </a>
-        <p style={{ fontFamily: INTER, fontSize: 11, color: MUTED, margin: '10px 0 0', lineHeight: 1.6 }}>
-          Skickar ett e-postmeddelande till admin@akaren.se. Din prenumeration avslutas inte automatiskt.
-          / Sends an email to admin@akaren.se. Your subscription is not cancelled automatically.
-        </p>
+      {/* Action buttons */}
+      <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${BORD}`, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+        {!isActive && sub?.stripe_enabled && (
+          <button
+            onClick={handleCheckout}
+            disabled={acting}
+            style={{
+              fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
+              padding: '8px 20px', borderRadius: 7, border: 'none',
+              background: AMBER, color: TEXT2, cursor: acting ? 'not-allowed' : 'pointer',
+              opacity: acting ? 0.7 : 1,
+            }}
+          >
+            {acting ? '…' : 'Starta prenumeration'}
+          </button>
+        )}
+
+        {isActive && (
+          <button
+            onClick={handlePortal}
+            disabled={acting}
+            style={{
+              fontFamily: OUTFIT, fontSize: 13, fontWeight: 500,
+              padding: '8px 20px', borderRadius: 7,
+              border: `1px solid ${BORD}`,
+              background: '#fff', color: TEXT2,
+              cursor: acting ? 'not-allowed' : 'pointer',
+              opacity: acting ? 0.7 : 1,
+            }}
+          >
+            {acting ? '…' : 'Hantera prenumeration'}
+          </button>
+        )}
+
+        {!sub?.stripe_enabled && (
+          <p style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED2, margin: 0 }}>
+            Kontakta <a href="mailto:admin@akaren.se" style={{ color: AMBER }}>admin@akaren.se</a> för att hantera din prenumeration.
+          </p>
+        )}
+
+        {error && (
+          <p style={{ fontFamily: OUTFIT, fontSize: 12, color: '#e74c3c', margin: 0 }}>
+            {error}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -457,7 +539,7 @@ export function Settings({ onFortnoxResult }) {
             </span>
             <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>2 990 kr/mån</span>
           </div>
-          <BillingCard company={company} />
+          <BillingCard />
         </div>
       )}
 

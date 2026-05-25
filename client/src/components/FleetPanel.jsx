@@ -1,12 +1,15 @@
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const INTER = "'Inter', sans-serif";
-const BLUE  = '#4361ee';
-const WHITE = '#ffffff';
-const BORDER = '#e9ecef';
-const TEXT  = '#1a1a2e';
-const MUTED = '#6c757d';
-const SURF  = '#f8f9fa';
+const AMBER   = '#c9921e';
+const AMBER_DK= '#a87818';
+const WHITE   = '#ffffff';
+const BORDER  = '#cfc9bb';
+const TEXT    = '#151210';
+const MUTED   = '#6a6050';
+const FAINT   = '#9a9082';
+const OUTFIT  = "'Outfit', system-ui, sans-serif";
+const SURF    = '#f4f0e7';
+const MONO    = "'DM Mono', monospace";
 
 const EURO = {
   6: { label: 'E6', color: '#16a34a', bg: 'rgba(22,163,74,0.08)' },
@@ -26,21 +29,21 @@ function VehicleRow({ v }) {
       padding: '8px 0', borderBottom: `1px solid ${BORDER}`,
     }}>
       <span style={{
-        fontFamily: INTER, fontSize: 12, color: BLUE,
+        fontFamily: OUTFIT, fontSize: 12, color: AMBER,
         fontWeight: 600, flexShrink: 0, minWidth: 54,
       }}>
         {v.id}
       </span>
 
       <span style={{
-        fontFamily: INTER, fontSize: 13, color: TEXT,
+        fontFamily: OUTFIT, fontSize: 13, color: TEXT,
         flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>
         {v.namn}
       </span>
 
       <span style={{
-        fontFamily: INTER, fontSize: 11, fontWeight: 600,
+        fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
         textTransform: 'uppercase',
         color: badge.color, background: badge.bg,
         padding: '2px 6px', borderRadius: 4, flexShrink: 0,
@@ -49,7 +52,7 @@ function VehicleRow({ v }) {
       </span>
 
       <span style={{
-        fontFamily: INTER, fontSize: 12, color: MUTED,
+        fontFamily: MONO, fontSize: 12, color: MUTED,
         flexShrink: 0, textAlign: 'right', minWidth: 78,
       }}>
         {fmtSEK(v.timkostnad_sek)} kr/tim
@@ -57,7 +60,7 @@ function VehicleRow({ v }) {
 
       {v.lez_godkänd && (
         <span style={{
-          fontFamily: INTER, fontSize: 11, fontWeight: 600,
+          fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
           textTransform: 'uppercase', color: '#16a34a', flexShrink: 0,
         }}>
           LEZ
@@ -71,7 +74,7 @@ export function FleetPanel({ fleet }) {
   const { t } = useLanguage();
   if (fleet.length === 0) {
     return (
-      <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: 0, flexShrink: 0 }}>
+      <p style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED, margin: 0, flexShrink: 0 }}>
         {t.fleetPanel.loading}
       </p>
     );

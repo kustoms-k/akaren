@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const BLUE    = '#4361ee';
-const BLUE_DK = '#3451d1';
+const AMBER   = '#c9921e';
+const AMBER_DK= '#a87818';
 const WHITE   = '#ffffff';
-const BG      = '#f0f2f5';
-const BORDER  = '#e9ecef';
-const TEXT    = '#1a1a2e';
-const MUTED   = '#6c757d';
-const FAINT   = '#9ca3af';
-const INTER   = "'Inter', sans-serif";
+const BG      = '#edeae1';
+const BORDER  = '#cfc9bb';
+const TEXT    = '#151210';
+const MUTED   = '#6a6050';
+const FAINT   = '#9a9082';
+const OUTFIT  = "'Outfit', system-ui, sans-serif";
 
 const fmtSEK = (n) =>
   n == null ? '—' :
@@ -53,16 +53,16 @@ function KpiCard({ label, value, sub, accent }) {
       background: WHITE, border: `1px solid ${BORDER}`,
       borderRadius: 12, padding: '18px 20px', flex: 1, minWidth: 0,
     }}>
-      <div style={{ fontFamily: INTER, fontSize: 11, fontWeight: 600, color: MUTED,
+      <div style={{ fontFamily: OUTFIT, fontSize: 11, fontWeight: 600, color: MUTED,
         textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
         {label}
       </div>
-      <div style={{ fontFamily: INTER, fontSize: 22, fontWeight: 700,
+      <div style={{ fontFamily: OUTFIT, fontSize: 22, fontWeight: 700,
         color: accent ?? TEXT, lineHeight: 1, marginBottom: 4 }}>
         {value}
       </div>
       {sub && (
-        <div style={{ fontFamily: INTER, fontSize: 11, color: FAINT }}>{sub}</div>
+        <div style={{ fontFamily: OUTFIT, fontSize: 11, color: FAINT }}>{sub}</div>
       )}
     </div>
   );
@@ -139,7 +139,7 @@ export function CustomerPortal({ token }) {
     return (
       <div style={{ minHeight: '100vh', background: BG, display: 'flex',
         alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontFamily: INTER, fontSize: 14, color: MUTED }}>{tp.loadingPortal}</div>
+        <div style={{ fontFamily: OUTFIT, fontSize: 14, color: MUTED }}>{tp.loadingPortal}</div>
       </div>
     );
   }
@@ -150,10 +150,10 @@ export function CustomerPortal({ token }) {
         alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12,
           padding: '32px 40px', textAlign: 'center', maxWidth: 400 }}>
-          <div style={{ fontFamily: INTER, fontSize: 16, fontWeight: 600, color: TEXT, marginBottom: 8 }}>
+          <div style={{ fontFamily: OUTFIT, fontSize: 16, fontWeight: 600, color: TEXT, marginBottom: 8 }}>
             {tp.notFound}
           </div>
-          <div style={{ fontFamily: INTER, fontSize: 13, color: MUTED }}>
+          <div style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED }}>
             {tp.notFoundDesc}
           </div>
         </div>
@@ -171,7 +171,7 @@ export function CustomerPortal({ token }) {
   ];
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, fontFamily: INTER }}>
+    <div style={{ minHeight: '100vh', background: BG, fontFamily: OUTFIT }}>
 
       <header style={{
         background: WHITE, borderBottom: `1px solid ${BORDER}`,
@@ -210,11 +210,11 @@ export function CustomerPortal({ token }) {
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px 80px' }}>
 
         <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontFamily: INTER, fontSize: 24, fontWeight: 700, color: TEXT,
+          <h1 style={{ fontFamily: OUTFIT, fontSize: 24, fontWeight: 700, color: TEXT,
             margin: '0 0 6px', letterSpacing: '-0.02em' }}>
             {tp.welcome}, {portal.customer_name}
           </h1>
-          <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: 0 }}>
+          <p style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED, margin: 0 }}>
             {tp.subtitle(portal.company_name)}
           </p>
         </div>
@@ -286,7 +286,7 @@ export function CustomerPortal({ token }) {
                       href={`/quote/${q.token}`}
                       style={{
                         display: 'inline-flex', alignItems: 'center', gap: 6,
-                        fontFamily: INTER, fontSize: 12, fontWeight: 600,
+                        fontFamily: OUTFIT, fontSize: 12, fontWeight: 600,
                         color: WHITE, background: BLUE,
                         border: 'none', borderRadius: 8, padding: '10px 20px',
                         textDecoration: 'none', cursor: 'pointer',
@@ -308,7 +308,7 @@ export function CustomerPortal({ token }) {
         <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${BORDER}`, marginBottom: 24 }}>
           {TABS.map(({ id, label }) => (
             <button key={id} onClick={() => setActiveTab(id)} style={{
-              fontFamily: INTER, fontSize: 13, fontWeight: activeTab === id ? 600 : 400,
+              fontFamily: OUTFIT, fontSize: 13, fontWeight: activeTab === id ? 600 : 400,
               color: activeTab === id ? BLUE : MUTED,
               background: 'none', border: 'none',
               borderBottom: activeTab === id ? `2px solid ${BLUE}` : '2px solid transparent',
@@ -338,7 +338,7 @@ export function CustomerPortal({ token }) {
                       {[tp.table.ref, tp.table.cargo, tp.table.route,
                         tp.table.date, tp.table.amount, tp.table.status].map((col) => (
                         <th key={col} style={{
-                          fontFamily: INTER, fontSize: 11, fontWeight: 600,
+                          fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
                           color: MUTED, textAlign: 'left',
                           textTransform: 'uppercase', letterSpacing: '0.05em',
                           padding: '12px 16px', borderBottom: `1px solid ${BORDER}`,
@@ -358,32 +358,32 @@ export function CustomerPortal({ token }) {
                           onMouseEnter={(e) => { e.currentTarget.style.background = BG; }}
                           onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                         >
-                          <td style={{ fontFamily: INTER, fontSize: 11, fontWeight: 600,
+                          <td style={{ fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
                             color: BLUE, padding: '14px 16px', whiteSpace: 'nowrap' }}>
                             {q.faktura_nr
                               ? `#${q.faktura_nr}`
                               : `OFF-${String(q.id).padStart(3, '0')}`}
                           </td>
-                          <td style={{ fontFamily: INTER, fontSize: 13, color: TEXT,
+                          <td style={{ fontFamily: OUTFIT, fontSize: 13, color: TEXT,
                             padding: '14px 16px', maxWidth: 160,
                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {q.lasttyp ?? '—'}
                           </td>
-                          <td style={{ fontFamily: INTER, fontSize: 12, color: MUTED, padding: '14px 16px' }}>
+                          <td style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED, padding: '14px 16px' }}>
                             {[q.upphämtning, q.leverans].filter(Boolean).join(' → ') || '—'}
                           </td>
-                          <td style={{ fontFamily: INTER, fontSize: 12, color: MUTED,
+                          <td style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED,
                             padding: '14px 16px', whiteSpace: 'nowrap' }}>
                             {fmtDate(q.created_at)}
                           </td>
-                          <td style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600,
+                          <td style={{ fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
                             color: TEXT, padding: '14px 16px', whiteSpace: 'nowrap' }}>
                             {fmtSEK(q.invoice_total ?? q.totalpris_sek)}
                           </td>
                           <td style={{ padding: '14px 16px' }}>
                             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                               <span style={{
-                                fontFamily: INTER, fontSize: 11, fontWeight: 600,
+                                fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
                                 padding: '3px 10px', borderRadius: 20,
                                 background: sb.bg, color: sb.color,
                               }}>
@@ -391,7 +391,7 @@ export function CustomerPortal({ token }) {
                               </span>
                               {ib && (
                                 <span style={{
-                                  fontFamily: INTER, fontSize: 11, fontWeight: 600,
+                                  fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
                                   padding: '3px 10px', borderRadius: 20,
                                   background: ib.bg, color: ib.color,
                                 }}>
@@ -412,7 +412,7 @@ export function CustomerPortal({ token }) {
               <button
                 onClick={() => setShowInquiry(true)}
                 style={{
-                  fontFamily: INTER, fontSize: 13, fontWeight: 600,
+                  fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
                   background: BLUE, color: WHITE,
                   border: 'none', borderRadius: 8, padding: '13px 28px',
                   cursor: 'pointer', transition: 'background 0.15s',
@@ -422,7 +422,7 @@ export function CustomerPortal({ token }) {
               >
                 {tp.newInquiry.btn}
               </button>
-              <p style={{ fontFamily: INTER, fontSize: 11, color: FAINT, marginTop: 8 }}>
+              <p style={{ fontFamily: OUTFIT, fontSize: 11, color: FAINT, marginTop: 8 }}>
                 {tp.newInquiry.hint}
               </p>
             </div>
@@ -442,7 +442,7 @@ export function CustomerPortal({ token }) {
                 display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {messages.length === 0 ? (
                   <div style={{ margin: 'auto', textAlign: 'center' }}>
-                    <div style={{ fontFamily: INTER, fontSize: 13, color: MUTED }}>
+                    <div style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED }}>
                       {tp.noMessagesDesc}
                     </div>
                   </div>
@@ -460,11 +460,11 @@ export function CustomerPortal({ token }) {
                           color: isOut ? TEXT : WHITE,
                           borderRadius: isOut ? '4px 12px 12px 12px' : '12px 4px 12px 12px',
                           padding: '10px 14px',
-                          fontFamily: INTER, fontSize: 13, lineHeight: 1.5,
+                          fontFamily: OUTFIT, fontSize: 13, lineHeight: 1.5,
                         }}>
                           {msg.body}
                         </div>
-                        <div style={{ fontFamily: INTER, fontSize: 10, color: FAINT, marginTop: 4 }}>
+                        <div style={{ fontFamily: OUTFIT, fontSize: 10, color: FAINT, marginTop: 4 }}>
                           {isOut ? msg.sender_name : tp.messageThread.you} · {fmtTime(msg.created_at)}
                         </div>
                       </div>
@@ -487,7 +487,7 @@ export function CustomerPortal({ token }) {
                   placeholder={tp.messageThread.placeholder}
                   rows={2}
                   style={{
-                    flex: 1, fontFamily: INTER, fontSize: 13, color: TEXT,
+                    flex: 1, fontFamily: OUTFIT, fontSize: 13, color: TEXT,
                     background: BG, border: `1px solid ${BORDER}`, borderRadius: 8,
                     padding: '10px 14px', resize: 'none', outline: 'none',
                     lineHeight: 1.5,
@@ -497,7 +497,7 @@ export function CustomerPortal({ token }) {
                   onClick={sendMessage}
                   disabled={sending || !msgInput.trim()}
                   style={{
-                    fontFamily: INTER, fontSize: 12, fontWeight: 600,
+                    fontFamily: OUTFIT, fontSize: 12, fontWeight: 600,
                     background: msgInput.trim() ? BLUE : BORDER,
                     color: msgInput.trim() ? WHITE : FAINT,
                     border: 'none', borderRadius: 8, padding: '10px 18px',
@@ -535,10 +535,10 @@ export function CustomerPortal({ token }) {
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}>
               <div>
-                <div style={{ fontFamily: INTER, fontSize: 15, fontWeight: 700, color: TEXT }}>
+                <div style={{ fontFamily: OUTFIT, fontSize: 15, fontWeight: 700, color: TEXT }}>
                   {tp.newInquiry.heading}
                 </div>
-                <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED, marginTop: 2 }}>
+                <div style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED, marginTop: 2 }}>
                   {tp.newInquiry.sub}
                 </div>
               </div>
@@ -554,10 +554,10 @@ export function CustomerPortal({ token }) {
               {inquirySent ? (
                 <div style={{ textAlign: 'center', padding: '16px 0' }}>
                   <div style={{ fontSize: 24, marginBottom: 8 }}>✓</div>
-                  <div style={{ fontFamily: INTER, fontSize: 14, fontWeight: 600, color: '#16a34a', marginBottom: 4 }}>
+                  <div style={{ fontFamily: OUTFIT, fontSize: 14, fontWeight: 600, color: '#16a34a', marginBottom: 4 }}>
                     {tp.newInquiry.sent}
                   </div>
-                  <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>
+                  <div style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED }}>
                     {tp.newInquiry.sentDesc}
                   </div>
                 </div>
@@ -570,7 +570,7 @@ export function CustomerPortal({ token }) {
                     placeholder={tp.newInquiry.placeholder}
                     rows={7}
                     style={{
-                      width: '100%', fontFamily: INTER, fontSize: 13, color: TEXT,
+                      width: '100%', fontFamily: OUTFIT, fontSize: 13, color: TEXT,
                       background: BG, border: `1px solid ${BORDER}`, borderRadius: 8,
                       padding: '12px 14px', resize: 'vertical', outline: 'none',
                       lineHeight: 1.6, boxSizing: 'border-box',
@@ -580,7 +580,7 @@ export function CustomerPortal({ token }) {
                     <button
                       onClick={() => { setShowInquiry(false); setInquiryText(''); }}
                       style={{
-                        fontFamily: INTER, fontSize: 12, fontWeight: 500,
+                        fontFamily: OUTFIT, fontSize: 12, fontWeight: 500,
                         background: WHITE, color: MUTED,
                         border: `1px solid ${BORDER}`, borderRadius: 8,
                         padding: '10px 20px', cursor: 'pointer',
@@ -592,7 +592,7 @@ export function CustomerPortal({ token }) {
                       onClick={sendInquiry}
                       disabled={!inquiryText.trim() || sendingInquiry}
                       style={{
-                        fontFamily: INTER, fontSize: 12, fontWeight: 600,
+                        fontFamily: OUTFIT, fontSize: 12, fontWeight: 600,
                         background: inquiryText.trim() ? BLUE : BORDER,
                         color: inquiryText.trim() ? WHITE : FAINT,
                         border: 'none', borderRadius: 8,
@@ -614,7 +614,7 @@ export function CustomerPortal({ token }) {
         borderTop: `1px solid ${BORDER}`, background: WHITE,
         padding: '16px 24px', textAlign: 'center', marginTop: 40,
       }}>
-        <div style={{ fontFamily: INTER, fontSize: 11, color: FAINT }}>
+        <div style={{ fontFamily: OUTFIT, fontSize: 11, color: FAINT }}>
           {portal.company_name}
           {portal.company_org_nr && ` · Org.nr ${portal.company_org_nr}`}
           {portal.company_phone && ` · ${portal.company_phone}`}

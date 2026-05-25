@@ -11,9 +11,10 @@ export function AuthProvider({ children }) {
   const [user,    setUser]    = useState(() => load('auth_user'));
   const [company, setCompany] = useState(() => load('auth_company'));
 
-  // Auto-login with default credentials if no session exists
+  // Auto-login with default credentials — dev convenience only, never runs in production
   useEffect(() => {
     if (token) return;
+    if (!import.meta.env.DEV) return;
     fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

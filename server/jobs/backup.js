@@ -8,7 +8,7 @@ import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } fro
 import db from '../db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH   = path.join(__dirname, '../data/kemoffs.db');
+const DB_PATH   = process.env.DB_PATH ?? path.join(__dirname, '../data/kemoffs.db');
 const TMP_DIR   = path.join(__dirname, '../data');
 
 // ── S3 client (S3-compatible: AWS, R2, Backblaze, MinIO) ─────────────────────

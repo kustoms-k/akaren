@@ -6,16 +6,17 @@ import { useSync }       from '../context/SyncContext.jsx';
 import { useLanguage }   from '../context/LanguageContext.jsx';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const BLUE    = '#4361ee';
-const BLUE_DK = '#3451d1';
-const BG      = '#f0f2f5';
+const AMBER   = '#c9921e';
+const AMBER_DK= '#a87818';
+const BG      = '#edeae1';
 const WHITE   = '#ffffff';
-const BORDER  = '#e9ecef';
-const TEXT    = '#1a1a2e';
-const MUTED   = '#6c757d';
-const FAINT   = '#9ca3af';
-const INTER   = "'Inter', sans-serif";
-const SURF    = '#f8f9fa';
+const BORDER  = '#cfc9bb';
+const TEXT    = '#151210';
+const MUTED   = '#6a6050';
+const FAINT   = '#9a9082';
+const OUTFIT  = "'Outfit', system-ui, sans-serif";
+const SURF    = '#f4f0e7';
+const MONO    = "'DM Mono', monospace";
 
 function currentMonth() {
   return new Date().toISOString().slice(0, 7);
@@ -48,7 +49,7 @@ const EURO_BADGE = {
 
 function SortIndicator({ active, dir }) {
   if (!active) return <span style={{ color: FAINT, marginLeft: 3, fontSize: 10 }}>↕</span>;
-  return <span style={{ color: BLUE, marginLeft: 3, fontSize: 10 }}>{dir === 'asc' ? '↑' : '↓'}</span>;
+  return <span style={{ color: AMBER, marginLeft: 3, fontSize: 10 }}>{dir === 'asc' ? '↑' : '↓'}</span>;
 }
 
 function ProfitCell({ value }) {
@@ -70,7 +71,7 @@ function EuroBadge({ klass }) {
   const b = EURO_BADGE[klass] ?? EURO_BADGE[4];
   return (
     <span style={{
-      fontFamily: INTER, fontSize: 11, fontWeight: 600,
+      fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
       letterSpacing: '0.02em', textTransform: 'uppercase',
       color: b.color, background: b.bg, padding: '3px 10px', borderRadius: 6,
     }}>
@@ -143,13 +144,13 @@ export function Fleet() {
   const lowCount = fleet.filter((v) => v.profit_per_hour != null && v.profit_per_hour < 200).length;
 
   const thStyle = (col) => ({
-    fontFamily: INTER, fontSize: 11, fontWeight: 600,
+    fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
     letterSpacing: '0.5px', textTransform: 'uppercase', color: MUTED,
     padding: '10px 16px', textAlign: col.align, width: col.width,
     whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none',
-    background: sortKey === col.key ? '#eef0f7' : SURF,
+    background: sortKey === col.key ? '#e8e2d5' : SURF,
     transition: 'background 0.1s',
-    borderBottom: '1px solid #e9ecef',
+    borderBottom: `1px solid ${BORDER}`,
   });
 
   return (
@@ -157,16 +158,16 @@ export function Fleet() {
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
         <div>
-          <h1 style={{ fontFamily: INTER, fontSize: 20, fontWeight: 700, color: TEXT, margin: '0 0 4px' }}>
+          <h1 style={{ fontFamily: OUTFIT, fontSize: 20, fontWeight: 700, color: TEXT, margin: '0 0 4px' }}>
             {t.fleet.heading}
           </h1>
           {!loading && lowCount > 0 && (
-            <div style={{ fontFamily: INTER, fontSize: 13, color: '#d97706' }}>
+            <div style={{ fontFamily: OUTFIT, fontSize: 13, color: '#d97706' }}>
               {t.fleet.underperforming(lowCount)}
             </div>
           )}
           {refreshing && (
-            <div style={{ fontFamily: INTER, fontSize: 12, color: FAINT }}>
+            <div style={{ fontFamily: OUTFIT, fontSize: 12, color: FAINT }}>
               {t.fleet.refreshing}
             </div>
           )}
@@ -175,8 +176,8 @@ export function Fleet() {
           value={month}
           onChange={(e) => setMonth(e.target.value)}
           style={{
-            fontFamily: INTER, fontSize: 13, color: TEXT,
-            background: WHITE, border: '1.5px solid #e9ecef', borderRadius: 8,
+            fontFamily: OUTFIT, fontSize: 13, color: TEXT,
+            background: WHITE, border: `1.5px solid ${BORDER}`, borderRadius: 8,
             padding: '9px 14px', cursor: 'pointer', outline: 'none',
           }}
         >
@@ -185,7 +186,7 @@ export function Fleet() {
       </div>
 
       {loading && (
-        <div style={{ fontFamily: INTER, fontSize: 14, color: MUTED, textAlign: 'center', padding: 48 }}>
+        <div style={{ fontFamily: OUTFIT, fontSize: 14, color: MUTED, textAlign: 'center', padding: 48 }}>
           {t.fleet.loading}
         </div>
       )}
@@ -193,7 +194,7 @@ export function Fleet() {
       {!loading && (
         <>
           <div style={{
-            background: WHITE, border: '1px solid #e9ecef', borderRadius: 12,
+            background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12,
             boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden', marginBottom: 20,
           }}>
             <div style={{ overflowX: 'auto' }}>
@@ -216,38 +217,38 @@ export function Fleet() {
                         key={v.id}
                         style={{
                           background: WHITE,
-                          borderBottom: i < sorted.length - 1 ? '1px solid #f0f2f5' : 'none',
+                          borderBottom: i < sorted.length - 1 ? `1px solid ${BG}` : 'none',
                           borderLeft: isUnderperforming ? '3px solid #f59e0b' : '3px solid transparent',
                         }}
                         onMouseEnter={(e) => e.currentTarget.style.background = SURF}
                         onMouseLeave={(e) => e.currentTarget.style.background = WHITE}
                       >
-                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: BLUE, fontWeight: 600, verticalAlign: 'middle' }}>{v.id}</td>
-                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT, verticalAlign: 'middle' }}>{v.namn}</td>
-                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: MUTED, verticalAlign: 'middle' }}>{v.typ}</td>
-                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: MUTED, verticalAlign: 'middle' }}>{fmtNum(v.maxLast_kg)} kg</td>
-                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: TEXT, verticalAlign: 'middle' }}>
+                        <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', color: AMBER, fontWeight: 600, verticalAlign: 'middle' }}>{v.id}</td>
+                        <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', color: TEXT, verticalAlign: 'middle' }}>{v.namn}</td>
+                        <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', color: MUTED, verticalAlign: 'middle' }}>{v.typ}</td>
+                        <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: MUTED, verticalAlign: 'middle' }}>{fmtNum(v.maxLast_kg)} kg</td>
+                        <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: TEXT, verticalAlign: 'middle' }}>
                           {v.monthly_revenue > 0 ? fmtSEK(v.monthly_revenue) : <span style={{ color: FAINT }}>—</span>}
                         </td>
-                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: TEXT, verticalAlign: 'middle' }}>
+                        <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: TEXT, verticalAlign: 'middle' }}>
                           {v.monthly_hours > 0 ? <span>{v.monthly_hours.toFixed(1)} h</span> : <span style={{ color: FAINT }}>—</span>}
                         </td>
-                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', textAlign: 'right', verticalAlign: 'middle' }}>
+                        <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'right', verticalAlign: 'middle' }}>
                           <ProfitCell value={v.profit_per_hour} />
                         </td>
-                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: MUTED, verticalAlign: 'middle' }}>{fmtNum(v.timkostnad_sek)} kr/h</td>
-                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', textAlign: 'center', verticalAlign: 'middle' }}>
+                        <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: MUTED, verticalAlign: 'middle' }}>{fmtNum(v.timkostnad_sek)} kr/h</td>
+                        <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'center', verticalAlign: 'middle' }}>
                           <EuroBadge klass={v.euro_klass} />
                         </td>
-                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', textAlign: 'center', verticalAlign: 'middle' }}>
+                        <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'center', verticalAlign: 'middle' }}>
                           {v.lez_godkänd
                             ? <span style={{ color: '#16a34a', fontSize: 14, fontWeight: 700 }}>✓</span>
                             : <span style={{ color: FAINT, fontSize: 14 }}>—</span>}
                         </td>
-                        <td style={{ fontFamily: INTER, fontSize: 13, padding: '12px 16px', textAlign: 'center', verticalAlign: 'middle' }}>
+                        <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'center', verticalAlign: 'middle' }}>
                           {v.tillstånd?.length > 0 ? (
                             <span title={v.tillstånd.join(', ')} style={{
-                              fontFamily: INTER, fontSize: 11, fontWeight: 600,
+                              fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
                               color: '#3b82f6', background: '#eff6ff',
                               padding: '3px 10px', borderRadius: 6, cursor: 'default', whiteSpace: 'nowrap',
                             }}>
@@ -264,14 +265,14 @@ export function Fleet() {
 
             <div style={{
               display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap',
-              padding: '10px 16px', borderTop: '1px solid #e9ecef', background: SURF,
+              padding: '10px 16px', borderTop: `1px solid ${BORDER}`, background: SURF,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{
                   display: 'inline-block', width: 10, height: 10,
                   borderLeft: '3px solid #f59e0b', background: '#fff7ed', flexShrink: 0,
                 }} />
-                <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>
+                <span style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED }}>
                   {t.fleet.legend.underperforming}
                 </span>
               </div>
@@ -280,9 +281,9 @@ export function Fleet() {
                   display: 'inline-block', width: 10, height: 10,
                   background: '#e8fdf0', border: '1px solid #16a34a', borderRadius: 2, flexShrink: 0,
                 }} />
-                <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>{t.fleet.legend.performing}</span>
+                <span style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED }}>{t.fleet.legend.performing}</span>
               </div>
-              <span style={{ fontFamily: INTER, fontSize: 12, color: FAINT, marginLeft: 'auto', fontStyle: 'italic' }}>
+              <span style={{ fontFamily: OUTFIT, fontSize: 12, color: FAINT, marginLeft: 'auto', fontStyle: 'italic' }}>
                 {t.fleet.legend.note}
               </span>
             </div>
@@ -302,7 +303,7 @@ export function Fleet() {
                 boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
               }}>
                 <div style={{
-                  fontFamily: INTER, fontSize: 11, fontWeight: 600,
+                  fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
                   letterSpacing: '0.5px', textTransform: 'uppercase',
                   color: FAINT, marginBottom: 10,
                 }}>
@@ -310,13 +311,13 @@ export function Fleet() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                   <span style={{
-                    fontFamily: INTER, fontSize: 26, fontWeight: 700,
+                    fontFamily: OUTFIT, fontSize: 26, fontWeight: 700,
                     color: card.warn ? '#d97706' : TEXT, lineHeight: 1,
                   }}>
                     {card.value}
                   </span>
                   {card.unit && (
-                    <span style={{ fontFamily: INTER, fontSize: 14, color: MUTED }}>{card.unit}</span>
+                    <span style={{ fontFamily: OUTFIT, fontSize: 14, color: MUTED }}>{card.unit}</span>
                   )}
                 </div>
               </div>

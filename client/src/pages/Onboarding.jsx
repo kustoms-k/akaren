@@ -4,16 +4,19 @@ import { useAuth }  from '../context/AuthContext.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
 import { LogoFull } from '../assets/Logo.jsx';
 
-const BLUE    = '#4361ee';
-const BLUE_DK = '#3451d1';
-const BG      = '#f0f2f5';
+const AMBER   = '#c9921e';
+const BLUE    = AMBER;
+const AMBER_DK= '#a87818';
+const BLUE_DK = AMBER_DK;
+const BG      = '#edeae1';
 const WHITE   = '#ffffff';
-const SURF    = '#f8f9fa';
-const BORDER  = '#e9ecef';
-const TEXT    = '#1a1a2e';
-const MUTED   = '#6c757d';
+const SURF    = '#f4f0e7';
+const BORDER  = '#cfc9bb';
+const TEXT    = '#151210';
+const MUTED   = '#6a6050';
 const GREEN   = '#2ecc71';
-const INTER   = "'Inter', sans-serif";
+const OUTFIT  = "'Outfit', system-ui, sans-serif";
+const INTER   = OUTFIT;
 
 const STEP_IDS = ['company', 'fleet', 'pricing', 'customer', 'demo'];
 
@@ -85,7 +88,7 @@ function TextInput({ value, onChange, placeholder, type = 'text', disabled }) {
         fontFamily: INTER, fontSize: 13, color: TEXT, background: WHITE,
         border: `1.5px solid ${f ? BLUE : BORDER}`, borderRadius: 8,
         padding: '9px 12px', width: '100%', boxSizing: 'border-box', outline: 'none',
-        boxShadow: f ? '0 0 0 3px rgba(67,97,238,0.10)' : 'none',
+        boxShadow: f ? '0 0 0 3px rgba(201,168,76,0.14)' : 'none',
         transition: 'border-color 0.15s, box-shadow 0.15s',
         opacity: disabled ? 0.6 : 1,
       }}
@@ -96,7 +99,7 @@ function TextInput({ value, onChange, placeholder, type = 'text', disabled }) {
 function Btn({ onClick, disabled, children, variant = 'primary', small }) {
   const [h, setH] = useState(false);
   const bg = variant === 'primary'
-    ? (disabled ? '#a0aec0' : h ? BLUE_DK : BLUE)
+    ? (disabled ? '#ddd9d2' : h ? BLUE_DK : BLUE)
     : (h ? BG : WHITE);
   return (
     <button
@@ -107,7 +110,7 @@ function Btn({ onClick, disabled, children, variant = 'primary', small }) {
         fontSize: small ? 12 : 14,
         padding: small ? '6px 14px' : '10px 22px',
         borderRadius: 8, border: variant === 'ghost' ? `1px solid ${BORDER}` : 'none',
-        background: bg, color: variant === 'primary' ? WHITE : TEXT,
+        background: bg, color: variant === 'primary' ? (disabled ? '#a09aa8' : TEXT) : TEXT,
         cursor: disabled ? 'not-allowed' : 'pointer',
         transition: 'background 0.15s',
         whiteSpace: 'nowrap',
@@ -308,7 +311,7 @@ function StepFleet({ trucks, onAdd, onRemove, onUpdate, onNext, onBack }) {
                 fontFamily: INTER, textAlign: 'left', cursor: 'pointer',
                 padding: '12px 14px', borderRadius: 10,
                 border: `2px solid ${selected ? BLUE : BORDER}`,
-                background: selected ? 'rgba(67,97,238,0.06)' : WHITE,
+                background: selected ? 'rgba(201,168,76,0.06)' : WHITE,
                 transition: 'border-color 0.15s, background 0.15s',
               }}
             >
@@ -390,7 +393,7 @@ function StepPricing({ pricing, onChange, onNext, onBack }) {
 
       {/* How it works callout */}
       <div style={{
-        background: 'rgba(67,97,238,0.05)', border: `1px solid rgba(67,97,238,0.2)`,
+        background: 'rgba(201,168,76,0.05)', border: `1px solid rgba(201,168,76,0.2)`,
         borderRadius: 10, padding: '14px 18px', marginBottom: 28,
         display: 'flex', gap: 14,
       }}>
@@ -864,8 +867,8 @@ export function Onboarding({ onComplete }) {
       {/* Wizard card */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px' }}>
         <div style={{
-          background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 14,
-          boxShadow: '0 4px 32px rgba(0,0,0,0.07)',
+          background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 8,
+          boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
           width: '100%', maxWidth: 640, padding: '36px 40px',
         }}>
           <StepBar current={step} />

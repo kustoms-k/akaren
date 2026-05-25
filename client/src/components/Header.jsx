@@ -1,4 +1,5 @@
 import { S } from '../constants/strings.js';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const INTER = "'Inter', sans-serif";
 const BLUE  = '#4361ee';
@@ -22,6 +23,7 @@ function HistoryIcon() {
 }
 
 export function Header({ onHistoryOpen, fleetCount, fuelPrice }) {
+  const { company } = useAuth();
   const isLive     = fuelPrice && fuelPrice.source !== 'fallback';
   const dotColor   = isLive ? 'var(--accent-green)' : 'var(--text-secondary)';
 
@@ -70,7 +72,7 @@ export function Header({ onHistoryOpen, fleetCount, fuelPrice }) {
               color:      'var(--text-secondary)',
             }}
           >
-            {S.app.company}
+            {company?.name ?? ''}
           </span>
 
           {fleetCount > 0 && (

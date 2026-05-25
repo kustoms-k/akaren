@@ -1,19 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
-import { COMPANY as COMPANY_INFO } from '../constants/company.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 import { LogoFull } from '../assets/Logo.jsx';
 
-const INTER = "'Inter', sans-serif";
-const BLUE  = '#4361ee';
-const BLUE_DK = '#3451d1';
-const BG    = '#f7f6f3';
-const WHITE = '#ffffff';
-const TEXT  = '#1a1a18';
-const MUTED = '#9b9890';
-const BDR   = '#e8e6e1';
-const BDR2  = '#f0efe9';
-
-const COMPANY_NAME = COMPANY_INFO.name;
+const OUTFIT  = "'Outfit', system-ui, sans-serif";
+const INTER   = OUTFIT;
+const AMBER   = '#c9921e';
+const BLUE    = AMBER;
+const AMBER_DK= '#a87818';
+const BLUE_DK = AMBER_DK;
+const BG      = '#edeae1';
+const WHITE   = '#ffffff';
+const TEXT    = '#151210';
+const MUTED   = '#6a6050';
+const BDR     = '#cfc9bb';
+const BDR2    = '#f4f0e7';
 
 const fmtSEK = (n) =>
   n == null ? '—' : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n) + ' kr';
@@ -153,7 +153,7 @@ function Accepted({ formattedId, t }) {
           {t.publicQuote.acceptedDesc}
         </p>
         <div style={{ marginTop: 28, paddingTop: 24, borderTop: `1px solid ${BDR}` }}>
-          <p style={{ fontFamily: INTER, fontSize: '0.6875rem', color: MUTED, margin: 0, letterSpacing: '0.06em' }}>{COMPANY_NAME}</p>
+          <p style={{ fontFamily: INTER, fontSize: '0.6875rem', color: MUTED, margin: 0, letterSpacing: '0.06em' }}>{companyName}</p>
         </div>
       </Card>
     </Shell>
@@ -175,7 +175,7 @@ function Declined({ formattedId, t }) {
           {t.publicQuote.declinedDesc}
         </p>
         <div style={{ marginTop: 28, paddingTop: 24, borderTop: `1px solid ${BDR}` }}>
-          <p style={{ fontFamily: INTER, fontSize: '0.6875rem', color: MUTED, margin: 0, letterSpacing: '0.06em' }}>{COMPANY_NAME}</p>
+          <p style={{ fontFamily: INTER, fontSize: '0.6875rem', color: MUTED, margin: 0, letterSpacing: '0.06em' }}>{companyName}</p>
         </div>
       </Card>
     </Shell>
@@ -188,7 +188,7 @@ function HistoryCard({ history, t }) {
   return (
     <Card style={{ marginTop: 16 }}>
       <SectionHead
-        title={pq.history.heading(COMPANY_NAME)}
+        title={pq.history.heading(companyName)}
         count={pq.history.count(history.length)}
       />
       <div>
@@ -284,7 +284,7 @@ function MessageThread({ messages, onSend, t }) {
                   {m.message}
                 </div>
                 <span style={{ fontFamily: INTER, fontSize: '0.5rem', color: MUTED, letterSpacing: '0.04em' }}>
-                  {isCustomer ? pm.you : COMPANY_NAME} · {fmtTs(m.created_at)}
+                  {isCustomer ? pm.you : companyName} · {fmtTs(m.created_at)}
                 </span>
               </div>
             );
@@ -371,7 +371,7 @@ function CounterOfferCard({ quote, counterOffers, onSubmit, t }) {
             {co.revised}
           </div>
           <p style={{ fontFamily: INTER, fontSize: '0.9375rem', color: TEXT, margin: '0 0 8px', lineHeight: 1.5 }}>
-            {co.revisedDesc(COMPANY_NAME)}
+            {co.revisedDesc(companyName)}
           </p>
           <div style={{ fontFamily: INTER, fontSize: '1.5rem', fontWeight: 700, color: BLUE, margin: '8px 0' }}>
             {fmtSEK(latest.revised_price_sek)}
@@ -536,6 +536,7 @@ export function PublicQuote({ token }) {
 
   const [phase,         setPhase]         = useState('loading');
   const [quote,         setQuote]         = useState(null);
+  const companyName = quote?.company_name ?? '';
   const [messages,      setMessages]      = useState([]);
   const [counterOffers, setCounterOffers] = useState([]);
   const [history,       setHistory]       = useState([]);
@@ -634,7 +635,7 @@ export function PublicQuote({ token }) {
       <Card>
         <div style={{ padding: '28px 24px 18px', borderBottom: `1px solid ${BDR}` }}>
           <p style={{ fontFamily: INTER, fontSize: 22, color: TEXT, margin: '0 0 4px', letterSpacing: '0.03em' }}>
-            {COMPANY_NAME}
+            {companyName}
           </p>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
             <p style={{ fontFamily: INTER, fontSize: '0.6875rem', color: MUTED, margin: 0, letterSpacing: '0.08em' }}>
@@ -746,7 +747,7 @@ export function PublicQuote({ token }) {
       )}
 
       <p style={{ fontFamily: INTER, fontSize: '0.625rem', color: MUTED, textAlign: 'center', marginTop: 24, letterSpacing: '0.06em' }}>
-        {pq.footer(COMPANY_NAME, quote.formattedId, fmtDate(quote.created_at))}
+        {pq.footer(companyName, quote.formattedId, fmtDate(quote.created_at))}
       </p>
     </Shell>
   );

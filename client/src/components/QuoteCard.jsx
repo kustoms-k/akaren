@@ -1,13 +1,16 @@
-import { S } from '../constants/strings.js';
+import { useAuth } from '../context/AuthContext.jsx';
 
-const INTER = "'Inter', sans-serif";
-const BLUE  = '#4361ee';
-const WHITE = '#ffffff';
-const BG    = '#f0f2f5';
-const TEXT  = '#1a1a2e';
-const MUTED = '#6c757d';
-const FAINT = '#9ca3af';
-const BORDER = '#e9ecef';
+const AMBER   = '#c9921e';
+const AMBER_DK= '#a87818';
+const BG      = '#edeae1';
+const WHITE   = '#ffffff';
+const BORDER  = '#cfc9bb';
+const TEXT    = '#151210';
+const MUTED   = '#6a6050';
+const FAINT   = '#9a9082';
+const OUTFIT  = "'Outfit', system-ui, sans-serif";
+const SURF    = '#f4f0e7';
+const MONO    = "'DM Mono', monospace";
 
 const fmtSEK = (n) =>
   new Intl.NumberFormat('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -28,7 +31,7 @@ function Th({ children, i }) {
   return (
     <th
       style={{
-        fontFamily: INTER,
+        fontFamily: OUTFIT,
         fontSize: 11,
         fontWeight: 600,
         letterSpacing: '0.06em',
@@ -49,7 +52,7 @@ function Td({ children, bold, muted, right }) {
   return (
     <td
       style={{
-        fontFamily: INTER,
+        fontFamily: right ? MONO : OUTFIT,
         fontSize: bold ? 15 : 13,
         fontWeight: bold ? 700 : 400,
         color: muted ? MUTED : TEXT,
@@ -63,6 +66,7 @@ function Td({ children, bold, muted, right }) {
 }
 
 export function QuoteCard({ data, quoteNumber, onSave, onExport, saving }) {
+  const { company } = useAuth();
   const today      = new Date();
   const validUntil = new Date(today);
   validUntil.setDate(validUntil.getDate() + 14);
@@ -128,7 +132,7 @@ export function QuoteCard({ data, quoteNumber, onSave, onExport, saving }) {
             <div>
               <p
                 style={{
-                  fontFamily: INTER,
+                  fontFamily: OUTFIT,
                   fontSize: 22,
                   fontWeight: 700,
                   color: TEXT,
@@ -138,11 +142,11 @@ export function QuoteCard({ data, quoteNumber, onSave, onExport, saving }) {
               >
                 Offert
               </p>
-              <p style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: BLUE, margin: 0 }}>
-                {S.app.companyLegal}
+              <p style={{ fontFamily: OUTFIT, fontSize: 13, fontWeight: 600, color: AMBER, margin: 0 }}>
+                {company?.name ?? ''}
               </p>
-              <p style={{ fontFamily: INTER, fontSize: 12, color: MUTED, margin: '3px 0 0' }}>
-                Org.nr {S.app.orgnr}
+              <p style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED, margin: '3px 0 0' }}>
+                {company?.org_nr ? `Org.nr ${company.org_nr}` : ''}
               </p>
             </div>
 
@@ -150,19 +154,19 @@ export function QuoteCard({ data, quoteNumber, onSave, onExport, saving }) {
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
               <p
                 style={{
-                  fontFamily: INTER,
+                  fontFamily: OUTFIT,
                   fontSize: 15,
                   fontWeight: 700,
-                  color: BLUE,
+                  color: AMBER,
                   margin: '0 0 10px',
                 }}
               >
                 {quoteNumber ?? S.quote.labels.draft}
               </p>
-              <p style={{ fontFamily: INTER, fontSize: 12, color: MUTED, margin: '0 0 3px' }}>
+              <p style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED, margin: '0 0 3px' }}>
                 {S.quote.labels.issued}:&nbsp;&nbsp;&nbsp;&nbsp;{fmtDate(today)}
               </p>
-              <p style={{ fontFamily: INTER, fontSize: 12, color: MUTED, margin: 0 }}>
+              <p style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED, margin: 0 }}>
                 {S.quote.labels.validUntil}: {fmtDate(validUntil)}
               </p>
             </div>
@@ -186,10 +190,10 @@ export function QuoteCard({ data, quoteNumber, onSave, onExport, saving }) {
                 { label: S.quote.labels.date,  val: data.datum },
               ].filter((f) => f.val).map(({ label, val }) => (
                 <div key={label}>
-                  <p style={{ fontFamily: INTER, fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: FAINT, margin: '0 0 3px' }}>
+                  <p style={{ fontFamily: OUTFIT, fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: FAINT, margin: '0 0 3px' }}>
                     {label}
                   </p>
-                  <p style={{ fontFamily: INTER, fontSize: 13, color: TEXT, fontWeight: 500, margin: 0 }}>
+                  <p style={{ fontFamily: OUTFIT, fontSize: 13, color: TEXT, fontWeight: 500, margin: 0 }}>
                     {val}
                   </p>
                 </div>
@@ -213,7 +217,7 @@ export function QuoteCard({ data, quoteNumber, onSave, onExport, saving }) {
             className="qcard-pad"
           >
             <span style={{ fontSize: '1rem', flexShrink: 0 }}>⚠</span>
-            <p style={{ fontFamily: INTER, fontSize: 12, fontWeight: 600, color: 'var(--lez-text)', margin: 0 }}>
+            <p style={{ fontFamily: OUTFIT, fontSize: 12, fontWeight: 600, color: 'var(--lez-text)', margin: 0 }}>
               {S.quote.banners.lez}
             </p>
           </div>
@@ -242,7 +246,7 @@ export function QuoteCard({ data, quoteNumber, onSave, onExport, saving }) {
                 <td
                   colSpan={3}
                   style={{
-                    fontFamily: INTER,
+                    fontFamily: OUTFIT,
                     fontSize: 12,
                     fontWeight: 700,
                     letterSpacing: '0.06em',
@@ -255,7 +259,7 @@ export function QuoteCard({ data, quoteNumber, onSave, onExport, saving }) {
                 </td>
                 <td
                   style={{
-                    fontFamily: INTER,
+                    fontFamily: MONO,
                     fontSize: 17,
                     fontWeight: 700,
                     color: TEXT,
@@ -286,7 +290,7 @@ export function QuoteCard({ data, quoteNumber, onSave, onExport, saving }) {
               }}
             >
               <span style={{ fontSize: '0.875rem', flexShrink: 0 }}>⚡</span>
-              <p style={{ fontFamily: INTER, fontSize: 12, color: 'var(--tillstand-text)', margin: 0, lineHeight: 1.5 }}>
+              <p style={{ fontFamily: OUTFIT, fontSize: 12, color: 'var(--tillstand-text)', margin: 0, lineHeight: 1.5 }}>
                 {S.quote.banners.tillstand}
               </p>
             </div>
@@ -309,11 +313,11 @@ export function QuoteCard({ data, quoteNumber, onSave, onExport, saving }) {
             disabled={saving}
             style={{
               flex: 1,
-              fontFamily: INTER,
+              fontFamily: OUTFIT,
               fontSize: 13,
               fontWeight: 600,
-              background: BLUE,
-              color: WHITE,
+              background: AMBER,
+              color: TEXT,
               border: 'none',
               borderRadius: 6,
               padding: '12px 16px',
@@ -329,11 +333,11 @@ export function QuoteCard({ data, quoteNumber, onSave, onExport, saving }) {
             onClick={onExport}
             style={{
               flex: 1,
-              fontFamily: INTER,
+              fontFamily: OUTFIT,
               fontSize: 13,
               fontWeight: 600,
               background: WHITE,
-              color: BLUE,
+              color: AMBER,
               border: `1px solid ${BORDER}`,
               borderRadius: 6,
               padding: '12px 16px',

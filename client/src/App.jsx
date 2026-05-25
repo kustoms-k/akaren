@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect, useRef, useMemo, Component } from 'react';
 import {
-  BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip,
+  BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell,
 } from 'recharts';
 import {
   LayoutDashboard, FilePlus, Briefcase, Truck, TrendingUp,
   Settings as SettingsIcon, LogOut, Bell, Search, X, DollarSign, FileText,
-  AlertTriangle, Fuel, Shield, Lock, Users, Leaf,
+  AlertTriangle, Fuel, Shield, Lock, Users, Leaf, CalendarDays,
 } from 'lucide-react';
 import { useLiveQuery }   from 'dexie-react-hooks';
 import { InquiryInput }              from './components/InquiryInput.jsx';
@@ -26,7 +26,9 @@ import { RouteMap }       from './components/RouteMap.jsx';
 import { Customers }      from './pages/Customers.jsx';
 import { Co2 }            from './pages/Co2.jsx';
 import { Onboarding }     from './pages/Onboarding.jsx';
+import { Dispatch }       from './pages/Dispatch.jsx';
 import { TourOverlay }    from './components/TourOverlay.jsx';
+import { SubscriptionGate } from './components/SubscriptionGate.jsx';
 import { SplashScreen }  from './components/SplashScreen.jsx';
 import { LogoFull, LogoMark } from './assets/Logo.jsx';
 import { useAnalysis }   from './hooks/useAnalysis.js';
@@ -38,20 +40,52 @@ import { LanguageProvider, useLanguage } from './context/LanguageContext.jsx';
 import { db }             from './db/dexie.js';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
-const AMBER   = '#c9a84c';
-const AMBER_DK= '#b8932a';
-const AMBER_LT= '#e4c978';
-const BG      = '#f5f3ee';
+const AMBER   = '#c9921e';
+const CYAN        = '#5eead4';
+const CYAN_BR     = '#2dd4bf';
+const VIOLET      = '#a78bfa';
+const BLUE_ACC    = '#60a5fa';
+const SUCCESS     = '#4ade80';
+const WARNING_C   = '#fbbf24';
+const DANGER      = '#f87171';
+const BG_BASE     = '#080b14';
+const SURF        = 'rgba(20,27,45,0.6)';
+const SURF_SOLID  = '#111827';
+const SURF_ELV    = 'rgba(30,41,66,0.5)';
+const BORDER      = 'rgba(255,255,255,0.06)';
+const BORDER_GLOW = 'rgba(94,234,212,0.15)';
+const TEXT_PR     = '#e8edf5';
+const TEXT_SEC    = '#8b97ad';
+const TEXT_MU     = '#5a6478';
+const INTER       = "'Inter', 'Outfit', system-ui, sans-serif";
+const MONO        = "'DM Mono', monospace";
+
+// Legacy aliases
+const OUTFIT  = INTER;
 const WHITE   = '#ffffff';
-const BORDER  = '#e6e2da';
-const TEXT    = '#17161a';
-const MUTED   = '#6b6574';
-const FAINT   = '#a09aa8';
-const OUTFIT  = "'Outfit', system-ui, sans-serif";
-// Legacy aliases kept for components not yet updated
-const BLUE    = AMBER;
-const BLUE_DK = AMBER_DK;
-const INTER   = OUTFIT;
+const TEXT    = TEXT_PR;
+const MUTED   = TEXT_SEC;
+const FAINT   = TEXT_MU;
+const BLUE    = CYAN;
+const BLUE_DK = CYAN_BR;
+const AMBER_LT= AMBER;
+const AMBER_DK= '#a87818';
+
+const glassCard = {
+  background: 'rgba(20,27,45,0.6)',
+  backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)',
+  border: '1px solid rgba(255,255,255,0.06)',
+  borderRadius: 16,
+  boxShadow: '0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)',
+};
+
+// Dark executive tokens
+const DARK       = BG_BASE;
+const DARK_SURF  = 'rgba(20,27,45,0.6)';
+const DARK_SURF2 = 'rgba(30,41,66,0.5)';
+const DARK_BDR   = 'rgba(255,255,255,0.06)';
+const GREEN_LIVE = SUCCESS;
 
 const NOISE_URI = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E")`;
 
@@ -72,23 +106,50 @@ const fmtDate = (str) => {
 const fmtPrice = (n) =>
   new Intl.NumberFormat('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 
-// ─── Static mock data ─────────────────────────────────────────────────────────
-const REVENUE_DATA = [
-  { month: 'Jan', value: 185000 },
-  { month: 'Feb', value: 220000 },
-  { month: 'Mar', value: 195000 },
-  { month: 'Apr', value: 248000 },
-  { month: 'Maj', value: 267000 },
-  { month: 'Jun', value: 284500 },
-];
+// ─── Live dashboard helpers ───────────────────────────────────────────────────
+function fmtTimeAgo(isoStr) {
+  const ms   = Date.now() - new Date(String(isoStr).replace(' ', 'T')).getTime();
+  const mins = Math.floor(ms / 60000);
+  if (mins < 1)  return 'Nyss';
+  if (mins < 60) return `${mins} min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)  return `${hrs}h`;
+  return `${Math.floor(hrs / 24)}d`;
+}
 
-function getActivity(t) {
-  return [
-    { dot: BLUE,      text: t.dashboard.activity.quoteCreated,   sub: 'AGR-2024-031',         time: '2 min' },
-    { dot: '#2ecc71', text: t.dashboard.activity.jobSaved,       sub: 'Stockholm → Göteborg', time: '14 min' },
-    { dot: '#60a5fa', text: t.dashboard.activity.smsSent,        sub: t.dashboard.activity.driverNotified, time: '1h' },
-    { dot: '#a78bfa', text: t.dashboard.activity.invoiceGen,     sub: 'AGR-2024-030',         time: '2h' },
-  ];
+function buildRevenueData(quotes) {
+  const now    = new Date();
+  const months = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+    return {
+      month: d.toLocaleDateString('sv-SE', { month: 'short' }),
+      key:   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+      value: 0,
+    };
+  });
+  for (const q of quotes) {
+    if (!q.created_at || !q.totalpris_sek) continue;
+    const key = String(q.created_at).slice(0, 7);
+    const m   = months.find((mo) => mo.key === key);
+    if (m) m.value += Number(q.totalpris_sek) || 0;
+  }
+  return months.map(({ month, value }) => ({ month, value }));
+}
+
+function buildActivity(quotes, t) {
+  const sorted = [...quotes]
+    .sort((a, b) => new Date(String(b.created_at).replace(' ', 'T')) - new Date(String(a.created_at).replace(' ', 'T')))
+    .slice(0, 5);
+  return sorted.map((q) => {
+    const route = [q.upphämtning, q.leverans].filter(Boolean).join(' → ') || q.lasttyp || '—';
+    const isJob = q.status === 'godkänd' || q.status === 'aktiv' || q.status === 'avslutad';
+    return {
+      dot:  isJob ? '#2ecc71' : AMBER,
+      text: isJob ? t.dashboard.activity.jobSaved : t.dashboard.activity.quoteCreated,
+      sub:  route,
+      time: fmtTimeAgo(q.created_at),
+    };
+  });
 }
 
 function getNavItems(t) {
@@ -96,6 +157,7 @@ function getNavItems(t) {
     { id: 'dashboard',   label: t.nav.dashboard,    Icon: LayoutDashboard, ownerOnly: false },
     { id: 'new-quote',   label: t.nav.newQuote,     Icon: FilePlus,        ownerOnly: false },
     { id: 'jobs',        label: t.nav.jobs,         Icon: Briefcase,       ownerOnly: false },
+    { id: 'dispatch',    label: 'Dispatch',         Icon: CalendarDays,    ownerOnly: false },
     { id: 'fleet',       label: t.nav.fleet,        Icon: Truck,           ownerOnly: false },
     { id: 'lonsamhet',   label: t.nav.profitability,Icon: TrendingUp,      ownerOnly: false },
     { id: 'customers',   label: t.nav.customers,    Icon: Users,           ownerOnly: false },
@@ -128,18 +190,19 @@ function NavItem({ id, label, Icon, isActive, onClick }) {
       style={{
         width: '100%',
         display: 'flex', alignItems: 'center', gap: 10,
-        padding: '8px 14px 8px 11px',
+        padding: '8px 12px',
         background: isActive
-          ? 'rgba(255,255,255,0.05)'
+          ? 'rgba(94,234,212,0.1)'
           : hovered ? 'rgba(255,255,255,0.03)' : 'transparent',
-        border: 'none',
-        borderLeft: `3px solid ${isActive ? AMBER : 'transparent'}`,
-        borderRadius: '0 6px 6px 0',
-        color: isActive ? '#ffffff' : hovered ? 'rgba(255,255,255,0.70)' : 'rgba(255,255,255,0.38)',
-        fontSize: 13, fontFamily: OUTFIT, fontWeight: isActive ? 600 : 400,
+        border: isActive ? '1px solid rgba(94,234,212,0.2)' : '1px solid transparent',
+        borderRadius: 10,
+        color: isActive ? CYAN : hovered ? TEXT_PR : TEXT_SEC,
+        fontSize: 13, fontFamily: INTER, fontWeight: isActive ? 600 : 400,
         cursor: 'pointer', textAlign: 'left',
+        boxShadow: isActive ? 'inset 0 0 20px rgba(94,234,212,0.05)' : 'none',
         transition: 'color 160ms cubic-bezier(0.23,1,0.32,1), background 160ms cubic-bezier(0.23,1,0.32,1), border-color 160ms cubic-bezier(0.23,1,0.32,1)',
         lineHeight: 1.3,
+        marginBottom: 2,
       }}
     >
       <Icon size={14} strokeWidth={isActive ? 2 : 1.5} style={{ flexShrink: 0 }} />
@@ -148,40 +211,55 @@ function NavItem({ id, label, Icon, isActive, onClick }) {
   );
 }
 
-const DOT_BG = { backgroundColor: '#f5f4f1' };
+const DOT_BG = { background: 'transparent' };
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
-function Sidebar({ activePage, onNavigate, company, onLogout, userRole }) {
+function Sidebar({ activePage, onNavigate, company, onLogout, userRole, mobileOpen, onMobileClose }) {
   const { t } = useLanguage();
   const visibleItems = getNavItems(t).filter((n) => !n.ownerOnly || userRole === 'owner');
   return (
-    <aside style={{
-      width: 216, flexShrink: 0,
-      background: '#0d0d0f',
+    <>
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <div className="mobile-backdrop" onClick={onMobileClose} aria-hidden />
+      )}
+    <aside className={`app-sidebar${mobileOpen ? ' mobile-open' : ''}`} style={{
+      width: 230, flexShrink: 0,
+      background: 'rgba(8,11,20,0.92)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
       borderRight: '1px solid rgba(255,255,255,0.06)',
       display: 'flex', flexDirection: 'column',
       height: '100vh',
     }}>
       {/* Logo */}
       <div style={{
-        padding: '18px 16px 14px',
-        display: 'flex', flexDirection: 'column', gap: 3,
+        padding: '20px 16px 16px',
+        display: 'flex', flexDirection: 'column', gap: 4,
         borderBottom: '1px solid rgba(255,255,255,0.06)',
         flexShrink: 0,
       }}>
-        <LogoFull markSize={26} variant="light" />
         <div style={{
-          fontSize: 10, color: 'rgba(255,255,255,0.28)',
-          fontFamily: OUTFIT, paddingLeft: 38, marginTop: 2,
-          letterSpacing: '0.04em', textTransform: 'uppercase',
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          fontFamily: INTER, fontWeight: 700, fontSize: 18,
+          background: 'linear-gradient(135deg, #5eead4, #ffffff)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          letterSpacing: '-0.01em',
+          lineHeight: 1,
         }}>
-          {company?.name ?? ''}
+          Åkaren
+        </div>
+        <div style={{
+          fontSize: 10, color: TEXT_MU,
+          fontFamily: INTER, marginTop: 2,
+          letterSpacing: '0.2em', textTransform: 'uppercase',
+        }}>
+          TRANSPORT PANEL
         </div>
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: '8px 6px', overflowY: 'auto' }}>
+      <nav style={{ flex: 1, padding: '10px 10px', overflowY: 'auto' }}>
         {visibleItems.map(({ id, label, Icon }) => (
           <NavItem
             key={id}
@@ -194,29 +272,51 @@ function Sidebar({ activePage, onNavigate, company, onLogout, userRole }) {
         ))}
       </nav>
 
-      {/* Footer + Log out */}
+      {/* Footer + user profile + Log out */}
       <div style={{
         borderTop: '1px solid rgba(255,255,255,0.06)',
-        padding: '10px 14px 12px', flexShrink: 0,
+        padding: '12px 14px 14px', flexShrink: 0,
       }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          {/* Avatar */}
+          <div style={{
+            width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+            background: 'rgba(94,234,212,0.15)',
+            border: '1px solid rgba(94,234,212,0.3)',
+            boxShadow: '0 0 10px rgba(94,234,212,0.2)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: INTER, fontSize: 11, fontWeight: 700, color: CYAN,
+          }}>
+            {(company?.name ?? 'A').slice(0, 2).toUpperCase()}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              fontFamily: INTER, fontSize: 11, color: TEXT_SEC,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
+              Admin · {company?.name ?? 'Åkaren'}
+            </div>
+          </div>
+        </div>
         <button
           onClick={onLogout}
           style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            color: 'rgba(255,255,255,0.35)', fontSize: 12, fontFamily: OUTFIT,
+            display: 'flex', alignItems: 'center', gap: 8,
+            color: TEXT_MU, fontSize: 12, fontFamily: INTER,
             background: 'none', border: 'none', cursor: 'pointer',
-            padding: '6px 4px', width: '100%',
+            padding: '5px 4px', width: '100%',
             borderRadius: 6,
             transition: 'color 160ms cubic-bezier(0.23,1,0.32,1)',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.75)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)'; }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = TEXT_PR; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = TEXT_MU; }}
         >
           <LogOut size={13} strokeWidth={1.5} />
           <span>{t.nav.logOut}</span>
         </button>
       </div>
     </aside>
+    </>
   );
 }
 
@@ -228,19 +328,19 @@ function FuelBadge({ fuelPrice }) {
     minimumFractionDigits: 2, maximumFractionDigits: 2,
   }).format(fuelPrice.price_per_litre);
   return (
-    <div style={{
+    <div className="topbar-fuel-badge" style={{
       display: 'flex', alignItems: 'center', gap: 6,
-      background: '#f8f9fa', border: `1px solid ${BORDER}`, borderRadius: 6,
+      background: 'rgba(20,27,45,0.6)', border: 'rgba(255,255,255,0.06)', borderRadius: 8,
       padding: '4px 10px', flexShrink: 0,
     }}>
-      <span style={{ fontFamily: INTER, fontSize: '0.625rem', color: MUTED }}>Diesel</span>
-      <span style={{ fontFamily: INTER, fontSize: '0.6875rem', fontWeight: 600, color: TEXT }}>
+      <span style={{ fontFamily: INTER, fontSize: '0.625rem', color: TEXT_MU }}>Diesel</span>
+      <span style={{ fontFamily: INTER, fontSize: '0.6875rem', fontWeight: 600, color: AMBER }}>
         {priceStr} kr
       </span>
       <span style={{
         width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-        background: isLive ? '#2ecc71' : FAINT,
-        boxShadow: isLive ? '0 0 5px rgba(46,204,113,0.5)' : 'none',
+        background: isLive ? SUCCESS : TEXT_MU,
+        boxShadow: isLive ? `0 0 5px ${SUCCESS}80` : 'none',
       }} />
     </div>
   );
@@ -265,27 +365,27 @@ function WeatherBadge({ weather }) {
   const sign     = weather.temp_c >= 0 ? '+' : '';
 
   return (
-    <div ref={ref} style={{ position: 'relative', flexShrink: 0 }}>
+    <div ref={ref} className="topbar-weather" style={{ position: 'relative', flexShrink: 0 }}>
       <div
         onClick={() => isWinter && setOpen((v) => !v)}
         style={{
           display: 'flex', alignItems: 'center', gap: 6,
-          background: isWinter ? 'rgba(245,158,11,0.08)' : '#f8f9fa',
-          border: `1px solid ${isWinter ? '#f59e0b' : BORDER}`, borderRadius: 6,
+          background: isWinter ? 'rgba(251,191,36,0.08)' : 'rgba(20,27,45,0.6)',
+          border: `1px solid ${isWinter ? 'rgba(251,191,36,0.3)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 8,
           padding: '4px 10px',
           cursor: isWinter ? 'pointer' : 'default',
           userSelect: 'none',
         }}
       >
-        <span style={{ fontFamily: INTER, fontSize: '0.6875rem', fontWeight: 600, color: isWinter ? '#d97706' : TEXT }}>
+        <span style={{ fontFamily: INTER, fontSize: '0.6875rem', fontWeight: 600, color: isWinter ? WARNING_C : TEXT_PR }}>
           {sign}{weather.temp_c}°C
         </span>
         <span style={{ fontSize: '0.8125rem', lineHeight: 1 }}>{weather.icon}</span>
-        <span style={{ fontFamily: INTER, fontSize: '0.625rem', color: MUTED }}>
+        <span style={{ fontFamily: INTER, fontSize: '0.625rem', color: TEXT_MU }}>
           {weather.condition} / {weather.condition_sv}
         </span>
         {isWinter && (
-          <span style={{ fontFamily: INTER, fontSize: '0.5rem', letterSpacing: '0.06em', color: '#f59e0b' }}>
+          <span style={{ fontFamily: INTER, fontSize: '0.5rem', letterSpacing: '0.06em', color: WARNING_C }}>
             ▾
           </span>
         )}
@@ -295,10 +395,10 @@ function WeatherBadge({ weather }) {
         <div style={{
           position: 'absolute', top: 'calc(100% + 6px)', left: '50%',
           transform: 'translateX(-50%)', zIndex: 500, width: 300,
-          background: WHITE, border: '1px solid #f59e0b', borderRadius: 8,
+          background: 'rgba(14,20,36,0.97)', border: `1px solid rgba(251,191,36,0.3)`, borderRadius: 10,
           padding: '10px 14px',
-          fontFamily: INTER, fontSize: '0.6875rem', color: '#d97706', lineHeight: 1.6,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          fontFamily: INTER, fontSize: '0.6875rem', color: WARNING_C, lineHeight: 1.6,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
         }}>
           {t.topbar.winterWarning}
         </div>
@@ -325,54 +425,54 @@ function RoadAlertsBadge({ alerts }) {
   if (!alerts || alerts.length === 0) return null;
 
   return (
-    <div ref={ref} style={{ position: 'relative', flexShrink: 0 }}>
+    <div ref={ref} className="topbar-road-alerts" style={{ position: 'relative', flexShrink: 0 }}>
       <div
         onClick={() => setOpen((v) => !v)}
         style={{
           display: 'flex', alignItems: 'center', gap: 6,
-          background: 'rgba(239,68,68,0.07)', border: '1px solid #ef4444',
-          borderRadius: 6, padding: '4px 10px', cursor: 'pointer', userSelect: 'none',
+          background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.3)',
+          borderRadius: 8, padding: '4px 10px', cursor: 'pointer', userSelect: 'none',
         }}
       >
-        <AlertTriangle size={11} color="#dc2626" />
-        <span style={{ fontFamily: INTER, fontSize: '0.6875rem', fontWeight: 600, color: '#dc2626' }}>
+        <AlertTriangle size={11} color={DANGER} />
+        <span style={{ fontFamily: INTER, fontSize: '0.6875rem', fontWeight: 600, color: DANGER }}>
           {t.roadAlerts.label(alerts.length)}
         </span>
-        <span style={{ fontFamily: INTER, fontSize: '0.5rem', letterSpacing: '0.06em', color: '#dc2626' }}>▾</span>
+        <span style={{ fontFamily: INTER, fontSize: '0.5rem', letterSpacing: '0.06em', color: DANGER }}>▾</span>
       </div>
 
       {open && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 6px)', left: '50%',
           transform: 'translateX(-50%)', zIndex: 500, width: 340,
-          background: WHITE, border: '1px solid #fca5a5', borderRadius: 10,
-          padding: '10px 0', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', overflow: 'hidden',
+          background: 'rgba(14,20,36,0.97)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 12,
+          padding: '10px 0', boxShadow: '0 8px 24px rgba(0,0,0,0.4)', overflow: 'hidden',
         }}>
-          <div style={{ padding: '2px 14px 8px', fontFamily: INTER, fontSize: '0.625rem', letterSpacing: '0.06em', color: MUTED, textTransform: 'uppercase' }}>
+          <div style={{ padding: '2px 14px 8px', fontFamily: INTER, fontSize: '0.625rem', letterSpacing: '0.06em', color: TEXT_MU, textTransform: 'uppercase' }}>
             {t.roadAlerts.header}
           </div>
           <div style={{ maxHeight: 260, overflowY: 'auto' }}>
             {alerts.slice(0, 8).map((a) => (
               <div key={a.id} style={{
                 padding: '8px 14px',
-                borderTop: '1px solid #fee2e2',
+                borderTop: '1px solid rgba(255,255,255,0.05)',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                  <span style={{ fontFamily: INTER, fontSize: '0.6875rem', fontWeight: 700, color: '#dc2626' }}>
+                  <span style={{ fontFamily: INTER, fontSize: '0.6875rem', fontWeight: 700, color: DANGER }}>
                     {a.road}
                   </span>
-                  <span style={{ fontFamily: INTER, fontSize: '0.625rem', color: TEXT, flex: 1 }}>
+                  <span style={{ fontFamily: INTER, fontSize: '0.625rem', color: TEXT_SEC, flex: 1 }}>
                     {a.location}
                   </span>
                 </div>
-                <div style={{ fontFamily: INTER, fontSize: '0.625rem', color: MUTED }}>
+                <div style={{ fontFamily: INTER, fontSize: '0.625rem', color: TEXT_MU }}>
                   {a.condition}{a.warnings?.length ? ' — ' + a.warnings.join(', ') : ''}
                 </div>
               </div>
             ))}
           </div>
           {alerts.length > 8 && (
-            <div style={{ padding: '6px 14px 2px', fontFamily: INTER, fontSize: '0.5625rem', color: MUTED }}>
+            <div style={{ padding: '6px 14px 2px', fontFamily: INTER, fontSize: '0.5625rem', color: TEXT_MU }}>
               +{alerts.length - 8} till…
             </div>
           )}
@@ -387,10 +487,10 @@ function SyncDot() {
   const { syncStatus, pendingCount } = useSync();
   const { t } = useLanguage();
 
-  const color = syncStatus === 'offline' ? '#e74c3c'
-    : syncStatus === 'syncing'           ? '#f59e0b'
-    : syncStatus === 'error'             ? '#e74c3c'
-    : '#2ecc71';
+  const color = syncStatus === 'offline' ? DANGER
+    : syncStatus === 'syncing'           ? WARNING_C
+    : syncStatus === 'error'             ? DANGER
+    : SUCCESS;
 
   const label = syncStatus === 'offline'
     ? (pendingCount > 0 ? t.topbar.sync.offlineQueue(pendingCount) : t.topbar.sync.offline)
@@ -428,7 +528,7 @@ function SyncDot() {
   );
 }
 
-function TopBar({ fuelPrice, weather, roadAlerts, company }) {
+function TopBar({ fuelPrice, weather, roadAlerts, company, onMobileMenuOpen }) {
   const { t, lang, setLang } = useLanguage();
   const now = new Date();
   const dateLocale = lang === 'sv' ? 'sv-SE' : 'en-GB';
@@ -436,31 +536,50 @@ function TopBar({ fuelPrice, weather, roadAlerts, company }) {
 
   return (
     <div style={{
-      height: 48, flexShrink: 0,
-      background: WHITE,
-      borderBottom: `1px solid ${BORDER}`,
+      height: 52, flexShrink: 0,
+      background: 'rgba(8,11,20,0.85)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+      borderBottom: '1px solid rgba(255,255,255,0.05)',
       display: 'flex', alignItems: 'center',
       padding: '0 20px', gap: 12,
     }}>
+      {/* Hamburger — mobile only */}
+      <button
+        className="mobile-menu-btn"
+        onClick={onMobileMenuOpen}
+        aria-label="Open menu"
+        style={{
+          background: 'none', border: 'none', cursor: 'pointer',
+          color: TEXT_MU, padding: 6, borderRadius: 6,
+          alignItems: 'center', justifyContent: 'center', gap: 3, flexShrink: 0,
+          flexDirection: 'column',
+        }}
+      >
+        <span style={{ display: 'block', width: 18, height: 1.5, background: 'currentColor', borderRadius: 2 }} />
+        <span style={{ display: 'block', width: 18, height: 1.5, background: 'currentColor', borderRadius: 2, marginTop: 4 }} />
+        <span style={{ display: 'block', width: 18, height: 1.5, background: 'currentColor', borderRadius: 2, marginTop: 4 }} />
+      </button>
+
       {/* Search */}
-      <div style={{ position: 'relative', flexShrink: 0 }}>
+      <div className="topbar-search" style={{ position: 'relative', flexShrink: 0 }}>
         <Search
-          size={13} color={MUTED}
+          size={13} color={TEXT_MU}
           style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
         />
         <input
           placeholder={t.topbar.searchPlaceholder}
           style={{
-            width: 220, height: 30,
-            background: BG, border: `1px solid ${BORDER}`,
-            borderRadius: 6, color: TEXT,
-            fontFamily: OUTFIT, fontSize: 12,
+            width: 200, height: 30,
+            background: 'rgba(20,27,45,0.8)', border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 8, color: TEXT_PR,
+            fontFamily: INTER, fontSize: 12,
             paddingLeft: 28, paddingRight: 10,
             outline: 'none',
-            transition: 'border-color 160ms cubic-bezier(0.23,1,0.32,1)',
+            transition: 'border-color 160ms',
           }}
-          onFocus={(e) => { e.currentTarget.style.borderColor = AMBER; }}
-          onBlur={(e) => { e.currentTarget.style.borderColor = BORDER; }}
+          onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(94,234,212,0.5)'; }}
+          onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
         />
       </div>
 
@@ -474,20 +593,36 @@ function TopBar({ fuelPrice, weather, roadAlerts, company }) {
       {/* Sync status */}
       <SyncDot />
 
+      {/* SYSTEM LIVE pill */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 6,
+        background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.2)',
+        borderRadius: 100, padding: '4px 10px', flexShrink: 0,
+      }}>
+        <span style={{
+          display: 'inline-block', width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+          background: SUCCESS, boxShadow: `0 0 8px ${SUCCESS}99`,
+          animation: 'dot-pulse 2s ease infinite',
+        }} />
+        <span style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.10em', color: SUCCESS }}>
+          SYSTEM LIVE
+        </span>
+      </div>
+
       {/* Language toggle */}
-      <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: 2, flexShrink: 0, background: 'rgba(20,27,45,0.8)', borderRadius: 8, padding: 3, border: '1px solid rgba(255,255,255,0.06)' }}>
         {['en', 'sv'].map((l) => (
           <button
             key={l}
             onClick={() => setLang(l)}
             style={{
-              fontFamily: OUTFIT, fontSize: 10, fontWeight: 700,
-              background: lang === l ? AMBER : 'transparent',
-              color: lang === l ? '#17161a' : MUTED,
-              border: `1px solid ${lang === l ? AMBER : BORDER}`,
-              borderRadius: 5, padding: '3px 8px',
+              fontFamily: INTER, fontSize: 10, fontWeight: 700,
+              background: lang === l ? CYAN : 'transparent',
+              color: lang === l ? '#080b14' : TEXT_MU,
+              border: 'none',
+              borderRadius: 6, padding: '4px 10px',
               cursor: 'pointer',
-              transition: 'background 160ms cubic-bezier(0.23,1,0.32,1), color 160ms cubic-bezier(0.23,1,0.32,1)',
+              transition: 'background 160ms, color 160ms',
               letterSpacing: '0.06em',
             }}
           >
@@ -496,354 +631,430 @@ function TopBar({ fuelPrice, weather, roadAlerts, company }) {
         ))}
       </div>
 
-      {/* Date + company */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1, flexShrink: 0 }}>
-        <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: MUTED, whiteSpace: 'nowrap' }}>
-          {todayStr}
-        </span>
-        <span style={{ fontFamily: OUTFIT, fontSize: 10, color: AMBER, letterSpacing: '0.06em', whiteSpace: 'nowrap', fontWeight: 600 }}>
-          {company?.name ?? 'Åkaren'}
-        </span>
-      </div>
+      {/* Date */}
+      <span style={{ fontFamily: MONO, fontSize: 10, color: TEXT_MU, whiteSpace: 'nowrap', flexShrink: 0 }}>
+        {todayStr}
+      </span>
     </div>
   );
 }
 
-// ─── KpiCard ──────────────────────────────────────────────────────────────────
-function KpiCard({ label, value, change, changeUp, accentColor }) {
+// ─── KpiCard — dark glassmorphic ──────────────────────────────────────────────
+function KpiCard({ label, value, change, changeUp, accentColor, Icon: IconProp }) {
   return (
     <div style={{
-      background: WHITE,
-      border: '1px solid var(--border)',
-      borderLeft: `3px solid ${accentColor}`,
-      borderRadius: '0 8px 8px 0',
-      padding: '16px 20px',
+      background: 'rgba(20,27,45,0.6)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      border: '1px solid rgba(255,255,255,0.06)',
+      borderRadius: 16,
+      padding: '20px 22px 22px',
+      position: 'relative',
+      overflow: 'hidden',
+      boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
       animation: 'number-up 0.28s cubic-bezier(0.23,1,0.32,1) both',
     }}>
+      {/* Accent gradient line at top */}
       <div style={{
-        fontFamily: OUTFIT,
-        fontSize: 10, fontWeight: 700,
-        letterSpacing: '0.10em',
-        textTransform: 'uppercase',
-        color: MUTED,
-        marginBottom: 10,
+        position: 'absolute', top: 0, left: 0, right: 0, height: 1.5,
+        background: `linear-gradient(90deg, ${accentColor}90 0%, transparent 70%)`,
+      }} />
+
+      {/* Icon + badge row */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+        {IconProp && (
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: `${accentColor}18`, border: `1px solid ${accentColor}30`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <IconProp size={16} color={accentColor} strokeWidth={1.5} />
+          </div>
+        )}
+        {change && (
+          <span style={{
+            fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.03em',
+            color: changeUp ? SUCCESS : DANGER,
+            background: changeUp ? 'rgba(74,222,128,0.10)' : 'rgba(248,113,113,0.10)',
+            border: `1px solid ${changeUp ? 'rgba(74,222,128,0.22)' : 'rgba(248,113,113,0.22)'}`,
+            padding: '2px 8px', borderRadius: 100, whiteSpace: 'nowrap', marginLeft: 'auto',
+          }}>
+            {changeUp ? '+' : ''}{change}
+          </span>
+        )}
+      </div>
+
+      {/* Label */}
+      <div style={{
+        fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.10em',
+        textTransform: 'uppercase', color: 'rgba(255,255,255,0.30)', marginBottom: 8,
       }}>
         {label}
       </div>
+
+      {/* Value */}
       <div style={{
-        fontFamily: "'DM Mono', monospace",
-        fontSize: 22, fontWeight: 500,
-        color: TEXT,
-        letterSpacing: '-0.02em',
-        lineHeight: 1,
-        marginBottom: 10,
+        fontFamily: MONO, fontSize: 28, fontWeight: 700,
+        color: '#ffffff', letterSpacing: '-0.02em', lineHeight: 1,
       }}>
         {value}
       </div>
-      {change && (
-        <div style={{
-          fontFamily: OUTFIT,
-          fontSize: 11, fontWeight: 500,
-          color: changeUp ? '#16a34a' : '#dc2626',
-          display: 'flex', alignItems: 'center', gap: 3,
-        }}>
-          <span>{changeUp ? '↑' : '↓'}</span>
-          <span>{change}</span>
-        </div>
-      )}
     </div>
   );
 }
 
-// ─── Dashboard ────────────────────────────────────────────────────────────────
-function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote }) {
+// ─── Dashboard — dark executive layout ───────────────────────────────────────
+function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
   const { t } = useLanguage();
-  const ACTIVITY = getActivity(t);
-  const totalRevenue = quotes.reduce((sum, q) => sum + (Number(q.totalpris_sek) || 0), 0);
-  const dieselValue  = fuelPrice ? fmtPrice(fuelPrice.price_per_litre) + ' kr/L' : '18.45 kr/L';
-  const lezCount     = quotes.filter((q) => q.lez_varning).length;
-  const displayQ     = quotes.slice(0, 5);
 
-  const tdBase = {
-    fontSize: 13, fontFamily: INTER, color: TEXT,
-    padding: '12px 16px 12px 0',
-    borderBottom: '1px solid #f0f2f5',
-    verticalAlign: 'middle',
-  };
+  const revenueData   = buildRevenueData(quotes);
+  const activity      = buildActivity(quotes, t);
+  const chartSubtitle = revenueData.length >= 2
+    ? `${revenueData[0].month} – ${revenueData[revenueData.length - 1].month} ${new Date().getFullYear()}`
+    : '';
+
+  const todayStr    = new Date().toDateString();
+  const yestStr     = new Date(Date.now() - 86400000).toDateString();
+  const toDay       = (q) => new Date(String(q.created_at).replace(' ', 'T')).toDateString();
+  const todayQ      = quotes.filter((q) => toDay(q) === todayStr);
+  const yestQ       = quotes.filter((q) => toDay(q) === yestStr);
+  const todayRev    = todayQ.reduce((s, q) => s + (Number(q.totalpris_sek) || 0), 0);
+  const yestRev     = yestQ.reduce((s, q) => s + (Number(q.totalpris_sek) || 0), 0);
+  const revPct      = yestRev > 0 ? Math.round((todayRev - yestRev) / yestRev * 100) : null;
+  const quotesDelta = todayQ.length - yestQ.length;
+
+  const totalRevenue = quotes.reduce((sum, q) => sum + (Number(q.totalpris_sek) || 0), 0);
+  const dieselValue  = fuelPrice ? fmtPrice(fuelPrice.price_per_litre) + ' kr/L' : '—';
+  const lezCount     = quotes.filter((q) => q.lez_varning).length;
+  const lezPct       = quotes.length > 0 ? Math.round((quotes.length - lezCount) / quotes.length * 100) : 100;
+  const displayQ     = quotes.slice(0, 6);
+  const activeJobs   = quotes.filter((q) => q.status === 'aktiv' || q.status === 'planerad').length;
 
   return (
     <div style={{
       flex: 1, overflowY: 'auto',
-      padding: '20px 24px',
-      ...DOT_BG,
+      padding: '24px 28px',
+      background: 'transparent',
       display: 'flex', flexDirection: 'column', gap: 20,
     }}>
 
-      {/* ── KPI row ──────────────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+      {/* ── Page header ────────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div>
+          <div style={{ fontFamily: OUTFIT, fontSize: 20, fontWeight: 700, color: '#ffffff', letterSpacing: '-0.01em', lineHeight: 1.2 }}>
+            Operativ Överblick
+          </div>
+          <div style={{ fontFamily: OUTFIT, fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 3 }}>
+            {new Date().toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* SYSTEM LIVE badge */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.22)',
+            borderRadius: 7, padding: '6px 12px',
+          }}>
+            <span style={{
+              display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
+              background: GREEN_LIVE, boxShadow: '0 0 8px rgba(34,197,94,0.65)',
+            }} />
+            <span style={{ fontFamily: OUTFIT, fontSize: 10, fontWeight: 700, letterSpacing: '0.10em', color: GREEN_LIVE }}>
+              SYSTEM LIVE
+            </span>
+          </div>
+          {/* CTA */}
+          <button
+            onClick={onNewQuote}
+            style={{
+              background: 'linear-gradient(135deg, #2dd4bf, #5eead4)', color: '#080b14', border: 'none', borderRadius: 10,
+              padding: '10px 18px', fontSize: 12, fontWeight: 700, fontFamily: INTER,
+              letterSpacing: '0.04em', textTransform: 'uppercase', cursor: 'pointer',
+              boxShadow: '0 0 20px rgba(94,234,212,0.3)',
+              transition: 'transform 160ms, box-shadow 160ms',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 0 30px rgba(94,234,212,0.5)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(94,234,212,0.3)'; }}
+          >
+            + {t.dashboard.analyseBtn}
+          </button>
+        </div>
+      </div>
+
+      {/* ── KPI row ────────────────────────────────────────────────────────── */}
+      <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
         <KpiCard
-          accentColor="#c9a84c"
+          accentColor={AMBER} Icon={DollarSign}
           label={t.dashboard.totalRevenue}
-          value={totalRevenue > 0
-            ? new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(totalRevenue) + ' kr'
-            : '284 500 kr'}
-          change={`12% ${t.dashboard.vsYesterday}`} changeUp
+          value={totalRevenue > 0 ? new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(totalRevenue) + ' kr' : '—'}
+          change={revPct != null ? `${Math.abs(revPct)}% ${t.dashboard.vsYesterday}` : null}
+          changeUp={revPct != null && revPct >= 0}
         />
         <KpiCard
-          accentColor="#10b981"
+          accentColor="#10b981" Icon={FileText}
           label={t.dashboard.quotes}
-          value={quotes.length > 0 ? String(quotes.length) : '23'}
-          change={`3 ${t.dashboard.vsYesterday}`} changeUp
+          value={String(quotes.length)}
+          change={quotesDelta !== 0 ? `${Math.abs(quotesDelta)} ${t.dashboard.vsYesterday}` : null}
+          changeUp={quotesDelta > 0}
         />
         <KpiCard
-          accentColor="#ef4444"
-          label={t.dashboard.lezAlerts}
-          value={quotes.length > 0 ? String(lezCount) : '2'}
-          change={`1 ${t.dashboard.vsYesterday}`} changeUp={false}
+          accentColor={lezCount === 0 ? '#10b981' : '#ef4444'} Icon={AlertTriangle}
+          label="LEZ Efterlevnad"
+          value={`${lezPct}%`}
+          change={lezCount > 0 ? `${lezCount} varning${lezCount !== 1 ? 'ar' : ''}` : 'GODKÄND'}
+          changeUp={lezCount === 0}
         />
         <KpiCard
-          accentColor="#f59e0b"
+          accentColor="#f59e0b" Icon={Fuel}
           label={t.dashboard.dieselPrice}
           value={dieselValue}
-          change={`0.12 ${t.dashboard.vsYesterday}`} changeUp={false}
+          change={fuelPrice?.source !== 'fallback' ? 'LIVE' : null}
+          changeUp={true}
         />
       </div>
 
-      {/* ── Middle row ───────────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '62fr 38fr', gap: 16, minHeight: 280 }}>
+      {/* ── Middle row: chart + live events ────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '62fr 38fr', gap: 16, minHeight: 300 }}>
 
         {/* Bar chart */}
-        <div style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '20px 24px' }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, fontFamily: INTER, marginBottom: 4 }}>
-            {t.dashboard.monthlyRevenue}
+        <div style={{ background: DARK_SURF, border: `1px solid ${DARK_BDR}`, borderRadius: 12, padding: '20px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#ffffff', fontFamily: INTER }}>
+              {t.dashboard.monthlyRevenue}
+            </span>
+            <span style={{
+              fontFamily: OUTFIT, fontSize: 10, fontWeight: 600, letterSpacing: '0.05em',
+              color: AMBER, background: `${AMBER}15`, border: `1px solid ${AMBER}30`,
+              borderRadius: 5, padding: '2px 8px',
+            }}>
+              MÅNADSVIS
+            </span>
           </div>
-          <div style={{ fontSize: 11, color: MUTED, fontFamily: INTER, marginBottom: 18 }}>
-            Jan – Jun 2024
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', fontFamily: INTER, marginBottom: 18 }}>
+            {chartSubtitle}
           </div>
-          <ResponsiveContainer width="100%" height={175}>
-            <BarChart data={REVENUE_DATA} barCategoryGap="35%" margin={{ top: 0, right: 4, left: 0, bottom: 0 }}>
+          <ResponsiveContainer width="100%" height={195}>
+            <BarChart data={revenueData} barCategoryGap="35%" margin={{ top: 0, right: 4, left: 0, bottom: 0 }}>
               <defs>
-                <linearGradient id="barGradMain" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor="#e4c978" stopOpacity={1} />
-                  <stop offset="55%"  stopColor="#c9a84c" stopOpacity={1} />
-                  <stop offset="100%" stopColor="#a07830" stopOpacity={0.88} />
+                <linearGradient id="barGradDark" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"   stopColor="#5eead4" stopOpacity={1} />
+                  <stop offset="55%"  stopColor="#2dd4bf" stopOpacity={1} />
+                  <stop offset="100%" stopColor="#0d9488" stopOpacity={0.5} />
                 </linearGradient>
-                <linearGradient id="barGradHover" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor="#f0dfa0" stopOpacity={1} />
-                  <stop offset="100%" stopColor="#c9a84c" stopOpacity={0.9} />
+                <linearGradient id="barGradPeak" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"   stopColor="#a78bfa" stopOpacity={1} />
+                  <stop offset="100%" stopColor="#7c3aed" stopOpacity={0.9} />
                 </linearGradient>
-                <filter id="barGlow">
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
               </defs>
               <XAxis
-                dataKey="month"
-                axisLine={false} tickLine={false}
-                tick={{ fill: FAINT, fontSize: 11, fontFamily: INTER }}
+                dataKey="month" axisLine={false} tickLine={false}
+                tick={{ fill: 'rgba(255,255,255,0.28)', fontSize: 11, fontFamily: INTER }}
               />
               <YAxis
                 axisLine={false} tickLine={false}
-                tick={{ fill: FAINT, fontSize: 10, fontFamily: INTER }}
+                tick={{ fill: 'rgba(255,255,255,0.28)', fontSize: 10, fontFamily: INTER }}
                 tickFormatter={(v) => `${Math.round(v / 1000)}k`}
                 width={30}
               />
               <Tooltip
-                cursor={{ fill: 'rgba(201,168,76,0.08)' }}
+                cursor={{ fill: 'rgba(94,234,212,0.06)' }}
                 contentStyle={{
-                  background: WHITE, border: `1px solid ${BORDER}`,
-                  borderRadius: 8, fontSize: 11, fontFamily: INTER, color: TEXT,
+                  background: DARK_SURF2, border: `1px solid ${DARK_BDR}`,
+                  borderRadius: 8, fontSize: 11, fontFamily: INTER, color: '#fff',
                 }}
-                labelStyle={{ color: MUTED }}
+                labelStyle={{ color: 'rgba(255,255,255,0.50)' }}
                 formatter={(v) => [
                   new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(v) + ' kr',
                   'Intäkt',
                 ]}
               />
-              <Bar dataKey="value" fill="url(#barGradMain)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="value" radius={[5, 5, 0, 0]}>
+                {revenueData.map((entry, idx) => {
+                  const max = Math.max(...revenueData.map((d) => d.value));
+                  return (
+                    <Cell
+                      key={idx}
+                      fill={entry.value === max && max > 0 ? 'url(#barGradPeak)' : 'url(#barGradDark)'}
+                    />
+                  );
+                })}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* CTA card */}
-        <div style={{
-          background: '#0d0d0f',
-          borderRadius: 8, padding: '26px',
-          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-          border: '1px solid rgba(255,255,255,0.08)',
-        }}>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: WHITE, fontFamily: OUTFIT, marginBottom: 10, lineHeight: 1.35, letterSpacing: '-0.01em' }}>
-              {t.dashboard.newQuoteCta}
-            </div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.58)', fontFamily: OUTFIT, lineHeight: 1.65 }}>
-              {t.dashboard.newQuoteCtaSub}
-            </div>
+        {/* Live events feed */}
+        <div style={{ background: DARK_SURF, border: `1px solid ${DARK_BDR}`, borderRadius: 12, padding: '20px 22px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexShrink: 0 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#ffffff', fontFamily: INTER }}>
+              {t.dashboard.recentActivity}
+            </span>
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.28)', fontFamily: OUTFIT, letterSpacing: '0.06em' }}>
+              {quotes.length} TOTALT
+            </span>
           </div>
-          <button
-            onClick={onNewQuote}
-            style={{
-              marginTop: 28,
-              background: AMBER,
-              color: '#17161a',
-              border: 'none', borderRadius: 8,
-              padding: '13px 20px',
-              fontSize: 12, fontWeight: 700, fontFamily: OUTFIT,
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-              cursor: 'pointer',
-              transition: 'background 160ms cubic-bezier(0.23,1,0.32,1)',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = AMBER_LT; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = AMBER; }}
-          >
-            {t.dashboard.analyseBtn}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Bottom row ───────────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-
-        {/* Recent Activity */}
-        <div style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '18px 22px' }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, fontFamily: INTER, marginBottom: 18 }}>
-            {t.dashboard.recentActivity}
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {ACTIVITY.map((item, i) => (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 14, overflowY: 'auto' }}>
+            {activity.length === 0 ? (
+              <div style={{ fontFamily: INTER, fontSize: 12, color: 'rgba(255,255,255,0.28)', fontStyle: 'italic' }}>
+                {t.dashboard.noJobsYet}
+              </div>
+            ) : activity.map((item, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                 <div style={{
-                  width: 6, height: 6, borderRadius: '50%',
-                  background: item.dot, flexShrink: 0, marginTop: 5,
+                  width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+                  background: item.dot, marginTop: 5,
+                  boxShadow: `0 0 6px ${item.dot}99`,
                 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, color: TEXT, fontFamily: INTER }}>{item.text}</div>
-                  <div style={{ fontSize: 11, color: MUTED, fontFamily: INTER, marginTop: 1 }}>{item.sub}</div>
+                  <div style={{ fontSize: 12, color: '#ffffff', fontFamily: INTER }}>{item.text}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.40)', fontFamily: INTER, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {item.sub}
+                  </div>
                 </div>
-                <span style={{ fontSize: 11, color: MUTED, fontFamily: INTER, flexShrink: 0 }}>{item.time}</span>
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)', fontFamily: INTER, flexShrink: 0 }}>{item.time}</span>
               </div>
             ))}
           </div>
         </div>
-
-        {/* Recent Quotes */}
-        <div style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '18px 22px' }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, fontFamily: INTER, marginBottom: 18 }}>
-            {t.dashboard.recentQuotes}
-          </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#f8f9fa' }}>
-                {[t.dashboard.tableHeaders.no, t.dashboard.tableHeaders.date, t.dashboard.tableHeaders.cargo, t.dashboard.tableHeaders.amount, t.dashboard.tableHeaders.status].map((col) => (
-                  <th key={col} style={{
-                    textAlign: 'left', fontSize: 11,
-                    color: MUTED, fontFamily: INTER, fontWeight: 600,
-                    letterSpacing: '0.5px', textTransform: 'uppercase',
-                    padding: '8px 16px 8px 0',
-                    borderBottom: `1px solid ${BORDER}`,
-                  }}>
-                    {col}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {displayQ.length === 0 ? (
-                <tr>
-                  <td colSpan={5}>
-                    <div style={{
-                      padding: '32px 8px', textAlign: 'center',
-                      fontFamily: INTER, fontSize: 12, color: MUTED, fontStyle: 'italic',
-                    }}>
-                      {t.dashboard.noJobsYet}
-                    </div>
-                  </td>
-                </tr>
-              ) : displayQ.map((q) => {
-                const badge = getStatusBadge(q.status, t);
-                return (
-                  <tr key={q.id} style={{ cursor: 'default' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = '#f8f9fa'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                  >
-                    <td style={{ ...tdBase, color: BLUE, fontFamily: INTER, fontSize: 12, fontWeight: 600 }}>{q.id}</td>
-                    <td style={tdBase}>{fmtDate(q.created_at)}</td>
-                    <td style={{ ...tdBase, maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {q.lasttyp || '—'}
-                    </td>
-                    <td style={{ ...tdBase, fontFamily: INTER, whiteSpace: 'nowrap', fontWeight: 500 }}>{fmtSEK(q.totalpris_sek)}</td>
-                    <td style={tdBase}>
-                      <span style={{
-                        fontSize: 11, fontFamily: INTER, fontWeight: 600,
-                        letterSpacing: '0.02em',
-                        padding: '3px 10px', borderRadius: 6,
-                        background: badge.bg, color: badge.color,
-                        whiteSpace: 'nowrap',
-                      }}>
-                        {badge.label}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
       </div>
 
-      {/* ── Road conditions panel ────────────────────────────────────────── */}
+      {/* ── Bottom stats row ─────────────────────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+        {[
+          { StatIcon: Truck,       label: 'FORDONSFLOTTA',    value: fleet.length > 0 ? `${fleet.length} fordon` : '—',    accent: AMBER },
+          { StatIcon: Fuel,        label: 'DIESEL / LITER',   value: dieselValue,                                           accent: '#f59e0b' },
+          { StatIcon: Leaf,        label: 'LEZ EFTERLEVNAD',  value: `${lezPct}%`,                                          accent: lezPct >= 90 ? '#10b981' : '#ef4444' },
+          { StatIcon: Briefcase,   label: 'AKTIVA UPPDRAG',   value: activeJobs > 0 ? String(activeJobs) : '—',            accent: '#a78bfa' },
+        ].map(({ StatIcon, label, value, accent }) => (
+          <div key={label} style={{
+            background: DARK_SURF, border: `1px solid ${DARK_BDR}`,
+            borderRadius: 10, padding: '14px 18px',
+            display: 'flex', alignItems: 'center', gap: 14,
+          }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 9, flexShrink: 0,
+              background: `${accent}12`, border: `1px solid ${accent}22`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <StatIcon size={15} color={accent} strokeWidth={1.5} />
+            </div>
+            <div>
+              <div style={{ fontFamily: OUTFIT, fontSize: 9, fontWeight: 700, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.26)', marginBottom: 4 }}>
+                {label}
+              </div>
+              <div style={{ fontFamily: MONO, fontSize: 16, fontWeight: 500, color: '#ffffff', letterSpacing: '-0.01em', lineHeight: 1 }}>
+                {value}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Recent Quotes table ──────────────────────────────────────────────── */}
+      <div style={{ background: DARK_SURF, border: `1px solid ${DARK_BDR}`, borderRadius: 12, padding: '18px 22px' }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: '#ffffff', fontFamily: INTER, marginBottom: 16 }}>
+          {t.dashboard.recentQuotes}
+        </div>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              {[t.dashboard.tableHeaders.no, t.dashboard.tableHeaders.date, t.dashboard.tableHeaders.cargo, t.dashboard.tableHeaders.amount, t.dashboard.tableHeaders.status].map((col) => (
+                <th key={col} style={{
+                  textAlign: 'left', fontSize: 10,
+                  color: 'rgba(255,255,255,0.28)', fontFamily: INTER, fontWeight: 600,
+                  letterSpacing: '0.06em', textTransform: 'uppercase',
+                  padding: '0 16px 10px 0',
+                  borderBottom: '1px solid rgba(255,255,255,0.06)',
+                }}>
+                  {col}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {displayQ.length === 0 ? (
+              <tr>
+                <td colSpan={5}>
+                  <div style={{ padding: '32px 8px', textAlign: 'center', fontFamily: INTER, fontSize: 12, color: 'rgba(255,255,255,0.28)', fontStyle: 'italic' }}>
+                    {t.dashboard.noJobsYet}
+                  </div>
+                </td>
+              </tr>
+            ) : displayQ.map((q) => {
+              const badge = getStatusBadge(q.status, t);
+              const darkBadgeBg = badge.color === '#16a34a'
+                ? 'rgba(22,163,74,0.12)'
+                : badge.color === '#e74c3c'
+                  ? 'rgba(231,76,60,0.12)'
+                  : 'rgba(217,119,6,0.12)';
+              return (
+                <tr key={q.id}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.025)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <td style={{ fontSize: 12, fontFamily: INTER, color: AMBER, fontWeight: 600, padding: '11px 16px 11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', verticalAlign: 'middle' }}>{q.id}</td>
+                  <td style={{ fontSize: 12, fontFamily: INTER, color: 'rgba(255,255,255,0.60)', padding: '11px 16px 11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', verticalAlign: 'middle' }}>{fmtDate(q.created_at)}</td>
+                  <td style={{ fontSize: 12, fontFamily: INTER, color: 'rgba(255,255,255,0.60)', padding: '11px 16px 11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', verticalAlign: 'middle', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.lasttyp || '—'}</td>
+                  <td style={{ fontSize: 12, fontFamily: MONO, color: '#ffffff', fontWeight: 500, padding: '11px 16px 11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>{fmtSEK(q.totalpris_sek)}</td>
+                  <td style={{ padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', verticalAlign: 'middle' }}>
+                    <span style={{
+                      fontSize: 10, fontFamily: INTER, fontWeight: 600, letterSpacing: '0.04em',
+                      padding: '3px 10px', borderRadius: 5,
+                      background: darkBadgeBg, color: badge.color,
+                      whiteSpace: 'nowrap', border: `1px solid ${badge.color}30`,
+                    }}>
+                      {badge.label}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* ── Stockholm Road Alerts ───────────────────────────────────────────── */}
       {roadAlerts !== undefined && (
-        <div style={{ background: WHITE, border: `1px solid ${roadAlerts.length > 0 ? '#fca5a5' : BORDER}`, borderRadius: 8, padding: '18px 22px' }}>
+        <div style={{
+          background: DARK_SURF,
+          border: `1px solid ${roadAlerts.length > 0 ? 'rgba(239,68,68,0.25)' : DARK_BDR}`,
+          borderRadius: 12, padding: '18px 22px',
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <AlertTriangle size={14} color={roadAlerts.length > 0 ? '#dc2626' : '#2ecc71'} />
-            <span style={{ fontSize: 13, fontWeight: 600, color: TEXT, fontFamily: INTER }}>
+            <AlertTriangle size={14} color={roadAlerts.length > 0 ? '#ef4444' : GREEN_LIVE} />
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#ffffff', fontFamily: INTER }}>
               {t.roadAlerts.sweden}
             </span>
             {roadAlerts.length === 0 && (
-              <span style={{ fontSize: 11, fontFamily: INTER, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 5, padding: '2px 8px' }}>
+              <span style={{ fontSize: 10, fontFamily: INTER, color: GREEN_LIVE, background: 'rgba(34,197,94,0.10)', border: '1px solid rgba(34,197,94,0.22)', borderRadius: 5, padding: '2px 8px' }}>
                 {t.roadAlerts.normal}
               </span>
             )}
             {roadAlerts.length > 0 && (
-              <span style={{ fontSize: 11, fontFamily: INTER, color: '#dc2626', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 5, padding: '2px 8px' }}>
+              <span style={{ fontSize: 10, fontFamily: INTER, color: '#ef4444', background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.22)', borderRadius: 5, padding: '2px 8px' }}>
                 {t.roadAlerts.label(roadAlerts.length)}
               </span>
             )}
           </div>
-
           {roadAlerts.length === 0 ? (
-            <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED, fontStyle: 'italic' }}>
+            <div style={{ fontFamily: INTER, fontSize: 12, color: 'rgba(255,255,255,0.28)', fontStyle: 'italic' }}>
               {t.roadAlerts.none}
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
               {roadAlerts.map((a) => (
                 <div key={a.id} style={{
-                  border: '1px solid #fee2e2', borderRadius: 8, padding: '10px 14px',
-                  background: '#fff8f8',
+                  border: '1px solid rgba(239,68,68,0.20)', borderRadius: 8, padding: '10px 14px',
+                  background: 'rgba(239,68,68,0.04)',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontFamily: INTER, fontSize: 12, fontWeight: 700, color: '#dc2626', flexShrink: 0 }}>
-                      {a.road}
-                    </span>
-                    <span style={{ fontFamily: INTER, fontSize: 11, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {a.location}
-                    </span>
+                    <span style={{ fontFamily: INTER, fontSize: 12, fontWeight: 700, color: '#ef4444', flexShrink: 0 }}>{a.road}</span>
+                    <span style={{ fontFamily: INTER, fontSize: 11, color: 'rgba(255,255,255,0.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.location}</span>
                   </div>
-                  <div style={{ fontFamily: INTER, fontSize: 11, color: '#d97706', fontWeight: 500 }}>
-                    {a.condition}
-                  </div>
+                  <div style={{ fontFamily: INTER, fontSize: 11, color: '#f59e0b', fontWeight: 500 }}>{a.condition}</div>
                   {a.warnings?.length > 0 && (
-                    <div style={{ fontFamily: INTER, fontSize: 11, color: MUTED, marginTop: 2 }}>
+                    <div style={{ fontFamily: INTER, fontSize: 11, color: 'rgba(255,255,255,0.38)', marginTop: 2 }}>
                       {a.warnings.join(' · ')}
-                    </div>
-                  )}
-                  {a.measurements?.length > 0 && (
-                    <div style={{ fontFamily: INTER, fontSize: 10, color: FAINT, marginTop: 2 }}>
-                      {a.measurements[0]}
                     </div>
                   )}
                 </div>
@@ -853,7 +1064,112 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote }) {
         </div>
       )}
 
-      {/* bottom spacer */}
+      {/* ── Stockholm Transportintelligens ─────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+
+        {/* Compliance Checklist */}
+        <div style={{ background: DARK_SURF, border: `1px solid ${DARK_BDR}`, borderRadius: 12, padding: '18px 22px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <Shield size={13} color={CYAN} strokeWidth={1.5} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#ffffff', fontFamily: INTER, letterSpacing: '0.02em' }}>
+              Regulatorisk Efterlevnad
+            </span>
+            <span style={{ fontFamily: INTER, fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: CYAN, background: 'rgba(94,234,212,0.1)', border: '1px solid rgba(94,234,212,0.25)', borderRadius: 4, padding: '1px 6px', marginLeft: 'auto' }}>
+              STOCKHOLM
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[
+              {
+                ok: lezPct >= 90,
+                label: `LEZ Stockholms stad`,
+                detail: lezPct >= 90 ? `${lezPct}% av transporter godkända` : `${lezCount} varning${lezCount !== 1 ? 'ar' : ''} — kontrollera fordon`,
+                icon: Leaf,
+              },
+              {
+                ok: true,
+                label: 'EU körtidsregler (561/2006)',
+                detail: 'Kontrollera färdskrivare dagligen',
+                icon: CalendarDays,
+              },
+              {
+                ok: true,
+                label: 'Trängselskatt E4 / Essingeleden',
+                detail: 'Vardagar 06:00–22:00 — inkludera i offert',
+                icon: AlertTriangle,
+              },
+              {
+                ok: true,
+                label: 'EU ETS Fas 4 (2026)',
+                detail: 'Vägtransport ingår — CO₂-rapport krävs',
+                icon: Leaf,
+              },
+            ].map(({ ok, label, detail, icon: CheckIcon }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <div style={{
+                  width: 20, height: 20, borderRadius: 5, flexShrink: 0,
+                  background: ok ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
+                  border: `1px solid ${ok ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <CheckIcon size={10} color={ok ? GREEN_LIVE : '#ef4444'} strokeWidth={2} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: INTER, fontSize: 12, color: '#ffffff', fontWeight: 500 }}>{label}</div>
+                  <div style={{ fontFamily: INTER, fontSize: 10, color: 'rgba(255,255,255,0.40)', marginTop: 1 }}>{detail}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Market Intelligence */}
+        <div style={{ background: DARK_SURF, border: `1px solid ${DARK_BDR}`, borderRadius: 12, padding: '18px 22px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <TrendingUp size={13} color="#a78bfa" strokeWidth={1.5} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#ffffff', fontFamily: INTER, letterSpacing: '0.02em' }}>
+              Marknadsintelligens
+            </span>
+            <span style={{ fontFamily: OUTFIT, fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: '#a78bfa', background: 'rgba(167,139,250,0.10)', border: '1px solid rgba(167,139,250,0.22)', borderRadius: 4, padding: '1px 6px', marginLeft: 'auto' }}>
+              AI-ANALYS
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {[
+              {
+                pct: '68%',
+                label: 'Stockholmsåkare offerterar fortfarande via telefon/e-post',
+                color: AMBER,
+                insight: 'Din konkurrensfördel: AI-offert på sekunder',
+              },
+              {
+                pct: '2026',
+                label: 'EU ETS inkluderar vägtransport — CO₂-kostnader stiger',
+                color: '#a78bfa',
+                insight: 'Åkaren spårar redan CO₂ per uppdrag automatiskt',
+              },
+              {
+                pct: '35%',
+                label: 'SME-åkare saknar digital dieselkostnadsintegration',
+                color: '#10b981',
+                insight: 'Live dieselpris uppdateras i varje offert',
+              },
+            ].map(({ pct, label, color, insight }) => (
+              <div key={label} style={{
+                padding: '10px 12px', borderRadius: 8,
+                background: `${color}08`, border: `1px solid ${color}18`,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontFamily: MONO, fontSize: 16, fontWeight: 700, color, letterSpacing: '-0.01em' }}>{pct}</span>
+                  <span style={{ fontFamily: INTER, fontSize: 11, color: 'rgba(255,255,255,0.60)', flex: 1, lineHeight: 1.4 }}>{label}</span>
+                </div>
+                <div style={{ fontFamily: INTER, fontSize: 10, color, opacity: 0.75 }}>↗ {insight}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div style={{ height: 4 }} />
     </div>
   );
@@ -865,10 +1181,10 @@ function PlaceholderPage({ label }) {
   return (
     <div style={{
       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      ...DOT_BG, flexDirection: 'column', gap: 10,
+      background: 'transparent', flexDirection: 'column', gap: 10,
     }}>
-      <div style={{ fontSize: 13, color: MUTED, fontFamily: INTER }}>{label}</div>
-      <div style={{ fontSize: 11, color: FAINT, fontFamily: INTER }}>{t.placeholderPage.comingSoon}</div>
+      <div style={{ fontSize: 13, color: TEXT_SEC, fontFamily: INTER }}>{label}</div>
+      <div style={{ fontSize: 11, color: TEXT_MU, fontFamily: INTER }}>{t.placeholderPage.comingSoon}</div>
     </div>
   );
 }
@@ -906,6 +1222,7 @@ function AppInner() {
   const [msgQuote,         setMsgQuote]         = useState(null);  // { rawId, id, lasttyp }
   const [fortnoxResult,    setFortnoxResult]    = useState(null);  // toast from OAuth redirect
   const [dpaAccepted,      setDpaAccepted]      = useState(() => Boolean(company?.dpa_accepted_at));
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // ── IndexedDB live reads — instant, no spinners ───────────────────────────
   const fleet     = useLiveQuery(() => db.fleet.toArray(),                     [], []) ?? [];
@@ -928,6 +1245,22 @@ function AppInner() {
       const msg = params.get('msg') ?? 'unknown error';
       setActivePage('settings');
       setFortnoxResult({ message: `${t.settings.fortnox.heading}: ${msg}`, variant: 'error' });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Detect Stripe redirect-back (?stripe=success or ?stripe=cancel)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const stripe = params.get('stripe');
+    if (!stripe) return;
+    const clean = window.location.pathname + window.location.hash.replace(/\?.*/, '');
+    window.history.replaceState({}, '', clean);
+    setActivePage('settings');
+    if (stripe === 'success') {
+      setFortnoxResult({ message: 'Prenumeration aktiverad — tack!', variant: 'success' });
+    } else if (stripe === 'cancel') {
+      setFortnoxResult({ message: 'Betalning avbruten — prenumerationen är oförändrad.', variant: 'error' });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1174,6 +1507,7 @@ function AppInner() {
       userName:    user?.name ?? user?.email ?? 'Okänd',
       modelUsed:   extractionModel ?? 'claude-sonnet-4',
       generatedAt: new Date().toISOString().slice(0, 10),
+      company:     company,
     });
   }
 
@@ -1181,13 +1515,21 @@ function AppInner() {
   const tillstandKravs = parsed?.['tillstånd_krävs'] ?? parsed?.tillstand_kravs ?? false;
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', ...DOT_BG }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'radial-gradient(circle at 50% 0%, #0d1424 0%, #080b14 60%)', backgroundAttachment: 'fixed' }}>
 
-      <Sidebar activePage={activePage} onNavigate={handleNavigate} company={company} onLogout={logout} userRole={user?.role} />
+      <Sidebar
+        activePage={activePage}
+        onNavigate={(page) => { handleNavigate(page); setMobileSidebarOpen(false); }}
+        company={company}
+        onLogout={logout}
+        userRole={user?.role}
+        mobileOpen={mobileSidebarOpen}
+        onMobileClose={() => setMobileSidebarOpen(false)}
+      />
 
       {/* ── Right side ──────────────────────────────────────────────── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-        <TopBar fuelPrice={fuelPrice} weather={weather} roadAlerts={roadAlerts} company={company} />
+        <TopBar fuelPrice={fuelPrice} weather={weather} roadAlerts={roadAlerts} company={company} onMobileMenuOpen={() => setMobileSidebarOpen(true)} />
 
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           {activePage === 'dashboard' && (
@@ -1196,6 +1538,7 @@ function AppInner() {
               fuelPrice={fuelPrice}
               roadAlerts={roadAlerts}
               onNewQuote={() => setShowNewQuote(true)}
+              fleet={fleet}
             />
           )}
           {activePage === 'lonsamhet' && (
@@ -1216,6 +1559,11 @@ function AppInner() {
           {activePage === 'jobs' && (
             <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
               <Jobs />
+            </div>
+          )}
+          {activePage === 'dispatch' && (
+            <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <Dispatch />
             </div>
           )}
           {activePage === 'customers' && (
@@ -1245,27 +1593,30 @@ function AppInner() {
       {showNewQuote && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 200,
-          background: BG,
+          background: 'rgba(8,11,20,0.95)',
           display: 'flex', flexDirection: 'column',
         }}>
           {/* Overlay top bar */}
           <div style={{
             height: 56, flexShrink: 0,
-            background: WHITE, borderBottom: `1px solid ${BORDER}`,
+            background: 'rgba(8,11,20,0.9)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '0 24px',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <LogoMark size={26} />
-              <span style={{ color: TEXT, fontSize: 14, fontWeight: 600, fontFamily: INTER }}>
+              <span style={{ color: TEXT_PR, fontSize: 14, fontWeight: 600, fontFamily: INTER }}>
                 {t.newQuote.title}
               </span>
             </div>
             <button
               onClick={() => setShowNewQuote(false)}
               style={{
-                background: 'none', border: `1px solid ${BORDER}`,
-                borderRadius: 8, color: MUTED,
+                background: 'none', border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 8, color: TEXT_SEC,
                 width: 32, height: 32,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: 'pointer', flexShrink: 0,
@@ -1276,7 +1627,7 @@ function AppInner() {
           </div>
 
           {/* Three-column grid */}
-          <div style={{
+          <div className="new-quote-grid" style={{
             flex: 1,
             display: 'grid',
             gridTemplateColumns: '35fr 35fr 30fr',
@@ -1307,8 +1658,8 @@ function AppInner() {
                           title={tpl.name}
                           style={{
                             fontFamily: INTER, fontSize: '0.6875rem',
-                            color: BLUE, background: WHITE,
-                            border: `1.5px solid ${BORDER}`, borderRadius: 100,
+                            color: CYAN, background: 'rgba(94,234,212,0.08)',
+                            border: '1px solid rgba(94,234,212,0.2)', borderRadius: 100,
                             padding: '4px 12px', cursor: 'pointer',
                             whiteSpace: 'nowrap', flexShrink: 0,
                             fontWeight: 500,
@@ -1338,7 +1689,7 @@ function AppInner() {
                     style={{
                       fontFamily: INTER, fontSize: '0.5rem', letterSpacing: '0.04em',
                       background: 'none', border: 'none', padding: 0,
-                      color: MUTED, cursor: 'pointer', textAlign: 'left',
+                      color: TEXT_MU, cursor: 'pointer', textAlign: 'left',
                       textDecoration: 'underline', textDecorationColor: BORDER,
                     }}
                   >
@@ -1352,7 +1703,7 @@ function AppInner() {
                   style={{
                     fontFamily: INTER, fontSize: '0.5rem', letterSpacing: '0.04em',
                     background: 'none', border: 'none', padding: 0,
-                    color: MUTED, cursor: 'pointer', textAlign: 'left',
+                    color: TEXT_MU, cursor: 'pointer', textAlign: 'left',
                     textDecoration: 'underline', textDecorationColor: BORDER,
                     flexShrink: 0,
                   }}
@@ -1386,6 +1737,11 @@ function AppInner() {
                 routeLive={routeLive}
                 routeLoading={routeLoading}
               />
+
+              {/* Subscription gate — shown when analysis returns 402 */}
+              {status === 'error' && error === 'subscription_required' && (
+                <SubscriptionGate onClose={() => setShowNewQuote(false)} />
+              )}
 
               {status === 'done' && parsed && (
                 <>
@@ -1589,18 +1945,18 @@ function AppInner() {
                         flex: 1, fontFamily: INTER, fontSize: '0.6875rem', fontWeight: 600,
                         letterSpacing: '0.06em', textTransform: 'uppercase',
                         background: canSave
-                          ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
-                          : '#e9ecef',
-                        color: canSave ? WHITE : MUTED,
+                          ? 'linear-gradient(135deg, #2dd4bf, #5eead4)'
+                          : 'rgba(255,255,255,0.06)',
+                        color: canSave ? '#080b14' : TEXT_MU,
                         border: 'none',
-                        borderRadius: 8, padding: '11px 14px',
+                        borderRadius: 10, padding: '11px 14px',
                         cursor: (saving || !canSave) ? 'not-allowed' : 'pointer',
                         opacity: saving ? 0.55 : 1,
-                        transition: 'opacity 0.15s',
-                        boxShadow: canSave ? '0 1px 4px rgba(99,102,241,0.22)' : 'none',
+                        transition: 'opacity 0.15s, box-shadow 0.15s',
+                        boxShadow: canSave ? '0 0 20px rgba(94,234,212,0.3)' : 'none',
                       }}
-                      onMouseEnter={(e) => { if (canSave && !saving) e.currentTarget.style.opacity = '0.88'; }}
-                      onMouseLeave={(e) => { if (canSave && !saving) e.currentTarget.style.opacity = '1'; }}
+                      onMouseEnter={(e) => { if (canSave && !saving) e.currentTarget.style.boxShadow = '0 0 30px rgba(94,234,212,0.5)'; }}
+                      onMouseLeave={(e) => { if (canSave && !saving) e.currentTarget.style.boxShadow = '0 0 20px rgba(94,234,212,0.3)'; }}
                     >
                       {saving ? t.newQuote.saving : t.newQuote.confirmQuote}
                     </button>
@@ -1609,13 +1965,13 @@ function AppInner() {
                       style={{
                         flexShrink: 0, fontFamily: INTER, fontSize: '0.6875rem', fontWeight: 600,
                         letterSpacing: '0.06em', textTransform: 'uppercase',
-                        background: WHITE, color: '#374151',
-                        border: `1.5px solid ${BORDER}`, borderRadius: 8,
+                        background: 'transparent', color: TEXT_SEC,
+                        border: '1px solid rgba(94,234,212,0.3)', borderRadius: 10,
                         padding: '11px 14px', cursor: 'pointer',
                         transition: 'all 0.15s',
                       }}
-                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = BLUE; e.currentTarget.style.color = BLUE; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = '#374151'; }}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = CYAN; e.currentTarget.style.color = CYAN; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(94,234,212,0.3)'; e.currentTarget.style.color = TEXT_SEC; }}
                     >
                       {t.newQuote.exportPdf}
                     </button>
@@ -1676,17 +2032,17 @@ function AppInner() {
                 ) : (
                   quotes.map((q) => (
                     <div key={q.id} style={{
-                      padding: '9px 0', borderBottom: `1px solid #f0f2f5`,
+                      padding: '9px 0', borderBottom: `1px solid rgba(255,255,255,0.05)`,
                       cursor: 'default',
                     }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = '#f8f9fa'; }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginBottom: 3 }}>
-                        <span style={{ fontFamily: INTER, fontSize: '0.8125rem', color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                        <span style={{ fontFamily: INTER, fontSize: '0.8125rem', color: TEXT_PR, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
                           {q.lasttyp ?? '—'}
                         </span>
-                        <span style={{ fontFamily: INTER, fontSize: '0.8125rem', fontWeight: 600, color: BLUE, flexShrink: 0 }}>
+                        <span style={{ fontFamily: INTER, fontSize: '0.8125rem', fontWeight: 600, color: AMBER, flexShrink: 0 }}>
                           {fmtSEK(q.totalpris_sek)}
                         </span>
                       </div>
@@ -1774,26 +2130,29 @@ function AppInner() {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <div style={{
-            background: WHITE, border: `1px solid ${BORDER}`,
-            borderRadius: 12, padding: 28, width: 400,
-            boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
+            background: 'rgba(14,20,36,0.98)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 16, padding: 28, width: 400,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
           }}>
-            <div style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600, color: MUTED, marginBottom: 16 }}>
+            <div style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600, color: TEXT_MU, marginBottom: 16 }}>
               {t.newQuote.templateModal.heading}
             </div>
             <label style={{ display: 'block', marginBottom: 22 }}>
-              <div style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 600, color: MUTED, marginBottom: 5 }}>
+              <div style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 600, color: TEXT_MU, marginBottom: 5 }}>
                 {t.newQuote.templateModal.nameLabel}
               </div>
               <input
                 autoFocus
                 value={mallModal.name}
-                onChange={(e) => setMallModal({ name: e.target.value })}
+                onChange={(e) => setMallModal((prev) => ({ ...prev, name: e.target.value }))}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleSaveMall(); if (e.key === 'Escape') setMallModal(null); }}
                 style={{
-                  width: '100%', fontFamily: INTER, fontSize: '0.875rem', color: TEXT,
-                  border: `1px solid ${BORDER}`, borderRadius: 8, padding: '8px 12px',
-                  outline: 'none', boxSizing: 'border-box', background: BG,
+                  width: '100%', fontFamily: INTER, fontSize: '0.875rem', color: TEXT_PR,
+                  border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 14px',
+                  outline: 'none', boxSizing: 'border-box', background: 'rgba(20,27,45,0.8)',
                 }}
               />
             </label>
@@ -1802,8 +2161,8 @@ function AppInner() {
                 onClick={() => setMallModal(null)}
                 style={{
                   fontFamily: INTER, fontSize: '0.75rem', padding: '9px 18px',
-                  border: `1.5px solid ${BORDER}`, borderRadius: 8,
-                  background: WHITE, color: MUTED, cursor: 'pointer',
+                  border: '1px solid rgba(94,234,212,0.2)', borderRadius: 10,
+                  background: 'transparent', color: CYAN, cursor: 'pointer',
                 }}
               >
                 {t.newQuote.templateModal.cancel}
@@ -1813,10 +2172,11 @@ function AppInner() {
                 disabled={!mallModal.name.trim()}
                 style={{
                   fontFamily: INTER, fontSize: '0.75rem', fontWeight: 600, padding: '9px 18px',
-                  border: 'none', borderRadius: 8,
-                  background: mallModal.name.trim() ? BLUE : '#e9ecef',
-                  color: mallModal.name.trim() ? WHITE : MUTED,
+                  border: 'none', borderRadius: 10,
+                  background: mallModal.name.trim() ? 'linear-gradient(135deg, #2dd4bf, #5eead4)' : 'rgba(255,255,255,0.06)',
+                  color: mallModal.name.trim() ? '#080b14' : TEXT_MU,
                   cursor: mallModal.name.trim() ? 'pointer' : 'not-allowed',
+                  boxShadow: mallModal.name.trim() ? '0 0 15px rgba(94,234,212,0.3)' : 'none',
                 }}
               >
                 {t.newQuote.templateModal.save}
@@ -1834,28 +2194,31 @@ function AppInner() {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <div style={{
-            background: WHITE, border: `1px solid ${BORDER}`,
-            borderRadius: 12, width: 460, maxHeight: '78vh',
+            background: 'rgba(14,20,36,0.98)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 16, width: 460, maxHeight: '78vh',
             display: 'flex', flexDirection: 'column',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
           }}>
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '18px 24px 14px', borderBottom: `1px solid ${BORDER}`,
+              padding: '18px 24px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)',
             }}>
-              <span style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600, color: MUTED }}>
+              <span style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600, color: TEXT_MU }}>
                 {t.newQuote.templateManager.heading}{templates.length > 0 ? ` (${templates.length})` : ''}
               </span>
               <button
                 onClick={() => setShowMallManager(false)}
-                style={{ fontFamily: INTER, fontSize: '0.875rem', background: 'none', border: 'none', color: MUTED, cursor: 'pointer', padding: '0 2px', lineHeight: 1 }}
+                style={{ fontFamily: INTER, fontSize: '0.875rem', background: 'none', border: 'none', color: TEXT_SEC, cursor: 'pointer', padding: '0 2px', lineHeight: 1 }}
               >
                 ✕
               </button>
             </div>
             <div style={{ flex: 1, overflowY: 'auto' }}>
               {templates.length === 0 ? (
-                <div style={{ fontFamily: INTER, fontSize: '0.8125rem', color: MUTED, textAlign: 'center', padding: '36px 24px', fontStyle: 'italic' }}>
+                <div style={{ fontFamily: INTER, fontSize: '0.8125rem', color: TEXT_MU, textAlign: 'center', padding: '36px 24px', fontStyle: 'italic' }}>
                   {t.newQuote.templateManager.empty}
                 </div>
               ) : (
@@ -1863,13 +2226,13 @@ function AppInner() {
                   <div key={tpl.id} style={{
                     display: 'flex', alignItems: 'center', gap: 12,
                     padding: '11px 24px',
-                    borderBottom: i < templates.length - 1 ? `1px solid ${BORDER}` : 'none',
+                    borderBottom: i < templates.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
                   }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontFamily: INTER, fontSize: '0.8125rem', color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontFamily: INTER, fontSize: '0.8125rem', color: TEXT_PR, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {tpl.name}
                       </div>
-                      <div style={{ fontFamily: INTER, fontSize: '0.5625rem', color: MUTED, marginTop: 2 }}>
+                      <div style={{ fontFamily: INTER, fontSize: '0.5625rem', color: TEXT_MU, marginTop: 2 }}>
                         {[
                           tpl.lasttyp,
                           tpl.fordon_id,
@@ -1883,8 +2246,8 @@ function AppInner() {
                       onClick={() => handleDeleteTemplate(tpl.id)}
                       style={{
                         fontFamily: INTER, fontSize: '0.625rem', letterSpacing: '0.04em',
-                        background: '#fff0f0', border: '1.5px solid #fca5a5', borderRadius: 6,
-                        color: '#e74c3c', cursor: 'pointer', padding: '4px 9px', flexShrink: 0,
+                        background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 6,
+                        color: DANGER, cursor: 'pointer', padding: '4px 9px', flexShrink: 0,
                       }}
                     >
                       {t.newQuote.templateManager.delete}
@@ -1893,13 +2256,13 @@ function AppInner() {
                 ))
               )}
             </div>
-            <div style={{ padding: '12px 24px', borderTop: `1px solid ${BORDER}`, display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ padding: '12px 24px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'flex-end' }}>
               <button
                 onClick={() => setShowMallManager(false)}
                 style={{
                   fontFamily: INTER, fontSize: '0.75rem', padding: '8px 20px',
-                  border: `1.5px solid ${BORDER}`, borderRadius: 8,
-                  background: WHITE, color: MUTED, cursor: 'pointer',
+                  border: '1px solid rgba(94,234,212,0.2)', borderRadius: 10,
+                  background: 'transparent', color: CYAN, cursor: 'pointer',
                 }}
               >
                 {t.newQuote.templateManager.close}
@@ -1939,36 +2302,44 @@ function SubscriptionPaused({ company, onLogout }) {
   const { t } = useLanguage();
   return (
     <div style={{
-      minHeight: '100vh', background: BG,
+      minHeight: '100vh', background: 'radial-gradient(circle at 50% 0%, #0d1424 0%, #080b14 60%)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontFamily: INTER, padding: 24,
     }}>
       <div style={{
-        background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 16,
-        boxShadow: '0 4px 32px rgba(0,0,0,0.08)',
+        background: 'rgba(20,27,45,0.8)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 20,
+        boxShadow: '0 4px 32px rgba(0,0,0,0.4)',
         padding: '48px 40px', maxWidth: 440, width: '100%',
         textAlign: 'center',
       }}>
         <div style={{
-          width: 48, height: 48, background: 'rgba(231,76,60,0.08)',
+          width: 48, height: 48, background: 'rgba(248,113,113,0.1)',
+          border: '1px solid rgba(248,113,113,0.2)',
           borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
           margin: '0 auto 20px',
         }}>
           <span style={{ fontSize: 22 }}>⏸</span>
         </div>
-        <h1 style={{ fontSize: 18, fontWeight: 700, color: TEXT, margin: '0 0 10px' }}>
+        <h1 style={{ fontSize: 18, fontWeight: 700, color: TEXT_PR, margin: '0 0 10px' }}>
           {t.subscriptionPaused.heading}
         </h1>
-        <p style={{ fontSize: 13, color: MUTED, margin: '0 0 28px', lineHeight: 1.7 }}>
+        <p style={{ fontSize: 13, color: TEXT_SEC, margin: '0 0 28px', lineHeight: 1.7 }}>
           {t.subscriptionPaused.desc}
         </p>
         <a
           href={`mailto:admin@akaren.se?subject=${encodeURIComponent(t.subscriptionPaused.heading + ' — ' + (company?.name ?? ''))}`}
           style={{
-            display: 'inline-block', background: BLUE, color: WHITE,
+            display: 'inline-block',
+            background: 'linear-gradient(135deg, #2dd4bf, #5eead4)',
+            color: '#080b14',
             fontFamily: INTER, fontSize: 13, fontWeight: 600,
-            padding: '10px 24px', borderRadius: 8, textDecoration: 'none',
+            padding: '10px 24px', borderRadius: 10, textDecoration: 'none',
             marginBottom: 16,
+            boxShadow: '0 0 20px rgba(94,234,212,0.3)',
           }}
         >
           {t.subscriptionPaused.contact}
@@ -1978,7 +2349,7 @@ function SubscriptionPaused({ company, onLogout }) {
             onClick={onLogout}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              fontFamily: INTER, fontSize: 12, color: MUTED,
+              fontFamily: INTER, fontSize: 12, color: TEXT_MU,
             }}
           >
             {t.subscriptionPaused.logOut}

@@ -2,16 +2,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const BLUE    = '#4361ee';
-const BLUE_DK = '#3451d1';
+const AMBER   = '#c9921e';
+const AMBER_DK= '#a87818';
 const WHITE   = '#ffffff';
-const BG      = '#f0f2f5';
-const SURF    = '#f8f9fa';
-const BORDER  = '#e9ecef';
-const TEXT    = '#1a1a2e';
-const MUTED   = '#6c757d';
-const FAINT   = '#9ca3af';
-const INTER   = "'Inter', sans-serif";
+const BG      = '#edeae1';
+const SURF    = '#f4f0e7';
+const BORDER  = '#cfc9bb';
+const TEXT    = '#151210';
+const MUTED   = '#6a6050';
+const FAINT   = '#9a9082';
+const OUTFIT  = "'Outfit', system-ui, sans-serif";
+const MONO    = "'DM Mono', monospace";
 
 const fmtSEK = (n) =>
   n == null ? '—' :
@@ -79,7 +80,7 @@ function CustomerModal({ initial, onSave, onClose }) {
           padding: '20px 24px 16px', borderBottom: `1px solid ${BORDER}`,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
-          <div style={{ fontFamily: INTER, fontSize: 15, fontWeight: 700, color: TEXT }}>
+          <div style={{ fontFamily: OUTFIT, fontSize: 15, fontWeight: 700, color: TEXT }}>
             {isEdit ? cm.editHeading : cm.addHeading}
           </div>
           <button onClick={onClose}
@@ -94,7 +95,7 @@ function CustomerModal({ initial, onSave, onClose }) {
             { label: cm.email, value: email, onChange: setEmail, placeholder: 'inkop@foretag.se' },
           ].map(({ label, value, onChange, placeholder }) => (
             <label key={label} style={{ display: 'block', marginBottom: 14 }}>
-              <div style={{ fontFamily: INTER, fontSize: 11, fontWeight: 600, color: MUTED,
+              <div style={{ fontFamily: OUTFIT, fontSize: 11, fontWeight: 600, color: MUTED,
                 textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }}>
                 {label}
               </div>
@@ -103,17 +104,17 @@ function CustomerModal({ initial, onSave, onClose }) {
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
                 style={{
-                  width: '100%', fontFamily: INTER, fontSize: 13, color: TEXT,
+                  width: '100%', fontFamily: OUTFIT, fontSize: 13, color: TEXT,
                   background: BG, border: `1px solid ${BORDER}`, borderRadius: 8,
                   padding: '9px 12px', outline: 'none', boxSizing: 'border-box',
                 }}
-                onFocus={(e) => { e.target.style.borderColor = BLUE; }}
+                onFocus={(e) => { e.target.style.borderColor = AMBER; }}
                 onBlur={(e)  => { e.target.style.borderColor = BORDER; }}
               />
             </label>
           ))}
           <label style={{ display: 'block', marginBottom: 20 }}>
-            <div style={{ fontFamily: INTER, fontSize: 11, fontWeight: 600, color: MUTED,
+            <div style={{ fontFamily: OUTFIT, fontSize: 11, fontWeight: 600, color: MUTED,
               textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }}>
               {cm.notes}
             </div>
@@ -123,19 +124,19 @@ function CustomerModal({ initial, onSave, onClose }) {
               placeholder={cm.notesPlaceholder}
               rows={2}
               style={{
-                width: '100%', fontFamily: INTER, fontSize: 13, color: TEXT,
+                width: '100%', fontFamily: OUTFIT, fontSize: 13, color: TEXT,
                 background: BG, border: `1px solid ${BORDER}`, borderRadius: 8,
                 padding: '9px 12px', resize: 'vertical', outline: 'none',
                 boxSizing: 'border-box', lineHeight: 1.5,
               }}
-              onFocus={(e) => { e.target.style.borderColor = BLUE; }}
+              onFocus={(e) => { e.target.style.borderColor = AMBER; }}
               onBlur={(e)  => { e.target.style.borderColor = BORDER; }}
             />
           </label>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
             <button onClick={onClose}
               style={{
-                fontFamily: INTER, fontSize: 12, fontWeight: 500,
+                fontFamily: OUTFIT, fontSize: 12, fontWeight: 500,
                 background: WHITE, color: MUTED, border: `1px solid ${BORDER}`,
                 borderRadius: 8, padding: '10px 20px', cursor: 'pointer',
               }}>
@@ -145,9 +146,9 @@ function CustomerModal({ initial, onSave, onClose }) {
               onClick={handleSave}
               disabled={!name.trim() || saving}
               style={{
-                fontFamily: INTER, fontSize: 12, fontWeight: 600,
-                background: name.trim() ? BLUE : BORDER,
-                color: name.trim() ? WHITE : FAINT,
+                fontFamily: OUTFIT, fontSize: 12, fontWeight: 600,
+                background: name.trim() ? AMBER : BORDER,
+                color: name.trim() ? TEXT : FAINT,
                 border: 'none', borderRadius: 8, padding: '10px 24px',
                 cursor: name.trim() ? 'pointer' : 'default',
               }}>
@@ -229,14 +230,14 @@ function CustomerDetail({ customer, onClose, onEdit, onDelete }) {
         <div style={{ padding: '20px 24px 16px', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <div>
-              <div style={{ fontFamily: INTER, fontSize: 16, fontWeight: 700, color: TEXT, marginBottom: 3 }}>
+              <div style={{ fontFamily: OUTFIT, fontSize: 16, fontWeight: 700, color: TEXT, marginBottom: 3 }}>
                 {customer.customer_name}
               </div>
               {customer.customer_phone && (
-                <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>{customer.customer_phone}</div>
+                <div style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED }}>{customer.customer_phone}</div>
               )}
               {customer.customer_email && (
-                <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>{customer.customer_email}</div>
+                <div style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED }}>{customer.customer_email}</div>
               )}
             </div>
             <button onClick={onClose}
@@ -252,16 +253,16 @@ function CustomerDetail({ customer, onClose, onEdit, onDelete }) {
               { label: cd.stats.lastSeen, value: fmtRelTime(customer.last_seen_at, t) },
             ].map(({ label, value }) => (
               <div key={label}>
-                <div style={{ fontFamily: INTER, fontSize: 10, color: FAINT,
+                <div style={{ fontFamily: OUTFIT, fontSize: 10, color: FAINT,
                   textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
-                <div style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>{value}</div>
+                <div style={{ fontFamily: OUTFIT, fontSize: 13, fontWeight: 600, color: TEXT }}>{value}</div>
               </div>
             ))}
           </div>
 
           <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
             <button onClick={copyLink} style={{
-              fontFamily: INTER, fontSize: 11, fontWeight: 600,
+              fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
               background: copied ? '#e8fdf0' : BG,
               color: copied ? '#16a34a' : TEXT,
               border: `1px solid ${copied ? '#16a34a' : BORDER}`,
@@ -270,7 +271,7 @@ function CustomerDetail({ customer, onClose, onEdit, onDelete }) {
               {copied ? cd.linkCopied : cd.copyLink}
             </button>
             <button onClick={() => onEdit(customer)} style={{
-              fontFamily: INTER, fontSize: 11, fontWeight: 500,
+              fontFamily: OUTFIT, fontSize: 11, fontWeight: 500,
               background: WHITE, color: MUTED,
               border: `1px solid ${BORDER}`, borderRadius: 8,
               padding: '7px 14px', cursor: 'pointer',
@@ -280,7 +281,7 @@ function CustomerDetail({ customer, onClose, onEdit, onDelete }) {
             {confirmDelete ? (
               <>
                 <button onClick={() => onDelete(customer.id)} style={{
-                  fontFamily: INTER, fontSize: 11, fontWeight: 600,
+                  fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
                   background: '#fff0f0', color: '#e74c3c',
                   border: '1px solid #fca5a5', borderRadius: 8,
                   padding: '7px 14px', cursor: 'pointer',
@@ -288,7 +289,7 @@ function CustomerDetail({ customer, onClose, onEdit, onDelete }) {
                   {cd.confirmDelete}
                 </button>
                 <button onClick={() => setConfirmDelete(false)} style={{
-                  fontFamily: INTER, fontSize: 11,
+                  fontFamily: OUTFIT, fontSize: 11,
                   background: 'none', color: MUTED,
                   border: 'none', padding: '7px 8px', cursor: 'pointer',
                 }}>
@@ -297,7 +298,7 @@ function CustomerDetail({ customer, onClose, onEdit, onDelete }) {
               </>
             ) : (
               <button onClick={() => setConfirmDelete(true)} style={{
-                fontFamily: INTER, fontSize: 11,
+                fontFamily: OUTFIT, fontSize: 11,
                 background: 'none', color: '#e74c3c',
                 border: 'none', padding: '7px 8px', cursor: 'pointer',
               }}>
@@ -310,7 +311,7 @@ function CustomerDetail({ customer, onClose, onEdit, onDelete }) {
             <div style={{
               marginTop: 12, background: '#fffbeb', border: '1px solid #fde68a',
               borderRadius: 6, padding: '8px 12px',
-              fontFamily: INTER, fontSize: 12, color: '#92400e', lineHeight: 1.5,
+              fontFamily: OUTFIT, fontSize: 12, color: '#92400e', lineHeight: 1.5,
             }}>
               {customer.notes}
             </div>
@@ -321,10 +322,10 @@ function CustomerDetail({ customer, onClose, onEdit, onDelete }) {
         <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
           {TABS.map(({ id, label }) => (
             <button key={id} onClick={() => setTab(id)} style={{
-              fontFamily: INTER, fontSize: 12, fontWeight: tab === id ? 600 : 400,
-              color: tab === id ? BLUE : MUTED,
+              fontFamily: OUTFIT, fontSize: 12, fontWeight: tab === id ? 600 : 400,
+              color: tab === id ? AMBER : MUTED,
               background: 'none', border: 'none',
-              borderBottom: tab === id ? `2px solid ${BLUE}` : '2px solid transparent',
+              borderBottom: tab === id ? `2px solid ${AMBER}` : '2px solid transparent',
               padding: '10px 16px', cursor: 'pointer', marginBottom: -1,
             }}>
               {label}
@@ -340,11 +341,11 @@ function CustomerDetail({ customer, onClose, onEdit, onDelete }) {
               <div style={{ flex: 1, padding: '16px 24px', display: 'flex',
                 flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
                 {messages === null ? (
-                  <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED, padding: '24px 0', textAlign: 'center' }}>
+                  <div style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED, padding: '24px 0', textAlign: 'center' }}>
                     {t.customers.loading}
                   </div>
                 ) : messages.length === 0 ? (
-                  <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED, padding: '24px 0', textAlign: 'center' }}>
+                  <div style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED, padding: '24px 0', textAlign: 'center' }}>
                     {cd.noMessages}
                   </div>
                 ) : (
@@ -355,15 +356,15 @@ function CustomerDetail({ customer, onClose, onEdit, onDelete }) {
                         alignItems: isOut ? 'flex-end' : 'flex-start' }}>
                         <div style={{
                           maxWidth: '80%',
-                          background: isOut ? BLUE : BG,
-                          color: isOut ? WHITE : TEXT,
+                          background: isOut ? AMBER : BG,
+                          color: isOut ? TEXT : TEXT,
                           borderRadius: isOut ? '12px 4px 12px 12px' : '4px 12px 12px 12px',
                           padding: '9px 13px',
-                          fontFamily: INTER, fontSize: 12, lineHeight: 1.5,
+                          fontFamily: OUTFIT, fontSize: 12, lineHeight: 1.5,
                         }}>
                           {msg.body}
                         </div>
-                        <div style={{ fontFamily: INTER, fontSize: 10, color: FAINT, marginTop: 3 }}>
+                        <div style={{ fontFamily: OUTFIT, fontSize: 10, color: FAINT, marginTop: 3 }}>
                           {isOut ? (msg.sender_name ?? t.customers.detail.msgSend) : customer.customer_name} · {fmtTime(msg.created_at)}
                           {isOut && msg.read_at && ` · ${t.customers.read}`}
                         </div>
@@ -381,7 +382,7 @@ function CustomerDetail({ customer, onClose, onEdit, onDelete }) {
                   placeholder={cd.msgPlaceholder}
                   rows={2}
                   style={{
-                    flex: 1, fontFamily: INTER, fontSize: 12, color: TEXT,
+                    flex: 1, fontFamily: OUTFIT, fontSize: 12, color: TEXT,
                     background: BG, border: `1px solid ${BORDER}`, borderRadius: 8,
                     padding: '8px 12px', resize: 'none', outline: 'none', lineHeight: 1.5,
                   }}
@@ -390,9 +391,9 @@ function CustomerDetail({ customer, onClose, onEdit, onDelete }) {
                   onClick={sendMsg}
                   disabled={sending || !msgInput.trim()}
                   style={{
-                    fontFamily: INTER, fontSize: 11, fontWeight: 600,
-                    background: msgInput.trim() ? BLUE : BORDER,
-                    color: msgInput.trim() ? WHITE : FAINT,
+                    fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
+                    background: msgInput.trim() ? AMBER : BORDER,
+                    color: msgInput.trim() ? TEXT : FAINT,
                     border: 'none', borderRadius: 8, padding: '9px 16px',
                     cursor: msgInput.trim() ? 'pointer' : 'default', flexShrink: 0,
                   }}>
@@ -406,11 +407,11 @@ function CustomerDetail({ customer, onClose, onEdit, onDelete }) {
           {tab === 'inquiries' && (
             <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
               {inquiries === null ? (
-                <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED, textAlign: 'center', padding: '24px 0' }}>
+                <div style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED, textAlign: 'center', padding: '24px 0' }}>
                   {t.customers.loading}
                 </div>
               ) : inquiries.length === 0 ? (
-                <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED, textAlign: 'center', padding: '24px 0' }}>
+                <div style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED, textAlign: 'center', padding: '24px 0' }}>
                   {cd.noInquiries}
                 </div>
               ) : (
@@ -419,17 +420,17 @@ function CustomerDetail({ customer, onClose, onEdit, onDelete }) {
                     background: BG, border: `1px solid ${BORDER}`, borderRadius: 8,
                     padding: '12px 16px',
                   }}>
-                    <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT,
+                    <div style={{ fontFamily: OUTFIT, fontSize: 12, color: TEXT,
                       lineHeight: 1.6, marginBottom: 6, whiteSpace: 'pre-wrap' }}>
                       {inq.body}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontFamily: INTER, fontSize: 10, color: FAINT }}>
+                      <span style={{ fontFamily: OUTFIT, fontSize: 10, color: FAINT }}>
                         {fmtTime(inq.created_at)}
                       </span>
                       {inq.quote_id ? (
                         <span style={{
-                          fontFamily: INTER, fontSize: 10, fontWeight: 600,
+                          fontFamily: OUTFIT, fontSize: 10, fontWeight: 600,
                           background: '#e8fdf0', color: '#16a34a',
                           padding: '2px 8px', borderRadius: 10,
                         }}>
@@ -437,7 +438,7 @@ function CustomerDetail({ customer, onClose, onEdit, onDelete }) {
                         </span>
                       ) : (
                         <span style={{
-                          fontFamily: INTER, fontSize: 10, fontWeight: 600,
+                          fontFamily: OUTFIT, fontSize: 10, fontWeight: 600,
                           background: '#fff7ed', color: '#d97706',
                           padding: '2px 8px', borderRadius: 10,
                         }}>
@@ -455,11 +456,11 @@ function CustomerDetail({ customer, onClose, onEdit, onDelete }) {
           {tab === 'activity' && (
             <div style={{ padding: '16px 24px' }}>
               {activity === null ? (
-                <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED, textAlign: 'center', padding: '24px 0' }}>
+                <div style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED, textAlign: 'center', padding: '24px 0' }}>
                   {t.customers.loading}
                 </div>
               ) : activity.length === 0 ? (
-                <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED, textAlign: 'center', padding: '24px 0' }}>
+                <div style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED, textAlign: 'center', padding: '24px 0' }}>
                   {cd.noActivity}
                 </div>
               ) : (
@@ -472,11 +473,11 @@ function CustomerDetail({ customer, onClose, onEdit, onDelete }) {
                     }}>
                       <div style={{
                         width: 6, height: 6, borderRadius: '50%',
-                        background: BLUE, flexShrink: 0, marginTop: 5,
+                        background: AMBER, flexShrink: 0, marginTop: 5,
                       }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT }}>{ev.event}</div>
-                        <div style={{ fontFamily: INTER, fontSize: 10, color: FAINT, marginTop: 1 }}>
+                        <div style={{ fontFamily: OUTFIT, fontSize: 12, color: TEXT }}>{ev.event}</div>
+                        <div style={{ fontFamily: OUTFIT, fontSize: 10, color: FAINT, marginTop: 1 }}>
                           {fmtTime(ev.created_at)}
                         </div>
                       </div>
@@ -568,24 +569,24 @@ export function Customers() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ fontFamily: INTER, fontSize: 22, fontWeight: 700, color: TEXT,
+          <h1 style={{ fontFamily: OUTFIT, fontSize: 22, fontWeight: 700, color: TEXT,
             margin: '0 0 4px', letterSpacing: '-0.02em' }}>
             {tc.heading}
           </h1>
-          <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: 0 }}>
+          <p style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED, margin: 0 }}>
             {tc.portalsCount(customers.length)}
           </p>
         </div>
         <button
           onClick={() => setShowAdd(true)}
           style={{
-            fontFamily: INTER, fontSize: 13, fontWeight: 600,
-            background: BLUE, color: WHITE,
+            fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
+            background: AMBER, color: TEXT,
             border: 'none', borderRadius: 8, padding: '10px 20px',
             cursor: 'pointer', transition: 'background 0.15s',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = BLUE_DK; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = BLUE; }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = AMBER_DK; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = AMBER; }}
         >
           {tc.add}
         </button>
@@ -603,9 +604,9 @@ export function Customers() {
               background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 10,
               padding: '14px 18px', flex: 1, minWidth: 120,
             }}>
-              <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 600, color: MUTED,
+              <div style={{ fontFamily: OUTFIT, fontSize: 10, fontWeight: 600, color: MUTED,
                 textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{label}</div>
-              <div style={{ fontFamily: INTER, fontSize: 20, fontWeight: 700, color: TEXT }}>{value}</div>
+              <div style={{ fontFamily: OUTFIT, fontSize: 20, fontWeight: 700, color: TEXT }}>{value}</div>
             </div>
           ))}
         </div>
@@ -618,18 +619,18 @@ export function Customers() {
             onChange={(e) => setSearch(e.target.value)}
             placeholder={tc.search}
             style={{
-              width: 280, fontFamily: INTER, fontSize: 13, color: TEXT,
+              width: 280, fontFamily: OUTFIT, fontSize: 13, color: TEXT,
               background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 8,
               padding: '8px 14px', outline: 'none',
             }}
-            onFocus={(e) => { e.target.style.borderColor = BLUE; }}
+            onFocus={(e) => { e.target.style.borderColor = AMBER; }}
             onBlur={(e)  => { e.target.style.borderColor = BORDER; }}
           />
         </div>
       )}
 
       {loading ? (
-        <div style={{ fontFamily: INTER, fontSize: 13, color: MUTED, padding: '48px 0', textAlign: 'center' }}>
+        <div style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED, padding: '48px 0', textAlign: 'center' }}>
           {tc.loading}
         </div>
       ) : filtered.length === 0 ? (
@@ -637,18 +638,18 @@ export function Customers() {
           background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12,
           padding: '64px 24px', textAlign: 'center',
         }}>
-          <div style={{ fontFamily: INTER, fontSize: 16, fontWeight: 600, color: TEXT, marginBottom: 8 }}>
+          <div style={{ fontFamily: OUTFIT, fontSize: 16, fontWeight: 600, color: TEXT, marginBottom: 8 }}>
             {customers.length === 0 ? tc.noCustomers : tc.noMatch}
           </div>
-          <div style={{ fontFamily: INTER, fontSize: 13, color: MUTED, marginBottom: 24 }}>
+          <div style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED, marginBottom: 24 }}>
             {customers.length === 0 ? tc.noCustomersDesc : tc.search}
           </div>
           {customers.length === 0 && (
             <button
               onClick={() => setShowAdd(true)}
               style={{
-                fontFamily: INTER, fontSize: 13, fontWeight: 600,
-                background: BLUE, color: WHITE,
+                fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
+                background: AMBER, color: TEXT,
                 border: 'none', borderRadius: 8, padding: '10px 24px', cursor: 'pointer',
               }}>
               {tc.addFirst}
@@ -663,7 +664,7 @@ export function Customers() {
                 {[tc.table.name, tc.table.contact, tc.table.lastSeen,
                   tc.table.quotes, tc.table.ytd, tc.table.messages, ''].map((col) => (
                   <th key={col} style={{
-                    fontFamily: INTER, fontSize: 11, fontWeight: 600, color: MUTED,
+                    fontFamily: OUTFIT, fontSize: 11, fontWeight: 600, color: MUTED,
                     textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.05em',
                     padding: '12px 16px', borderBottom: `1px solid ${BORDER}`,
                   }}>
@@ -689,34 +690,34 @@ export function Customers() {
                     onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                   >
                     <td style={{ padding: '14px 16px' }}>
-                      <div style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
+                      <div style={{ fontFamily: OUTFIT, fontSize: 13, fontWeight: 600, color: TEXT }}>
                         {c.customer_name}
                       </div>
                       {c.notes && (
-                        <div style={{ fontFamily: INTER, fontSize: 11, color: FAINT, marginTop: 2,
+                        <div style={{ fontFamily: OUTFIT, fontSize: 11, color: FAINT, marginTop: 2,
                           maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {c.notes}
                         </div>
                       )}
                     </td>
                     <td style={{ padding: '14px 16px' }}>
-                      <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>
+                      <div style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED }}>
                         {c.customer_phone ?? c.customer_email ?? '—'}
                       </div>
                     </td>
                     <td style={{ padding: '14px 16px' }}>
-                      <div style={{ fontFamily: INTER, fontSize: 12,
+                      <div style={{ fontFamily: OUTFIT, fontSize: 12,
                         color: c.last_seen_at ? TEXT : FAINT }}>
                         {fmtRelTime(c.last_seen_at, t)}
                       </div>
                     </td>
                     <td style={{ padding: '14px 16px' }}>
-                      <div style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
+                      <div style={{ fontFamily: OUTFIT, fontSize: 13, fontWeight: 600, color: TEXT }}>
                         {c.quote_count}
                       </div>
                     </td>
                     <td style={{ padding: '14px 16px' }}>
-                      <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT }}>
+                      <div style={{ fontFamily: OUTFIT, fontSize: 12, color: TEXT }}>
                         {fmtSEK(c.ytd_spend)}
                       </div>
                     </td>
@@ -724,7 +725,7 @@ export function Customers() {
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                         {hasUnread && (
                           <span style={{
-                            fontFamily: INTER, fontSize: 11, fontWeight: 600,
+                            fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
                             background: '#fff7ed', color: '#d97706',
                             padding: '3px 10px', borderRadius: 20,
                           }}>
@@ -733,15 +734,15 @@ export function Customers() {
                         )}
                         {hasPending && (
                           <span style={{
-                            fontFamily: INTER, fontSize: 11, fontWeight: 600,
-                            background: 'rgba(67,97,238,0.08)', color: BLUE,
+                            fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
+                            background: 'rgba(201,146,30,0.10)', color: AMBER,
                             padding: '3px 10px', borderRadius: 20,
                           }}>
                             {tc.pendingInquiry(c.pending_inquiries)}
                           </span>
                         )}
                         {!hasUnread && !hasPending && (
-                          <span style={{ fontFamily: INTER, fontSize: 11, color: FAINT }}>
+                          <span style={{ fontFamily: OUTFIT, fontSize: 11, color: FAINT }}>
                             {c.total_messages > 0 ? tc.totalMsg(c.total_messages) : '—'}
                           </span>
                         )}
@@ -751,7 +752,7 @@ export function Customers() {
                       <button
                         onClick={(e) => copyLink(e, c.token)}
                         style={{
-                          fontFamily: INTER, fontSize: 11, fontWeight: 500,
+                          fontFamily: OUTFIT, fontSize: 11, fontWeight: 500,
                           background: copied === c.token ? '#e8fdf0' : WHITE,
                           color: copied === c.token ? '#16a34a' : MUTED,
                           border: `1px solid ${BORDER}`, borderRadius: 6,

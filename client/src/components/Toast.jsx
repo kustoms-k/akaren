@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const INTER = "'Inter', sans-serif";
+const OUTFIT = "'Outfit', system-ui, sans-serif";
 
 const VARIANTS = {
   success: {
@@ -47,7 +47,7 @@ export function Toast({ message, variant = 'success', onDismiss }) {
         background: v.bg,
         border: `1px solid ${v.border}`,
         color: v.text,
-        fontFamily: INTER,
+        fontFamily: OUTFIT,
         fontSize: 13,
         fontWeight: 500,
         padding: '12px 16px',

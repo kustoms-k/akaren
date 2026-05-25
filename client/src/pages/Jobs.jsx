@@ -9,16 +9,27 @@ import { Toast }           from '../components/Toast.jsx';
 import { db }              from '../db/dexie.js';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const BLUE    = '#4361ee';
-const BLUE_DK = '#3451d1';
-const BG      = '#f0f2f5';
+const AMBER   = '#c9921e';
+const AMBER_DK= '#a87818';
+const CYAN    = '#5eead4';
+const CYAN_BR = '#2dd4bf';
+const SUCCESS = '#4ade80';
+const DANGER  = '#f87171';
+const WARNING_C = '#fbbf24';
+const BG_BASE = '#080b14';
+const BORDER  = 'rgba(255,255,255,0.06)';
+const TEXT_PR = '#e8edf5';
+const TEXT_SEC= '#8b97ad';
+const TEXT_MU = '#5a6478';
+const INTER   = "'Inter', 'Outfit', system-ui, sans-serif";
+const MONO    = "'DM Mono', monospace";
+// Legacy aliases
+const OUTFIT  = INTER;
 const WHITE   = '#ffffff';
-const BORDER  = '#e9ecef';
-const TEXT    = '#1a1a2e';
-const MUTED   = '#6c757d';
-const FAINT   = '#9ca3af';
-const INTER   = "'Inter', sans-serif";
-const SURF    = '#f8f9fa';
+const TEXT    = TEXT_PR;
+const MUTED   = TEXT_SEC;
+const FAINT   = TEXT_MU;
+const SURF    = 'rgba(255,255,255,0.03)';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtSEK = (n) =>
@@ -36,9 +47,9 @@ const fmtDate = (s) => {
 function StatusBadge({ status }) {
   const { t } = useLanguage();
   const colors = {
-    planerad:   { color: '#d97706', bg: '#fff7ed' },
-    aktiv:      { color: '#15803d', bg: '#f0fdf4' },
-    fakturerad: { color: '#3b82f6', bg: '#eff6ff' },
+    planerad:   { color: WARNING_C, bg: 'rgba(251,191,36,0.1)',  border: 'rgba(251,191,36,0.2)' },
+    aktiv:      { color: SUCCESS,   bg: 'rgba(74,222,128,0.1)',  border: 'rgba(74,222,128,0.2)' },
+    fakturerad: { color: '#60a5fa', bg: 'rgba(96,165,250,0.1)', border: 'rgba(96,165,250,0.2)' },
   };
   const s = colors[status] ?? colors.planerad;
   const label = t.jobs.statuses[status] ?? status;
@@ -46,7 +57,8 @@ function StatusBadge({ status }) {
     <span style={{
       fontFamily: INTER, fontSize: 11, letterSpacing: '0.02em', fontWeight: 600,
       textTransform: 'uppercase', color: s.color, background: s.bg,
-      padding: '3px 10px', borderRadius: 6, whiteSpace: 'nowrap',
+      border: `1px solid ${s.border}`,
+      padding: '3px 10px', borderRadius: 100, whiteSpace: 'nowrap',
     }}>
       {label}
     </span>
@@ -127,40 +139,46 @@ function InvoiceModal({ job, customers, onClose, onSuccess }) {
   }
 
   const inputStyle = {
-    width: '100%', fontFamily: INTER, fontSize: 13, color: TEXT,
-    border: '1.5px solid #e9ecef', borderRadius: 8, padding: '9px 14px',
-    outline: 'none', boxSizing: 'border-box', background: WHITE,
+    width: '100%', fontFamily: INTER, fontSize: 13, color: TEXT_PR,
+    border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '9px 14px',
+    outline: 'none', boxSizing: 'border-box', background: 'rgba(20,27,45,0.8)',
   };
   const labelStyle = {
-    fontFamily: INTER, fontSize: 11, letterSpacing: '0.04em',
-    textTransform: 'uppercase', color: FAINT, fontWeight: 600,
+    fontFamily: INTER, fontSize: 11, letterSpacing: '0.08em',
+    textTransform: 'uppercase', color: TEXT_MU, fontWeight: 700,
     display: 'block', marginBottom: 5,
   };
 
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 500,
-      background: 'rgba(26,26,46,0.45)',
+      background: 'rgba(8,11,20,0.85)',
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       <form
         onSubmit={handleSubmit}
         style={{
-          background: WHITE, border: '1px solid #e9ecef', borderRadius: 12,
-          boxShadow: '0 8px 40px rgba(0,0,0,0.13)', padding: 28, width: 460,
+          background: 'rgba(14,20,36,0.98)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 16,
+          boxShadow: '0 8px 40px rgba(0,0,0,0.5)', padding: 28, width: 460,
         }}
       >
-        <div style={{ fontFamily: INTER, fontSize: 11, letterSpacing: '0.05em', textTransform: 'uppercase', color: FAINT, fontWeight: 600, marginBottom: 6 }}>
+        <div style={{ fontFamily: INTER, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: TEXT_MU, fontWeight: 700, marginBottom: 6 }}>
           {t.jobs.invoiceModal.heading}
         </div>
-        <div style={{ fontFamily: INTER, fontSize: 15, fontWeight: 600, color: TEXT, marginBottom: 4 }}>
+        <div style={{ fontFamily: INTER, fontSize: 15, fontWeight: 600, color: TEXT_PR, marginBottom: 4 }}>
           {job.lasttyp || 'Transport'}
         </div>
         {(job.upphämtning || job.leverans) && (
-          <div style={{ fontFamily: INTER, fontSize: 13, color: MUTED, marginBottom: 20 }}>
+          <div style={{ fontFamily: INTER, fontSize: 13, color: TEXT_SEC, marginBottom: 20 }}>
             {[job.upphämtning, job.leverans].filter(Boolean).join(' → ')}
             {job.totalpris_sek != null && (
-              <span style={{ color: BLUE, marginLeft: 10, fontWeight: 600 }}>{fmtSEK(job.totalpris_sek)} {t.jobs.exclVat}</span>
+              <span style={{ color: AMBER, marginLeft: 10, fontWeight: 600 }}>{fmtSEK(job.totalpris_sek)} {t.jobs.exclVat}</span>
             )}
           </div>
         )}
@@ -203,24 +221,25 @@ function InvoiceModal({ job, customers, onClose, onSuccess }) {
           <textarea rows={3} value={form.customer_address} onChange={(e) => setForm((f) => ({ ...f, customer_address: e.target.value }))} placeholder={'Gatuadress\nPostnummer Ort'} style={{ ...inputStyle, resize: 'none' }} />
         </div>
 
-        {err && <div style={{ fontFamily: INTER, fontSize: 12, color: '#e74c3c', marginBottom: 14 }}>{err}</div>}
+        {err && <div style={{ fontFamily: INTER, fontSize: 12, color: DANGER, marginBottom: 14 }}>{err}</div>}
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button type="button" onClick={onClose} disabled={busy}
             style={{
-              fontFamily: INTER, fontSize: 13, fontWeight: 600, padding: '9px 18px',
-              border: '1.5px solid #e9ecef', borderRadius: 8, background: WHITE,
-              color: '#374151', cursor: 'pointer',
+              fontFamily: INTER, fontSize: 13, fontWeight: 500, padding: '9px 18px',
+              border: '1px solid rgba(94,234,212,0.25)', borderRadius: 10, background: 'transparent',
+              color: CYAN, cursor: 'pointer',
             }}>
             {t.jobs.invoiceModal.cancel}
           </button>
           <button type="submit" disabled={busy || !form.customer_name.trim()}
             style={{
               fontFamily: INTER, fontSize: 13, fontWeight: 600, padding: '9px 20px',
-              border: 'none', borderRadius: 8,
-              background: busy || !form.customer_name.trim() ? '#d1d5db' : BLUE,
-              color: busy || !form.customer_name.trim() ? MUTED : WHITE,
+              border: 'none', borderRadius: 10,
+              background: busy || !form.customer_name.trim() ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #2dd4bf, #5eead4)',
+              color: busy || !form.customer_name.trim() ? TEXT_MU : '#080b14',
               cursor: busy || !form.customer_name.trim() ? 'not-allowed' : 'pointer',
+              boxShadow: busy || !form.customer_name.trim() ? 'none' : '0 0 15px rgba(94,234,212,0.3)',
             }}>
             {busy ? t.jobs.invoiceModal.generating : t.jobs.invoiceModal.generate}
           </button>
@@ -317,34 +336,39 @@ export function Jobs() {
   ];
 
   return (
-    <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px 48px', background: BG, minHeight: 0 }}>
+    <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px 48px', background: 'transparent', minHeight: 0 }}>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
         <div>
-          <h1 style={{ fontFamily: INTER, fontSize: 20, fontWeight: 700, color: TEXT, margin: '0 0 4px' }}>
+          <h1 style={{ fontFamily: INTER, fontSize: 24, fontWeight: 700, color: TEXT_PR, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
             {t.jobs.heading}
           </h1>
-          <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: 0 }}>
+          <p style={{ fontFamily: INTER, fontSize: 13, color: TEXT_SEC, margin: 0 }}>
             {loading ? t.jobs.loading : t.jobs.count(jobs.length)}
           </p>
         </div>
       </div>
 
       <div style={{
-        background: WHITE, border: '1px solid #e9ecef', borderRadius: 12,
-        boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden',
+        background: 'rgba(20,27,45,0.6)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255,255,255,0.06)',
+        borderRadius: 16,
+        boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+        overflow: 'hidden',
       }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 800 }}>
             <thead>
-              <tr style={{ background: SURF }}>
+              <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
                 {COLS.map((c) => (
                   <th key={c.label} style={{
-                    fontFamily: INTER, fontSize: 11, fontWeight: 600,
-                    letterSpacing: '0.5px', textTransform: 'uppercase', color: MUTED,
+                    fontFamily: INTER, fontSize: 11, fontWeight: 700,
+                    letterSpacing: '0.08em', textTransform: 'uppercase', color: TEXT_MU,
                     padding: '10px 16px', textAlign: c.right ? 'right' : 'left',
                     width: c.w, whiteSpace: 'nowrap',
-                    borderBottom: '1px solid #e9ecef',
+                    borderBottom: '1px solid rgba(255,255,255,0.06)',
                   }}>
                     {c.label}
                   </th>
@@ -356,7 +380,7 @@ export function Jobs() {
                 <tr>
                   <td colSpan={7} style={{
                     fontFamily: INTER, fontSize: 13, textAlign: 'center',
-                    color: MUTED, fontStyle: 'italic', padding: 40,
+                    color: TEXT_MU, fontStyle: 'italic', padding: 40,
                   }}>
                     {t.jobs.loading}
                   </td>
@@ -366,7 +390,7 @@ export function Jobs() {
                 <tr>
                   <td colSpan={7} style={{
                     fontFamily: INTER, fontSize: 13, textAlign: 'center',
-                    color: MUTED, fontStyle: 'italic', padding: 40,
+                    color: TEXT_MU, fontStyle: 'italic', padding: 40,
                   }}>
                     {t.jobs.noJobs}
                   </td>
@@ -382,89 +406,89 @@ export function Jobs() {
                 return (
                   <tr
                     key={job.id}
-                    style={{ background: WHITE }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = SURF}
-                    onMouseLeave={(e) => e.currentTarget.style.background = WHITE}
+                    style={{ background: 'transparent' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                   >
                     <td style={{
-                      fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT,
-                      borderBottom: isLast ? 'none' : '1px solid #f0f2f5', verticalAlign: 'middle',
+                      fontFamily: MONO, fontSize: 12, padding: '12px 16px', color: TEXT_PR,
+                      borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)', verticalAlign: 'middle',
                     }}>
-                      <span style={{ fontSize: 12, color: BLUE, fontWeight: 600 }}>{jobNr}</span>
+                      <span style={{ color: AMBER, fontWeight: 600 }}>{jobNr}</span>
                     </td>
 
                     <td style={{
-                      fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT,
-                      borderBottom: isLast ? 'none' : '1px solid #f0f2f5', verticalAlign: 'middle',
+                      fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT_PR,
+                      borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)', verticalAlign: 'middle',
                     }}>
                       {job.upphämtning || job.leverans ? (
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13 }}>
                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 100 }}>{job.upphämtning || '—'}</span>
-                            <span style={{ color: FAINT, flexShrink: 0 }}>→</span>
+                            <span style={{ color: TEXT_MU, flexShrink: 0 }}>→</span>
                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 100 }}>{job.leverans || '—'}</span>
                           </div>
                           {job.avstand_km != null && (
-                            <div style={{ fontSize: 11, color: FAINT, marginTop: 2 }}>{job.avstand_km} km</div>
+                            <div style={{ fontSize: 11, color: TEXT_MU, marginTop: 2 }}>{job.avstand_km} km</div>
                           )}
                         </div>
-                      ) : <span style={{ color: FAINT }}>—</span>}
+                      ) : <span style={{ color: TEXT_MU }}>—</span>}
                     </td>
 
                     <td style={{
-                      fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT,
-                      borderBottom: isLast ? 'none' : '1px solid #f0f2f5', verticalAlign: 'middle',
+                      fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT_PR,
+                      borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)', verticalAlign: 'middle',
                       maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>
                       {job.lasttyp || '—'}
                     </td>
 
                     <td style={{
-                      fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT,
-                      borderBottom: isLast ? 'none' : '1px solid #f0f2f5', verticalAlign: 'middle',
+                      fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT_PR,
+                      borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)', verticalAlign: 'middle',
                       textAlign: 'right',
                     }}>
                       {job.totalpris_sek != null ? (
                         <div>
-                          <div style={{ fontSize: 14, fontWeight: 600 }}>{fmtSEK(job.totalpris_sek)}</div>
-                          <div style={{ fontSize: 11, color: FAINT }}>{t.jobs.exclVat}</div>
+                          <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 500, color: AMBER }}>{fmtSEK(job.totalpris_sek)}</div>
+                          <div style={{ fontFamily: INTER, fontSize: 10, color: TEXT_MU }}>{t.jobs.exclVat}</div>
                         </div>
                       ) : '—'}
                     </td>
 
                     <td style={{
-                      fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: MUTED,
-                      borderBottom: isLast ? 'none' : '1px solid #f0f2f5', verticalAlign: 'middle',
+                      fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT_SEC,
+                      borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)', verticalAlign: 'middle',
                     }}>
                       {fmtDate(job.created_at)}
                     </td>
 
                     <td style={{
-                      fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT,
-                      borderBottom: isLast ? 'none' : '1px solid #f0f2f5', verticalAlign: 'middle',
+                      fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT_PR,
+                      borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)', verticalAlign: 'middle',
                     }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         <StatusBadge status={job.status} />
-                        {fakturaNr && <span style={{ fontFamily: INTER, fontSize: 11, color: FAINT }}>{fakturaNr}</span>}
+                        {fakturaNr && <span style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU }}>{fakturaNr}</span>}
                       </div>
                     </td>
 
                     <td style={{
-                      fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT,
-                      borderBottom: isLast ? 'none' : '1px solid #f0f2f5', verticalAlign: 'middle',
+                      fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT_PR,
+                      borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)', verticalAlign: 'middle',
                     }}>
                       {!isFakturerad ? (
                         <button
                           onClick={() => setModal(job)}
                           style={{
                             display: 'flex', alignItems: 'center', gap: 6,
-                            fontFamily: INTER, fontSize: 13, fontWeight: 600,
+                            fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
                             padding: '7px 14px', borderRadius: 8,
-                            border: 'none', background: BLUE, color: WHITE,
+                            border: 'none', background: AMBER, color: TEXT,
                             cursor: 'pointer', whiteSpace: 'nowrap',
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.background = BLUE_DK}
-                          onMouseLeave={(e) => e.currentTarget.style.background = BLUE}
+                          onMouseEnter={(e) => e.currentTarget.style.background = AMBER_DK}
+                          onMouseLeave={(e) => e.currentTarget.style.background = AMBER}
                         >
                           <FileText size={13} />
                           {t.jobs.generateInvoice}
@@ -476,10 +500,10 @@ export function Jobs() {
                               onClick={() => handleReDownload(job)}
                               style={{
                                 display: 'flex', alignItems: 'center', gap: 6,
-                                fontFamily: INTER, fontSize: 13, fontWeight: 600,
+                                fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
                                 padding: '6px 12px', borderRadius: 8,
-                                border: '1.5px solid #e9ecef', background: WHITE,
-                                color: '#374151', cursor: 'pointer', whiteSpace: 'nowrap',
+                                border: `1px solid ${BORDER}`, background: WHITE,
+                                color: TEXT, cursor: 'pointer', whiteSpace: 'nowrap',
                               }}
                             >
                               <Download size={13} />
@@ -490,10 +514,10 @@ export function Jobs() {
                             onClick={() => handleSendEmail(job)}
                             style={{
                               display: 'flex', alignItems: 'center', gap: 6,
-                              fontFamily: INTER, fontSize: 13, fontWeight: 600,
+                              fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
                               padding: '6px 12px', borderRadius: 8,
-                              border: '1.5px solid #e9ecef', background: WHITE,
-                              color: '#374151', cursor: 'pointer', whiteSpace: 'nowrap',
+                              border: `1px solid ${BORDER}`, background: WHITE,
+                              color: TEXT, cursor: 'pointer', whiteSpace: 'nowrap',
                             }}
                           >
                             <Mail size={13} />
@@ -510,7 +534,7 @@ export function Jobs() {
         </div>
       </div>
 
-      <div style={{ fontFamily: INTER, fontSize: 12, color: FAINT, marginTop: 12 }}>
+      <div style={{ fontFamily: OUTFIT, fontSize: 12, color: FAINT, marginTop: 12 }}>
         {t.jobs.emailNote}
       </div>
 

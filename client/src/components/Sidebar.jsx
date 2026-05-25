@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { S } from '../constants/strings.js';
 
-const INTER = "'Inter', sans-serif";
-const BLUE  = '#4361ee';
+const OUTFIT = "'Outfit', system-ui, sans-serif";
+const INTER  = OUTFIT;
+const AMBER  = '#c9921e';
+const BLUE   = AMBER;
 
 const fmtSEK = (n) =>
   n == null

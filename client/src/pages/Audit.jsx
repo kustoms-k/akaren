@@ -3,18 +3,21 @@ import { apiFetch } from '../utils/apiFetch.js';
 import { useAuth }  from '../context/AuthContext.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const INTER  = "'Inter', sans-serif";
-const BLUE   = '#4361ee';
-const BG     = '#f0f2f5';
-const WHITE  = '#ffffff';
-const BORDER = '#e9ecef';
-const TEXT   = '#1a1a2e';
-const MUTED  = '#6c757d';
-const SURF   = '#f8f9fa';
+const AMBER   = '#c9921e';
+const AMBER_DK= '#a87818';
+const BG      = '#edeae1';
+const WHITE   = '#ffffff';
+const BORDER  = '#cfc9bb';
+const TEXT    = '#151210';
+const MUTED   = '#6a6050';
+const FAINT   = '#9a9082';
+const OUTFIT  = "'Outfit', system-ui, sans-serif";
+const SURF    = '#f4f0e7';
+const MONO    = "'DM Mono', monospace";
 
 const ACTION_COLORS = {
   create: { bg: 'rgba(46,204,113,0.10)',  color: '#1a7a47' },
-  update: { bg: 'rgba(67,97,238,0.10)',   color: '#4361ee' },
+  update: { bg: 'rgba(201,146,30,0.10)',   color: AMBER },
   delete: { bg: 'rgba(231,76,60,0.10)',   color: '#e74c3c' },
   view:   { bg: 'rgba(108,117,125,0.10)', color: '#6c757d' },
   send:   { bg: 'rgba(168,85,247,0.10)',  color: '#9333ea' },
@@ -30,7 +33,7 @@ function DiffView({ before, after, action, t }) {
   const a = tryParse(after);
 
   if (!b && !a) {
-    return <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>—</span>;
+    return <span style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED }}>—</span>;
   }
 
   if (!b && a) {
@@ -41,14 +44,14 @@ function DiffView({ before, after, action, t }) {
       </div>
     ));
     return lines.length ? (
-      <div style={{ fontFamily: INTER, fontSize: 12, lineHeight: 1.8 }}>{lines}</div>
+      <div style={{ fontFamily: OUTFIT, fontSize: 12, lineHeight: 1.8 }}>{lines}</div>
     ) : (
-      <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>{t.audit.row.created}</span>
+      <span style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED }}>{t.audit.row.created}</span>
     );
   }
 
   if (!a) {
-    return <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>—</span>;
+    return <span style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED }}>—</span>;
   }
 
   const allKeys = new Set([...Object.keys(b ?? {}), ...Object.keys(a ?? {})]);
@@ -87,9 +90,9 @@ function DiffView({ before, after, action, t }) {
   }
 
   return lines.length ? (
-    <div style={{ fontFamily: INTER, fontSize: 12, lineHeight: 1.8 }}>{lines}</div>
+    <div style={{ fontFamily: OUTFIT, fontSize: 12, lineHeight: 1.8 }}>{lines}</div>
   ) : (
-    <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>{t.audit.row.noChanges}</span>
+    <span style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED }}>{t.audit.row.noChanges}</span>
   );
 }
 
@@ -99,7 +102,7 @@ function ActionBadge({ action }) {
     <span style={{
       display: 'inline-block',
       padding: '2px 10px', borderRadius: 20,
-      fontFamily: INTER, fontSize: 11, fontWeight: 600,
+      fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
       textTransform: 'uppercase',
       background: style.bg, color: style.color,
       whiteSpace: 'nowrap',
@@ -170,7 +173,7 @@ export function Audit() {
         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: BG, flexDirection: 'column', gap: 10,
       }}>
-        <div style={{ fontFamily: INTER, fontSize: 14, color: '#e74c3c', fontWeight: 600 }}>
+        <div style={{ fontFamily: OUTFIT, fontSize: 14, color: '#e74c3c', fontWeight: 600 }}>
           {t.audit.accessDenied}
         </div>
       </div>
@@ -181,7 +184,7 @@ export function Audit() {
   const currentPage = Math.floor(offset / LIMIT) + 1;
 
   const inputStyle = {
-    fontFamily: INTER, fontSize: 13, color: TEXT,
+    fontFamily: OUTFIT, fontSize: 13, color: TEXT,
     background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 6,
     padding: '6px 10px', outline: 'none',
   };
@@ -199,10 +202,10 @@ export function Audit() {
     <div style={{ flex: 1, overflowY: 'auto', background: BG, padding: '20px 24px' }}>
 
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontFamily: INTER, fontSize: 20, fontWeight: 700, color: TEXT, marginBottom: 4 }}>
+        <div style={{ fontFamily: OUTFIT, fontSize: 20, fontWeight: 700, color: TEXT, marginBottom: 4 }}>
           {t.audit.heading}
         </div>
-        <div style={{ fontFamily: INTER, fontSize: 13, color: MUTED }}>
+        <div style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED }}>
           {t.audit.eventsTotal(total)} · {t.audit.ownerOnly}
         </div>
       </div>
@@ -214,7 +217,7 @@ export function Audit() {
         display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end',
       }}>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontFamily: INTER, fontSize: 11, color: MUTED, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <span style={{ fontFamily: OUTFIT, fontSize: 11, color: MUTED, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             {t.audit.filters.entity}
           </span>
           <select
@@ -230,7 +233,7 @@ export function Audit() {
         </label>
 
         <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontFamily: INTER, fontSize: 11, color: MUTED, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <span style={{ fontFamily: OUTFIT, fontSize: 11, color: MUTED, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             {t.audit.filters.user}
           </span>
           <select
@@ -246,7 +249,7 @@ export function Audit() {
         </label>
 
         <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontFamily: INTER, fontSize: 11, color: MUTED, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <span style={{ fontFamily: OUTFIT, fontSize: 11, color: MUTED, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             {t.audit.filters.from}
           </span>
           <input
@@ -258,7 +261,7 @@ export function Audit() {
         </label>
 
         <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontFamily: INTER, fontSize: 11, color: MUTED, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <span style={{ fontFamily: OUTFIT, fontSize: 11, color: MUTED, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             {t.audit.filters.to}
           </span>
           <input
@@ -272,9 +275,9 @@ export function Audit() {
         <button
           type="submit"
           style={{
-            fontFamily: INTER, fontSize: 13, fontWeight: 600,
+            fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
             padding: '7px 18px',
-            background: BLUE, color: WHITE, border: 'none',
+            background: AMBER, color: TEXT, border: 'none',
             borderRadius: 6, cursor: 'pointer', alignSelf: 'flex-end',
           }}
         >
@@ -286,7 +289,7 @@ export function Audit() {
             type="button"
             onClick={() => { setEntityType(''); setUserId(''); setDateFrom(''); setDateTo(''); }}
             style={{
-              fontFamily: INTER, fontSize: 13, fontWeight: 500,
+              fontFamily: OUTFIT, fontSize: 13, fontWeight: 500,
               padding: '7px 14px', background: WHITE,
               border: `1px solid ${BORDER}`, borderRadius: 6,
               color: MUTED, cursor: 'pointer', alignSelf: 'flex-end',
@@ -308,7 +311,7 @@ export function Audit() {
               {TABLE_HEADERS.map((h) => (
                 <th key={h} style={{
                   textAlign: 'left', padding: '10px 14px',
-                  fontFamily: INTER, fontSize: 11,
+                  fontFamily: OUTFIT, fontSize: 11,
                   letterSpacing: '0.04em', textTransform: 'uppercase',
                   color: MUTED, fontWeight: 600, whiteSpace: 'nowrap',
                 }}>
@@ -320,14 +323,14 @@ export function Audit() {
           <tbody>
             {loading && rows.length === 0 && (
               <tr>
-                <td colSpan={6} style={{ padding: 32, textAlign: 'center', fontFamily: INTER, fontSize: 13, color: MUTED }}>
+                <td colSpan={6} style={{ padding: 32, textAlign: 'center', fontFamily: OUTFIT, fontSize: 13, color: MUTED }}>
                   {t.audit.loading}
                 </td>
               </tr>
             )}
             {!loading && rows.length === 0 && (
               <tr>
-                <td colSpan={6} style={{ padding: 32, textAlign: 'center', fontFamily: INTER, fontSize: 13, color: MUTED, fontStyle: 'italic' }}>
+                <td colSpan={6} style={{ padding: 32, textAlign: 'center', fontFamily: OUTFIT, fontSize: 13, color: MUTED, fontStyle: 'italic' }}>
                   {t.audit.noEntries}
                 </td>
               </tr>
@@ -340,26 +343,26 @@ export function Audit() {
                   onClick={() => setExpanded(isExp ? null : row.id)}
                   style={{
                     borderBottom: `1px solid ${i < rows.length - 1 ? BORDER : 'transparent'}`,
-                    background: isExp ? 'rgba(67,97,238,0.04)' : i % 2 === 0 ? WHITE : SURF,
+                    background: isExp ? 'rgba(201,146,30,0.06)' : i % 2 === 0 ? WHITE : SURF,
                     cursor: 'pointer',
                     transition: 'background 0.1s',
                   }}
                 >
-                  <td style={{ padding: '9px 14px', fontFamily: INTER, fontSize: 12, color: MUTED, whiteSpace: 'nowrap' }}>
+                  <td style={{ padding: '9px 14px', fontFamily: OUTFIT, fontSize: 12, color: MUTED, whiteSpace: 'nowrap' }}>
                     {fmtTs(row.created_at)}
                   </td>
                   <td style={{ padding: '9px 14px' }}>
-                    <div style={{ fontFamily: INTER, fontSize: 13, color: TEXT, fontWeight: 500, whiteSpace: 'nowrap' }}>
+                    <div style={{ fontFamily: OUTFIT, fontSize: 13, color: TEXT, fontWeight: 500, whiteSpace: 'nowrap' }}>
                       {row.user_name ?? '—'}
                     </div>
-                    <div style={{ fontFamily: INTER, fontSize: 11, color: MUTED }}>
+                    <div style={{ fontFamily: OUTFIT, fontSize: 11, color: MUTED }}>
                       {row.user_email ?? ''}
                     </div>
                   </td>
-                  <td style={{ padding: '9px 14px', fontFamily: INTER, fontSize: 12, color: MUTED, whiteSpace: 'nowrap' }}>
+                  <td style={{ padding: '9px 14px', fontFamily: OUTFIT, fontSize: 12, color: MUTED, whiteSpace: 'nowrap' }}>
                     {t.audit.entities[row.entity_type] ?? row.entity_type}
                   </td>
-                  <td style={{ padding: '9px 14px', fontFamily: INTER, fontSize: 12, color: BLUE, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  <td style={{ padding: '9px 14px', fontFamily: OUTFIT, fontSize: 12, color: AMBER, fontWeight: 600, whiteSpace: 'nowrap' }}>
                     {row.entity_id ?? '—'}
                   </td>
                   <td style={{ padding: '9px 14px', whiteSpace: 'nowrap' }}>
@@ -369,7 +372,7 @@ export function Audit() {
                     {isExp ? (
                       <DiffView before={row.before_value} after={row.after_value} action={row.action} t={t} />
                     ) : (
-                      <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>
+                      <span style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED }}>
                         {row.action === 'view' ? t.audit.row.viewOnly
                          : row.after_value ? t.audit.row.clickExpand
                          : '—'}
@@ -388,7 +391,7 @@ export function Audit() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           marginTop: 14, padding: '0 2px',
         }}>
-          <span style={{ fontFamily: INTER, fontSize: 13, color: MUTED }}>
+          <span style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED }}>
             {t.audit.pagination.summary(currentPage, totalPages, total)}
           </span>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -396,7 +399,7 @@ export function Audit() {
               disabled={offset === 0}
               onClick={() => { const o = Math.max(0, offset - LIMIT); setOffset(o); load(o); }}
               style={{
-                fontFamily: INTER, fontSize: 13, fontWeight: 500, padding: '6px 14px',
+                fontFamily: OUTFIT, fontSize: 13, fontWeight: 500, padding: '6px 14px',
                 background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 6,
                 color: offset === 0 ? MUTED : TEXT, cursor: offset === 0 ? 'not-allowed' : 'pointer',
               }}
@@ -407,7 +410,7 @@ export function Audit() {
               disabled={offset + LIMIT >= total}
               onClick={() => { const o = offset + LIMIT; setOffset(o); load(o); }}
               style={{
-                fontFamily: INTER, fontSize: 13, fontWeight: 500, padding: '6px 14px',
+                fontFamily: OUTFIT, fontSize: 13, fontWeight: 500, padding: '6px 14px',
                 background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 6,
                 color: offset + LIMIT >= total ? MUTED : TEXT,
                 cursor: offset + LIMIT >= total ? 'not-allowed' : 'pointer',

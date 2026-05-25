@@ -7,7 +7,7 @@ const router = Router();
 
 const stmtGetAll = db.prepare(`
   SELECT j.id, j.quote_id, j.status, j.faktura_nr, j.fortnox_invoice_nr, j.customer_id, j.created_at,
-         q.lasttyp, q.upphämtning, q.leverans, q.totalpris_sek, q.avstand_km, q.datum,
+         q.lasttyp, q.upphämtning, q.leverans, q.totalpris_sek, q.avstand_km, q.datum, q.fordon_id,
          i.id           AS invoice_id,
          i.faktura_nr   AS invoice_faktura_nr,
          i.total        AS invoice_total,
@@ -103,6 +103,24 @@ router.post('/:id/faktura', async (req, res) => {
     }
 
     res.json({ ok: true, faktura_nr, fortnox_invoice_nr });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.patch('/:id/status', (req, res) => {
+  const { status } = req.body ?? {};
+  const allowed = ['planerad', 'aktiv', 'avslutad'];
+  if (!allowed.includes(status)) {
+    return res.status(400).json({ error: `status must be one of: ${allowed.join(', ')}` });
+  }
+  const jobId = Number(req.params.id);
+  try {
+    const result = db.prepare(
+      `UPDATE jobs SET status = ? WHERE id = ? AND company_id = ?`
+    ).run(status, jobId, req.companyId);
+    if (result.changes === 0) return res.status(404).json({ error: 'Uppdrag hittades inte.' });
+    res.json({ ok: true, status });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

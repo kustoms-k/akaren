@@ -347,6 +347,9 @@ const migrations = [
   `ALTER TABLE users     ADD COLUMN tour_dismissed_at        TEXT`,
   `ALTER TABLE users     ADD COLUMN tos_accepted_at          TEXT`,
   `ALTER TABLE users     ADD COLUMN tos_version              TEXT`,
+  `ALTER TABLE companies ADD COLUMN stripe_customer_id         TEXT`,
+  `ALTER TABLE companies ADD COLUMN stripe_subscription_id     TEXT`,
+  `ALTER TABLE companies ADD COLUMN stripe_subscription_status TEXT NOT NULL DEFAULT 'none'`,
 ];
 
 // Backfill: companies created before the onboarding feature launch are already set up

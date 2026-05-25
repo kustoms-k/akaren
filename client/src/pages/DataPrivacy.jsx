@@ -2,15 +2,18 @@ import { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const INTER   = "'Inter', sans-serif";
-const BLUE    = '#4361ee';
-const BLUE_DK = '#3451d1';
-const BG      = '#f0f2f5';
+const OUTFIT  = "'Outfit', system-ui, sans-serif";
+const INTER   = OUTFIT;
+const AMBER   = '#c9921e';
+const BLUE    = AMBER;
+const AMBER_DK= '#a87818';
+const BLUE_DK = AMBER_DK;
+const BG      = '#edeae1';
 const WHITE   = '#ffffff';
-const BORDER  = '#e9ecef';
-const TEXT    = '#1a1a2e';
-const MUTED   = '#6c757d';
-const SURF    = '#f8f9fa';
+const BORDER  = '#cfc9bb';
+const TEXT    = '#151210';
+const MUTED   = '#6a6050';
+const SURF    = '#f4f0e7';
 
 function Section({ title, subtitle, children }) {
   return (

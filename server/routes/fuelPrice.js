@@ -17,7 +17,7 @@ const insertCache = db.prepare(
 async function fetchFuelpriceKungen() {
   const res = await fetch('https://fuelpricekungen.se/api/prices', {
     signal:  AbortSignal.timeout(5000),
-    headers: { 'User-Agent': 'Kemoffs-Akeri/1.0', Accept: 'application/json' },
+    headers: { 'User-Agent': 'Akaren-TMS/1.0', Accept: 'application/json' },
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();

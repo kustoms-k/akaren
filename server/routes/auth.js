@@ -7,6 +7,18 @@ const router     = Router();
 const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret-change-in-production';
 const JWT_EXPIRY = '24h';
 
+// ── Input validation helpers ──────────────────────────────────────────────────
+const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,253}\.[^\s@]{2,}$/;
+
+function validateEmail(email) {
+  return typeof email === 'string' && EMAIL_RE.test(email.trim()) && email.length <= 320;
+}
+
+function sanitizeStr(val, maxLen = 255) {
+  if (typeof val !== 'string') return null;
+  return val.trim().slice(0, maxLen) || null;
+}
+
 // ── Prepared statements ───────────────────────────────────────────────────────
 const stmtUserByEmail   = db.prepare('SELECT * FROM users WHERE email = ?');
 const stmtCompanyById   = db.prepare('SELECT * FROM companies WHERE id = ?');
@@ -39,8 +51,10 @@ function safeCompany(row) {
 // ── POST /api/auth/login ──────────────────────────────────────────────────────
 router.post('/login', async (req, res) => {
   const { email, password } = req.body ?? {};
-  if (!email?.trim() || !password) {
-    return res.status(400).json({ error: 'Email and password required' });
+
+  if (!validateEmail(email)) return res.status(400).json({ error: 'Valid email required' });
+  if (typeof password !== 'string' || password.length < 1 || password.length > 1024) {
+    return res.status(400).json({ error: 'Password required' });
   }
 
   try {
@@ -72,15 +86,20 @@ router.post('/register', async (req, res) => {
     user_name, user_email, password,
   } = req.body ?? {};
 
-  if (!company_name?.trim() || !user_email?.trim() || !password) {
-    return res.status(400).json({ error: 'company_name, user_email, and password required' });
-  }
-  if (password.length < 8) {
+  const cleanCompany = sanitizeStr(company_name, 200);
+  const cleanEmail   = sanitizeStr(user_email, 320)?.toLowerCase();
+
+  if (!cleanCompany)              return res.status(400).json({ error: 'company_name required' });
+  if (!validateEmail(cleanEmail)) return res.status(400).json({ error: 'Valid user_email required' });
+  if (typeof password !== 'string' || password.length < 8) {
     return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  }
+  if (password.length > 1024) {
+    return res.status(400).json({ error: 'Password too long' });
   }
 
   try {
-    const existing = stmtUserByEmail.get(user_email.trim().toLowerCase());
+    const existing = stmtUserByEmail.get(cleanEmail);
     if (existing) return res.status(409).json({ error: 'Email already registered' });
 
     const hash = await bcrypt.hash(password, 10);
@@ -90,22 +109,17 @@ router.post('/register', async (req, res) => {
     let companyId, userId;
     try {
       const cr = stmtInsertCompany.run(
-        company_name.trim(),
-        org_nr?.trim()        ?? null,
-        address?.trim()       ?? null,
-        phone?.trim()         ?? null,
-        companyEmail?.trim()  ?? null,
-        bankgiro?.trim()      ?? null,
+        cleanCompany,
+        sanitizeStr(org_nr, 20),
+        sanitizeStr(address, 300),
+        sanitizeStr(phone, 30),
+        sanitizeStr(companyEmail, 320),
+        sanitizeStr(bankgiro, 20),
       );
       companyId = cr.lastInsertRowid;
 
-      const displayName = user_name?.trim() || user_email.split('@')[0];
-      const ur = stmtInsertUser.run(
-        companyId,
-        displayName,
-        user_email.trim().toLowerCase(),
-        hash,
-      );
+      const displayName = sanitizeStr(user_name, 100) || cleanEmail.split('@')[0];
+      const ur = stmtInsertUser.run(companyId, displayName, cleanEmail, hash);
       userId = ur.lastInsertRowid;
       db.exec('COMMIT');
     } catch (err) {
@@ -113,13 +127,13 @@ router.post('/register', async (req, res) => {
       throw err;
     }
 
-    const user    = { id: userId, company_id: companyId, email: user_email.trim().toLowerCase(), role: 'owner' };
+    const user    = { id: userId, company_id: companyId, email: cleanEmail, role: 'owner' };
     const company = stmtCompanyById.get(companyId);
     const token   = makeToken(user);
 
     res.status(201).json({
       token,
-      user:    { id: userId, name: user_name?.trim() || user_email.split('@')[0], email: user.email, role: 'owner', tos_accepted_at: null },
+      user:    { id: userId, name: sanitizeStr(user_name, 100) || cleanEmail.split('@')[0], email: cleanEmail, role: 'owner', tos_accepted_at: null },
       company: safeCompany(company),
     });
   } catch (err) {
