@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
 const AuthContext = createContext(null);
 
@@ -10,6 +10,27 @@ export function AuthProvider({ children }) {
   const [token,   setToken]   = useState(() => localStorage.getItem('auth_token'));
   const [user,    setUser]    = useState(() => load('auth_user'));
   const [company, setCompany] = useState(() => load('auth_company'));
+
+  // Auto-login with default credentials if no session exists
+  useEffect(() => {
+    if (token) return;
+    fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'admin@kemoffs.se', password: 'admin123' }),
+    })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data?.token) return;
+        localStorage.setItem('auth_token',   data.token);
+        localStorage.setItem('auth_user',    JSON.stringify(data.user));
+        localStorage.setItem('auth_company', JSON.stringify(data.company));
+        setToken(data.token);
+        setUser(data.user);
+        setCompany(data.company);
+      })
+      .catch(() => {});
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const login = useCallback((data) => {
     localStorage.setItem('auth_token',   data.token);
