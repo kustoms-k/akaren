@@ -66,7 +66,17 @@
       "Bash(git push *)",
       "Bash(git commit *)",
       "Bash(git pull *)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(curl -s -X POST https://api.trafikinfo.trafikverket.se/v2/data.json -H 'Content-Type: application/xml' -d '<?xml version=\"1.0\" encoding=\"UTF-8\"?> *)",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s -X POST https://api.trafikinfo.trafikverket.se/v1/data.json -H 'Content-Type: application/xml' -d '<?xml version=\"1.0\" encoding=\"UTF-8\"?> *)",
+      "Bash(python3 -c ' *)",
+      "Bash(npx @colbymchenry/codegraph install --target=claude --location=local --yes)",
+      "Bash(grep -v \"/>$\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/route-advisory -H 'Content-Type: application/json' -H 'Authorization: Bearer test' -d '{\"pickup\":\"Stockholm\",\"delivery\":\"Göteborg\",\"lang\":\"sv\"}')",
+      "Bash(railway variables *)",
+      "Bash(node -e \"console.log\\(require\\('crypto'\\).randomBytes\\(32\\).toString\\('hex'\\)\\)\")",
+      "Bash(openssl rand *)"
     ],
     "additionalDirectories": [
       "\\tmp"

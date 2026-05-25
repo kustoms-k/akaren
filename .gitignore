@@ -5,3 +5,6 @@ client/dist
 .env
 *.sqlite
 database.sqlite
+*.db-shm
+*.db-wal
+.codegraph/
