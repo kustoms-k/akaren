@@ -13,7 +13,6 @@ const WHITE  = '#ffffff';
 const BORDER = '#e6e2da';
 const NAV    = '#111118';
 
-const NOISE_URI = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E")`;
 
 function inputStyle(focused) {
   return {
@@ -108,41 +107,17 @@ function HeroPanel({ lang }) {
 
   return (
     <div style={{
-      flex: '0 0 56%',
-      position: 'relative',
-      overflow: 'hidden',
-      background: `linear-gradient(160deg, ${NAV} 0%, #1a1820 55%, #211e16 100%)`,
+      flex: '0 0 54%',
+      background: '#0d0d0f',
+      borderRight: '1px solid rgba(255,255,255,0.06)',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'center',
       padding: '56px 52px',
       minHeight: '100%',
     }}>
-      {/* Noise grain */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        backgroundImage: NOISE_URI,
-        backgroundRepeat: 'repeat',
-        pointerEvents: 'none', zIndex: 1,
-      }} />
-      {/* Amber glow orb */}
-      <div style={{
-        position: 'absolute', bottom: '-60px', right: '-40px',
-        width: 360, height: 360, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(201,168,76,0.16) 0%, transparent 65%)',
-        filter: 'blur(30px)',
-        pointerEvents: 'none', zIndex: 1,
-      }} />
-      <div style={{
-        position: 'absolute', top: '30%', left: '-80px',
-        width: 240, height: 240, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 70%)',
-        filter: 'blur(40px)',
-        pointerEvents: 'none', zIndex: 1,
-      }} />
-
       {/* Content */}
-      <div style={{ position: 'relative', zIndex: 2 }}>
+      <div>
         <div style={{ marginBottom: 36 }}>
           <LogoMark size={60} glow />
         </div>
@@ -150,24 +125,24 @@ function HeroPanel({ lang }) {
         <div style={{
           fontFamily: OUTFIT,
           fontWeight: 800,
-          fontSize: 42,
-          letterSpacing: '0.10em',
+          fontSize: 38,
+          letterSpacing: '0.08em',
           color: WHITE,
           lineHeight: 1,
-          marginBottom: 4,
+          marginBottom: 6,
         }}>
           ÅKAREN
         </div>
         <div style={{
-          fontFamily: OUTFIT,
-          fontWeight: 500,
+          fontFamily: "'DM Mono', monospace",
+          fontWeight: 400,
           fontSize: 10,
-          letterSpacing: '0.30em',
-          color: 'rgba(255,255,255,0.35)',
-          marginBottom: 32,
+          letterSpacing: '0.22em',
+          color: 'rgba(255,255,255,0.28)',
+          marginBottom: 28,
           textTransform: 'uppercase',
         }}>
-          TRANSPORT AI
+          TRANSPORTHANTERING
         </div>
 
         {/* Amber divider */}
@@ -352,7 +327,6 @@ export function Login() {
           background: WHITE,
           overflowY: 'auto',
           minHeight: '100vh',
-          borderLeft: `1px solid ${BORDER}`,
         }}>
           <div style={{ width: '100%', maxWidth: 360 }}>
 

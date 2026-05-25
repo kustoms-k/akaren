@@ -117,10 +117,6 @@ function getStatusBadge(status, t) {
 }
 
 // ─── NavItem ──────────────────────────────────────────────────────────────────
-const NAV_HOVER  = 'rgba(255,255,255,0.06)';
-const NAV_TEXT   = 'rgba(255,255,255,0.52)';
-const NAV_ACTIVE_TEXT = '#17161a';
-
 function NavItem({ id, label, Icon, isActive, onClick }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -132,33 +128,27 @@ function NavItem({ id, label, Icon, isActive, onClick }) {
       style={{
         width: '100%',
         display: 'flex', alignItems: 'center', gap: 10,
-        padding: '9px 14px',
+        padding: '8px 14px 8px 11px',
         background: isActive
-          ? 'linear-gradient(90deg, #c9a84c 0%, #d4b55e 100%)'
-          : hovered ? NAV_HOVER : 'transparent',
+          ? 'rgba(255,255,255,0.05)'
+          : hovered ? 'rgba(255,255,255,0.03)' : 'transparent',
         border: 'none',
-        borderRadius: 8,
-        color: isActive ? NAV_ACTIVE_TEXT : hovered ? 'rgba(255,255,255,0.85)' : NAV_TEXT,
-        fontSize: 13, fontFamily: OUTFIT, fontWeight: isActive ? 700 : 500,
+        borderLeft: `3px solid ${isActive ? AMBER : 'transparent'}`,
+        borderRadius: '0 6px 6px 0',
+        color: isActive ? '#ffffff' : hovered ? 'rgba(255,255,255,0.70)' : 'rgba(255,255,255,0.38)',
+        fontSize: 13, fontFamily: OUTFIT, fontWeight: isActive ? 600 : 400,
         cursor: 'pointer', textAlign: 'left',
-        transition: 'background 0.18s cubic-bezier(0.22,1,0.36,1), color 0.15s',
+        transition: 'color 160ms cubic-bezier(0.23,1,0.32,1), background 160ms cubic-bezier(0.23,1,0.32,1), border-color 160ms cubic-bezier(0.23,1,0.32,1)',
         lineHeight: 1.3,
-        margin: '1px 0',
-        boxShadow: isActive ? '0 2px 12px rgba(201,168,76,0.38)' : 'none',
       }}
     >
-      <Icon size={15} strokeWidth={isActive ? 2 : 1.5} style={{ flexShrink: 0, opacity: isActive ? 1 : 0.75 }} />
+      <Icon size={14} strokeWidth={isActive ? 2 : 1.5} style={{ flexShrink: 0 }} />
       <span>{label}</span>
     </button>
   );
 }
 
-// Subtle dot grid for the main app surface
-const DOT_BG = {
-  backgroundColor: '#f5f3ee',
-  backgroundImage: `radial-gradient(circle, rgba(201,168,76,0.09) 1px, transparent 1px)`,
-  backgroundSize: '24px 24px',
-};
+const DOT_BG = { backgroundColor: '#f5f4f1' };
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 function Sidebar({ activePage, onNavigate, company, onLogout, userRole }) {
@@ -166,25 +156,24 @@ function Sidebar({ activePage, onNavigate, company, onLogout, userRole }) {
   const visibleItems = getNavItems(t).filter((n) => !n.ownerOnly || userRole === 'owner');
   return (
     <aside style={{
-      width: 224, flexShrink: 0,
-      background: 'linear-gradient(180deg, #1a1a2e 0%, #141428 100%)',
-      borderRight: 'none',
+      width: 216, flexShrink: 0,
+      background: '#0d0d0f',
+      borderRight: '1px solid rgba(255,255,255,0.06)',
       display: 'flex', flexDirection: 'column',
       height: '100vh',
-      boxShadow: '4px 0 24px rgba(0,0,0,0.18)',
     }}>
       {/* Logo */}
       <div style={{
-        padding: '20px 16px 16px',
-        display: 'flex', flexDirection: 'column', gap: 4,
-        borderBottom: '1px solid rgba(255,255,255,0.07)',
+        padding: '18px 16px 14px',
+        display: 'flex', flexDirection: 'column', gap: 3,
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
         flexShrink: 0,
       }}>
-        <LogoFull markSize={28} variant="light" />
+        <LogoFull markSize={26} variant="light" />
         <div style={{
-          fontSize: 10, color: 'rgba(255,255,255,0.32)',
-          fontFamily: INTER, paddingLeft: 40, marginTop: 3,
-          letterSpacing: '0.03em', textTransform: 'uppercase',
+          fontSize: 10, color: 'rgba(255,255,255,0.28)',
+          fontFamily: OUTFIT, paddingLeft: 38, marginTop: 2,
+          letterSpacing: '0.04em', textTransform: 'uppercase',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
           {company?.name ?? ''}
@@ -192,7 +181,7 @@ function Sidebar({ activePage, onNavigate, company, onLogout, userRole }) {
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: '10px 10px', overflowY: 'auto' }}>
+      <nav style={{ flex: 1, padding: '8px 6px', overflowY: 'auto' }}>
         {visibleItems.map(({ id, label, Icon }) => (
           <NavItem
             key={id}
@@ -207,29 +196,23 @@ function Sidebar({ activePage, onNavigate, company, onLogout, userRole }) {
 
       {/* Footer + Log out */}
       <div style={{
-        borderTop: '1px solid rgba(255,255,255,0.07)',
-        padding: '12px 16px 14px', flexShrink: 0,
+        borderTop: '1px solid rgba(255,255,255,0.06)',
+        padding: '10px 14px 12px', flexShrink: 0,
       }}>
-        <div style={{
-          fontFamily: INTER, fontSize: 10, color: 'rgba(255,255,255,0.22)',
-          letterSpacing: '0.04em', marginBottom: 10,
-        }}>
-          v1.0
-        </div>
         <button
           onClick={onLogout}
           style={{
             display: 'flex', alignItems: 'center', gap: 10,
-            color: 'rgba(255,255,255,0.45)', fontSize: 13, fontFamily: INTER,
+            color: 'rgba(255,255,255,0.35)', fontSize: 12, fontFamily: OUTFIT,
             background: 'none', border: 'none', cursor: 'pointer',
             padding: '6px 4px', width: '100%',
             borderRadius: 6,
-            transition: 'color 0.15s',
+            transition: 'color 160ms cubic-bezier(0.23,1,0.32,1)',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.85)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.45)'; }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.75)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)'; }}
         >
-          <LogOut size={14} strokeWidth={1.5} />
+          <LogOut size={13} strokeWidth={1.5} />
           <span>{t.nav.logOut}</span>
         </button>
       </div>
@@ -449,31 +432,35 @@ function TopBar({ fuelPrice, weather, roadAlerts, company }) {
   const { t, lang, setLang } = useLanguage();
   const now = new Date();
   const dateLocale = lang === 'sv' ? 'sv-SE' : 'en-GB';
-  const todayStr = new Intl.DateTimeFormat(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' }).format(now);
+  const todayStr = new Intl.DateTimeFormat(dateLocale, { weekday: 'short', day: 'numeric', month: 'short' }).format(now);
 
   return (
     <div style={{
-      height: 56, flexShrink: 0,
+      height: 48, flexShrink: 0,
       background: WHITE,
       borderBottom: `1px solid ${BORDER}`,
       display: 'flex', alignItems: 'center',
-      padding: '0 24px', gap: 16,
+      padding: '0 20px', gap: 12,
     }}>
+      {/* Search */}
       <div style={{ position: 'relative', flexShrink: 0 }}>
         <Search
-          size={14} color={MUTED}
-          style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+          size={13} color={MUTED}
+          style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
         />
         <input
           placeholder={t.topbar.searchPlaceholder}
           style={{
-            width: 260, height: 34,
-            background: BG, border: 'none',
-            borderRadius: 8, color: TEXT,
-            fontFamily: INTER, fontSize: 13,
-            paddingLeft: 32, paddingRight: 12,
+            width: 220, height: 30,
+            background: BG, border: `1px solid ${BORDER}`,
+            borderRadius: 6, color: TEXT,
+            fontFamily: OUTFIT, fontSize: 12,
+            paddingLeft: 28, paddingRight: 10,
             outline: 'none',
+            transition: 'border-color 160ms cubic-bezier(0.23,1,0.32,1)',
           }}
+          onFocus={(e) => { e.currentTarget.style.borderColor = AMBER; }}
+          onBlur={(e) => { e.currentTarget.style.borderColor = BORDER; }}
         />
       </div>
 
@@ -494,12 +481,14 @@ function TopBar({ fuelPrice, weather, roadAlerts, company }) {
             key={l}
             onClick={() => setLang(l)}
             style={{
-              fontFamily: INTER, fontSize: 11, fontWeight: 600,
-              background: lang === l ? AMBER : '#eeebe4',
+              fontFamily: OUTFIT, fontSize: 10, fontWeight: 700,
+              background: lang === l ? AMBER : 'transparent',
               color: lang === l ? '#17161a' : MUTED,
               border: `1px solid ${lang === l ? AMBER : BORDER}`,
-              borderRadius: 6, padding: '4px 10px',
-              cursor: 'pointer', transition: 'all 0.15s',
+              borderRadius: 5, padding: '3px 8px',
+              cursor: 'pointer',
+              transition: 'background 160ms cubic-bezier(0.23,1,0.32,1), color 160ms cubic-bezier(0.23,1,0.32,1)',
+              letterSpacing: '0.06em',
             }}
           >
             {l.toUpperCase()}
@@ -508,80 +497,60 @@ function TopBar({ fuelPrice, weather, roadAlerts, company }) {
       </div>
 
       {/* Date + company */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, flexShrink: 0 }}>
-        <span style={{ fontFamily: INTER, fontSize: '0.5rem', color: MUTED, letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1, flexShrink: 0 }}>
+        <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: MUTED, whiteSpace: 'nowrap' }}>
           {todayStr}
         </span>
-        <span style={{ fontFamily: OUTFIT, fontSize: '0.5rem', color: AMBER, letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
+        <span style={{ fontFamily: OUTFIT, fontSize: 10, color: AMBER, letterSpacing: '0.06em', whiteSpace: 'nowrap', fontWeight: 600 }}>
           {company?.name ?? 'Åkaren'}
         </span>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
-        <Bell size={16} color={MUTED} style={{ cursor: 'pointer' }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 16, background: AMBER,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <span style={{ color: WHITE, fontSize: 13, fontWeight: 600, fontFamily: INTER }}>SA</span>
-          </div>
-          <span style={{ color: TEXT, fontSize: 13, fontFamily: INTER }}>Sales Admin</span>
-          <span style={{ color: '#2ecc71', fontSize: 8 }}>●</span>
-        </div>
       </div>
     </div>
   );
 }
 
 // ─── KpiCard ──────────────────────────────────────────────────────────────────
-function KpiCard({ Icon, label, value, change, changeUp, accentColor }) {
+function KpiCard({ label, value, change, changeUp, accentColor }) {
   return (
     <div style={{
       background: WHITE,
-      borderRadius: 12,
-      padding: '20px 20px 18px',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05)',
-      border: '1px solid rgba(0,0,0,0.06)',
-      position: 'relative',
-      overflow: 'hidden',
+      border: '1px solid var(--border)',
+      borderLeft: `3px solid ${accentColor}`,
+      borderRadius: '0 8px 8px 0',
+      padding: '16px 20px',
+      animation: 'number-up 0.28s cubic-bezier(0.23,1,0.32,1) both',
     }}>
-      {/* Thin coloured top accent */}
       <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-        background: accentColor, borderRadius: '12px 12px 0 0',
-      }} />
-
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14, marginTop: 4 }}>
-        <div style={{
-          width: 38, height: 38, borderRadius: 10,
-          background: `${accentColor}18`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-        }}>
-          <Icon size={17} color={accentColor} strokeWidth={1.8} />
-        </div>
-        <span style={{
-          fontSize: 11, fontFamily: INTER, fontWeight: 600,
-          color: changeUp ? '#16a34a' : '#dc2626',
-          background: changeUp ? '#f0fdf4' : '#fef2f2',
-          padding: '3px 8px', borderRadius: 6,
-          display: 'flex', alignItems: 'center', gap: 3, whiteSpace: 'nowrap',
-        }}>
-          {changeUp ? '↑' : '↓'} {change}
-        </span>
-      </div>
-      <div style={{
-        fontSize: 11, color: '#94a3b8', fontFamily: INTER, marginBottom: 6,
-        fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.8px',
+        fontFamily: OUTFIT,
+        fontSize: 10, fontWeight: 700,
+        letterSpacing: '0.10em',
+        textTransform: 'uppercase',
+        color: MUTED,
+        marginBottom: 10,
       }}>
         {label}
       </div>
       <div style={{
-        fontSize: 24, fontWeight: 700, color: TEXT, fontFamily: INTER,
-        lineHeight: 1.1, letterSpacing: '-0.025em',
+        fontFamily: "'DM Mono', monospace",
+        fontSize: 22, fontWeight: 500,
+        color: TEXT,
+        letterSpacing: '-0.02em',
+        lineHeight: 1,
+        marginBottom: 10,
       }}>
         {value}
       </div>
+      {change && (
+        <div style={{
+          fontFamily: OUTFIT,
+          fontSize: 11, fontWeight: 500,
+          color: changeUp ? '#16a34a' : '#dc2626',
+          display: 'flex', alignItems: 'center', gap: 3,
+        }}>
+          <span>{changeUp ? '↑' : '↓'}</span>
+          <span>{change}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -613,7 +582,7 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote }) {
       {/* ── KPI row ──────────────────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
         <KpiCard
-          Icon={DollarSign} accentColor="#c9a84c"
+          accentColor="#c9a84c"
           label={t.dashboard.totalRevenue}
           value={totalRevenue > 0
             ? new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(totalRevenue) + ' kr'
@@ -621,19 +590,19 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote }) {
           change={`12% ${t.dashboard.vsYesterday}`} changeUp
         />
         <KpiCard
-          Icon={FileText} accentColor="#10b981"
+          accentColor="#10b981"
           label={t.dashboard.quotes}
           value={quotes.length > 0 ? String(quotes.length) : '23'}
           change={`3 ${t.dashboard.vsYesterday}`} changeUp
         />
         <KpiCard
-          Icon={AlertTriangle} accentColor="#ef4444"
+          accentColor="#ef4444"
           label={t.dashboard.lezAlerts}
           value={quotes.length > 0 ? String(lezCount) : '2'}
           change={`1 ${t.dashboard.vsYesterday}`} changeUp={false}
         />
         <KpiCard
-          Icon={Fuel} accentColor="#f59e0b"
+          accentColor="#f59e0b"
           label={t.dashboard.dieselPrice}
           value={dieselValue}
           change={`0.12 ${t.dashboard.vsYesterday}`} changeUp={false}
@@ -644,7 +613,7 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote }) {
       <div style={{ display: 'grid', gridTemplateColumns: '62fr 38fr', gap: 16, minHeight: 280 }}>
 
         {/* Bar chart */}
-        <div style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 14, padding: '20px 24px', boxShadow: '0 1px 8px rgba(0,0,0,0.05)' }}>
+        <div style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '20px 24px' }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, fontFamily: INTER, marginBottom: 4 }}>
             {t.dashboard.monthlyRevenue}
           </div>
@@ -694,29 +663,19 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote }) {
                   'Intäkt',
                 ]}
               />
-              <Bar dataKey="value" fill="url(#barGradMain)" radius={[6, 6, 0, 0]}
-                style={{ filter: 'drop-shadow(0 2px 6px rgba(201,168,76,0.38))' }} />
+              <Bar dataKey="value" fill="url(#barGradMain)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         {/* CTA card */}
         <div style={{
-          background: 'linear-gradient(145deg, #111118 0%, #1c1b22 100%)',
-          borderRadius: 14, padding: '26px',
+          background: '#0d0d0f',
+          borderRadius: 8, padding: '26px',
           display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-          border: '1px solid rgba(201,168,76,0.18)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.22)',
-          position: 'relative', overflow: 'hidden',
+          border: '1px solid rgba(255,255,255,0.08)',
         }}>
-          {/* Ambient amber glow */}
-          <div style={{
-            position: 'absolute', bottom: -40, right: -40,
-            width: 160, height: 160, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(201,168,76,0.18) 0%, transparent 70%)',
-            pointerEvents: 'none',
-          }} />
-          <div style={{ position: 'relative', zIndex: 1 }}>
+          <div>
             <div style={{ fontSize: 18, fontWeight: 700, color: WHITE, fontFamily: OUTFIT, marginBottom: 10, lineHeight: 1.35, letterSpacing: '-0.01em' }}>
               {t.dashboard.newQuoteCta}
             </div>
@@ -727,19 +686,18 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote }) {
           <button
             onClick={onNewQuote}
             style={{
-              marginTop: 28, position: 'relative', zIndex: 1,
-              background: 'linear-gradient(135deg, #c9a84c 0%, #d4b55e 100%)',
+              marginTop: 28,
+              background: AMBER,
               color: '#17161a',
               border: 'none', borderRadius: 8,
               padding: '13px 20px',
-              fontSize: 12, fontWeight: 800, fontFamily: OUTFIT,
-              letterSpacing: '0.1em', textTransform: 'uppercase',
+              fontSize: 12, fontWeight: 700, fontFamily: OUTFIT,
+              letterSpacing: '0.08em', textTransform: 'uppercase',
               cursor: 'pointer',
-              transition: 'transform 0.16s cubic-bezier(0.22,1,0.36,1), box-shadow 0.16s',
-              boxShadow: '0 3px 12px rgba(201,168,76,0.38)',
+              transition: 'background 160ms cubic-bezier(0.23,1,0.32,1)',
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(201,168,76,0.48)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 3px 12px rgba(201,168,76,0.38)'; }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = AMBER_LT; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = AMBER; }}
           >
             {t.dashboard.analyseBtn}
           </button>
@@ -750,7 +708,7 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
         {/* Recent Activity */}
-        <div style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 14, padding: '20px 24px', boxShadow: '0 1px 8px rgba(0,0,0,0.05)' }}>
+        <div style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '18px 22px' }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, fontFamily: INTER, marginBottom: 18 }}>
             {t.dashboard.recentActivity}
           </div>
@@ -772,7 +730,7 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote }) {
         </div>
 
         {/* Recent Quotes */}
-        <div style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 14, padding: '20px 24px', boxShadow: '0 1px 8px rgba(0,0,0,0.05)' }}>
+        <div style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '18px 22px' }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, fontFamily: INTER, marginBottom: 18 }}>
             {t.dashboard.recentQuotes}
           </div>
@@ -838,7 +796,7 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote }) {
 
       {/* ── Road conditions panel ────────────────────────────────────────── */}
       {roadAlerts !== undefined && (
-        <div style={{ background: WHITE, border: `1px solid ${roadAlerts.length > 0 ? '#fca5a5' : BORDER}`, borderRadius: 14, padding: '20px 24px', boxShadow: '0 1px 8px rgba(0,0,0,0.05)' }}>
+        <div style={{ background: WHITE, border: `1px solid ${roadAlerts.length > 0 ? '#fca5a5' : BORDER}`, borderRadius: 8, padding: '18px 22px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
             <AlertTriangle size={14} color={roadAlerts.length > 0 ? '#dc2626' : '#2ecc71'} />
             <span style={{ fontSize: 13, fontWeight: 600, color: TEXT, fontFamily: INTER }}>
