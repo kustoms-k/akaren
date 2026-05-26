@@ -59,6 +59,7 @@ import customersRouter                  from './routes/customers.js';
 import onboardingRouter                 from './routes/onboarding.js';
 import co2Router                        from './routes/co2.js';
 import stripeRouter, { handleStripeWebhook } from './routes/stripe.js';
+import bankidRouter                     from './routes/bankid.js';
 import { authLimiter, analyseLimiter, apiLimiter } from './middleware/rateLimit.js';
 import { requireSubscription } from './middleware/requireSubscription.js';
 import db from './db.js';
@@ -106,6 +107,7 @@ app.use(express.json({ limit: '512kb' }));
 
 // ── Public routes (no auth) ───────────────────────────────────────────────────
 app.use('/api/auth',         authLimiter, authRouter);
+app.use('/api/auth/bankid',  authLimiter, bankidRouter);
 app.use('/api/public/quote', publicQuoteRouter);
 app.use('/api/portal',       portalRouter);
 app.use('/api/fuel-price',   fuelPriceRouter);
