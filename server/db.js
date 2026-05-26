@@ -43,7 +43,8 @@ db.exec(`
     email         TEXT    NOT NULL UNIQUE,
     password_hash TEXT    NOT NULL,
     role          TEXT    NOT NULL DEFAULT 'dispatcher',
-    last_login    TEXT
+    last_login    TEXT,
+    created_at    TEXT    DEFAULT CURRENT_TIMESTAMP
   );
 
   CREATE TABLE IF NOT EXISTS quotes (
@@ -358,6 +359,8 @@ const migrations = [
   `ALTER TABLE users ADD COLUMN driver_id            INTEGER REFERENCES drivers(id)`,
   // Audit trail enrichment
   `ALTER TABLE audit_log ADD COLUMN user_name TEXT`,
+  // User created_at — was missing from original schema; existing rows get NULL
+  `ALTER TABLE users ADD COLUMN created_at TEXT`,
 ];
 
 // Backfill: companies created before the onboarding feature launch are already set up
