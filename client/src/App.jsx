@@ -1225,6 +1225,24 @@ function AppInner() {
           flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '10px 20px', gap: 12,
         }}>
+          {/* Hamburger — only shown on mobile via CSS */}
+          <button
+            className="mobile-menu-btn"
+            onClick={() => setMobileSidebarOpen(true)}
+            style={{
+              display: 'none', alignItems: 'center', justifyContent: 'center',
+              width: 32, height: 32, background: 'none', border: 'none',
+              cursor: 'pointer', flexShrink: 0, padding: 0,
+              color: TEXT_MU,
+            }}
+            aria-label="Open navigation"
+          >
+            <svg width="18" height="14" viewBox="0 0 18 14" fill="none">
+              <rect y="0"  width="18" height="2" rx="1" fill="currentColor"/>
+              <rect y="6"  width="18" height="2" rx="1" fill="currentColor"/>
+              <rect y="12" width="18" height="2" rx="1" fill="currentColor"/>
+            </svg>
+          </button>
           <div style={{ position: 'relative' }}>
             <Search
               size={13} color={TEXT_MU}
