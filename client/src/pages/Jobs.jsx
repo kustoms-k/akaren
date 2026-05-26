@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Download, Mail, FileText } from 'lucide-react';
 import { useLiveQuery }    from 'dexie-react-hooks';
 import { useAuth }         from '../context/AuthContext.jsx';
@@ -9,18 +9,18 @@ import { Toast }           from '../components/Toast.jsx';
 import { db }              from '../db/dexie.js';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const AMBER   = '#c9921e';
-const AMBER_DK= '#a87818';
-const CYAN    = '#5eead4';
-const CYAN_BR = '#2dd4bf';
-const SUCCESS = '#4ade80';
-const DANGER  = '#f87171';
-const WARNING_C = '#fbbf24';
-const BG_BASE = '#080b14';
-const BORDER  = 'rgba(255,255,255,0.06)';
-const TEXT_PR = '#e8edf5';
-const TEXT_SEC= '#8b97ad';
-const TEXT_MU = '#5a6478';
+const AMBER   = '#B56510';
+const AMBER_DK= '#9A6410';
+const CYAN    = '#2C5FBF';
+const CYAN_BR = '#2A5FAA';
+const SUCCESS = '#1E7A50';
+const DANGER  = '#A82424';
+const WARNING_C = '#B56510';
+const BG_BASE = '#EDECEA';
+const BORDER  = 'rgba(28,26,22,0.09)';
+const TEXT_PR = '#1C1A17';
+const TEXT_SEC= '#625E58';
+const TEXT_MU = '#A09C96';
 const INTER   = "'Inter', 'Outfit', system-ui, sans-serif";
 const MONO    = "'DM Mono', monospace";
 // Legacy aliases
@@ -29,7 +29,7 @@ const WHITE   = '#ffffff';
 const TEXT    = TEXT_PR;
 const MUTED   = TEXT_SEC;
 const FAINT   = TEXT_MU;
-const SURF    = 'rgba(255,255,255,0.03)';
+const SURF    = '#FAF9F7';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtSEK = (n) =>
@@ -140,8 +140,8 @@ function InvoiceModal({ job, customers, onClose, onSuccess }) {
 
   const inputStyle = {
     width: '100%', fontFamily: INTER, fontSize: 13, color: TEXT_PR,
-    border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '9px 14px',
-    outline: 'none', boxSizing: 'border-box', background: 'rgba(20,27,45,0.8)',
+    border: '1px solid rgba(28,26,22,0.12)', borderRadius: 8, padding: '9px 14px',
+    outline: 'none', boxSizing: 'border-box', background: '#ffffff',
   };
   const labelStyle = {
     fontFamily: INTER, fontSize: 11, letterSpacing: '0.08em',
@@ -152,7 +152,7 @@ function InvoiceModal({ job, customers, onClose, onSuccess }) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 500,
-      background: 'rgba(8,11,20,0.85)',
+      background: 'rgba(28,26,22,0.5)',
       backdropFilter: 'blur(8px)',
       WebkitBackdropFilter: 'blur(8px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -160,12 +160,10 @@ function InvoiceModal({ job, customers, onClose, onSuccess }) {
       <form
         onSubmit={handleSubmit}
         style={{
-          background: 'rgba(14,20,36,0.98)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: 16,
-          boxShadow: '0 8px 40px rgba(0,0,0,0.5)', padding: 28, width: 460,
+          background: '#FAF9F7',
+          border: '1px solid rgba(28,26,22,0.09)',
+          borderRadius: 12,
+          boxShadow: '0 8px 32px rgba(28,26,22,0.14)', padding: 28, width: 460,
         }}
       >
         <div style={{ fontFamily: INTER, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: TEXT_MU, fontWeight: 700, marginBottom: 6 }}>
@@ -176,7 +174,7 @@ function InvoiceModal({ job, customers, onClose, onSuccess }) {
         </div>
         {(job.upphämtning || job.leverans) && (
           <div style={{ fontFamily: INTER, fontSize: 13, color: TEXT_SEC, marginBottom: 20 }}>
-            {[job.upphämtning, job.leverans].filter(Boolean).join(' → ')}
+            {[job.upphämtning, job.leverans].filter(Boolean).join(' – ')}
             {job.totalpris_sek != null && (
               <span style={{ color: AMBER, marginLeft: 10, fontWeight: 600 }}>{fmtSEK(job.totalpris_sek)} {t.jobs.exclVat}</span>
             )}
@@ -236,10 +234,10 @@ function InvoiceModal({ job, customers, onClose, onSuccess }) {
             style={{
               fontFamily: INTER, fontSize: 13, fontWeight: 600, padding: '9px 20px',
               border: 'none', borderRadius: 10,
-              background: busy || !form.customer_name.trim() ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #2dd4bf, #5eead4)',
-              color: busy || !form.customer_name.trim() ? TEXT_MU : '#080b14',
+              background: busy || !form.customer_name.trim() ? 'rgba(28,26,22,0.06)' : '#1C1A17',
+              color: busy || !form.customer_name.trim() ? TEXT_MU : '#FAF9F7',
               cursor: busy || !form.customer_name.trim() ? 'not-allowed' : 'pointer',
-              boxShadow: busy || !form.customer_name.trim() ? 'none' : '0 0 15px rgba(94,234,212,0.3)',
+              boxShadow: 'none',
             }}>
             {busy ? t.jobs.invoiceModal.generating : t.jobs.invoiceModal.generate}
           </button>
@@ -350,18 +348,15 @@ export function Jobs() {
       </div>
 
       <div style={{
-        background: 'rgba(20,27,45,0.6)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255,255,255,0.06)',
-        borderRadius: 16,
-        boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+        background: SURF,
+        border: `1px solid `,
+        borderRadius: 12,
         overflow: 'hidden',
       }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 800 }}>
             <thead>
-              <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
+              <tr style={{ background: 'transparent', borderBottom: `1px solid ` }}>
                 {COLS.map((c) => (
                   <th key={c.label} style={{
                     fontFamily: INTER, fontSize: 11, fontWeight: 700,
@@ -407,7 +402,7 @@ export function Jobs() {
                   <tr
                     key={job.id}
                     style={{ background: 'transparent' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(28,26,22,0.025)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                   >
                     <td style={{
@@ -425,7 +420,7 @@ export function Jobs() {
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13 }}>
                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 100 }}>{job.upphämtning || '—'}</span>
-                            <span style={{ color: TEXT_MU, flexShrink: 0 }}>→</span>
+                            <span style={{ color: TEXT_MU, flexShrink: 0 }}>–</span>
                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 100 }}>{job.leverans || '—'}</span>
                           </div>
                           {job.avstand_km != null && (
@@ -484,11 +479,11 @@ export function Jobs() {
                             display: 'flex', alignItems: 'center', gap: 6,
                             fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
                             padding: '7px 14px', borderRadius: 8,
-                            border: 'none', background: AMBER, color: TEXT,
+                            border: 'none', background: '#1C1A17', color: '#FAF9F7',
                             cursor: 'pointer', whiteSpace: 'nowrap',
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.background = AMBER_DK}
-                          onMouseLeave={(e) => e.currentTarget.style.background = AMBER}
+                          onMouseEnter={(e) => e.currentTarget.style.background = '#343230'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = '#1C1A17'}
                         >
                           <FileText size={13} />
                           {t.jobs.generateInvoice}
@@ -516,8 +511,8 @@ export function Jobs() {
                               display: 'flex', alignItems: 'center', gap: 6,
                               fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
                               padding: '6px 12px', borderRadius: 8,
-                              border: `1px solid ${BORDER}`, background: WHITE,
-                              color: TEXT, cursor: 'pointer', whiteSpace: 'nowrap',
+                              border: `1px solid \$\{BORDER\}`, background: SURF,
+                              color: TEXT_PR, cursor: 'pointer', whiteSpace: 'nowrap',
                             }}
                           >
                             <Mail size={13} />

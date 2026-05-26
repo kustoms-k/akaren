@@ -666,7 +666,6 @@ export function PublicQuote({ token }) {
 
         {quote.lez_varning && (
           <div style={{ margin: '0 24px 12px', background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 4, padding: '10px 14px', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-            <span>⚠</span>
             <span style={{ fontFamily: INTER, fontSize: '0.6875rem', color: '#991B1B', lineHeight: 1.5 }}>
               {pq.lez}
             </span>
@@ -674,7 +673,6 @@ export function PublicQuote({ token }) {
         )}
         {quote['tillstånd_krävs'] && (
           <div style={{ margin: '0 24px 12px', background: '#FFFBEB', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 4, padding: '10px 14px', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-            <span>⚡</span>
             <span style={{ fontFamily: INTER, fontSize: '0.6875rem', color: '#92400E', lineHeight: 1.5 }}>
               {pq.tillstand}
             </span>

@@ -266,7 +266,7 @@ export function CustomerPortal({ token }) {
                     </div>
                     {(q.upphämtning || q.leverans) && (
                       <div style={{ fontSize: 13, color: MUTED, marginBottom: 4 }}>
-                        {[q.upphämtning, q.leverans].filter(Boolean).join(' → ')}
+                        {[q.upphämtning, q.leverans].filter(Boolean).join(' – ')}
                       </div>
                     )}
                     {q.datum && (
@@ -370,7 +370,7 @@ export function CustomerPortal({ token }) {
                             {q.lasttyp ?? '—'}
                           </td>
                           <td style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED, padding: '14px 16px' }}>
-                            {[q.upphämtning, q.leverans].filter(Boolean).join(' → ') || '—'}
+                            {[q.upphämtning, q.leverans].filter(Boolean).join(' – ') || '—'}
                           </td>
                           <td style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED,
                             padding: '14px 16px', whiteSpace: 'nowrap' }}>
@@ -546,14 +546,14 @@ export function CustomerPortal({ token }) {
                 onClick={() => { setShowInquiry(false); setInquiryText(''); setInquirySent(false); }}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: MUTED, fontSize: 18, padding: 4 }}
               >
-                ✕
+                ×
               </button>
             </div>
 
             <div style={{ padding: '20px 24px' }}>
               {inquirySent ? (
                 <div style={{ textAlign: 'center', padding: '16px 0' }}>
-                  <div style={{ fontSize: 24, marginBottom: 8 }}>✓</div>
+                  <div style={{ fontSize: 24, marginBottom: 8, color: '#16a34a', fontWeight: 700 }}>OK</div>
                   <div style={{ fontFamily: OUTFIT, fontSize: 14, fontWeight: 600, color: '#16a34a', marginBottom: 4 }}>
                     {tp.newInquiry.sent}
                   </div>

@@ -16,7 +16,7 @@ export const S = {
     label: 'Beskriv transporten',
     placeholder:
       'T.ex. "Flytta 5 ton stål från Hammarby Sjöstad till Solna industriområde den 20 juni, kräver kran vid lossning."',
-    submit: 'Analysera förfrågan →',
+    submit: 'Analysera förfrågan',
     submitting: 'Analyserar...',
     clear: 'Rensa',
   },

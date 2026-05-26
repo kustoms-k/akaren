@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, useMemo, Component } from 'react';
+﻿import { useState, useCallback, useEffect, useRef, useMemo, Component } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell,
 } from 'recharts';
@@ -39,55 +39,66 @@ import { SyncProvider, useSync } from './context/SyncContext.jsx';
 import { LanguageProvider, useLanguage } from './context/LanguageContext.jsx';
 import { db }             from './db/dexie.js';
 
-// ─── Design tokens ────────────────────────────────────────────────────────────
-const AMBER   = '#c9921e';
-const CYAN        = '#5eead4';
-const CYAN_BR     = '#2dd4bf';
-const VIOLET      = '#a78bfa';
-const BLUE_ACC    = '#60a5fa';
-const SUCCESS     = '#4ade80';
-const WARNING_C   = '#fbbf24';
-const DANGER      = '#f87171';
-const BG_BASE     = '#080b14';
-const SURF        = 'rgba(20,27,45,0.6)';
-const SURF_SOLID  = '#111827';
-const SURF_ELV    = 'rgba(30,41,66,0.5)';
-const BORDER      = 'rgba(255,255,255,0.06)';
-const BORDER_GLOW = 'rgba(94,234,212,0.15)';
-const TEXT_PR     = '#e8edf5';
-const TEXT_SEC    = '#8b97ad';
-const TEXT_MU     = '#5a6478';
-const INTER       = "'Inter', 'Outfit', system-ui, sans-serif";
-const MONO        = "'DM Mono', monospace";
+// ─── Design tokens — warm analytical ─────────────────────────────────────────
+const SAGE      = '#5C8A6E';
+const SAGE_DIM  = '#4A7A5C';
+const TERRA     = '#C06040';
+const SLATE_A   = '#4A6FA8';
+const AMBER_C   = '#A87818';
+const MAUVE_C   = '#8B6FA8';
+const CORAL_C   = '#C85448';
+const BG_BASE   = '#F5F3EF';
+const SURF      = '#FFFFFF';
+const SURF_SOLID = '#FFFFFF';
+const SURF_ELV  = '#F0EDE8';
+const BORDER    = '#E3DDD6';
+const BORDER_ST = '#CCC6BC';
+const TEXT_PR   = '#1C1917';
+const TEXT_SEC  = '#6B6359';
+const TEXT_MU   = '#A09590';
+const INTER     = "'Inter', system-ui, sans-serif";
+const MONO      = "'DM Mono', monospace";
 
-// Legacy aliases
-const OUTFIT  = INTER;
-const WHITE   = '#ffffff';
-const TEXT    = TEXT_PR;
-const MUTED   = TEXT_SEC;
-const FAINT   = TEXT_MU;
-const BLUE    = CYAN;
-const BLUE_DK = CYAN_BR;
-const AMBER_LT= AMBER;
-const AMBER_DK= '#a87818';
+// Aliases — keep compatibility with existing inline styles
+const OUTFIT   = INTER;
+const WHITE    = '#ffffff';
+const TEXT     = TEXT_PR;
+const MUTED    = TEXT_SEC;
+const FAINT    = TEXT_MU;
+const CYAN     = SAGE;
+const CYAN_BR  = SAGE_DIM;
+const VIOLET   = MAUVE_C;
+const BLUE_ACC = SLATE_A;
+const SUCCESS  = SAGE;
+const WARNING_C = AMBER_C;
+const DANGER   = CORAL_C;
+const AMBER    = AMBER_C;
+const BLUE     = SLATE_A;
+const BLUE_DK  = '#3A5F98';
+const AMBER_LT = AMBER_C;
+const AMBER_DK = '#8A6010';
+const BORDER_GLOW = BORDER;
 
 const glassCard = {
-  background: 'rgba(20,27,45,0.6)',
-  backdropFilter: 'blur(20px)',
-  WebkitBackdropFilter: 'blur(20px)',
-  border: '1px solid rgba(255,255,255,0.06)',
-  borderRadius: 16,
-  boxShadow: '0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)',
+  background: SURF,
+  border: `1px solid ${BORDER}`,
+  borderRadius: 12,
+  boxShadow: '0 1px 4px rgba(28,25,23,0.06), 0 2px 8px rgba(28,25,23,0.04)',
 };
 
-// Dark executive tokens
-const DARK       = BG_BASE;
-const DARK_SURF  = 'rgba(20,27,45,0.6)';
-const DARK_SURF2 = 'rgba(30,41,66,0.5)';
-const DARK_BDR   = 'rgba(255,255,255,0.06)';
-const GREEN_LIVE = SUCCESS;
+const DARK       = '#1F1C19';
+const DARK_SURF  = '#2A2622';
+const DARK_SURF2 = '#342E2A';
+const DARK_BDR   = 'rgba(255,255,255,0.08)';
+const GREEN_LIVE = SAGE;
 
 const NOISE_URI = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E")`;
+
+const D_BLUE  = '#2C5FBF';
+const ACCENT  = '#2C5FBF';
+const D_GREEN = '#1E7A50';
+const D_AMBER = '#B56510';
+const D_RED   = '#A82424';
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 const fmtSEK = (n) =>
@@ -141,7 +152,7 @@ function buildActivity(quotes, t) {
     .sort((a, b) => new Date(String(b.created_at).replace(' ', 'T')) - new Date(String(a.created_at).replace(' ', 'T')))
     .slice(0, 5);
   return sorted.map((q) => {
-    const route = [q.upphämtning, q.leverans].filter(Boolean).join(' → ') || q.lasttyp || '—';
+    const route = [q.upphämtning, q.leverans].filter(Boolean).join(' – ') || q.lasttyp || '—';
     const isJob = q.status === 'godkänd' || q.status === 'aktiv' || q.status === 'avslutad';
     return {
       dot:  isJob ? '#2ecc71' : AMBER,
@@ -154,17 +165,11 @@ function buildActivity(quotes, t) {
 
 function getNavItems(t) {
   return [
-    { id: 'dashboard',   label: t.nav.dashboard,    Icon: LayoutDashboard, ownerOnly: false },
-    { id: 'new-quote',   label: t.nav.newQuote,     Icon: FilePlus,        ownerOnly: false },
-    { id: 'jobs',        label: t.nav.jobs,         Icon: Briefcase,       ownerOnly: false },
-    { id: 'dispatch',    label: 'Dispatch',         Icon: CalendarDays,    ownerOnly: false },
-    { id: 'fleet',       label: t.nav.fleet,        Icon: Truck,           ownerOnly: false },
-    { id: 'lonsamhet',   label: t.nav.profitability,Icon: TrendingUp,      ownerOnly: false },
-    { id: 'customers',   label: t.nav.customers,    Icon: Users,           ownerOnly: false },
-    { id: 'co2',         label: t.nav.co2 ?? 'CO₂ & Utsläpp', Icon: Leaf, ownerOnly: false },
-    { id: 'settings',    label: t.nav.settings,     Icon: SettingsIcon,    ownerOnly: false },
-    { id: 'audit',       label: t.nav.audit,        Icon: Shield,          ownerOnly: true  },
-    { id: 'dataprivacy', label: t.nav.dataPrivacy,  Icon: Lock,            ownerOnly: true  },
+    { id: 'dashboard',   label: t.nav.dashboard,    Icon: LayoutDashboard, ownerOnly: false, group: 'main' },
+    { id: 'new-quote',   label: t.nav.newQuote,     Icon: FilePlus,        ownerOnly: false, group: 'main' },
+    { id: 'operations',  label: t.nav.operations,   Icon: Briefcase,       ownerOnly: false, group: 'main' },
+    { id: 'fleet',       label: t.nav.fleet,        Icon: Truck,           ownerOnly: false, group: 'main' },
+    { id: 'settings',    label: t.nav.settings,     Icon: SettingsIcon,    ownerOnly: false, group: 'main' },
   ];
 }
 
@@ -189,20 +194,18 @@ function NavItem({ id, label, Icon, isActive, onClick }) {
       onMouseLeave={() => setHovered(false)}
       style={{
         width: '100%',
-        display: 'flex', alignItems: 'center', gap: 10,
-        padding: '8px 12px',
-        background: isActive
-          ? 'rgba(94,234,212,0.1)'
-          : hovered ? 'rgba(255,255,255,0.03)' : 'transparent',
-        border: isActive ? '1px solid rgba(94,234,212,0.2)' : '1px solid transparent',
-        borderRadius: 10,
-        color: isActive ? CYAN : hovered ? TEXT_PR : TEXT_SEC,
-        fontSize: 13, fontFamily: INTER, fontWeight: isActive ? 600 : 400,
+        display: 'flex', alignItems: 'center', gap: 9,
+        padding: '7px 12px 7px 14px',
+        background: isActive ? 'rgba(44,95,191,0.10)' : hovered ? 'rgba(255,255,255,0.04)' : 'transparent',
+        border: 'none',
+        borderLeft: `2px solid ${isActive ? '#7DBB95' : 'transparent'}`,
+        borderRadius: '0 7px 7px 0',
+        color: isActive ? '#F4F0E8' : hovered ? '#D4CCC4' : '#9B9088',
+        fontSize: 13, fontFamily: INTER, fontWeight: isActive ? 500 : 400,
         cursor: 'pointer', textAlign: 'left',
-        boxShadow: isActive ? 'inset 0 0 20px rgba(94,234,212,0.05)' : 'none',
-        transition: 'color 160ms cubic-bezier(0.23,1,0.32,1), background 160ms cubic-bezier(0.23,1,0.32,1), border-color 160ms cubic-bezier(0.23,1,0.32,1)',
+        transition: 'all 150ms cubic-bezier(0.23,1,0.32,1)',
         lineHeight: 1.3,
-        marginBottom: 2,
+        marginBottom: 1,
       }}
     >
       <Icon size={14} strokeWidth={isActive ? 2 : 1.5} style={{ flexShrink: 0 }} />
@@ -216,51 +219,47 @@ const DOT_BG = { background: 'transparent' };
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 function Sidebar({ activePage, onNavigate, company, onLogout, userRole, mobileOpen, onMobileClose }) {
   const { t } = useLanguage();
-  const visibleItems = getNavItems(t).filter((n) => !n.ownerOnly || userRole === 'owner');
+  const allItems = getNavItems(t).filter((n) => !n.ownerOnly || userRole === 'owner');
+  const mainItems = allItems.filter((n) => n.group === 'main');
+  const complianceItems = allItems.filter((n) => n.group === 'compliance');
   return (
     <>
-      {/* Mobile backdrop */}
       {mobileOpen && (
         <div className="mobile-backdrop" onClick={onMobileClose} aria-hidden />
       )}
     <aside className={`app-sidebar${mobileOpen ? ' mobile-open' : ''}`} style={{
-      width: 230, flexShrink: 0,
-      background: 'rgba(8,11,20,0.92)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
+      width: 220, flexShrink: 0,
+      background: '#1F1C19',
       borderRight: '1px solid rgba(255,255,255,0.06)',
       display: 'flex', flexDirection: 'column',
       height: '100vh',
     }}>
       {/* Logo */}
       <div style={{
-        padding: '20px 16px 16px',
-        display: 'flex', flexDirection: 'column', gap: 4,
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        padding: '22px 16px 18px',
+        borderBottom: '1px solid rgba(255,255,255,0.07)',
         flexShrink: 0,
       }}>
         <div style={{
-          fontFamily: INTER, fontWeight: 700, fontSize: 18,
-          background: 'linear-gradient(135deg, #5eead4, #ffffff)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          letterSpacing: '-0.01em',
+          fontFamily: INTER, fontWeight: 700, fontSize: 17,
+          color: '#F4F0E8',
+          letterSpacing: '-0.02em',
           lineHeight: 1,
         }}>
           Åkaren
         </div>
         <div style={{
-          fontSize: 10, color: TEXT_MU,
-          fontFamily: INTER, marginTop: 2,
-          letterSpacing: '0.2em', textTransform: 'uppercase',
+          fontSize: 9, color: '#5A544E',
+          fontFamily: INTER, marginTop: 5,
+          letterSpacing: '0.18em', textTransform: 'uppercase',
         }}>
-          TRANSPORT PANEL
+          {t.sidebar.tagline}
         </div>
       </div>
 
-      {/* Nav */}
-      <nav style={{ flex: 1, padding: '10px 10px', overflowY: 'auto' }}>
-        {visibleItems.map(({ id, label, Icon }) => (
+      {/* Main nav */}
+      <nav style={{ flex: 1, padding: '10px 8px 10px 0', overflowY: 'auto' }}>
+        {mainItems.map(({ id, label, Icon }) => (
           <NavItem
             key={id}
             id={id}
@@ -270,48 +269,69 @@ function Sidebar({ activePage, onNavigate, company, onLogout, userRole, mobileOp
             onClick={() => onNavigate(id)}
           />
         ))}
+
+        {/* Compliance section — owner only */}
+        {complianceItems.length > 0 && (
+          <>
+            <div style={{
+              fontSize: 9, fontFamily: INTER, fontWeight: 700,
+              letterSpacing: '0.14em', textTransform: 'uppercase',
+              color: '#3E3830', padding: '16px 14px 6px',
+            }}>
+              {t.sidebar.compliance}
+            </div>
+            {complianceItems.map(({ id, label, Icon }) => (
+              <NavItem
+                key={id}
+                id={id}
+                label={label}
+                Icon={Icon}
+                isActive={activePage === id}
+                onClick={() => onNavigate(id)}
+              />
+            ))}
+          </>
+        )}
       </nav>
 
-      {/* Footer + user profile + Log out */}
+      {/* Footer */}
       <div style={{
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        padding: '12px 14px 14px', flexShrink: 0,
+        borderTop: '1px solid rgba(255,255,255,0.07)',
+        padding: '12px 14px 16px', flexShrink: 0,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-          {/* Avatar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 10 }}>
           <div style={{
-            width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-            background: 'rgba(94,234,212,0.15)',
-            border: '1px solid rgba(94,234,212,0.3)',
-            boxShadow: '0 0 10px rgba(94,234,212,0.2)',
+            width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+            background: 'rgba(255,255,255,0.07)',
+            border: '1px solid rgba(255,255,255,0.10)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: INTER, fontSize: 11, fontWeight: 700, color: CYAN,
+            fontFamily: INTER, fontSize: 10, fontWeight: 700, color: '#C8C0B6',
           }}>
-            {(company?.name ?? 'A').slice(0, 2).toUpperCase()}
+            {(company?.name ?? 'Å').slice(0, 2).toUpperCase()}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
-              fontFamily: INTER, fontSize: 11, color: TEXT_SEC,
+              fontFamily: INTER, fontSize: 11, fontWeight: 500, color: '#9B9088',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>
-              Admin · {company?.name ?? 'Åkaren'}
+              {company?.name ?? 'Åkaren'}
             </div>
           </div>
         </div>
         <button
           onClick={onLogout}
           style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            color: TEXT_MU, fontSize: 12, fontFamily: INTER,
+            display: 'flex', alignItems: 'center', gap: 7,
+            color: '#5A544E', fontSize: 12, fontFamily: INTER,
             background: 'none', border: 'none', cursor: 'pointer',
-            padding: '5px 4px', width: '100%',
-            borderRadius: 6,
-            transition: 'color 160ms cubic-bezier(0.23,1,0.32,1)',
+            padding: '4px 0', width: '100%',
+            borderRadius: 5,
+            transition: 'color 150ms ease',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = TEXT_PR; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = TEXT_MU; }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#9B9088'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = '#5A544E'; }}
         >
-          <LogOut size={13} strokeWidth={1.5} />
+          <LogOut size={12} strokeWidth={1.5} />
           <span>{t.nav.logOut}</span>
         </button>
       </div>
@@ -320,382 +340,54 @@ function Sidebar({ activePage, onNavigate, company, onLogout, userRole, mobileOp
   );
 }
 
-// ─── TopBar ───────────────────────────────────────────────────────────────────
-function FuelBadge({ fuelPrice }) {
-  if (!fuelPrice) return null;
-  const isLive = fuelPrice.source !== 'fallback';
-  const priceStr = new Intl.NumberFormat('sv-SE', {
-    minimumFractionDigits: 2, maximumFractionDigits: 2,
-  }).format(fuelPrice.price_per_litre);
-  return (
-    <div className="topbar-fuel-badge" style={{
-      display: 'flex', alignItems: 'center', gap: 6,
-      background: 'rgba(20,27,45,0.6)', border: 'rgba(255,255,255,0.06)', borderRadius: 8,
-      padding: '4px 10px', flexShrink: 0,
-    }}>
-      <span style={{ fontFamily: INTER, fontSize: '0.625rem', color: TEXT_MU }}>Diesel</span>
-      <span style={{ fontFamily: INTER, fontSize: '0.6875rem', fontWeight: 600, color: AMBER }}>
-        {priceStr} kr
-      </span>
-      <span style={{
-        width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-        background: isLive ? SUCCESS : TEXT_MU,
-        boxShadow: isLive ? `0 0 5px ${SUCCESS}80` : 'none',
-      }} />
-    </div>
-  );
-}
+// ─── TopBar removed — search and language toggle are inlined in AppInner ──────
 
-function WeatherBadge({ weather }) {
-  const { t } = useLanguage();
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
 
-  useEffect(() => {
-    if (!open) return;
-    function onDoc(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    }
-    document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
-  }, [open]);
 
-  if (!weather) return null;
-  const isWinter = weather.is_winter;
-  const sign     = weather.temp_c >= 0 ? '+' : '';
-
-  return (
-    <div ref={ref} className="topbar-weather" style={{ position: 'relative', flexShrink: 0 }}>
-      <div
-        onClick={() => isWinter && setOpen((v) => !v)}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          background: isWinter ? 'rgba(251,191,36,0.08)' : 'rgba(20,27,45,0.6)',
-          border: `1px solid ${isWinter ? 'rgba(251,191,36,0.3)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 8,
-          padding: '4px 10px',
-          cursor: isWinter ? 'pointer' : 'default',
-          userSelect: 'none',
-        }}
-      >
-        <span style={{ fontFamily: INTER, fontSize: '0.6875rem', fontWeight: 600, color: isWinter ? WARNING_C : TEXT_PR }}>
-          {sign}{weather.temp_c}°C
-        </span>
-        <span style={{ fontSize: '0.8125rem', lineHeight: 1 }}>{weather.icon}</span>
-        <span style={{ fontFamily: INTER, fontSize: '0.625rem', color: TEXT_MU }}>
-          {weather.condition} / {weather.condition_sv}
-        </span>
-        {isWinter && (
-          <span style={{ fontFamily: INTER, fontSize: '0.5rem', letterSpacing: '0.06em', color: WARNING_C }}>
-            ▾
-          </span>
-        )}
-      </div>
-
-      {open && isWinter && (
-        <div style={{
-          position: 'absolute', top: 'calc(100% + 6px)', left: '50%',
-          transform: 'translateX(-50%)', zIndex: 500, width: 300,
-          background: 'rgba(14,20,36,0.97)', border: `1px solid rgba(251,191,36,0.3)`, borderRadius: 10,
-          padding: '10px 14px',
-          fontFamily: INTER, fontSize: '0.6875rem', color: WARNING_C, lineHeight: 1.6,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-        }}>
-          {t.topbar.winterWarning}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Road alerts badge ────────────────────────────────────────────────────────
-function RoadAlertsBadge({ alerts }) {
-  const { t } = useLanguage();
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function onDoc(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    }
-    document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
-  }, [open]);
-
-  if (!alerts || alerts.length === 0) return null;
-
-  return (
-    <div ref={ref} className="topbar-road-alerts" style={{ position: 'relative', flexShrink: 0 }}>
-      <div
-        onClick={() => setOpen((v) => !v)}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.3)',
-          borderRadius: 8, padding: '4px 10px', cursor: 'pointer', userSelect: 'none',
-        }}
-      >
-        <AlertTriangle size={11} color={DANGER} />
-        <span style={{ fontFamily: INTER, fontSize: '0.6875rem', fontWeight: 600, color: DANGER }}>
-          {t.roadAlerts.label(alerts.length)}
-        </span>
-        <span style={{ fontFamily: INTER, fontSize: '0.5rem', letterSpacing: '0.06em', color: DANGER }}>▾</span>
-      </div>
-
-      {open && (
-        <div style={{
-          position: 'absolute', top: 'calc(100% + 6px)', left: '50%',
-          transform: 'translateX(-50%)', zIndex: 500, width: 340,
-          background: 'rgba(14,20,36,0.97)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 12,
-          padding: '10px 0', boxShadow: '0 8px 24px rgba(0,0,0,0.4)', overflow: 'hidden',
-        }}>
-          <div style={{ padding: '2px 14px 8px', fontFamily: INTER, fontSize: '0.625rem', letterSpacing: '0.06em', color: TEXT_MU, textTransform: 'uppercase' }}>
-            {t.roadAlerts.header}
-          </div>
-          <div style={{ maxHeight: 260, overflowY: 'auto' }}>
-            {alerts.slice(0, 8).map((a) => (
-              <div key={a.id} style={{
-                padding: '8px 14px',
-                borderTop: '1px solid rgba(255,255,255,0.05)',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                  <span style={{ fontFamily: INTER, fontSize: '0.6875rem', fontWeight: 700, color: DANGER }}>
-                    {a.road}
-                  </span>
-                  <span style={{ fontFamily: INTER, fontSize: '0.625rem', color: TEXT_SEC, flex: 1 }}>
-                    {a.location}
-                  </span>
-                </div>
-                <div style={{ fontFamily: INTER, fontSize: '0.625rem', color: TEXT_MU }}>
-                  {a.condition}{a.warnings?.length ? ' — ' + a.warnings.join(', ') : ''}
-                </div>
-              </div>
-            ))}
-          </div>
-          {alerts.length > 8 && (
-            <div style={{ padding: '6px 14px 2px', fontFamily: INTER, fontSize: '0.5625rem', color: TEXT_MU }}>
-              +{alerts.length - 8} till…
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Sync status indicator ────────────────────────────────────────────────────
-function SyncDot() {
-  const { syncStatus, pendingCount } = useSync();
-  const { t } = useLanguage();
-
-  const color = syncStatus === 'offline' ? DANGER
-    : syncStatus === 'syncing'           ? WARNING_C
-    : syncStatus === 'error'             ? DANGER
-    : SUCCESS;
-
-  const label = syncStatus === 'offline'
-    ? (pendingCount > 0 ? t.topbar.sync.offlineQueue(pendingCount) : t.topbar.sync.offline)
-    : syncStatus === 'syncing' ? t.topbar.sync.syncing
-    : syncStatus === 'error'   ? t.topbar.sync.error
-    : t.topbar.sync.synced;
-
-  const pulse = syncStatus !== 'offline' && syncStatus !== 'error';
-
-  return (
-    <div
-      title={label}
-      style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'default', flexShrink: 0 }}
-    >
-      <span style={{ position: 'relative', display: 'inline-flex', width: 8, height: 8 }}>
-        {pulse && (
-          <span style={{
-            position: 'absolute', inset: 0,
-            borderRadius: '50%', background: color, opacity: 0.5,
-            animation: 'ping 1.5s cubic-bezier(0,0,0.2,1) infinite',
-          }} />
-        )}
-        <span style={{
-          position: 'relative', display: 'inline-flex',
-          width: 8, height: 8, borderRadius: '50%', background: color,
-        }} />
-      </span>
-      <span style={{
-        fontFamily: INTER, fontSize: '0.5625rem',
-        color, letterSpacing: '0.04em', whiteSpace: 'nowrap',
-      }}>
-        {label}
-      </span>
-    </div>
-  );
-}
-
-function TopBar({ fuelPrice, weather, roadAlerts, company, onMobileMenuOpen }) {
-  const { t, lang, setLang } = useLanguage();
-  const now = new Date();
-  const dateLocale = lang === 'sv' ? 'sv-SE' : 'en-GB';
-  const todayStr = new Intl.DateTimeFormat(dateLocale, { weekday: 'short', day: 'numeric', month: 'short' }).format(now);
-
-  return (
-    <div style={{
-      height: 52, flexShrink: 0,
-      background: 'rgba(8,11,20,0.85)',
-      backdropFilter: 'blur(16px)',
-      WebkitBackdropFilter: 'blur(16px)',
-      borderBottom: '1px solid rgba(255,255,255,0.05)',
-      display: 'flex', alignItems: 'center',
-      padding: '0 20px', gap: 12,
-    }}>
-      {/* Hamburger — mobile only */}
-      <button
-        className="mobile-menu-btn"
-        onClick={onMobileMenuOpen}
-        aria-label="Open menu"
-        style={{
-          background: 'none', border: 'none', cursor: 'pointer',
-          color: TEXT_MU, padding: 6, borderRadius: 6,
-          alignItems: 'center', justifyContent: 'center', gap: 3, flexShrink: 0,
-          flexDirection: 'column',
-        }}
-      >
-        <span style={{ display: 'block', width: 18, height: 1.5, background: 'currentColor', borderRadius: 2 }} />
-        <span style={{ display: 'block', width: 18, height: 1.5, background: 'currentColor', borderRadius: 2, marginTop: 4 }} />
-        <span style={{ display: 'block', width: 18, height: 1.5, background: 'currentColor', borderRadius: 2, marginTop: 4 }} />
-      </button>
-
-      {/* Search */}
-      <div className="topbar-search" style={{ position: 'relative', flexShrink: 0 }}>
-        <Search
-          size={13} color={TEXT_MU}
-          style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
-        />
-        <input
-          placeholder={t.topbar.searchPlaceholder}
-          style={{
-            width: 200, height: 30,
-            background: 'rgba(20,27,45,0.8)', border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: 8, color: TEXT_PR,
-            fontFamily: INTER, fontSize: 12,
-            paddingLeft: 28, paddingRight: 10,
-            outline: 'none',
-            transition: 'border-color 160ms',
-          }}
-          onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(94,234,212,0.5)'; }}
-          onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
-        />
-      </div>
-
-      {/* Live data badges */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <FuelBadge fuelPrice={fuelPrice} />
-        <WeatherBadge weather={weather} />
-        <RoadAlertsBadge alerts={roadAlerts} />
-      </div>
-
-      {/* Sync status */}
-      <SyncDot />
-
-      {/* SYSTEM LIVE pill */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 6,
-        background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.2)',
-        borderRadius: 100, padding: '4px 10px', flexShrink: 0,
-      }}>
-        <span style={{
-          display: 'inline-block', width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-          background: SUCCESS, boxShadow: `0 0 8px ${SUCCESS}99`,
-          animation: 'dot-pulse 2s ease infinite',
-        }} />
-        <span style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.10em', color: SUCCESS }}>
-          SYSTEM LIVE
-        </span>
-      </div>
-
-      {/* Language toggle */}
-      <div style={{ display: 'flex', gap: 2, flexShrink: 0, background: 'rgba(20,27,45,0.8)', borderRadius: 8, padding: 3, border: '1px solid rgba(255,255,255,0.06)' }}>
-        {['en', 'sv'].map((l) => (
-          <button
-            key={l}
-            onClick={() => setLang(l)}
-            style={{
-              fontFamily: INTER, fontSize: 10, fontWeight: 700,
-              background: lang === l ? CYAN : 'transparent',
-              color: lang === l ? '#080b14' : TEXT_MU,
-              border: 'none',
-              borderRadius: 6, padding: '4px 10px',
-              cursor: 'pointer',
-              transition: 'background 160ms, color 160ms',
-              letterSpacing: '0.06em',
-            }}
-          >
-            {l.toUpperCase()}
-          </button>
-        ))}
-      </div>
-
-      {/* Date */}
-      <span style={{ fontFamily: MONO, fontSize: 10, color: TEXT_MU, whiteSpace: 'nowrap', flexShrink: 0 }}>
-        {todayStr}
-      </span>
-    </div>
-  );
-}
-
-// ─── KpiCard — dark glassmorphic ──────────────────────────────────────────────
+// ─── KpiCard ─────────────────────────────────────────────────────────────────
 function KpiCard({ label, value, change, changeUp, accentColor, Icon: IconProp }) {
   return (
     <div style={{
-      background: 'rgba(20,27,45,0.6)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      border: '1px solid rgba(255,255,255,0.06)',
-      borderRadius: 16,
-      padding: '20px 22px 22px',
+      background: SURF,
+      border: `1px solid ${BORDER}`,
+      borderRadius: 12,
+      padding: '18px 20px 20px',
       position: 'relative',
       overflow: 'hidden',
-      boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
-      animation: 'number-up 0.28s cubic-bezier(0.23,1,0.32,1) both',
+      boxShadow: '0 1px 4px rgba(28,25,23,0.05)',
+      borderTop: `3px solid ${accentColor}`,
     }}>
-      {/* Accent gradient line at top */}
-      <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: 1.5,
-        background: `linear-gradient(90deg, ${accentColor}90 0%, transparent 70%)`,
-      }} />
-
-      {/* Icon + badge row */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
         {IconProp && (
           <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: `${accentColor}18`, border: `1px solid ${accentColor}30`,
+            width: 32, height: 32, borderRadius: 8,
+            background: `${accentColor}18`,
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
           }}>
-            <IconProp size={16} color={accentColor} strokeWidth={1.5} />
+            <IconProp size={15} color={accentColor} strokeWidth={1.5} />
           </div>
         )}
         {change && (
           <span style={{
-            fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.03em',
-            color: changeUp ? SUCCESS : DANGER,
-            background: changeUp ? 'rgba(74,222,128,0.10)' : 'rgba(248,113,113,0.10)',
-            border: `1px solid ${changeUp ? 'rgba(74,222,128,0.22)' : 'rgba(248,113,113,0.22)'}`,
-            padding: '2px 8px', borderRadius: 100, whiteSpace: 'nowrap', marginLeft: 'auto',
+            fontFamily: INTER, fontSize: 10, fontWeight: 600,
+            color: changeUp ? D_GREEN : D_RED,
+            background: changeUp ? 'rgba(58,148,104,0.10)' : 'rgba(184,60,60,0.10)',
+            border: `1px solid ${changeUp ? 'rgba(58,148,104,0.22)' : 'rgba(184,60,60,0.22)'}`,
+            padding: '2px 7px', borderRadius: 100, whiteSpace: 'nowrap', marginLeft: 'auto',
           }}>
             {changeUp ? '+' : ''}{change}
           </span>
         )}
       </div>
-
-      {/* Label */}
       <div style={{
-        fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.10em',
-        textTransform: 'uppercase', color: 'rgba(255,255,255,0.30)', marginBottom: 8,
+        fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.09em',
+        textTransform: 'uppercase', color: TEXT_MU, marginBottom: 6,
       }}>
         {label}
       </div>
-
-      {/* Value */}
       <div style={{
-        fontFamily: MONO, fontSize: 28, fontWeight: 700,
-        color: '#ffffff', letterSpacing: '-0.02em', lineHeight: 1,
+        fontFamily: MONO, fontSize: 26, fontWeight: 700,
+        color: TEXT_PR, letterSpacing: '-0.02em', lineHeight: 1,
       }}>
         {value}
       </div>
@@ -703,7 +395,7 @@ function KpiCard({ label, value, change, changeUp, accentColor, Icon: IconProp }
   );
 }
 
-// ─── Dashboard — dark executive layout ───────────────────────────────────────
+// ─── Dashboard ────────────────────────────────────────────────────────────────
 function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
   const { t } = useLanguage();
 
@@ -738,74 +430,71 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
       display: 'flex', flexDirection: 'column', gap: 20,
     }}>
 
-      {/* ── Page header ────────────────────────────────────────────────────── */}
+      {/* ── Page header ─────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <div>
-          <div style={{ fontFamily: OUTFIT, fontSize: 20, fontWeight: 700, color: '#ffffff', letterSpacing: '-0.01em', lineHeight: 1.2 }}>
-            Operativ Överblick
+          <div style={{ fontFamily: INTER, fontSize: 18, fontWeight: 700, color: TEXT_PR, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+            {t.dashboard.operationsTitle}
           </div>
-          <div style={{ fontFamily: OUTFIT, fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 3 }}>
+          <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT_MU, marginTop: 3 }}>
             {new Date().toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* SYSTEM LIVE badge */}
           <div style={{
             display: 'flex', alignItems: 'center', gap: 6,
-            background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.22)',
+            background: 'rgba(58,148,104,0.08)', border: '1px solid rgba(58,148,104,0.22)',
             borderRadius: 7, padding: '6px 12px',
           }}>
             <span style={{
               display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
-              background: GREEN_LIVE, boxShadow: '0 0 8px rgba(34,197,94,0.65)',
+              background: D_GREEN,
             }} />
-            <span style={{ fontFamily: OUTFIT, fontSize: 10, fontWeight: 700, letterSpacing: '0.10em', color: GREEN_LIVE }}>
-              SYSTEM LIVE
+            <span style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.10em', color: D_GREEN }}>
+              {t.dashboard.systemLive}
             </span>
           </div>
-          {/* CTA */}
           <button
             onClick={onNewQuote}
             style={{
-              background: 'linear-gradient(135deg, #2dd4bf, #5eead4)', color: '#080b14', border: 'none', borderRadius: 10,
-              padding: '10px 18px', fontSize: 12, fontWeight: 700, fontFamily: INTER,
-              letterSpacing: '0.04em', textTransform: 'uppercase', cursor: 'pointer',
-              boxShadow: '0 0 20px rgba(94,234,212,0.3)',
-              transition: 'transform 160ms, box-shadow 160ms',
+              background: TEXT_PR, color: SURF, border: 'none', borderRadius: 8,
+              padding: '9px 18px', fontSize: 12, fontWeight: 600, fontFamily: INTER,
+              letterSpacing: '0.03em', cursor: 'pointer',
+              transition: 'opacity 150ms',
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 0 30px rgba(94,234,212,0.5)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(94,234,212,0.3)'; }}
+            onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.82'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
           >
             + {t.dashboard.analyseBtn}
           </button>
         </div>
       </div>
 
-      {/* ── KPI row ────────────────────────────────────────────────────────── */}
+      {/* ── KPI cards ────────────────────────────────────────────────────────── */}
       <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
         <KpiCard
-          accentColor={AMBER} Icon={DollarSign}
+          accentColor={ACCENT} Icon={DollarSign}
           label={t.dashboard.totalRevenue}
           value={totalRevenue > 0 ? new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(totalRevenue) + ' kr' : '—'}
           change={revPct != null ? `${Math.abs(revPct)}% ${t.dashboard.vsYesterday}` : null}
           changeUp={revPct != null && revPct >= 0}
         />
         <KpiCard
-          accentColor="#10b981" Icon={FileText}
+          accentColor={ACCENT} Icon={FileText}
           label={t.dashboard.quotes}
           value={String(quotes.length)}
           change={quotesDelta !== 0 ? `${Math.abs(quotesDelta)} ${t.dashboard.vsYesterday}` : null}
           changeUp={quotesDelta > 0}
         />
         <KpiCard
-          accentColor={lezCount === 0 ? '#10b981' : '#ef4444'} Icon={AlertTriangle}
-          label="LEZ Efterlevnad"
+          accentColor={lezCount === 0 ? D_GREEN : D_RED} Icon={AlertTriangle}
+          label={t.dashboard.lezCompliance}
           value={`${lezPct}%`}
-          change={lezCount > 0 ? `${lezCount} varning${lezCount !== 1 ? 'ar' : ''}` : 'GODKÄND'}
+          change={lezCount > 0 ? t.dashboard.lezWarnings(lezCount) : t.dashboard.lezApproved}
           changeUp={lezCount === 0}
         />
         <KpiCard
-          accentColor="#f59e0b" Icon={Fuel}
+          accentColor={D_AMBER} Icon={Fuel}
           label={t.dashboard.dieselPrice}
           value={dieselValue}
           change={fuelPrice?.source !== 'fallback' ? 'LIVE' : null}
@@ -813,68 +502,67 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
         />
       </div>
 
-      {/* ── Middle row: chart + live events ────────────────────────────────── */}
+      {/* ── Middle row: chart + live events ──────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '62fr 38fr', gap: 16, minHeight: 300 }}>
 
         {/* Bar chart */}
-        <div style={{ background: DARK_SURF, border: `1px solid ${DARK_BDR}`, borderRadius: 12, padding: '20px 24px' }}>
+        <div style={{ background: SURF, border: `1px solid \$\{BORDER\}`, borderRadius: 12, padding: '20px 24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#ffffff', fontFamily: INTER }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: TEXT_PR, fontFamily: INTER }}>
               {t.dashboard.monthlyRevenue}
             </span>
             <span style={{
-              fontFamily: OUTFIT, fontSize: 10, fontWeight: 600, letterSpacing: '0.05em',
-              color: AMBER, background: `${AMBER}15`, border: `1px solid ${AMBER}30`,
+              fontFamily: INTER, fontSize: 10, fontWeight: 600, letterSpacing: '0.05em',
+              color: D_AMBER, background: `${D_AMBER}18`, border: `1px solid ${D_AMBER}35`,
               borderRadius: 5, padding: '2px 8px',
             }}>
               MÅNADSVIS
             </span>
           </div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', fontFamily: INTER, marginBottom: 18 }}>
+          <div style={{ fontSize: 11, color: TEXT_MU, fontFamily: INTER, marginBottom: 18 }}>
             {chartSubtitle}
           </div>
           <ResponsiveContainer width="100%" height={195}>
             <BarChart data={revenueData} barCategoryGap="35%" margin={{ top: 0, right: 4, left: 0, bottom: 0 }}>
               <defs>
-                <linearGradient id="barGradDark" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor="#5eead4" stopOpacity={1} />
-                  <stop offset="55%"  stopColor="#2dd4bf" stopOpacity={1} />
-                  <stop offset="100%" stopColor="#0d9488" stopOpacity={0.5} />
+                <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"   stopColor={D_AMBER} stopOpacity={1} />
+                  <stop offset="100%" stopColor={D_AMBER} stopOpacity={0.45} />
                 </linearGradient>
                 <linearGradient id="barGradPeak" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor="#a78bfa" stopOpacity={1} />
-                  <stop offset="100%" stopColor="#7c3aed" stopOpacity={0.9} />
+                  <stop offset="0%"   stopColor="#E8A030" stopOpacity={1} />
+                  <stop offset="100%" stopColor={D_AMBER}  stopOpacity={0.9} />
                 </linearGradient>
               </defs>
               <XAxis
                 dataKey="month" axisLine={false} tickLine={false}
-                tick={{ fill: 'rgba(255,255,255,0.28)', fontSize: 11, fontFamily: INTER }}
+                tick={{ fill: TEXT_MU, fontSize: 11, fontFamily: INTER }}
               />
               <YAxis
                 axisLine={false} tickLine={false}
-                tick={{ fill: 'rgba(255,255,255,0.28)', fontSize: 10, fontFamily: INTER }}
+                tick={{ fill: TEXT_MU, fontSize: 10, fontFamily: INTER }}
                 tickFormatter={(v) => `${Math.round(v / 1000)}k`}
                 width={30}
               />
               <Tooltip
-                cursor={{ fill: 'rgba(94,234,212,0.06)' }}
+                cursor={{ fill: 'rgba(28,26,22,0.04)' }}
                 contentStyle={{
-                  background: DARK_SURF2, border: `1px solid ${DARK_BDR}`,
-                  borderRadius: 8, fontSize: 11, fontFamily: INTER, color: '#fff',
+                  background: SURF_ELV, border: `1px solid \$\{BORDER\}`,
+                  borderRadius: 8, fontSize: 11, fontFamily: INTER, color: TEXT_PR,
                 }}
-                labelStyle={{ color: 'rgba(255,255,255,0.50)' }}
+                labelStyle={{ color: TEXT_SEC }}
                 formatter={(v) => [
                   new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(v) + ' kr',
                   'Intäkt',
                 ]}
               />
-              <Bar dataKey="value" radius={[5, 5, 0, 0]}>
+              <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                 {revenueData.map((entry, idx) => {
                   const max = Math.max(...revenueData.map((d) => d.value));
                   return (
                     <Cell
                       key={idx}
-                      fill={entry.value === max && max > 0 ? 'url(#barGradPeak)' : 'url(#barGradDark)'}
+                      fill={entry.value === max && max > 0 ? 'url(#barGradPeak)' : 'url(#barGrad)'}
                     />
                   );
                 })}
@@ -884,18 +572,18 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
         </div>
 
         {/* Live events feed */}
-        <div style={{ background: DARK_SURF, border: `1px solid ${DARK_BDR}`, borderRadius: 12, padding: '20px 22px', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ background: SURF, border: `1px solid \$\{BORDER\}`, borderRadius: 12, padding: '20px 22px', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexShrink: 0 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#ffffff', fontFamily: INTER }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: TEXT_PR, fontFamily: INTER }}>
               {t.dashboard.recentActivity}
             </span>
-            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.28)', fontFamily: OUTFIT, letterSpacing: '0.06em' }}>
+            <span style={{ fontSize: 10, color: TEXT_MU, fontFamily: INTER, letterSpacing: '0.06em' }}>
               {quotes.length} TOTALT
             </span>
           </div>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 14, overflowY: 'auto' }}>
             {activity.length === 0 ? (
-              <div style={{ fontFamily: INTER, fontSize: 12, color: 'rgba(255,255,255,0.28)', fontStyle: 'italic' }}>
+              <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT_MU, fontStyle: 'italic' }}>
                 {t.dashboard.noJobsYet}
               </div>
             ) : activity.map((item, i) => (
@@ -903,56 +591,23 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
                 <div style={{
                   width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
                   background: item.dot, marginTop: 5,
-                  boxShadow: `0 0 6px ${item.dot}99`,
                 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, color: '#ffffff', fontFamily: INTER }}>{item.text}</div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.40)', fontFamily: INTER, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: 12, color: TEXT_PR, fontFamily: INTER }}>{item.text}</div>
+                  <div style={{ fontSize: 11, color: TEXT_MU, fontFamily: INTER, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {item.sub}
                   </div>
                 </div>
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)', fontFamily: INTER, flexShrink: 0 }}>{item.time}</span>
+                <span style={{ fontSize: 10, color: TEXT_MU, fontFamily: INTER, flexShrink: 0 }}>{item.time}</span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* ── Bottom stats row ─────────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
-        {[
-          { StatIcon: Truck,       label: 'FORDONSFLOTTA',    value: fleet.length > 0 ? `${fleet.length} fordon` : '—',    accent: AMBER },
-          { StatIcon: Fuel,        label: 'DIESEL / LITER',   value: dieselValue,                                           accent: '#f59e0b' },
-          { StatIcon: Leaf,        label: 'LEZ EFTERLEVNAD',  value: `${lezPct}%`,                                          accent: lezPct >= 90 ? '#10b981' : '#ef4444' },
-          { StatIcon: Briefcase,   label: 'AKTIVA UPPDRAG',   value: activeJobs > 0 ? String(activeJobs) : '—',            accent: '#a78bfa' },
-        ].map(({ StatIcon, label, value, accent }) => (
-          <div key={label} style={{
-            background: DARK_SURF, border: `1px solid ${DARK_BDR}`,
-            borderRadius: 10, padding: '14px 18px',
-            display: 'flex', alignItems: 'center', gap: 14,
-          }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: 9, flexShrink: 0,
-              background: `${accent}12`, border: `1px solid ${accent}22`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <StatIcon size={15} color={accent} strokeWidth={1.5} />
-            </div>
-            <div>
-              <div style={{ fontFamily: OUTFIT, fontSize: 9, fontWeight: 700, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.26)', marginBottom: 4 }}>
-                {label}
-              </div>
-              <div style={{ fontFamily: MONO, fontSize: 16, fontWeight: 500, color: '#ffffff', letterSpacing: '-0.01em', lineHeight: 1 }}>
-                {value}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
       {/* ── Recent Quotes table ──────────────────────────────────────────────── */}
-      <div style={{ background: DARK_SURF, border: `1px solid ${DARK_BDR}`, borderRadius: 12, padding: '18px 22px' }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: '#ffffff', fontFamily: INTER, marginBottom: 16 }}>
+      <div style={{ background: SURF, border: `1px solid \$\{BORDER\}`, borderRadius: 12, padding: '18px 22px' }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: TEXT_PR, fontFamily: INTER, marginBottom: 16 }}>
           {t.dashboard.recentQuotes}
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -961,10 +616,10 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
               {[t.dashboard.tableHeaders.no, t.dashboard.tableHeaders.date, t.dashboard.tableHeaders.cargo, t.dashboard.tableHeaders.amount, t.dashboard.tableHeaders.status].map((col) => (
                 <th key={col} style={{
                   textAlign: 'left', fontSize: 10,
-                  color: 'rgba(255,255,255,0.28)', fontFamily: INTER, fontWeight: 600,
-                  letterSpacing: '0.06em', textTransform: 'uppercase',
+                  color: TEXT_MU, fontFamily: INTER, fontWeight: 600,
+                  letterSpacing: '0.07em', textTransform: 'uppercase',
                   padding: '0 16px 10px 0',
-                  borderBottom: '1px solid rgba(255,255,255,0.06)',
+                  borderBottom: `1px solid ${BORDER}`,
                 }}>
                   {col}
                 </th>
@@ -975,35 +630,29 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
             {displayQ.length === 0 ? (
               <tr>
                 <td colSpan={5}>
-                  <div style={{ padding: '32px 8px', textAlign: 'center', fontFamily: INTER, fontSize: 12, color: 'rgba(255,255,255,0.28)', fontStyle: 'italic' }}>
+                  <div style={{ padding: '32px 8px', textAlign: 'center', fontFamily: INTER, fontSize: 12, color: TEXT_MU, fontStyle: 'italic' }}>
                     {t.dashboard.noJobsYet}
                   </div>
                 </td>
               </tr>
             ) : displayQ.map((q) => {
-              const badge = getStatusBadge(q.status, t);
-              const darkBadgeBg = badge.color === '#16a34a'
-                ? 'rgba(22,163,74,0.12)'
-                : badge.color === '#e74c3c'
-                  ? 'rgba(231,76,60,0.12)'
-                  : 'rgba(217,119,6,0.12)';
+              const isOk   = q.status === 'PAID' || q.status === 'BETALD';
+              const isDecl = q.status === 'DECLINED' || q.status === 'AVBÖJD';
+              const dotC   = isOk ? D_GREEN : isDecl ? D_RED : D_AMBER;
+              const badge  = getStatusBadge(q.status, t);
               return (
                 <tr key={q.id}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.025)'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(28,26,22,0.035)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                 >
-                  <td style={{ fontSize: 12, fontFamily: INTER, color: AMBER, fontWeight: 600, padding: '11px 16px 11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', verticalAlign: 'middle' }}>{q.id}</td>
-                  <td style={{ fontSize: 12, fontFamily: INTER, color: 'rgba(255,255,255,0.60)', padding: '11px 16px 11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', verticalAlign: 'middle' }}>{fmtDate(q.created_at)}</td>
-                  <td style={{ fontSize: 12, fontFamily: INTER, color: 'rgba(255,255,255,0.60)', padding: '11px 16px 11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', verticalAlign: 'middle', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.lasttyp || '—'}</td>
-                  <td style={{ fontSize: 12, fontFamily: MONO, color: '#ffffff', fontWeight: 500, padding: '11px 16px 11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>{fmtSEK(q.totalpris_sek)}</td>
-                  <td style={{ padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', verticalAlign: 'middle' }}>
-                    <span style={{
-                      fontSize: 10, fontFamily: INTER, fontWeight: 600, letterSpacing: '0.04em',
-                      padding: '3px 10px', borderRadius: 5,
-                      background: darkBadgeBg, color: badge.color,
-                      whiteSpace: 'nowrap', border: `1px solid ${badge.color}30`,
-                    }}>
-                      {badge.label}
+                  <td style={{ fontSize: 12, fontFamily: INTER, color: D_AMBER, fontWeight: 600, padding: '11px 16px 11px 0', borderBottom: `1px solid ${BORDER}`, verticalAlign: 'middle' }}>{q.id}</td>
+                  <td style={{ fontSize: 12, fontFamily: INTER, color: TEXT_SEC, padding: '11px 16px 11px 0', borderBottom: `1px solid ${BORDER}`, verticalAlign: 'middle' }}>{fmtDate(q.created_at)}</td>
+                  <td style={{ fontSize: 12, fontFamily: INTER, color: TEXT_SEC, padding: '11px 16px 11px 0', borderBottom: `1px solid ${BORDER}`, verticalAlign: 'middle', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.lasttyp || '—'}</td>
+                  <td style={{ fontSize: 12, fontFamily: MONO, color: TEXT_PR, fontWeight: 500, padding: '11px 16px 11px 0', borderBottom: `1px solid ${BORDER}`, verticalAlign: 'middle', whiteSpace: 'nowrap' }}>{fmtSEK(q.totalpris_sek)}</td>
+                  <td style={{ padding: '11px 0', borderBottom: `1px solid ${BORDER}`, verticalAlign: 'middle' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: dotC, flexShrink: 0 }} />
+                      <span style={{ fontFamily: INTER, fontSize: 11, color: TEXT_SEC }}>{badge.label}</span>
                     </span>
                   </td>
                 </tr>
@@ -1013,47 +662,47 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
         </table>
       </div>
 
-      {/* ── Stockholm Road Alerts ───────────────────────────────────────────── */}
+      {/* ── Road Alerts ──────────────────────────────────────────────────────── */}
       {roadAlerts !== undefined && (
         <div style={{
-          background: DARK_SURF,
-          border: `1px solid ${roadAlerts.length > 0 ? 'rgba(239,68,68,0.25)' : DARK_BDR}`,
+          background: SURF,
+          border: `1px solid ${roadAlerts.length > 0 ? 'rgba(184,60,60,0.30)' : BORDER}`,
           borderRadius: 12, padding: '18px 22px',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <AlertTriangle size={14} color={roadAlerts.length > 0 ? '#ef4444' : GREEN_LIVE} />
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#ffffff', fontFamily: INTER }}>
+            <AlertTriangle size={14} color={roadAlerts.length > 0 ? D_RED : D_GREEN} />
+            <span style={{ fontSize: 13, fontWeight: 600, color: TEXT_PR, fontFamily: INTER }}>
               {t.roadAlerts.sweden}
             </span>
             {roadAlerts.length === 0 && (
-              <span style={{ fontSize: 10, fontFamily: INTER, color: GREEN_LIVE, background: 'rgba(34,197,94,0.10)', border: '1px solid rgba(34,197,94,0.22)', borderRadius: 5, padding: '2px 8px' }}>
+              <span style={{ fontSize: 10, fontFamily: INTER, color: D_GREEN, background: 'rgba(58,148,104,0.12)', border: '1px solid rgba(58,148,104,0.25)', borderRadius: 5, padding: '2px 8px' }}>
                 {t.roadAlerts.normal}
               </span>
             )}
             {roadAlerts.length > 0 && (
-              <span style={{ fontSize: 10, fontFamily: INTER, color: '#ef4444', background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.22)', borderRadius: 5, padding: '2px 8px' }}>
+              <span style={{ fontSize: 10, fontFamily: INTER, color: D_RED, background: 'rgba(184,60,60,0.12)', border: '1px solid rgba(184,60,60,0.25)', borderRadius: 5, padding: '2px 8px' }}>
                 {t.roadAlerts.label(roadAlerts.length)}
               </span>
             )}
           </div>
           {roadAlerts.length === 0 ? (
-            <div style={{ fontFamily: INTER, fontSize: 12, color: 'rgba(255,255,255,0.28)', fontStyle: 'italic' }}>
+            <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT_MU, fontStyle: 'italic' }}>
               {t.roadAlerts.none}
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
               {roadAlerts.map((a) => (
                 <div key={a.id} style={{
-                  border: '1px solid rgba(239,68,68,0.20)', borderRadius: 8, padding: '10px 14px',
-                  background: 'rgba(239,68,68,0.04)',
+                  border: '1px solid rgba(184,60,60,0.22)', borderRadius: 8, padding: '10px 14px',
+                  background: 'rgba(184,60,60,0.05)',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontFamily: INTER, fontSize: 12, fontWeight: 700, color: '#ef4444', flexShrink: 0 }}>{a.road}</span>
-                    <span style={{ fontFamily: INTER, fontSize: 11, color: 'rgba(255,255,255,0.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.location}</span>
+                    <span style={{ fontFamily: INTER, fontSize: 12, fontWeight: 700, color: D_RED, flexShrink: 0 }}>{a.road}</span>
+                    <span style={{ fontFamily: INTER, fontSize: 11, color: TEXT_SEC, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.location}</span>
                   </div>
-                  <div style={{ fontFamily: INTER, fontSize: 11, color: '#f59e0b', fontWeight: 500 }}>{a.condition}</div>
+                  <div style={{ fontFamily: INTER, fontSize: 11, color: D_AMBER, fontWeight: 500 }}>{a.condition}</div>
                   {a.warnings?.length > 0 && (
-                    <div style={{ fontFamily: INTER, fontSize: 11, color: 'rgba(255,255,255,0.38)', marginTop: 2 }}>
+                    <div style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU, marginTop: 2 }}>
                       {a.warnings.join(' · ')}
                     </div>
                   )}
@@ -1064,59 +713,46 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
         </div>
       )}
 
-      {/* ── Stockholm Transportintelligens ─────────────────────────────────── */}
+      {/* ── Compliance + Market Intelligence ─────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
 
         {/* Compliance Checklist */}
-        <div style={{ background: DARK_SURF, border: `1px solid ${DARK_BDR}`, borderRadius: 12, padding: '18px 22px' }}>
+        <div style={{ background: SURF, border: `1px solid \$\{BORDER\}`, borderRadius: 12, padding: '18px 22px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <Shield size={13} color={CYAN} strokeWidth={1.5} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#ffffff', fontFamily: INTER, letterSpacing: '0.02em' }}>
-              Regulatorisk Efterlevnad
+            <Shield size={13} color={D_BLUE} strokeWidth={1.5} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: TEXT_PR, fontFamily: INTER }}>
+              {t.dashboard.compliance.heading}
             </span>
-            <span style={{ fontFamily: INTER, fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: CYAN, background: 'rgba(94,234,212,0.1)', border: '1px solid rgba(94,234,212,0.25)', borderRadius: 4, padding: '1px 6px', marginLeft: 'auto' }}>
-              STOCKHOLM
+            <span style={{ fontFamily: INTER, fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: D_BLUE, background: `${D_BLUE}18`, border: `1px solid ${D_BLUE}35`, borderRadius: 4, padding: '1px 6px', marginLeft: 'auto' }}>
+              {t.dashboard.compliance.badge}
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[
               {
                 ok: lezPct >= 90,
-                label: `LEZ Stockholms stad`,
-                detail: lezPct >= 90 ? `${lezPct}% av transporter godkända` : `${lezCount} varning${lezCount !== 1 ? 'ar' : ''} — kontrollera fordon`,
+                label: t.dashboard.compliance.lezLabel,
+                detail: lezPct >= 90
+                  ? t.dashboard.compliance.lezOkDetail(lezPct)
+                  : t.dashboard.compliance.lezFailDetail(lezCount),
                 icon: Leaf,
               },
-              {
-                ok: true,
-                label: 'EU körtidsregler (561/2006)',
-                detail: 'Kontrollera färdskrivare dagligen',
-                icon: CalendarDays,
-              },
-              {
-                ok: true,
-                label: 'Trängselskatt E4 / Essingeleden',
-                detail: 'Vardagar 06:00–22:00 — inkludera i offert',
-                icon: AlertTriangle,
-              },
-              {
-                ok: true,
-                label: 'EU ETS Fas 4 (2026)',
-                detail: 'Vägtransport ingår — CO₂-rapport krävs',
-                icon: Leaf,
-              },
+              { ok: true, label: t.dashboard.compliance.drivingLabel,     detail: t.dashboard.compliance.drivingDetail,     icon: CalendarDays },
+              { ok: true, label: t.dashboard.compliance.congestionLabel,   detail: t.dashboard.compliance.congestionDetail,  icon: AlertTriangle },
+              { ok: true, label: t.dashboard.compliance.etsLabel,          detail: t.dashboard.compliance.etsDetail,         icon: Leaf },
             ].map(({ ok, label, detail, icon: CheckIcon }) => (
               <div key={label} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                 <div style={{
                   width: 20, height: 20, borderRadius: 5, flexShrink: 0,
-                  background: ok ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
-                  border: `1px solid ${ok ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
+                  background: ok ? 'rgba(58,148,104,0.14)' : 'rgba(184,60,60,0.14)',
+                  border: `1px solid ${ok ? 'rgba(58,148,104,0.28)' : 'rgba(184,60,60,0.28)'}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <CheckIcon size={10} color={ok ? GREEN_LIVE : '#ef4444'} strokeWidth={2} />
+                  <CheckIcon size={10} color={ok ? D_GREEN : D_RED} strokeWidth={2} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: INTER, fontSize: 12, color: '#ffffff', fontWeight: 500 }}>{label}</div>
-                  <div style={{ fontFamily: INTER, fontSize: 10, color: 'rgba(255,255,255,0.40)', marginTop: 1 }}>{detail}</div>
+                  <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT_PR, fontWeight: 500 }}>{label}</div>
+                  <div style={{ fontFamily: INTER, fontSize: 10, color: TEXT_MU, marginTop: 1 }}>{detail}</div>
                 </div>
               </div>
             ))}
@@ -1124,46 +760,29 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
         </div>
 
         {/* Market Intelligence */}
-        <div style={{ background: DARK_SURF, border: `1px solid ${DARK_BDR}`, borderRadius: 12, padding: '18px 22px' }}>
+        <div style={{ background: SURF, border: `1px solid \$\{BORDER\}`, borderRadius: 12, padding: '18px 22px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <TrendingUp size={13} color="#a78bfa" strokeWidth={1.5} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#ffffff', fontFamily: INTER, letterSpacing: '0.02em' }}>
-              Marknadsintelligens
+            <TrendingUp size={13} color="#7050B0" strokeWidth={1.5} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: TEXT_PR, fontFamily: INTER }}>
+              {t.dashboard.marketIntel.heading}
             </span>
-            <span style={{ fontFamily: OUTFIT, fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: '#a78bfa', background: 'rgba(167,139,250,0.10)', border: '1px solid rgba(167,139,250,0.22)', borderRadius: 4, padding: '1px 6px', marginLeft: 'auto' }}>
-              AI-ANALYS
-            </span>
+            <span style={{ fontFamily: INTER, fontSize: 9, letterSpacing: '0.07em', color: TEXT_MU, marginLeft: 'auto' }}>{t.dashboard.marketIntel.badge}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[
-              {
-                pct: '68%',
-                label: 'Stockholmsåkare offerterar fortfarande via telefon/e-post',
-                color: AMBER,
-                insight: 'Din konkurrensfördel: AI-offert på sekunder',
-              },
-              {
-                pct: '2026',
-                label: 'EU ETS inkluderar vägtransport — CO₂-kostnader stiger',
-                color: '#a78bfa',
-                insight: 'Åkaren spårar redan CO₂ per uppdrag automatiskt',
-              },
-              {
-                pct: '35%',
-                label: 'SME-åkare saknar digital dieselkostnadsintegration',
-                color: '#10b981',
-                insight: 'Live dieselpris uppdateras i varje offert',
-              },
+              { ...t.dashboard.marketIntel.stats[0], color: D_AMBER   },
+              { ...t.dashboard.marketIntel.stats[1], color: '#7050B0' },
+              { ...t.dashboard.marketIntel.stats[2], color: D_GREEN   },
             ].map(({ pct, label, color, insight }) => (
-              <div key={label} style={{
+              <div key={pct} style={{
                 padding: '10px 12px', borderRadius: 8,
-                background: `${color}08`, border: `1px solid ${color}18`,
+                background: 'rgba(28,26,22,0.04)', border: `1px solid ${BORDER}`,
               }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
                   <span style={{ fontFamily: MONO, fontSize: 16, fontWeight: 700, color, letterSpacing: '-0.01em' }}>{pct}</span>
-                  <span style={{ fontFamily: INTER, fontSize: 11, color: 'rgba(255,255,255,0.60)', flex: 1, lineHeight: 1.4 }}>{label}</span>
+                  <span style={{ fontFamily: INTER, fontSize: 11, color: TEXT_SEC, flex: 1, lineHeight: 1.4 }}>{label}</span>
                 </div>
-                <div style={{ fontFamily: INTER, fontSize: 10, color, opacity: 0.75 }}>↗ {insight}</div>
+                <div style={{ fontFamily: INTER, fontSize: 10, color, opacity: 0.78 }}>{insight}</div>
               </div>
             ))}
           </div>
@@ -1174,6 +793,8 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
     </div>
   );
 }
+
+
 
 // ─── Placeholder pages ────────────────────────────────────────────────────────
 function PlaceholderPage({ label }) {
@@ -1191,7 +812,7 @@ function PlaceholderPage({ label }) {
 
 // ─── App (inner — only rendered when authenticated) ──────────────────────────
 function AppInner() {
-  const { t, lang } = useLanguage();
+  const { t, lang, setLang } = useLanguage();
   const { user, company, logout, updateCompany } = useAuth();
 
   const {
@@ -1205,7 +826,7 @@ function AppInner() {
   const [lowApproved,        setLowApproved]        = useState(() => new Set());
   const [reviewAcknowledged, setReviewAcknowledged] = useState(false);
   const [activePage,      setActivePage]      = useState('dashboard');
-  const [showNewQuote,    setShowNewQuote]     = useState(false);
+  const [showNewQuote,    setShowNewQuote]     = useState(false); // kept for SubscriptionGate compat
   const [fuelPrice,       setFuelPrice]       = useState(null);
   const [weather,         setWeather]         = useState(null);
   const [roadAlerts,      setRoadAlerts]      = useState([]);
@@ -1357,7 +978,6 @@ function AppInner() {
   }, [conflictMsg, clearConflict]);
 
   function handleNavigate(id) {
-    if (id === 'new-quote') { setShowNewQuote(true); return; }
     setActivePage(id);
   }
 
@@ -1366,14 +986,14 @@ function AppInner() {
     setQuoteNumber(null);
     setShareToken(null);
     setSmsResult(null);
-    setShowNewQuote(true);
+    setActivePage('new-quote');
   }
 
   function openMallModal() {
     if (!parsed) return;
     const parts = [
       parsed.lasttyp,
-      [parsed.upphämtning, parsed.leverans].filter(Boolean).join('→'),
+      [parsed.upphämtning, parsed.leverans].filter(Boolean).join(' – '),
     ].filter(Boolean);
     setMallModal({ name: parts.join(' · ') });
   }
@@ -1381,7 +1001,7 @@ function AppInner() {
   function openMallModalFromQuote(q) {
     const parts = [
       q.lasttyp,
-      [q.upphämtning, q.leverans].filter(Boolean).join('→'),
+      [q.upphämtning, q.leverans].filter(Boolean).join(' – '),
     ].filter(Boolean);
     setMallModal({ name: parts.join(' · '), quoteData: q });
   }
@@ -1489,7 +1109,7 @@ function AppInner() {
 
       if (job.sms_status === 'sent') {
         const who = job.sms_driver_name ?? t.settings.drivers.name;
-        setToast({ message: `${t.jobs.heading} — SMS → ${who}`, variant: 'success' });
+        setToast({ message: `${t.jobs.heading} — SMS – ${who}`, variant: 'success' });
       } else if (job.sms_status === 'failed') {
         setToast({ message: `${t.jobs.heading} — SMS: ${job.sms_error ?? t.errors.network}`, variant: 'error' });
       } else {
@@ -1515,7 +1135,7 @@ function AppInner() {
   const tillstandKravs = parsed?.['tillstånd_krävs'] ?? parsed?.tillstand_kravs ?? false;
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'radial-gradient(circle at 50% 0%, #0d1424 0%, #080b14 60%)', backgroundAttachment: 'fixed' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: BG_BASE }}>
 
       <Sidebar
         activePage={activePage}
@@ -1529,7 +1149,50 @@ function AppInner() {
 
       {/* ── Right side ──────────────────────────────────────────────── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-        <TopBar fuelPrice={fuelPrice} weather={weather} roadAlerts={roadAlerts} company={company} onMobileMenuOpen={() => setMobileSidebarOpen(true)} />
+        {/* ── Minimal header: search + language toggle ──────────── */}
+        <div style={{
+          flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '10px 20px', gap: 12,
+        }}>
+          <div style={{ position: 'relative' }}>
+            <Search
+              size={13} color={TEXT_MU}
+              style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+            />
+            <input
+              placeholder={t.topbar.searchPlaceholder}
+              style={{
+                width: 200, height: 30,
+                background: SURF_ELV, border: `1px solid ${BORDER}`,
+                borderRadius: 7, color: TEXT_PR,
+                fontFamily: INTER, fontSize: 12,
+                paddingLeft: 28, paddingRight: 10,
+                outline: 'none', transition: 'border-color 150ms',
+              }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = ACCENT; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = BORDER; }}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: 2, background: SURF_ELV, borderRadius: 7, padding: 3, border: `1px solid ${BORDER}` }}>
+            {['en', 'sv'].map((l) => (
+              <button
+                key={l}
+                onClick={() => setLang(l)}
+                style={{
+                  fontFamily: INTER, fontSize: 10, fontWeight: 600,
+                  background: lang === l ? SURF : 'transparent',
+                  color: lang === l ? TEXT_PR : TEXT_MU,
+                  border: 'none', borderRadius: 5, padding: '3px 9px',
+                  cursor: 'pointer', transition: 'background 150ms, color 150ms',
+                  letterSpacing: '0.05em',
+                  boxShadow: lang === l ? '0 1px 2px rgba(28,25,23,0.08)' : 'none',
+                }}
+              >
+                {l.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           {activePage === 'dashboard' && (
@@ -1537,96 +1200,19 @@ function AppInner() {
               quotes={quotes}
               fuelPrice={fuelPrice}
               roadAlerts={roadAlerts}
-              onNewQuote={() => setShowNewQuote(true)}
+              onNewQuote={() => setActivePage('new-quote')}
               fleet={fleet}
             />
-          )}
-          {activePage === 'lonsamhet' && (
-            <div style={{ flex: 1, overflow: 'auto' }}>
-              <Profitability />
-            </div>
           )}
           {activePage === 'settings' && (
             <div style={{ flex: 1, overflow: 'auto' }}>
               <Settings onFortnoxResult={fortnoxResult} />
             </div>
           )}
-          {activePage === 'fleet' && (
-            <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-              <Fleet />
-            </div>
-          )}
-          {activePage === 'jobs' && (
-            <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-              <Jobs />
-            </div>
-          )}
-          {activePage === 'dispatch' && (
-            <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-              <Dispatch />
-            </div>
-          )}
-          {activePage === 'customers' && (
-            <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-              <Customers />
-            </div>
-          )}
-          {activePage === 'co2' && (
-            <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-              <Co2 />
-            </div>
-          )}
-          {activePage === 'audit' && (
-            <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-              <Audit />
-            </div>
-          )}
-          {activePage === 'dataprivacy' && (
-            <div style={{ flex: 1, overflow: 'auto' }}>
-              <DataPrivacy />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ── New Quote overlay ────────────────────────────────────────── */}
-      {showNewQuote && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 200,
-          background: 'rgba(8,11,20,0.95)',
-          display: 'flex', flexDirection: 'column',
-        }}>
-          {/* Overlay top bar */}
-          <div style={{
-            height: 56, flexShrink: 0,
-            background: 'rgba(8,11,20,0.9)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            borderBottom: '1px solid rgba(255,255,255,0.06)',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '0 24px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <LogoMark size={26} />
-              <span style={{ color: TEXT_PR, fontSize: 14, fontWeight: 600, fontFamily: INTER }}>
-                {t.newQuote.title}
-              </span>
-            </div>
-            <button
-              onClick={() => setShowNewQuote(false)}
-              style={{
-                background: 'none', border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 8, color: TEXT_SEC,
-                width: 32, height: 32,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', flexShrink: 0,
-              }}
-            >
-              <X size={16} />
-            </button>
-          </div>
-
-          {/* Three-column grid */}
+          {activePage === 'operations' && <OperationsPage />}
+          {activePage === 'fleet' && <FleetEnvPage />}
+          {/* ── New Quote tab ──────────────────────────────────────────── */}
+          {activePage === 'new-quote' && (
           <div className="new-quote-grid" style={{
             flex: 1,
             display: 'grid',
@@ -1649,7 +1235,7 @@ function AppInner() {
                     {templates.slice(0, 6).map((tpl) => {
                       const label = [
                         tpl.lasttyp,
-                        [tpl.upphämtning, tpl.leverans].filter(Boolean).join('→'),
+                        [tpl.upphämtning, tpl.leverans].filter(Boolean).join(' – '),
                       ].filter(Boolean).join(' · ') || tpl.name;
                       return (
                         <button
@@ -1740,7 +1326,7 @@ function AppInner() {
 
               {/* Subscription gate — shown when analysis returns 402 */}
               {status === 'error' && error === 'subscription_required' && (
-                <SubscriptionGate onClose={() => setShowNewQuote(false)} />
+                <SubscriptionGate onClose={() => setActivePage('dashboard')} />
               )}
 
               {status === 'done' && parsed && (
@@ -1794,7 +1380,7 @@ function AppInner() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingLeft: 18 }}>
                         {routeAdvisory.recommendations?.map((rec, i) => (
                           <div key={i} style={{ fontFamily: INTER, fontSize: '0.625rem', color: MUTED, lineHeight: 1.5 }}>
-                            • {rec}
+                            {rec}
                           </div>
                         ))}
                       </div>
@@ -1813,7 +1399,6 @@ function AppInner() {
                       borderRadius: 8, padding: '8px 12px',
                       display: 'flex', gap: 8, alignItems: 'flex-start',
                     }}>
-                      <span style={{ fontSize: '0.875rem', flexShrink: 0, lineHeight: 1.4 }}>⚠</span>
                       <span style={{ fontFamily: INTER, fontSize: '0.6875rem', color: 'var(--lez-text)', lineHeight: 1.5 }}>
                         {t.newQuote.banners.lez}
                       </span>
@@ -1827,7 +1412,6 @@ function AppInner() {
                       borderRadius: 8, padding: '8px 12px',
                       display: 'flex', gap: 8, alignItems: 'flex-start',
                     }}>
-                      <span style={{ fontSize: '0.875rem', flexShrink: 0, lineHeight: 1.4 }}>⚡</span>
                       <span style={{ fontFamily: INTER, fontSize: '0.6875rem', color: 'var(--tillstand-text)', lineHeight: 1.5 }}>
                         {t.newQuote.banners.tillstand}
                       </span>
@@ -2032,10 +1616,10 @@ function AppInner() {
                 ) : (
                   quotes.map((q) => (
                     <div key={q.id} style={{
-                      padding: '9px 0', borderBottom: `1px solid rgba(255,255,255,0.05)`,
+                      padding: '9px 0', borderBottom: `1px solid ${BORDER}`,
                       cursor: 'default',
                     }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(28,26,22,0.02)'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginBottom: 3 }}>
@@ -2119,8 +1703,9 @@ function AppInner() {
             </div>
 
           </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* ── Spara som mall modal ─────────────────────────────────────────── */}
       {mallModal && (
@@ -2213,7 +1798,7 @@ function AppInner() {
                 onClick={() => setShowMallManager(false)}
                 style={{ fontFamily: INTER, fontSize: '0.875rem', background: 'none', border: 'none', color: TEXT_SEC, cursor: 'pointer', padding: '0 2px', lineHeight: 1 }}
               >
-                ✕
+                ×
               </button>
             </div>
             <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -2379,6 +1964,58 @@ class ErrorBoundary extends Component {
     }
     return this.props.children;
   }
+}
+
+// ─── Operations compound page (Jobs + Dispatch) ──────────────────────────────
+function OperationsPage() {
+  const [tab, setTab] = useState('jobs');
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{
+        padding: '10px 24px', borderBottom: `1px solid ${BORDER}`,
+        background: SURF, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0,
+      }}>
+        <div className="sub-tabs">
+          <button className={`sub-tab${tab === 'jobs' ? ' active' : ''}`} onClick={() => setTab('jobs')}>
+            Uppdrag
+          </button>
+          <button className={`sub-tab${tab === 'dispatch' ? ' active' : ''}`} onClick={() => setTab('dispatch')}>
+            Planering
+          </button>
+        </div>
+      </div>
+      {tab === 'jobs'
+        ? <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}><Jobs /></div>
+        : <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}><Dispatch /></div>
+      }
+    </div>
+  );
+}
+
+// ─── Fleet compound page (Fleet + CO₂) ───────────────────────────────────────
+function FleetEnvPage() {
+  const [tab, setTab] = useState('fleet');
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{
+        padding: '10px 24px', borderBottom: `1px solid ${BORDER}`,
+        background: SURF, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0,
+      }}>
+        <div className="sub-tabs">
+          <button className={`sub-tab${tab === 'fleet' ? ' active' : ''}`} onClick={() => setTab('fleet')}>
+            Fordon
+          </button>
+          <button className={`sub-tab${tab === 'co2' ? ' active' : ''}`} onClick={() => setTab('co2')}>
+            CO₂ & Utsläpp
+          </button>
+        </div>
+      </div>
+      {tab === 'fleet'
+        ? <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}><Fleet /></div>
+        : <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}><Co2 /></div>
+      }
+    </div>
+  );
 }
 
 // ─── Auth gate — keeps hook count stable across auth transitions ─────────────

@@ -407,7 +407,7 @@ function BackupsSection() {
                 {b.encrypted ? td.encryptedYes : td.encryptedNo}
               </span>
               <span style={{ fontFamily: INTER, fontSize: 12, fontWeight: 600, color: b.status === 'ok' ? '#1a7a47' : '#e74c3c' }}>
-                {b.status === 'ok' ? '✓ OK' : '✕ FAILED'}
+                {b.status === 'ok' ? 'OK' : 'FAILED'}
               </span>
               <div>
                 {b.status === 'ok' && b.s3_key && (

@@ -216,7 +216,6 @@ export function QuoteCard({ data, quoteNumber, onSave, onExport, saving }) {
             }}
             className="qcard-pad"
           >
-            <span style={{ fontSize: '1rem', flexShrink: 0 }}>⚠</span>
             <p style={{ fontFamily: OUTFIT, fontSize: 12, fontWeight: 600, color: 'var(--lez-text)', margin: 0 }}>
               {S.quote.banners.lez}
             </p>
@@ -289,7 +288,6 @@ export function QuoteCard({ data, quoteNumber, onSave, onExport, saving }) {
                 alignItems: 'flex-start',
               }}
             >
-              <span style={{ fontSize: '0.875rem', flexShrink: 0 }}>⚡</span>
               <p style={{ fontFamily: OUTFIT, fontSize: 12, color: 'var(--tillstand-text)', margin: 0, lineHeight: 1.5 }}>
                 {S.quote.banners.tillstand}
               </p>

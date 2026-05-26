@@ -122,7 +122,7 @@ export function SubscriptionGate({ onClose }) {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 9, color: AMBER,
                 }}>
-                  ✓
+                  +
                 </span>
                 <span style={{ fontFamily: OUTFIT, fontSize: 13, color: 'rgba(255,255,255,0.70)' }}>
                   {f}
@@ -160,7 +160,7 @@ export function SubscriptionGate({ onClose }) {
             onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.97)'; }}
             onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
           >
-            {loading ? 'Öppnar betalning…' : 'Starta prenumeration →'}
+            {loading ? 'Öppnar betalning…' : 'Starta prenumeration'}
           </button>
           {onClose && (
             <button

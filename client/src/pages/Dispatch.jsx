@@ -111,7 +111,7 @@ function JobCard({ job, fleet, drivers, onAdvance, advancing }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: MUTED }}>
           <MapPin size={10} strokeWidth={2} style={{ flexShrink: 0 }} />
           <span style={{ fontFamily: OUTFIT, fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {[job.upphämtning, job.leverans].filter(Boolean).join(' → ')}
+            {[job.upphämtning, job.leverans].filter(Boolean).join(' – ')}
           </span>
         </div>
       )}

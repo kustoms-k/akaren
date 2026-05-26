@@ -324,7 +324,7 @@ export function AnalysisStream({
                 color: 'rgba(230,225,210,0.55)',
                 marginTop: 7,
               }}>
-                {[parsed.upphämtning, parsed.leverans].filter((v) => v && !isMock(v)).join(' → ')}
+                {[parsed.upphämtning, parsed.leverans].filter((v) => v && !isMock(v)).join(' – ')}
               </div>
             )}
           </div>

@@ -1,20 +1,20 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { generateFaktura } from '../utils/generateFaktura.js';
 import { Toast } from '../components/Toast.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const AMBER   = '#c9921e';
-const AMBER_DK= '#a87818';
-const BG      = '#edeae1';
+const AMBER   = '#B56510';
+const AMBER_DK= '#9A6410';
+const BG      = '#EDECEA';
 const WHITE   = '#ffffff';
-const BORDER  = '#cfc9bb';
-const TEXT    = '#151210';
-const MUTED   = '#6a6050';
-const FAINT   = '#9a9082';
+const BORDER  = 'rgba(28,26,22,0.09)';
+const TEXT    = '#1C1A17';
+const MUTED   = '#625E58';
+const FAINT   = '#A09C96';
 const OUTFIT  = "'Outfit', system-ui, sans-serif";
-const SURF    = '#f4f0e7';
+const SURF    = '#FAF9F7';
 const MONO    = "'DM Mono', monospace";
 
 function currentMonth() {
@@ -215,7 +215,7 @@ function TrendArrow({ current, prev, showDiff = true, threshold = 0.5 }) {
   }
   const diff = current - prev;
   if (Math.abs(diff) < threshold) {
-    return <span style={{ color: FAINT, fontFamily: OUTFIT, fontSize: 12 }}>→</span>;
+    return <span style={{ color: FAINT, fontFamily: OUTFIT, fontSize: 12 }}>–</span>;
   }
   const up = diff > 0;
   return (
@@ -272,7 +272,7 @@ function RecommendationCards({ recs, onApply, onDismiss, t }) {
                     color: MUTED, cursor: 'pointer',
                   }}
                 >
-                  ✕
+                  ×
                 </button>
               </div>
             </div>
@@ -357,7 +357,7 @@ function JobsTable({ jobs, prevJobs, onFakturaClick, t }) {
                     </span>
                     {j.leverans && j.leverans !== '—' && (
                       <span style={{ fontFamily: OUTFIT, fontSize: 12, color: FAINT, display: 'block', marginTop: 1 }}>
-                        → {truncate(j.leverans, 20)}
+                        – {truncate(j.leverans, 20)}
                       </span>
                     )}
                   </td>
@@ -728,7 +728,7 @@ export function Profitability() {
               {t.profitability.faktura.autoNumber}
             </div>
             <div style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED, marginBottom: 20 }}>
-              {fakturaJob.lasttyp} · {fakturaJob.kund} → {fakturaJob.leverans}
+              {fakturaJob.lasttyp} · {fakturaJob.kund} – {fakturaJob.leverans}
               {fakturaJob.intakt != null && (
                 <span style={{ color: AMBER, marginLeft: 8, fontWeight: 600 }}>{fmtSEK(fakturaJob.intakt)} {t.jobs.exclVat}</span>
               )}

@@ -351,7 +351,7 @@ export function MessagePanel({ rawId, quoteLabel, quoteId, onClose }) {
               display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
             }}
           >
-            ✕
+            ×
           </button>
         </div>
 

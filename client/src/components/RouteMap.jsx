@@ -256,7 +256,7 @@ export function RouteMap({ routeData, loading }) {
             whiteSpace:     'nowrap',
           }}
         >
-          {isSv ? 'Öppna i kartor' : 'Open in Maps'} ↗
+          {isSv ? 'Öppna i kartor' : 'Open in Maps'}
         </button>
       </div>
 
@@ -274,7 +274,6 @@ export function RouteMap({ routeData, loading }) {
           fontFamily:   "'Inter',sans-serif",
           fontSize:     11,
         }}>
-          <span style={{ fontSize: 13, flexShrink: 0 }}>⚠</span>
           <span style={{ color: '#92400e', lineHeight: 1.4 }}>
             {isSv
               ? `Trafikstörningar på rutten${delayMin > 0 ? ` — +${delayMin} min tillägg beräknat` : ''}`

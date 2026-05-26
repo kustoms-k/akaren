@@ -82,7 +82,7 @@ function DiffView({ before, after, action, t }) {
       lines.push(
         <div key={key}>
           <span style={{ color: '#e74c3c', textDecoration: 'line-through' }}>{key}: {String(bv)}</span>
-          {' → '}
+          {' – '}
           <span style={{ color: '#1a7a47' }}><strong>{String(av)}</strong></span>
         </div>
       );

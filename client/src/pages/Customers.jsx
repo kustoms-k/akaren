@@ -1,16 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const AMBER   = '#c9921e';
-const AMBER_DK= '#a87818';
+const AMBER   = '#B56510';
+const AMBER_DK= '#9A6410';
 const WHITE   = '#ffffff';
-const BG      = '#edeae1';
-const SURF    = '#f4f0e7';
-const BORDER  = '#cfc9bb';
-const TEXT    = '#151210';
-const MUTED   = '#6a6050';
-const FAINT   = '#9a9082';
+const BG      = '#EDECEA';
+const SURF    = '#FAF9F7';
+const BORDER  = 'rgba(28,26,22,0.09)';
+const TEXT    = '#1C1A17';
+const MUTED   = '#625E58';
+const FAINT   = '#A09C96';
 const OUTFIT  = "'Outfit', system-ui, sans-serif";
 const MONO    = "'DM Mono', monospace";
 
@@ -85,7 +85,7 @@ function CustomerModal({ initial, onSave, onClose }) {
           </div>
           <button onClick={onClose}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: MUTED, fontSize: 18, padding: 4 }}>
-            ✕
+            ×
           </button>
         </div>
         <div style={{ padding: '20px 24px' }}>
@@ -242,7 +242,7 @@ function CustomerDetail({ customer, onClose, onEdit, onDelete }) {
             </div>
             <button onClick={onClose}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: MUTED, fontSize: 18, padding: 4 }}>
-              ✕
+              ×
             </button>
           </div>
 
@@ -759,7 +759,7 @@ export function Customers() {
                           padding: '5px 10px', cursor: 'pointer',
                           whiteSpace: 'nowrap', transition: 'all 0.2s',
                         }}>
-                        {copied === c.token ? '✓' : tc.copyLink}
+                        {copied === c.token ? tc.detail.linkCopied : tc.copyLink}
                       </button>
                     </td>
                   </tr>

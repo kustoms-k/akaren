@@ -21,17 +21,15 @@ const INTER   = OUTFIT;
 const STEP_IDS = ['company', 'fleet', 'pricing', 'customer', 'demo'];
 
 const FLEET_PRESETS = [
-  { typ: 'Skåpbil',          lasttyp: 'Styckegods',    icon: '🚐', timkostnad_sek: 550,  priskm_sek: 16,  startavgift_sek: 350,  max_last_kg: 2500,  volym_m3: 18,  lez_godkand: true,  euro_klass: 6, desc: 'Lättare leveranser, LEZ-godkänd.' },
-  { typ: 'Lastbil',          lasttyp: 'Frakt',         icon: '🚛', timkostnad_sek: 750,  priskm_sek: 22,  startavgift_sek: 600,  max_last_kg: 10000, volym_m3: 40,  lez_godkand: true,  euro_klass: 6, desc: 'Allmän frakt, paletter.' },
-  { typ: 'Lastbil med släp', lasttyp: 'Frakt',         icon: '🚚', timkostnad_sek: 1100, priskm_sek: 38,  startavgift_sek: 1200, max_last_kg: 26000, volym_m3: 90,  lez_godkand: false, euro_klass: 4, desc: 'Maximal fraktkapacitet, långdistans.' },
-  { typ: 'Kranbil',          lasttyp: 'Tung last',     icon: '🏗️', timkostnad_sek: 1400, priskm_sek: 45,  startavgift_sek: 1500, max_last_kg: 20000, volym_m3: 50,  lez_godkand: false, euro_klass: 5, desc: 'Maskintransport med lastbärande kran.' },
-  { typ: 'Lastväxlare',      lasttyp: 'Containertrafik',icon:'🔄', timkostnad_sek: 950,  priskm_sek: 30,  startavgift_sek: 900,  max_last_kg: 18000, volym_m3: 0,   lez_godkand: false, euro_klass: 5, desc: 'Utbytbar kaross, containertrafik.' },
-  { typ: 'Kyllastbil',       lasttyp: 'Kylfrakt',      icon: '🧊', timkostnad_sek: 850,  priskm_sek: 32,  startavgift_sek: 900,  max_last_kg: 12000, volym_m3: 45,  lez_godkand: true,  euro_klass: 6, desc: 'Temperaturkontrollerad transport.' },
-  { typ: 'Tankbil',          lasttyp: 'Flytande gods', icon: '⛽', timkostnad_sek: 1200, priskm_sek: 42,  startavgift_sek: 1400, max_last_kg: 22000, volym_m3: 20,  lez_godkand: false, euro_klass: 4, desc: 'Flytande gods, ADR-certifierad.' },
-  { typ: 'Betongbil',        lasttyp: 'Betong',        icon: '🏭', timkostnad_sek: 1100, priskm_sek: 35,  startavgift_sek: 1100, max_last_kg: 16000, volym_m3: 8,   lez_godkand: false, euro_klass: 5, desc: 'Roterande trumma för färsk betong.' },
+  { typ: 'Skåpbil',          lasttyp: 'Styckegods',     timkostnad_sek: 550,  priskm_sek: 16,  startavgift_sek: 350,  max_last_kg: 2500,  volym_m3: 18,  lez_godkand: true,  euro_klass: 6 },
+  { typ: 'Lastbil',          lasttyp: 'Frakt',           timkostnad_sek: 750,  priskm_sek: 22,  startavgift_sek: 600,  max_last_kg: 10000, volym_m3: 40,  lez_godkand: true,  euro_klass: 6 },
+  { typ: 'Lastbil med släp', lasttyp: 'Frakt',           timkostnad_sek: 1100, priskm_sek: 38,  startavgift_sek: 1200, max_last_kg: 26000, volym_m3: 90,  lez_godkand: false, euro_klass: 4 },
+  { typ: 'Kranbil',          lasttyp: 'Tung last',       timkostnad_sek: 1400, priskm_sek: 45,  startavgift_sek: 1500, max_last_kg: 20000, volym_m3: 50,  lez_godkand: false, euro_klass: 5 },
+  { typ: 'Lastväxlare',      lasttyp: 'Containertrafik', timkostnad_sek: 950,  priskm_sek: 30,  startavgift_sek: 900,  max_last_kg: 18000, volym_m3: 0,   lez_godkand: false, euro_klass: 5 },
+  { typ: 'Kyllastbil',       lasttyp: 'Kylfrakt',        timkostnad_sek: 850,  priskm_sek: 32,  startavgift_sek: 900,  max_last_kg: 12000, volym_m3: 45,  lez_godkand: true,  euro_klass: 6 },
+  { typ: 'Tankbil',          lasttyp: 'Flytande gods',   timkostnad_sek: 1200, priskm_sek: 42,  startavgift_sek: 1400, max_last_kg: 22000, volym_m3: 20,  lez_godkand: false, euro_klass: 4 },
+  { typ: 'Betongbil',        lasttyp: 'Betong',          timkostnad_sek: 1100, priskm_sek: 35,  startavgift_sek: 1100, max_last_kg: 16000, volym_m3: 8,   lez_godkand: false, euro_klass: 5 },
 ];
-
-const DEMO_INQUIRY = `Vi behöver transportera 8 pallar maskindelar från Nacka Strand till Arlanda industri, imorgon kl 08:00. Total vikt ca 4 500 kg. Behöver lastbil med kapell. Kontakta gärna chauffören direkt på 070-123 45 67.`;
 
 // ── Confetti ──────────────────────────────────────────────────────────────────
 const CONFETTI_COLORS = ['#4361ee','#2ecc71','#f59e0b','#e74c3c','#a78bfa','#60a5fa','#f472b6'];
@@ -285,7 +283,7 @@ function StepFleet({ trucks, onAdd, onRemove, onUpdate, onNext, onBack }) {
         volym_m3:       preset.volym_m3,
         lez_godkand:    preset.lez_godkand,
         euro_klass:     preset.euro_klass,
-        beskrivning:    preset.desc,
+        beskrivning:    t.onboarding.fleetPresetDescs[FLEET_PRESETS.indexOf(preset)] ?? preset.typ,
       });
     }
   }
@@ -315,9 +313,8 @@ function StepFleet({ trucks, onAdd, onRemove, onUpdate, onNext, onBack }) {
                 transition: 'border-color 0.15s, background 0.15s',
               }}
             >
-              <div style={{ fontSize: 22, marginBottom: 6 }}>{preset.icon}</div>
               <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, marginBottom: 2 }}>{preset.typ}</div>
-              <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.4 }}>{preset.desc}</div>
+              <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.4 }}>{t.onboarding.fleetPresetDescs[FLEET_PRESETS.indexOf(preset)]}</div>
               {selected && (
                 <div style={{ marginTop: 6, fontSize: 11, color: BLUE, fontWeight: 600 }}>{s2.selectedMark}</div>
               )}
@@ -339,7 +336,7 @@ function StepFleet({ trucks, onAdd, onRemove, onUpdate, onNext, onBack }) {
             {trucks.map((tr) => (
               <div key={tr._key} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED, width: 90, flexShrink: 0 }}>
-                  {FLEET_PRESETS.find((p) => p.typ === tr.typ)?.icon ?? '🚛'} {tr.typ}
+                  {tr.typ}
                 </span>
                 <TextInput
                   value={tr.namn}
@@ -351,7 +348,7 @@ function StepFleet({ trucks, onAdd, onRemove, onUpdate, onNext, onBack }) {
                   onChange={(e) => onUpdate(tr._key, 'reg', e.target.value)}
                   placeholder="Reg.nr"
                 />
-                <Btn onClick={() => onRemove(tr._key)} variant="ghost" small>✕</Btn>
+                <Btn onClick={() => onRemove(tr._key)} variant="ghost" small>×</Btn>
               </div>
             ))}
           </div>
@@ -397,7 +394,6 @@ function StepPricing({ pricing, onChange, onNext, onBack }) {
         borderRadius: 10, padding: '14px 18px', marginBottom: 28,
         display: 'flex', gap: 14,
       }}>
-        <span style={{ fontSize: 20, flexShrink: 0 }}>🤖</span>
         <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT, lineHeight: 1.7 }}>
           <strong>{s3.howItWorks}</strong><br />
           {s3.formula}
@@ -548,7 +544,7 @@ function StepCustomer({ customer, onChange, onNext, onBack, onSkip, saving }) {
 function StepDemo({ onComplete, loadingComplete }) {
   const { t, lang } = useLanguage();
   const s5 = t.onboarding.step5;
-  const [inquiry,   setInquiry]   = useState(DEMO_INQUIRY);
+  const [inquiry,   setInquiry]   = useState(t.onboarding.demoInquiry);
   const [streaming, setStreaming] = useState(false);
   const [rawText,   setRawText]   = useState('');
   const [done,      setDone]      = useState(false);
@@ -659,7 +655,6 @@ function StepDemo({ onComplete, loadingComplete }) {
             borderRadius: 10, padding: '14px 20px', marginBottom: 20,
             display: 'flex', gap: 12, alignItems: 'center',
           }}>
-            <span style={{ fontSize: 24 }}>🎉</span>
             <div>
               <div style={{ fontFamily: INTER, fontSize: 15, fontWeight: 700, color: '#1a7a47' }}>
                 {s5.readyTitle}

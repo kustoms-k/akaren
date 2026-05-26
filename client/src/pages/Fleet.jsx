@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useLiveQuery }  from 'dexie-react-hooks';
 import { db }            from '../db/dexie.js';
 import { syncFleetStats } from '../db/sync.js';
@@ -6,16 +6,16 @@ import { useSync }       from '../context/SyncContext.jsx';
 import { useLanguage }   from '../context/LanguageContext.jsx';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const AMBER   = '#c9921e';
-const AMBER_DK= '#a87818';
-const BG      = '#edeae1';
+const AMBER   = '#B56510';
+const AMBER_DK= '#9A6410';
+const BG      = '#EDECEA';
 const WHITE   = '#ffffff';
-const BORDER  = '#cfc9bb';
-const TEXT    = '#151210';
-const MUTED   = '#6a6050';
-const FAINT   = '#9a9082';
+const BORDER  = 'rgba(28,26,22,0.09)';
+const TEXT    = '#1C1A17';
+const MUTED   = '#625E58';
+const FAINT   = '#A09C96';
 const OUTFIT  = "'Outfit', system-ui, sans-serif";
-const SURF    = '#f4f0e7';
+const SURF    = '#FAF9F7';
 const MONO    = "'DM Mono', monospace";
 
 function currentMonth() {
@@ -42,14 +42,14 @@ const fmtNum = (n) =>
   n == null ? '—' : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n);
 
 const EURO_BADGE = {
-  6: { label: 'E6', color: '#16a34a', bg: '#e8fdf0' },
-  5: { label: 'E5', color: '#d97706', bg: '#fff7ed' },
-  4: { label: 'E4', color: '#e74c3c', bg: '#fff0f0' },
+  6: { label: 'E6', color: '#3A9468', bg: 'rgba(58,148,104,0.10)' },
+  5: { label: 'E5', color: '#B87A18', bg: 'rgba(184,122,24,0.10)' },
+  4: { label: 'E4', color: '#B83C3C', bg: 'rgba(184,60,60,0.10)' },
 };
 
 function SortIndicator({ active, dir }) {
-  if (!active) return <span style={{ color: FAINT, marginLeft: 3, fontSize: 10 }}>↕</span>;
-  return <span style={{ color: AMBER, marginLeft: 3, fontSize: 10 }}>{dir === 'asc' ? '↑' : '↓'}</span>;
+  if (!active) return <span style={{ color: FAINT, marginLeft: 3, fontSize: 9, fontWeight: 700 }}>–</span>;
+  return <span style={{ color: AMBER, marginLeft: 3, fontSize: 9, fontWeight: 700 }}>{dir === 'asc' ? 'A' : 'Z'}</span>;
 }
 
 function ProfitCell({ value }) {
@@ -242,7 +242,7 @@ export function Fleet() {
                         </td>
                         <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'center', verticalAlign: 'middle' }}>
                           {v.lez_godkänd
-                            ? <span style={{ color: '#16a34a', fontSize: 14, fontWeight: 700 }}>✓</span>
+                            ? <span style={{ color: '#16a34a', fontSize: 14, fontWeight: 700 }}>OK</span>
                             : <span style={{ color: FAINT, fontSize: 14 }}>—</span>}
                         </td>
                         <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'center', verticalAlign: 'middle' }}>

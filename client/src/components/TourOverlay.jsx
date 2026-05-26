@@ -10,10 +10,10 @@ const MUTED = '#6c757d';
 const INTER = "'Inter', sans-serif";
 
 const TOUR_NAV = [
-  { navId: 'new-quote',  emoji: '⚡', key: 'newQuote'      },
-  { navId: 'customers',  emoji: '🔗', key: 'customers'     },
-  { navId: 'lonsamhet',  emoji: '📈', key: 'profitability' },
-  { navId: 'jobs',       emoji: '📋', key: 'jobs'          },
+  { navId: 'new-quote', key: 'newQuote'      },
+  { navId: 'customers', key: 'customers'     },
+  { navId: 'lonsamhet', key: 'profitability' },
+  { navId: 'jobs',      key: 'jobs'          },
 ];
 
 const STORAGE_KEY = (userId) => `tour_dismissed_${userId}`;
@@ -155,7 +155,6 @@ export function TourOverlay() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 20 }}>{current.emoji}</span>
             <div>
               <div style={{ color: WHITE, fontWeight: 700, fontSize: 14 }}>{current.title}</div>
             </div>
