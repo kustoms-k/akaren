@@ -33,6 +33,20 @@ export function AuthProvider({ children }) {
       .catch(() => {});
   }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Refresh company (and user role) from server when token exists but company is missing.
+  // Handles stale localStorage after a server restart or hard reload.
+  useEffect(() => {
+    if (!token || company) return;
+    fetch('/api/company', { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data?.id) return;
+        localStorage.setItem('auth_company', JSON.stringify(data));
+        setCompany(data);
+      })
+      .catch(() => {});
+  }, [token, company]);
+
   const login = useCallback((data) => {
     localStorage.setItem('auth_token',   data.token);
     localStorage.setItem('auth_user',    JSON.stringify(data.user));

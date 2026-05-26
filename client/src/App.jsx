@@ -2290,7 +2290,9 @@ function AppShell() {
   if (company?.active === 0 || company?.active === false) {
     return <SubscriptionPaused company={company} onLogout={logout} />;
   }
-  if (!company?.onboarding_completed_at) {
+  // Only show Onboarding when company is actually loaded but not completed —
+  // not when company is null (still loading from server).
+  if (company && !company.onboarding_completed_at) {
     return <Onboarding onComplete={updateCompany} />;
   }
   return <AppInner />;
