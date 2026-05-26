@@ -16,18 +16,19 @@ function createTransport() {
   });
 }
 
-export async function sendMail({ to, subject, html, text }) {
+export async function sendMail({ to, cc, subject, html, text, attachments }) {
   const transport = createTransport();
   if (!transport) {
-    // SMTP not configured — log to console only
     console.log(`[mailer] Would send to ${to}: ${subject}`);
-    return;
+    return { simulated: true };
   }
   try {
-    await transport.sendMail({ from: FROM, to, subject, html, text });
+    await transport.sendMail({ from: FROM, to, cc, subject, html, text, attachments });
     console.log(`[mailer] Sent "${subject}" to ${to}`);
+    return { sent: true };
   } catch (err) {
     console.error(`[mailer] Failed to send "${subject}" to ${to}:`, err.message);
+    throw err;
   }
 }
 

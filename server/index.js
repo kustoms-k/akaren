@@ -47,8 +47,10 @@ import auditRouter           from './routes/audit.js';
 import fortnoxRouter         from './routes/fortnox.js';
 import invoicesRouter        from './routes/invoices.js';
 import pricingInsightsRouter from './routes/pricingInsights.js';
-import { requireAuth, requireOwner }    from './middleware/auth.js';
+import { requireAuth, requireOwner, requireRole,
+         AGARE, TRAFIKLEDARE, EKONOMI, REVISOR, OFFICE_ROLES } from './middleware/auth.js';
 import { auditMutation, auditView }     from './middleware/auditLog.js';
+import usersRouter from './routes/users.js';
 import { runPricingInsightsJob }        from './jobs/pricingInsights.js';
 import { scheduleDailyBackup }          from './jobs/backup.js';
 import dataPrivacyRouter                from './routes/dataPrivacy.js';
@@ -118,33 +120,63 @@ app.use('/api/company', requireAuth, (req, res) => {
   res.json(safe);
 });
 
-// Fortnox integration — callback is public; all other routes are owner-only
+// ── User management — agare only ─────────────────────────────────────────────
+app.use('/api/users', apiLimiter, requireAuth, requireRole(AGARE), usersRouter);
+
+// Fortnox — callback public; management for agare + ekonomi
 app.use('/api/fortnox/callback', fortnoxRouter);
-app.use('/api/fortnox', requireAuth, requireOwner, fortnoxRouter);
+app.use('/api/fortnox', requireAuth, requireRole(AGARE, EKONOMI), fortnoxRouter);
 
-// Audit log — owner-only
-app.use('/api/audit', requireAuth, requireOwner, auditRouter);
+// Audit log — agare only
+app.use('/api/audit', requireAuth, requireRole(AGARE), auditRouter);
 
-// Mutations auto-logged; financial reads logged as 'view'
-app.use('/api/quotes',        apiLimiter, requireAuth, auditMutation('quote'),            quotesRouter);
+// Quotes — agare, trafikledare (write); ekonomi, revisor (read enforced inside route)
+app.use('/api/quotes',        apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE, EKONOMI, REVISOR), auditMutation('quote'), quotesRouter);
+
+// Jobs — all authenticated (forare sees only their own, enforced in route)
 app.use('/api/jobs',          apiLimiter, requireAuth, auditMutation('job'),              jobsRouter);
-app.use('/api/templates',     apiLimiter, requireAuth, auditMutation('template'),         templatesRouter);
-app.use('/api/drivers',       apiLimiter, requireAuth, auditMutation('driver'),           driversRouter);
-app.use('/api/profitability', apiLimiter, requireAuth, auditView('financial_report'),     profitabilityRouter);
-app.use('/api/statistics',    apiLimiter, requireAuth, auditView('financial_report'),     statisticsRouter);
 
-app.use('/api/invoices',          apiLimiter,     requireAuth, auditMutation('invoice'), invoicesRouter);
-app.use('/api/fleet',             apiLimiter,     requireAuth, fleetRouter);
-app.use('/api/analyse',           analyseLimiter, requireAuth, requireSubscription, analyseRouter);
-app.use('/api/distance',          apiLimiter,     requireAuth, distanceRouter);
-app.use('/api/route',             apiLimiter,     requireAuth, routeRouter);
-app.use('/api/route-advisory',    apiLimiter,     requireAuth, routeAdvisoryRouter);
-app.use('/api/pricing-insights',  apiLimiter,     requireAuth, requireSubscription, pricingInsightsRouter);
-app.use('/api/data-privacy',      apiLimiter,     requireAuth, requireOwner, dataPrivacyRouter);
-app.use('/api/customers',         apiLimiter,     requireAuth, auditMutation('customer_portal'), customersRouter);
-app.use('/api/onboarding',        apiLimiter,     requireAuth, onboardingRouter);
-app.use('/api/co2',               apiLimiter,     requireAuth, co2Router);
-app.use('/api/stripe',            apiLimiter,     requireAuth, requireOwner, stripeRouter);
+// Templates — office staff only (not forare/revisor)
+app.use('/api/templates',     apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE, EKONOMI), auditMutation('template'), templatesRouter);
+
+// Drivers — agare + trafikledare
+app.use('/api/drivers',       apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE), auditMutation('driver'), driversRouter);
+
+// Financial reports — not forare
+app.use('/api/profitability', apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE, EKONOMI, REVISOR), auditView('financial_report'), profitabilityRouter);
+app.use('/api/statistics',    apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE, EKONOMI, REVISOR), auditView('financial_report'), statisticsRouter);
+
+// Invoices — agare, ekonomi, revisor (read-only for revisor enforced via HTTP method in route)
+app.use('/api/invoices',          apiLimiter, requireAuth, requireRole(AGARE, EKONOMI, REVISOR), auditMutation('invoice'), invoicesRouter);
+
+// Fleet — agare + trafikledare (ekonomi/revisor cannot edit)
+app.use('/api/fleet',             apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE), fleetRouter);
+
+// AI analyse — agare + trafikledare only
+app.use('/api/analyse',           analyseLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE), requireSubscription, analyseRouter);
+
+// Routing & distance — agare + trafikledare
+app.use('/api/distance',          apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE), distanceRouter);
+app.use('/api/route',             apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE), routeRouter);
+app.use('/api/route-advisory',    apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE), routeAdvisoryRouter);
+
+// Pricing insights — agare + trafikledare + ekonomi
+app.use('/api/pricing-insights',  apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE, EKONOMI), requireSubscription, pricingInsightsRouter);
+
+// Data privacy — agare only
+app.use('/api/data-privacy',      apiLimiter, requireAuth, requireRole(AGARE), dataPrivacyRouter);
+
+// Customer portals — agare + trafikledare
+app.use('/api/customers',         apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE), auditMutation('customer_portal'), customersRouter);
+
+// Onboarding — all office staff
+app.use('/api/onboarding',        apiLimiter, requireAuth, requireRole(...OFFICE_ROLES), onboardingRouter);
+
+// CO2 — all office staff
+app.use('/api/co2',               apiLimiter, requireAuth, requireRole(...OFFICE_ROLES), co2Router);
+
+// Billing — agare only
+app.use('/api/stripe',            apiLimiter, requireAuth, requireRole(AGARE), stripeRouter);
 
 app.use(express.static(join(__dirname, '../client/dist')));
 

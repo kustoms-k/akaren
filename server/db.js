@@ -350,6 +350,12 @@ const migrations = [
   `ALTER TABLE companies ADD COLUMN stripe_customer_id         TEXT`,
   `ALTER TABLE companies ADD COLUMN stripe_subscription_id     TEXT`,
   `ALTER TABLE companies ADD COLUMN stripe_subscription_status TEXT NOT NULL DEFAULT 'none'`,
+  // RBAC columns
+  `ALTER TABLE users ADD COLUMN active               INTEGER NOT NULL DEFAULT 1`,
+  `ALTER TABLE users ADD COLUMN bankid_personnummer  TEXT`,
+  `ALTER TABLE users ADD COLUMN invite_token         TEXT`,
+  `ALTER TABLE users ADD COLUMN invite_expires_at    TEXT`,
+  `ALTER TABLE users ADD COLUMN driver_id            INTEGER REFERENCES drivers(id)`,
 ];
 
 // Backfill: companies created before the onboarding feature launch are already set up
@@ -360,6 +366,12 @@ try {
 for (const sql of migrations) {
   try { db.exec(sql); } catch { /* column already exists */ }
 }
+
+// Rename legacy roles to Swedish names (idempotent)
+try { db.exec(`UPDATE users SET role = 'agare'        WHERE role = 'owner'`);      } catch {}
+try { db.exec(`UPDATE users SET role = 'trafikledare' WHERE role = 'dispatcher'`); } catch {}
+// Ensure all existing users are active
+try { db.exec(`UPDATE users SET active = 1 WHERE active IS NULL`); } catch {}
 
 // ── Seed default company (id = 1) ─────────────────────────────────────────────
 const companyCount = db.prepare('SELECT COUNT(*) AS n FROM companies').get();
@@ -378,8 +390,8 @@ const userCount = db.prepare('SELECT COUNT(*) AS n FROM users').get();
 if (userCount.n === 0) {
   const hash = bcrypt.hashSync('admin123', 10);
   db.prepare(`
-    INSERT INTO users (company_id, name, email, password_hash, role)
-    VALUES (1, 'Admin', 'admin@kemoffs.se', ?, 'owner')
+    INSERT INTO users (company_id, name, email, password_hash, role, active)
+    VALUES (1, 'Admin', 'admin@kemoffs.se', ?, 'agare', 1)
   `).run(hash);
   console.log('Seeded default admin user: admin@kemoffs.se / admin123');
 }

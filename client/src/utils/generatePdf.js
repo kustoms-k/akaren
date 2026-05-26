@@ -565,5 +565,18 @@ export function generatePdf(data, quoteNumber, fleet = [], meta = {}) {
   // ── SAVE ──────────────────────────────────────────────────────────────────
 
   const numPart = String(quoteNumber ?? 'UTKAST').replace(/[^a-zA-Z0-9]/g, '-');
-  doc.save(`Offert-${numPart}-${kundnamn}.pdf`);
+  const pdfFilename = `Offert-${numPart}-${kundnamn}.pdf`;
+
+  if (meta._returnBase64) {
+    return { base64: doc.output('datauristring'), filename: pdfFilename };
+  }
+  doc.save(pdfFilename);
+}
+
+/**
+ * Returns { base64, filename } instead of triggering a browser download.
+ * Used to attach the quote PDF to outbound emails.
+ */
+export function quotePdfBase64(data, quoteNumber, fleet = [], meta = {}) {
+  return generatePdf(data, quoteNumber, fleet, { ...meta, _returnBase64: true });
 }

@@ -1,6 +1,7 @@
 import { Router }     from 'express';
 import { randomBytes } from 'node:crypto';
 import db              from '../db.js';
+import { sendMail }    from '../utils/mailer.js';
 
 const stmtLinkExtraction = db.prepare(`
   UPDATE ai_extractions
@@ -69,6 +70,9 @@ const stmtRespondCo = db.prepare(`
 const stmtUpdatePrice = db.prepare(`UPDATE quotes SET totalpris_sek = ? WHERE id = ? AND company_id = ?`);
 const stmtAcceptById  = db.prepare(`UPDATE quotes SET status = 'godkänd', accepted_at = CURRENT_TIMESTAMP WHERE id = ? AND company_id = ?`);
 const stmtCreateJob   = db.prepare(`INSERT INTO jobs (company_id, quote_id, status) VALUES (?, ?, 'planerad')`);
+const stmtSetStatus   = db.prepare(`UPDATE quotes SET status = ? WHERE id = ? AND company_id = ?`);
+const stmtSetEmail    = db.prepare(`UPDATE quotes SET customer_email = ?, customer_name = ?, status = 'skickad' WHERE id = ? AND company_id = ?`);
+const stmtGetCompany  = db.prepare(`SELECT * FROM companies WHERE id = ?`);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function formatId(rowid) {
@@ -225,6 +229,99 @@ router.patch('/:id/counter-offers/:offerId', (req, res) => {
 
     res.json({ status });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── PATCH /:id/status — update quote status manually ─────────────────────────
+router.patch('/:id/status', (req, res) => {
+  const { status } = req.body ?? {};
+  const allowed = ['väntande', 'skickad', 'godkänd', 'avböjd'];
+  if (!allowed.includes(status)) {
+    return res.status(400).json({ error: `status must be one of: ${allowed.join(', ')}` });
+  }
+  try {
+    const id     = Number(req.params.id);
+    const result = stmtSetStatus.run(status, id, req.companyId);
+    if (result.changes === 0) return res.status(404).json({ error: 'Quote not found' });
+    res.json({ ok: true, status });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /:id/email — send quote PDF to customer ──────────────────────────────
+router.post('/:id/email', async (req, res) => {
+  const { to, cc_owner, customer_name, pdf_base64, filename } = req.body ?? {};
+  if (!to || !pdf_base64) {
+    return res.status(400).json({ error: 'to and pdf_base64 are required' });
+  }
+
+  const id = Number(req.params.id);
+  try {
+    const quote   = stmtGetById.get(id, req.companyId);
+    if (!quote) return res.status(404).json({ error: 'Quote not found' });
+
+    const company = stmtGetCompany.get(req.companyId);
+
+    // Decode base64 PDF (strip data URI prefix if present)
+    const base64Data = pdf_base64.replace(/^data:application\/pdf;base64,/, '');
+    const pdfBuffer  = Buffer.from(base64Data, 'base64');
+
+    const route = [quote.upphämtning, quote.leverans].filter(Boolean).join(' → ');
+    const priceStr = quote.totalpris_sek
+      ? new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(quote.totalpris_sek) + ' kr'
+      : null;
+
+    const ccList = cc_owner && company?.email ? company.email : undefined;
+
+    const result = await sendMail({
+      to,
+      cc:      ccList,
+      subject: `Offert från ${company?.name ?? 'Åkaren'} — ${route || quote.lasttyp || 'Transport'}`,
+      attachments: [{ filename: filename || 'offert.pdf', content: pdfBuffer, contentType: 'application/pdf' }],
+      text: [
+        `Hej${customer_name ? ' ' + customer_name : ''},`,
+        '',
+        `Tack för ert intresse. Bifogat finner ni offert för: ${route || quote.lasttyp || 'transport'}.`,
+        priceStr ? `Pris (exkl. moms): ${priceStr}` : null,
+        '',
+        'Offerten är giltig i 14 dagar. Hör av er om ni har frågor.',
+        '',
+        `Med vänliga hälsningar,`,
+        company?.name ?? '',
+        company?.phone ?? '',
+        company?.email ?? '',
+      ].filter((l) => l !== null).join('\n'),
+      html: `
+        <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#151210">
+          <div style="background:#0d0d0f;padding:22px 28px;border-radius:10px 10px 0 0">
+            <span style="font-size:17px;font-weight:700;color:#c9921e;letter-spacing:-0.01em">${company?.name ?? 'Åkaren'}</span>
+          </div>
+          <div style="border:1px solid #e6e2da;border-top:none;border-radius:0 0 10px 10px;padding:28px">
+            <p style="margin:0 0 16px;color:#6a6050;line-height:1.7">
+              Hej${customer_name ? ' <strong>' + customer_name + '</strong>' : ''},<br>
+              Tack för ert intresse. Bifogat finner ni offert för:
+              <strong style="color:#151210"> ${route || quote.lasttyp || 'transport'}</strong>.
+            </p>
+            ${priceStr ? `<div style="background:#f4f0e7;border-radius:8px;padding:12px 18px;margin-bottom:16px;font-size:14px">Pris exkl. moms: <strong style="color:#151210">${priceStr}</strong></div>` : ''}
+            <p style="margin:0 0 16px;color:#6a6050;line-height:1.7">Offerten är giltig i 14 dagar. Hör av er om ni har frågor eller om ni vill justera något.</p>
+            <p style="margin:24px 0 0;font-size:12px;color:#9a9082">
+              Med vänliga hälsningar,<br>
+              <strong style="color:#151210">${company?.name ?? ''}</strong>
+              ${company?.phone ? '<br>' + company.phone : ''}
+              ${company?.email ? '<br>' + company.email : ''}
+            </p>
+          </div>
+        </div>`,
+    });
+
+    // Save customer email + mark as skickad
+    stmtSetEmail.run(to, customer_name ?? null, id, req.companyId);
+
+    res.json({ ok: true, simulated: Boolean(result?.simulated) });
+  } catch (err) {
+    console.error('[quotes/email] failed:', err.message);
     res.status(500).json({ error: err.message });
   }
 });

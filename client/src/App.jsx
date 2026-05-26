@@ -27,6 +27,8 @@ import { Customers }      from './pages/Customers.jsx';
 import { Co2 }            from './pages/Co2.jsx';
 import { Onboarding }     from './pages/Onboarding.jsx';
 import { Dispatch }       from './pages/Dispatch.jsx';
+import { DriverView }     from './pages/DriverView.jsx';
+import { SetupAccount }   from './pages/SetupAccount.jsx';
 import { TourOverlay }    from './components/TourOverlay.jsx';
 import { SubscriptionGate } from './components/SubscriptionGate.jsx';
 import { SplashScreen }  from './components/SplashScreen.jsx';
@@ -163,14 +165,24 @@ function buildActivity(quotes, t) {
   });
 }
 
-function getNavItems(t) {
-  return [
-    { id: 'dashboard',   label: t.nav.dashboard,    Icon: LayoutDashboard, ownerOnly: false, group: 'main' },
-    { id: 'new-quote',   label: t.nav.newQuote,     Icon: FilePlus,        ownerOnly: false, group: 'main' },
-    { id: 'operations',  label: t.nav.operations,   Icon: Briefcase,       ownerOnly: false, group: 'main' },
-    { id: 'fleet',       label: t.nav.fleet,        Icon: Truck,           ownerOnly: false, group: 'main' },
-    { id: 'settings',    label: t.nav.settings,     Icon: SettingsIcon,    ownerOnly: false, group: 'main' },
+// Roles that can access each nav item
+const NAV_ROLES = {
+  dashboard:  ['agare', 'trafikledare', 'ekonomi', 'revisor'],
+  'new-quote':['agare', 'trafikledare'],
+  operations: ['agare', 'trafikledare', 'ekonomi', 'revisor'],
+  fleet:      ['agare', 'trafikledare'],
+  settings:   ['agare', 'trafikledare', 'ekonomi', 'revisor'],
+};
+
+function getNavItems(t, role) {
+  const all = [
+    { id: 'dashboard',   label: t.nav.dashboard,    Icon: LayoutDashboard, group: 'main' },
+    { id: 'new-quote',   label: t.nav.newQuote,     Icon: FilePlus,        group: 'main' },
+    { id: 'operations',  label: t.nav.operations,   Icon: Briefcase,       group: 'main' },
+    { id: 'fleet',       label: t.nav.fleet,        Icon: Truck,           group: 'main' },
+    { id: 'settings',    label: t.nav.settings,     Icon: SettingsIcon,    group: 'main' },
   ];
+  return all.filter((n) => !role || (NAV_ROLES[n.id] ?? []).includes(role));
 }
 
 function getStatusBadge(status, t) {
@@ -219,8 +231,8 @@ const DOT_BG = { background: 'transparent' };
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 function Sidebar({ activePage, onNavigate, company, onLogout, userRole, mobileOpen, onMobileClose }) {
   const { t } = useLanguage();
-  const allItems = getNavItems(t).filter((n) => !n.ownerOnly || userRole === 'owner');
-  const mainItems = allItems.filter((n) => n.group === 'main');
+  const allItems        = getNavItems(t, userRole);
+  const mainItems       = allItems.filter((n) => n.group === 'main');
   const complianceItems = allItems.filter((n) => n.group === 'compliance');
   return (
     <>
@@ -838,8 +850,10 @@ function AppInner() {
   const [routeData,       setRouteData]       = useState(null);
   const [toast,           setToast]           = useState(null);    // { message, variant }
   const [smsResult,       setSmsResult]       = useState(null);   // { status, driverName, error }
-  const [mallModal,       setMallModal]       = useState(null);
-  const [showMallManager,  setShowMallManager]  = useState(false);
+  const [mallModal,          setMallModal]          = useState(null);
+  const [showMallManager,    setShowMallManager]    = useState(false);
+  const [showEmailQuoteModal, setShowEmailQuoteModal] = useState(false);
+  const [emailQuoteInput,    setEmailQuoteInput]    = useState({ to: '', name: '', cc: true });
   const [msgQuote,         setMsgQuote]         = useState(null);  // { rawId, id, lasttyp }
   const [fortnoxResult,    setFortnoxResult]    = useState(null);  // toast from OAuth redirect
   const [dpaAccepted,      setDpaAccepted]      = useState(() => Boolean(company?.dpa_accepted_at));
@@ -1064,6 +1078,10 @@ function AppInner() {
         }
       }
 
+      setQuoteStatus(null);
+      setSavedCustEmail(null);
+      setSavedQuoteRawId(null);
+
       const qRes = await apiFetch('/api/quotes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1091,6 +1109,7 @@ function AppInner() {
       const quote = await qRes.json();
       setQuoteNumber(quote.id);
       setShareToken(quote.token);
+      setSavedQuoteRawId(quote.rawId ?? parseInt(String(quote.id).split('-').pop(), 10));
 
       // Persist new quote to IndexedDB immediately
       await db.quotes.put(quote).catch(() => {});
@@ -1129,6 +1148,55 @@ function AppInner() {
       generatedAt: new Date().toISOString().slice(0, 10),
       company:     company,
     });
+  }
+
+  // ── Quote email + status actions ──────────────────────────────────────────
+  const [savedQuoteRawId,  setSavedQuoteRawId]  = useState(null);
+  const [quoteStatus,      setQuoteStatus]      = useState(null);
+  const [savedCustEmail,   setSavedCustEmail]   = useState(null);
+
+  async function handleEmailQuote({ to, customerName, ccOwner, statusOnly }) {
+    if (!savedQuoteRawId) return;
+    // Status-only update (godkänd / avböjd)
+    if (statusOnly) {
+      try {
+        const r = await apiFetch(`/api/quotes/${savedQuoteRawId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: statusOnly }),
+        });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        setQuoteStatus(statusOnly);
+        setToast({ message: `Offert markerad som ${statusOnly}`, variant: 'success' });
+      } catch (e) {
+        setToast({ message: e.message, variant: 'error' });
+      }
+      return;
+    }
+
+    // Full email send
+    const { quotePdfBase64 } = await import('./utils/generatePdf.js');
+    const { base64, filename } = quotePdfBase64(parsed, quoteNumber, fleet, {
+      userName:    user?.name ?? user?.email ?? 'Okänd',
+      modelUsed:   extractionModel ?? 'claude-sonnet-4',
+      generatedAt: new Date().toISOString().slice(0, 10),
+      company,
+    });
+
+    const r = await apiFetch(`/api/quotes/${savedQuoteRawId}/email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to, customer_name: customerName, cc_owner: ccOwner, pdf_base64: base64, filename }),
+    });
+    if (!r.ok) {
+      const body = await r.json().catch(() => ({}));
+      throw new Error(body.error || `HTTP ${r.status}`);
+    }
+    const result = await r.json();
+    setQuoteStatus('skickad');
+    setSavedCustEmail(to);
+    const msg = result.simulated ? 'E-post simulerad (SMTP ej konfigurerat)' : `Offert skickad till ${to}`;
+    setToast({ message: msg, variant: result.simulated ? 'warning' : 'success' });
   }
 
   const lezVarning     = parsed?.lez_varning ?? false;
@@ -1559,7 +1627,60 @@ function AppInner() {
                     >
                       {t.newQuote.exportPdf}
                     </button>
+
+                    {/* Email to customer — agare + trafikledare only */}
+                    {['agare', 'trafikledare'].includes(user?.role) && <button
+                      onClick={() => setShowEmailQuoteModal(true)}
+                      disabled={!savedQuoteRawId}
+                      title={!savedQuoteRawId ? 'Spara offerten först' : 'Skicka offert per e-post'}
+                      style={{
+                        flexShrink: 0, fontFamily: INTER, fontSize: '0.6875rem', fontWeight: 600,
+                        letterSpacing: '0.06em', textTransform: 'uppercase',
+                        background: quoteStatus === 'skickad' ? 'rgba(29,107,69,0.15)' : 'transparent',
+                        color: quoteStatus === 'skickad' ? '#2ecc71' : savedQuoteRawId ? TEXT_SEC : TEXT_MU,
+                        border: `1px solid ${quoteStatus === 'skickad' ? 'rgba(46,204,113,0.3)' : 'rgba(94,234,212,0.3)'}`,
+                        borderRadius: 10, padding: '11px 14px',
+                        cursor: savedQuoteRawId ? 'pointer' : 'not-allowed',
+                        transition: 'all 0.15s',
+                        opacity: savedQuoteRawId ? 1 : 0.45,
+                      }}
+                      onMouseEnter={(e) => { if (savedQuoteRawId && quoteStatus !== 'skickad') { e.currentTarget.style.borderColor = CYAN; e.currentTarget.style.color = CYAN; } }}
+                      onMouseLeave={(e) => { if (savedQuoteRawId && quoteStatus !== 'skickad') { e.currentTarget.style.borderColor = 'rgba(94,234,212,0.3)'; e.currentTarget.style.color = TEXT_SEC; } }}
+                    >
+                      {quoteStatus === 'skickad' ? '✓ Skickad' : '✉ Skicka till kund'}
+                    </button>}
                   </div>
+
+                  {/* Status update row — visible after save */}
+                  {savedQuoteRawId && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <span style={{ fontFamily: INTER, fontSize: '0.625rem', color: TEXT_MU }}>Status:</span>
+                      {[
+                        { s: 'godkänd', label: 'Godkänd', ok: true },
+                        { s: 'avböjd',  label: 'Avböjd',  ok: false },
+                      ].map(({ s, label, ok }) => (
+                        <button
+                          key={s}
+                          onClick={() => handleEmailQuote({ statusOnly: s })}
+                          style={{
+                            fontFamily: INTER, fontSize: '0.5625rem', fontWeight: 700,
+                            letterSpacing: '0.04em', textTransform: 'uppercase',
+                            padding: '3px 10px', borderRadius: 20,
+                            color: quoteStatus === s ? (ok ? '#2ecc71' : '#f43f5e') : TEXT_MU,
+                            background: quoteStatus === s
+                              ? (ok ? 'rgba(46,204,113,0.1)' : 'rgba(244,63,94,0.08)')
+                              : 'transparent',
+                            border: `1px solid ${quoteStatus === s
+                              ? (ok ? 'rgba(46,204,113,0.3)' : 'rgba(244,63,94,0.3)')
+                              : BORDER}`,
+                            cursor: 'pointer', transition: 'all 0.15s',
+                          }}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   <button
                     onClick={openMallModal}
@@ -1857,6 +1978,110 @@ function AppInner() {
         </div>
       )}
 
+      {/* ── Email offert modal ──────────────────────────────────────────── */}
+      {showEmailQuoteModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 300,
+          background: 'rgba(0,0,0,0.4)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            background: 'rgba(14,20,36,0.98)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 16, padding: 28, width: 420,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+          }}>
+            <div style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600, color: TEXT_MU, marginBottom: 20 }}>
+              Skicka offert per e-post
+            </div>
+            <label style={{ display: 'block', marginBottom: 14 }}>
+              <div style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 600, color: TEXT_MU, marginBottom: 5 }}>
+                Kundens e-postadress *
+              </div>
+              <input
+                autoFocus
+                type="email"
+                value={emailQuoteInput.to}
+                onChange={(e) => setEmailQuoteInput((prev) => ({ ...prev, to: e.target.value }))}
+                onKeyDown={(e) => { if (e.key === 'Escape') setShowEmailQuoteModal(false); }}
+                placeholder="kund@foretag.se"
+                style={{
+                  width: '100%', fontFamily: INTER, fontSize: '0.875rem', color: TEXT_PR,
+                  border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 14px',
+                  outline: 'none', boxSizing: 'border-box', background: 'rgba(20,27,45,0.8)',
+                }}
+              />
+            </label>
+            <label style={{ display: 'block', marginBottom: 14 }}>
+              <div style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 600, color: TEXT_MU, marginBottom: 5 }}>
+                Kundnamn (valfritt)
+              </div>
+              <input
+                type="text"
+                value={emailQuoteInput.name}
+                onChange={(e) => setEmailQuoteInput((prev) => ({ ...prev, name: e.target.value }))}
+                onKeyDown={(e) => { if (e.key === 'Escape') setShowEmailQuoteModal(false); }}
+                placeholder="Johan Svensson"
+                style={{
+                  width: '100%', fontFamily: INTER, fontSize: '0.875rem', color: TEXT_PR,
+                  border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 14px',
+                  outline: 'none', boxSizing: 'border-box', background: 'rgba(20,27,45,0.8)',
+                }}
+              />
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 22, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={emailQuoteInput.cc}
+                onChange={(e) => setEmailQuoteInput((prev) => ({ ...prev, cc: e.target.checked }))}
+                style={{ accentColor: CYAN, width: 14, height: 14 }}
+              />
+              <span style={{ fontFamily: INTER, fontSize: '0.75rem', color: TEXT_SEC }}>
+                Skicka kopia till ägaren (CC)
+              </span>
+            </label>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => { setShowEmailQuoteModal(false); setEmailQuoteInput({ to: '', name: '', cc: true }); }}
+                style={{
+                  fontFamily: INTER, fontSize: '0.75rem', padding: '9px 18px',
+                  border: '1px solid rgba(94,234,212,0.2)', borderRadius: 10,
+                  background: 'transparent', color: CYAN, cursor: 'pointer',
+                }}
+              >
+                Avbryt
+              </button>
+              <button
+                onClick={async () => {
+                  const { to, name, cc } = emailQuoteInput;
+                  if (!to.trim()) return;
+                  try {
+                    await handleEmailQuote({ to: to.trim(), customerName: name.trim() || undefined, ccOwner: cc });
+                    setShowEmailQuoteModal(false);
+                    setEmailQuoteInput({ to: '', name: '', cc: true });
+                  } catch (e) {
+                    setToast({ message: e.message, variant: 'error' });
+                  }
+                }}
+                disabled={!emailQuoteInput.to.trim()}
+                style={{
+                  fontFamily: INTER, fontSize: '0.75rem', fontWeight: 600, padding: '9px 18px',
+                  border: 'none', borderRadius: 10,
+                  background: emailQuoteInput.to.trim() ? 'linear-gradient(135deg, #2dd4bf, #5eead4)' : 'rgba(255,255,255,0.06)',
+                  color: emailQuoteInput.to.trim() ? '#080b14' : TEXT_MU,
+                  cursor: emailQuoteInput.to.trim() ? 'pointer' : 'not-allowed',
+                  boxShadow: emailQuoteInput.to.trim() ? '0 0 15px rgba(94,234,212,0.3)' : 'none',
+                }}
+              >
+                Skicka offert
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Message / counter-offer panel ───────────────────────────── */}
       {msgQuote && (
         <MessagePanel
@@ -2020,8 +2245,27 @@ function FleetEnvPage() {
 
 // ─── Auth gate — keeps hook count stable across auth transitions ─────────────
 function AppShell() {
-  const { isAuthenticated, user, company, logout, updateCompany, updateUser } = useAuth();
+  const { isAuthenticated, user, company, login, logout, updateCompany } = useAuth();
+
+  // Invite setup page — accessible without auth
+  if (window.location.pathname === '/setup-account') {
+    return (
+      <SetupAccount
+        onSetupComplete={(data) => {
+          login(data);
+          window.history.replaceState({}, '', '/');
+        }}
+      />
+    );
+  }
+
   if (!isAuthenticated) return <Login />;
+
+  // Forare sees only their job view, no full dashboard
+  if (user?.role === 'forare') {
+    return <DriverView user={user} onLogout={logout} />;
+  }
+
   if (company?.active === 0 || company?.active === false) {
     return <SubscriptionPaused company={company} onLogout={logout} />;
   }

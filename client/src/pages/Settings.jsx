@@ -531,7 +531,7 @@ export function Settings({ onFortnoxResult }) {
         </div>
       )}
 
-      {user?.role === 'owner' && (
+      {user?.role === 'agare' && (
         <div style={section}>
           <div style={sectionHead}>
             <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
@@ -543,7 +543,7 @@ export function Settings({ onFortnoxResult }) {
         </div>
       )}
 
-      {user?.role === 'owner' && (
+      {(user?.role === 'agare' || user?.role === 'ekonomi') && (
         <div style={section}>
           <div style={sectionHead}>
             <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
@@ -554,6 +554,8 @@ export function Settings({ onFortnoxResult }) {
           <FortnoxPanel toast={toast} setToast={setToast} />
         </div>
       )}
+
+      {user?.role === 'agare' && <UsersPanel section={section} sectionHead={sectionHead} setToast={setToast} />}
 
       <div style={section}>
         <div style={sectionHead}>
@@ -678,6 +680,280 @@ export function Settings({ onFortnoxResult }) {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── UsersPanel ───────────────────────────────────────────────────────────────
+const ROLE_LABELS = {
+  agare:        'Ägare',
+  trafikledare: 'Trafikledare',
+  ekonomi:      'Ekonomi',
+  forare:       'Förare',
+  revisor:      'Revisor',
+};
+
+const ROLE_COLORS = {
+  agare:        { bg: 'rgba(168,120,24,0.10)', color: '#A87818', border: 'rgba(168,120,24,0.25)' },
+  trafikledare: { bg: 'rgba(44,95,191,0.10)',  color: '#2C5FBF', border: 'rgba(44,95,191,0.25)'  },
+  ekonomi:      { bg: 'rgba(30,120,80,0.10)',  color: '#1E7A50', border: 'rgba(30,120,80,0.25)'  },
+  forare:       { bg: 'rgba(100,60,180,0.10)', color: '#643CB4', border: 'rgba(100,60,180,0.25)' },
+  revisor:      { bg: 'rgba(100,100,100,0.10)',color: '#606060', border: 'rgba(100,100,100,0.25)'},
+};
+
+function RoleBadge({ role }) {
+  const cfg = ROLE_COLORS[role] ?? ROLE_COLORS.revisor;
+  return (
+    <span style={{
+      fontSize: 10, fontWeight: 700, letterSpacing: '0.05em',
+      padding: '2px 8px', borderRadius: 20, fontFamily: INTER,
+      background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+    }}>
+      {ROLE_LABELS[role] ?? role}
+    </span>
+  );
+}
+
+function UsersPanel({ section, sectionHead, setToast }) {
+  const [users,    setUsers]    = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [invite,   setInvite]   = useState({ email: '', name: '', role: 'trafikledare' });
+  const [sending,  setSending]  = useState(false);
+  const { user: me } = useAuth();
+
+  function load() {
+    apiFetch('/api/users')
+      .then((r) => r.ok ? r.json() : [])
+      .then(setUsers)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }
+  useEffect(load, []);
+
+  async function handleInvite(e) {
+    e.preventDefault();
+    if (!invite.email.trim()) return;
+    setSending(true);
+    try {
+      const r    = await apiFetch('/api/users/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(invite),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error ?? 'Fel');
+      setToast({
+        message: data.simulated
+          ? `Inbjudan simulerad (SMTP ej konfigurerat) — ${invite.email}`
+          : `Inbjudan skickad till ${invite.email}`,
+        variant: 'success',
+      });
+      setInvite({ email: '', name: '', role: 'trafikledare' });
+      setShowForm(false);
+      load();
+    } catch (err) {
+      setToast({ message: err.message, variant: 'error' });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function toggleActive(u) {
+    try {
+      const r = await apiFetch(`/api/users/${u.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: u.active === 0 ? true : false }),
+      });
+      if (!r.ok) throw new Error('Fel vid uppdatering');
+      load();
+    } catch (err) {
+      setToast({ message: err.message, variant: 'error' });
+    }
+  }
+
+  async function changeRole(u, role) {
+    try {
+      await apiFetch(`/api/users/${u.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
+      load();
+    } catch {}
+  }
+
+  return (
+    <div style={section}>
+      <div style={sectionHead}>
+        <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
+          Användare
+        </span>
+        <button
+          onClick={() => setShowForm((v) => !v)}
+          style={{
+            fontFamily: INTER, fontSize: 12, fontWeight: 600,
+            background: TEXT, color: WHITE, border: 'none',
+            borderRadius: 7, padding: '6px 14px', cursor: 'pointer',
+          }}
+        >
+          + Bjud in
+        </button>
+      </div>
+
+      {showForm && (
+        <form onSubmit={handleInvite} style={{
+          padding: '16px 20px', background: SURF, borderBottom: `1px solid ${BORDER}`,
+          display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end',
+        }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 180px' }}>
+            <span style={{ fontFamily: INTER, fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: MUTED }}>
+              E-post *
+            </span>
+            <input
+              autoFocus type="email" required
+              value={invite.email}
+              onChange={(e) => setInvite((p) => ({ ...p, email: e.target.value }))}
+              placeholder="anna@foretag.se"
+              style={{ fontFamily: INTER, fontSize: 13, padding: '8px 10px', border: `1px solid ${BORDER}`, borderRadius: 7, outline: 'none', background: WHITE, color: TEXT }}
+            />
+          </label>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 140px' }}>
+            <span style={{ fontFamily: INTER, fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: MUTED }}>
+              Namn (valfritt)
+            </span>
+            <input
+              type="text"
+              value={invite.name}
+              onChange={(e) => setInvite((p) => ({ ...p, name: e.target.value }))}
+              placeholder="Anna Lindström"
+              style={{ fontFamily: INTER, fontSize: 13, padding: '8px 10px', border: `1px solid ${BORDER}`, borderRadius: 7, outline: 'none', background: WHITE, color: TEXT }}
+            />
+          </label>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '0 0 150px' }}>
+            <span style={{ fontFamily: INTER, fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: MUTED }}>
+              Roll
+            </span>
+            <select
+              value={invite.role}
+              onChange={(e) => setInvite((p) => ({ ...p, role: e.target.value }))}
+              style={{ fontFamily: INTER, fontSize: 13, padding: '8px 10px', border: `1px solid ${BORDER}`, borderRadius: 7, outline: 'none', background: WHITE, color: TEXT }}
+            >
+              {Object.entries(ROLE_LABELS).map(([v, label]) => (
+                <option key={v} value={v}>{label}</option>
+              ))}
+            </select>
+          </label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              type="submit" disabled={sending}
+              style={{
+                fontFamily: INTER, fontSize: 12, fontWeight: 600,
+                background: sending ? SURF : TEXT, color: sending ? MUTED : WHITE,
+                border: `1px solid ${BORDER}`, borderRadius: 7, padding: '8px 16px',
+                cursor: sending ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {sending ? 'Skickar…' : 'Skicka inbjudan'}
+            </button>
+            <button
+              type="button" onClick={() => setShowForm(false)}
+              style={{ fontFamily: INTER, fontSize: 12, background: 'none', border: `1px solid ${BORDER}`, borderRadius: 7, padding: '8px 14px', cursor: 'pointer', color: MUTED }}
+            >
+              Avbryt
+            </button>
+          </div>
+        </form>
+      )}
+
+      {loading ? (
+        <div style={{ padding: 24, fontFamily: INTER, fontSize: 13, color: MUTED, textAlign: 'center' }}>
+          Laddar…
+        </div>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: SURF, borderBottom: `1px solid ${BORDER}` }}>
+                {['Namn', 'E-post', 'Roll', 'Status', ''].map((h) => (
+                  <th key={h} style={{
+                    padding: '9px 14px', textAlign: h === '' ? 'right' : 'left',
+                    fontFamily: INTER, fontSize: 11, fontWeight: 600,
+                    letterSpacing: '0.04em', textTransform: 'uppercase', color: MUTED,
+                  }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.id} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                  <td style={{ padding: '10px 14px', fontFamily: INTER, fontSize: 13, color: TEXT, fontWeight: 500 }}>
+                    {u.name}
+                    {u.id === me?.id && (
+                      <span style={{ fontSize: 10, color: MUTED, marginLeft: 6 }}>(dig)</span>
+                    )}
+                  </td>
+                  <td style={{ padding: '10px 14px', fontFamily: INTER, fontSize: 12, color: MUTED }}>
+                    {u.email}
+                    {u.active === 0 && !u.password_hash && (
+                      <span style={{ marginLeft: 6, fontSize: 10, color: '#B46418' }}>• Inbjudan väntande</span>
+                    )}
+                  </td>
+                  <td style={{ padding: '10px 14px' }}>
+                    {u.id === me?.id ? (
+                      <RoleBadge role={u.role} />
+                    ) : (
+                      <select
+                        value={u.role}
+                        onChange={(e) => changeRole(u, e.target.value)}
+                        style={{
+                          fontFamily: INTER, fontSize: 11, padding: '3px 8px',
+                          border: `1px solid ${BORDER}`, borderRadius: 6,
+                          background: WHITE, color: TEXT, cursor: 'pointer',
+                        }}
+                      >
+                        {Object.entries(ROLE_LABELS).map(([v, label]) => (
+                          <option key={v} value={v}>{label}</option>
+                        ))}
+                      </select>
+                    )}
+                  </td>
+                  <td style={{ padding: '10px 14px' }}>
+                    <span style={{
+                      fontSize: 10, fontWeight: 600, letterSpacing: '0.05em',
+                      padding: '2px 8px', borderRadius: 20, fontFamily: INTER,
+                      background: u.active ? 'rgba(30,120,80,0.10)' : 'rgba(168,36,36,0.08)',
+                      color: u.active ? '#1E7A50' : '#A82424',
+                      border: `1px solid ${u.active ? 'rgba(30,120,80,0.25)' : 'rgba(168,36,36,0.22)'}`,
+                    }}>
+                      {u.active ? 'Aktiv' : 'Inaktiv'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '10px 14px', textAlign: 'right' }}>
+                    {u.id !== me?.id && (
+                      <button
+                        onClick={() => toggleActive(u)}
+                        style={{
+                          fontFamily: INTER, fontSize: 11, fontWeight: 600,
+                          background: 'none',
+                          color: u.active ? '#A82424' : '#1E7A50',
+                          border: `1px solid ${u.active ? 'rgba(168,36,36,0.3)' : 'rgba(30,120,80,0.3)'}`,
+                          borderRadius: 6, padding: '4px 10px', cursor: 'pointer',
+                        }}
+                      >
+                        {u.active ? 'Inaktivera' : 'Aktivera'}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

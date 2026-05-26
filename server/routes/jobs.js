@@ -31,8 +31,22 @@ const stmtMarkFaktura      = db.prepare(`UPDATE jobs SET status = 'fakturerad', 
 const stmtSetFortnoxNr     = db.prepare(`UPDATE jobs SET fortnox_invoice_nr = ? WHERE id = ? AND company_id = ?`);
 const stmtCustomerByNr     = db.prepare(`SELECT fortnox_customer_nr FROM customers WHERE id = ? AND company_id = ?`);
 
+const stmtGetForare = db.prepare(`
+  SELECT j.id, j.quote_id, j.status, j.created_at,
+         q.lasttyp, q.upphämtning, q.leverans, q.datum, q.fordon_id, q.totalpris_sek, q.avstand_km
+  FROM jobs j
+  LEFT JOIN quotes q  ON q.id = j.quote_id AND q.company_id = j.company_id
+  LEFT JOIN drivers d ON d.truck_id = q.fordon_id AND d.company_id = j.company_id
+  WHERE j.company_id = ? AND d.id = ?
+  ORDER BY j.created_at DESC
+`);
+
 router.get('/', (req, res) => {
   try {
+    if (req.user?.role === 'forare') {
+      if (!req.user.driverId) return res.json([]);
+      return res.json(stmtGetForare.all(req.companyId, req.user.driverId));
+    }
     res.json(stmtGetAll.all(req.companyId));
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -110,12 +124,22 @@ router.post('/:id/faktura', async (req, res) => {
 
 router.patch('/:id/status', (req, res) => {
   const { status } = req.body ?? {};
-  const allowed = ['planerad', 'aktiv', 'avslutad'];
+  // Forare may only transition to aktiv or avslutad on their own jobs
+  const forareAllowed = ['aktiv', 'avslutad'];
+  const allAllowed    = ['planerad', 'aktiv', 'avslutad'];
+  const allowed = req.user?.role === 'forare' ? forareAllowed : allAllowed;
   if (!allowed.includes(status)) {
     return res.status(400).json({ error: `status must be one of: ${allowed.join(', ')}` });
   }
   const jobId = Number(req.params.id);
   try {
+    // Forare can only update their own assigned jobs
+    if (req.user?.role === 'forare') {
+      const rows = stmtGetForare.all(req.companyId, req.user.driverId ?? 0);
+      if (!rows.some((j) => j.id === jobId)) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    }
     const result = db.prepare(
       `UPDATE jobs SET status = ? WHERE id = ? AND company_id = ?`
     ).run(status, jobId, req.companyId);
