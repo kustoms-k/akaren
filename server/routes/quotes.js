@@ -2,6 +2,7 @@ import { Router }     from 'express';
 import { randomBytes } from 'node:crypto';
 import db              from '../db.js';
 import { sendMail }    from '../utils/mailer.js';
+import { computeInsightsForCompany } from '../jobs/pricingInsights.js';
 
 const stmtLinkExtraction = db.prepare(`
   UPDATE ai_extractions
@@ -245,6 +246,10 @@ router.patch('/:id/status', (req, res) => {
     const result = stmtSetStatus.run(status, id, req.companyId);
     if (result.changes === 0) return res.status(404).json({ error: 'Quote not found' });
     res.json({ ok: true, status });
+    // Recompute pricing insights so win-rate data stays fresh after each outcome
+    if (status === 'godkänd' || status === 'avböjd') {
+      try { computeInsightsForCompany(req.companyId); } catch { /* non-fatal */ }
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

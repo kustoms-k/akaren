@@ -123,6 +123,7 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, onApplyPrice }
   const pctDiff   = (currentPrice - avgPrice) / avgPrice;
   const isBelow   = pctDiff < -0.03;
   const isAbove   = pctDiff > 0.03;
+  const isSeverelyBelow = pctDiff < -0.10;
 
   // Recommended price — derived from tier acceptance data
   const tierData = tierInsight?.insight_data?.by_cargo_type?.[lasttyp];
@@ -136,6 +137,7 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, onApplyPrice }
   }
 
   const absPct = Math.abs(Math.round(pctDiff * 100));
+  const absDiff = Math.round(Math.abs(currentPrice - avgPrice) / 100) * 100;
   const priceDiffColor = isBelow ? '#e74c3c' : isAbove ? '#16a34a' : MUTED;
   const priceDiffLabel = isBelow
     ? t.pricingIntel.belowAvg(absPct)
@@ -151,6 +153,10 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, onApplyPrice }
       )
     : null;
 
+  // Win rate for the tier this quote falls into
+  const currentTier = pctDiff < -0.10 ? 'below' : pctDiff > 0.10 ? 'above' : 'at';
+  const winRate = tierData?.[currentTier]?.acceptance_rate ?? null;
+
   const confidenceColor = cargoItem.n >= 20 ? '#16a34a' : cargoItem.n >= 8 ? '#d97706' : '#e74c3c';
   const confidenceLabel = cargoItem.n >= 20
     ? t.pricingIntel.confidence.high
@@ -159,111 +165,160 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, onApplyPrice }
     : t.pricingIntel.confidence.low;
 
   return (
-    <div style={{
-      flexShrink: 0,
-      background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12,
-      padding: '16px',
-    }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+    <div style={{ flexShrink: 0 }}>
+      {/* Prominent underpricing banner — only when >10% below avg */}
+      {isSeverelyBelow && (
         <div style={{
-          fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
-          textTransform: 'uppercase', color: MUTED, letterSpacing: '0.3px',
+          background: 'rgba(231,76,60,0.08)', border: '1.5px solid rgba(231,76,60,0.35)',
+          borderRadius: 10, padding: '10px 14px', marginBottom: 8,
+          display: 'flex', alignItems: 'flex-start', gap: 10,
         }}>
-          {t.pricingIntel.heading}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontFamily: OUTFIT, fontSize: 11, color: FAINT }}>
-            {t.pricingIntel.nJobs(cargoItem.n, lasttyp)} · {t.pricingIntel.confidence.label}:
-          </span>
-          <span style={{ fontFamily: OUTFIT, fontSize: 11, fontWeight: 600, color: confidenceColor }}>
-            {confidenceLabel}
-          </span>
-        </div>
-      </div>
-
-      {/* Price comparison rows */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-          <span style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED }}>
-            {t.pricingIntel.yourAvg}
-          </span>
-          <span style={{ fontFamily: OUTFIT, fontSize: 16, fontWeight: 600, color: TEXT }}>
-            {fmtSEK(avgPrice)}
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-          <span style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED }}>
-            {t.pricingIntel.thisQuote}
-          </span>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-            <span style={{ fontFamily: OUTFIT, fontSize: 11, color: priceDiffColor }}>
-              {priceDiffLabel}
-            </span>
-            <span style={{ fontFamily: OUTFIT, fontSize: 14, fontWeight: 600, color: priceDiffColor }}>
-              {fmtSEK(currentPrice)}
-            </span>
+          <span style={{ fontSize: 16, lineHeight: 1, flexShrink: 0 }}>⚠</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: OUTFIT, fontSize: 13, fontWeight: 600, color: '#c0392b', lineHeight: 1.4 }}>
+              {t.pricingIntel.underpricingBanner(absDiff)}
+            </div>
+            {onApplyPrice && (
+              <button
+                onClick={() => onApplyPrice(Math.round(avgPrice / 100) * 100)}
+                style={{
+                  marginTop: 8,
+                  fontFamily: OUTFIT, fontSize: 12, fontWeight: 600,
+                  background: '#e74c3c', color: '#fff',
+                  border: 'none', borderRadius: 6,
+                  padding: '5px 12px', cursor: 'pointer',
+                  transition: 'background 0.12s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#c0392b'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#e74c3c'; }}
+              >
+                {t.pricingIntel.adjustToAvg}
+              </button>
+            )}
           </div>
-        </div>
-
-        <div style={{ height: 1, background: BORDER, margin: '2px 0' }} />
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontFamily: OUTFIT, fontSize: 12, color: AMBER, fontWeight: 500 }}>
-            {t.pricingIntel.recommended}
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontFamily: OUTFIT, fontSize: 18, fontWeight: 700, color: AMBER}}>
-              {fmtSEK(recommendedPrice)}
-            </span>
-            <button
-              onClick={() => onApplyPrice(recommendedPrice)}
-              style={{
-                fontFamily: OUTFIT, fontSize: 12, fontWeight: 500,
-                background: 'rgba(201,146,30,0.10)', color: AMBER,
-                border: '1px solid rgba(201,146,30,0.25)', borderRadius: 6,
-                padding: '4px 10px', cursor: 'pointer',
-                transition: 'background 0.12s',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(201,146,30,0.20)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(201,146,30,0.10)'; }}
-            >
-              {t.pricingIntel.apply}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Tier acceptance bars */}
-      {tierData && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-          <div style={{
-            fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
-            textTransform: 'uppercase', color: MUTED, letterSpacing: '0.3px', marginBottom: 4,
-          }}>
-            {t.pricingIntel.acceptanceByTier}
-          </div>
-          <TierBar
-            label={t.pricingIntel.tierBelow}
-            rate={tierData.below?.acceptance_rate ?? 0}
-            count={tierData.below?.n ?? 0}
-            highlight={bestTier === 'below'}
-          />
-          <TierBar
-            label={t.pricingIntel.tierAt}
-            rate={tierData.at?.acceptance_rate ?? 0}
-            count={tierData.at?.n ?? 0}
-            highlight={bestTier === 'at'}
-          />
-          <TierBar
-            label={t.pricingIntel.tierAbove}
-            rate={tierData.above?.acceptance_rate ?? 0}
-            count={tierData.above?.n ?? 0}
-            highlight={bestTier === 'above'}
-          />
         </div>
       )}
+
+      {/* Main panel */}
+      <div style={{
+        background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12,
+        padding: '16px',
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div style={{
+            fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
+            textTransform: 'uppercase', color: MUTED, letterSpacing: '0.3px',
+          }}>
+            {t.pricingIntel.heading}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontFamily: OUTFIT, fontSize: 11, color: FAINT }}>
+              {t.pricingIntel.nJobs(cargoItem.n, lasttyp)} · {t.pricingIntel.confidence.label}:
+            </span>
+            <span style={{ fontFamily: OUTFIT, fontSize: 11, fontWeight: 600, color: confidenceColor }}>
+              {confidenceLabel}
+            </span>
+          </div>
+        </div>
+
+        {/* Price comparison rows */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <span style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED }}>
+              {t.pricingIntel.yourAvg}
+            </span>
+            <span style={{ fontFamily: OUTFIT, fontSize: 16, fontWeight: 600, color: TEXT }}>
+              {fmtSEK(avgPrice)}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <span style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED }}>
+              {t.pricingIntel.thisQuote}
+            </span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+              <span style={{ fontFamily: OUTFIT, fontSize: 11, color: priceDiffColor }}>
+                {priceDiffLabel}
+              </span>
+              <span style={{ fontFamily: OUTFIT, fontSize: 14, fontWeight: 600, color: priceDiffColor }}>
+                {fmtSEK(currentPrice)}
+              </span>
+            </div>
+          </div>
+
+          <div style={{ height: 1, background: BORDER, margin: '2px 0' }} />
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontFamily: OUTFIT, fontSize: 12, color: AMBER, fontWeight: 500 }}>
+              {t.pricingIntel.recommended}
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontFamily: OUTFIT, fontSize: 18, fontWeight: 700, color: AMBER}}>
+                {fmtSEK(recommendedPrice)}
+              </span>
+              {!isSeverelyBelow && (
+                <button
+                  onClick={() => onApplyPrice(recommendedPrice)}
+                  style={{
+                    fontFamily: OUTFIT, fontSize: 12, fontWeight: 500,
+                    background: 'rgba(201,146,30,0.10)', color: AMBER,
+                    border: '1px solid rgba(201,146,30,0.25)', borderRadius: 6,
+                    padding: '4px 10px', cursor: 'pointer',
+                    transition: 'background 0.12s',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(201,146,30,0.20)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(201,146,30,0.10)'; }}
+                >
+                  {t.pricingIntel.adjustToAvg}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Win rate sentence */}
+        {winRate !== null && tierData?.[currentTier]?.n >= 3 && (
+          <div style={{
+            fontFamily: OUTFIT, fontSize: 12, color: winRate >= 0.5 ? '#16a34a' : winRate >= 0.3 ? '#d97706' : '#e74c3c',
+            fontWeight: 500, marginBottom: 10,
+            background: winRate >= 0.5 ? 'rgba(22,163,74,0.06)' : winRate >= 0.3 ? 'rgba(217,119,6,0.06)' : 'rgba(231,76,60,0.06)',
+            borderRadius: 6, padding: '5px 8px',
+          }}>
+            {t.pricingIntel.winRateLine(Math.round(winRate * 100))}
+          </div>
+        )}
+
+        {/* Tier acceptance bars */}
+        {tierData && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <div style={{
+              fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
+              textTransform: 'uppercase', color: MUTED, letterSpacing: '0.3px', marginBottom: 4,
+            }}>
+              {t.pricingIntel.acceptanceByTier}
+            </div>
+            <TierBar
+              label={t.pricingIntel.tierBelow}
+              rate={tierData.below?.acceptance_rate ?? 0}
+              count={tierData.below?.n ?? 0}
+              highlight={bestTier === 'below'}
+            />
+            <TierBar
+              label={t.pricingIntel.tierAt}
+              rate={tierData.at?.acceptance_rate ?? 0}
+              count={tierData.at?.n ?? 0}
+              highlight={bestTier === 'at'}
+            />
+            <TierBar
+              label={t.pricingIntel.tierAbove}
+              rate={tierData.above?.acceptance_rate ?? 0}
+              count={tierData.above?.n ?? 0}
+              highlight={bestTier === 'above'}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

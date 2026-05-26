@@ -36,6 +36,7 @@ import { LogoFull, LogoMark } from './assets/Logo.jsx';
 import { useAnalysis }   from './hooks/useAnalysis.js';
 import { generatePdf }    from './utils/generatePdf.js';
 import { apiFetch }       from './utils/apiFetch.js';
+import { syncPricingInsights } from './db/sync.js';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import { SyncProvider, useSync } from './context/SyncContext.jsx';
 import { LanguageProvider, useLanguage } from './context/LanguageContext.jsx';
@@ -1168,6 +1169,8 @@ function AppInner() {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         setQuoteStatus(statusOnly);
         setToast({ message: `Offert markerad som ${statusOnly}`, variant: 'success' });
+        // Re-sync pricing insights so win-rate panel reflects the new outcome
+        syncPricingInsights(localStorage.getItem('auth_token')).catch(() => {});
       } catch (e) {
         setToast({ message: e.message, variant: 'error' });
       }

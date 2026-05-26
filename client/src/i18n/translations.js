@@ -929,6 +929,9 @@ export const EN = {
     suggestion:     'Suggested price',
     acceptanceRate: 'Acceptance rate',
     apply:          'Apply',
+    adjustToAvg:    'Apply avg price',
+    underpricingBanner: (amt) => `⚠ You are underpricing this job by approx. ${new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(amt)} kr compared to your own average.`,
+    winRateLine:    (pct) => `You win ${pct}% of quotes at this price level`,
   },
 
   dpa: {
@@ -1908,6 +1911,9 @@ export const SV = {
     suggestion:     'Föreslaget pris',
     acceptanceRate: 'Acceptansgrad',
     apply:          'Tillämpa',
+    adjustToAvg:    'Justera till snittpris',
+    underpricingBanner: (amt) => `Du underprissätter detta uppdrag med ca ${new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(amt)} kr jämfört med ditt eget snitt.`,
+    winRateLine:    (pct) => `Du vinner ${pct}% av offerter i detta prisläge`,
   },
 
   dpa: {
