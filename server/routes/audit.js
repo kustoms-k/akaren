@@ -6,7 +6,7 @@ const router = Router();
 const stmtGet = db.prepare(`
   SELECT a.id, a.entity_type, a.entity_id, a.action,
          a.before_value, a.after_value, a.ip_address, a.created_at,
-         u.name  AS user_name,
+         COALESCE(a.user_name, u.name) AS user_name,
          u.email AS user_email,
          u.role  AS user_role
   FROM audit_log a
@@ -14,6 +14,7 @@ const stmtGet = db.prepare(`
   WHERE a.company_id = ?
     AND (? IS NULL OR a.entity_type = ?)
     AND (? IS NULL OR a.user_id     = ?)
+    AND (? IS NULL OR a.action      = ?)
     AND (? IS NULL OR a.created_at >= ?)
     AND (? IS NULL OR a.created_at <= ?)
   ORDER BY a.created_at DESC
@@ -26,29 +27,31 @@ const stmtCount = db.prepare(`
   WHERE a.company_id = ?
     AND (? IS NULL OR a.entity_type = ?)
     AND (? IS NULL OR a.user_id     = ?)
+    AND (? IS NULL OR a.action      = ?)
     AND (? IS NULL OR a.created_at >= ?)
     AND (? IS NULL OR a.created_at <= ?)
 `);
 
 const stmtUsers = db.prepare(`SELECT id, name, email, role FROM users WHERE company_id = ?`);
 
-// GET /api/audit?entity_type=&user_id=&date_from=&date_to=&limit=&offset=
+// GET /api/audit?entity_type=&user_id=&action=&date_from=&date_to=&limit=&offset=
 router.get('/', (req, res) => {
   try {
-    const { entity_type, user_id, date_from, date_to } = req.query;
-    const lim = Math.min(Number(req.query.limit)  || 50, 200);
+    const { entity_type, user_id, action, date_from, date_to } = req.query;
+    const lim = Math.min(Number(req.query.limit) || 50, 200);
     const off = Number(req.query.offset) || 0;
 
     const et  = entity_type || null;
     const uid = user_id ? Number(user_id) : null;
+    const ac  = action   || null;
     const df  = date_from || null;
     const dt  = date_to ? date_to + ' 23:59:59' : null;
 
     const rows = stmtGet.all(
-      req.companyId, et, et, uid, uid, df, df, dt, dt, lim, off,
+      req.companyId, et, et, uid, uid, ac, ac, df, df, dt, dt, lim, off,
     );
     const { total } = stmtCount.get(
-      req.companyId, et, et, uid, uid, df, df, dt, dt,
+      req.companyId, et, et, uid, uid, ac, ac, df, df, dt, dt,
     );
     const users = stmtUsers.all(req.companyId);
 

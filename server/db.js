@@ -356,6 +356,8 @@ const migrations = [
   `ALTER TABLE users ADD COLUMN invite_token         TEXT`,
   `ALTER TABLE users ADD COLUMN invite_expires_at    TEXT`,
   `ALTER TABLE users ADD COLUMN driver_id            INTEGER REFERENCES drivers(id)`,
+  // Audit trail enrichment
+  `ALTER TABLE audit_log ADD COLUMN user_name TEXT`,
 ];
 
 // Backfill: companies created before the onboarding feature launch are already set up

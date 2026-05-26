@@ -129,8 +129,8 @@ app.use('/api/users', apiLimiter, requireAuth, requireRole(AGARE), usersRouter);
 app.use('/api/fortnox/callback', fortnoxRouter);
 app.use('/api/fortnox', requireAuth, requireRole(AGARE, EKONOMI), fortnoxRouter);
 
-// Audit log — agare only
-app.use('/api/audit', requireAuth, requireRole(AGARE), auditRouter);
+// Audit log — agare + revisor
+app.use('/api/audit', requireAuth, requireRole(AGARE, REVISOR), auditRouter);
 
 // Quotes — agare, trafikledare (write); ekonomi, revisor (read enforced inside route)
 app.use('/api/quotes',        apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE, EKONOMI, REVISOR), auditMutation('quote'), quotesRouter);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { apiFetch }     from '../utils/apiFetch.js';
 import { useAuth }      from '../context/AuthContext.jsx';
@@ -557,6 +557,14 @@ export function Settings({ onFortnoxResult }) {
 
       {user?.role === 'agare' && <UsersPanel section={section} sectionHead={sectionHead} setToast={setToast} />}
 
+      {(user?.role === 'agare' || user?.role === 'revisor') && (
+        <AuditPanel section={section} sectionHead={sectionHead} />
+      )}
+
+      {user?.role === 'agare' && (
+        <ExportPanel section={section} sectionHead={sectionHead} />
+      )}
+
       <div style={section}>
         <div style={sectionHead}>
           <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
@@ -678,6 +686,428 @@ export function Settings({ onFortnoxResult }) {
               </button>
             </div>
           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Shared label maps ────────────────────────────────────────────────────────
+const ENTITY_LABELS = {
+  quote:           'Offert',
+  job:             'Uppdrag',
+  fleet:           'Fordon',
+  driver:          'Förare',
+  invoice:         'Faktura',
+  template:        'Mall',
+  customer:        'Kund',
+  financial_report:'Finansrapport',
+  customer_portal: 'Kundportal',
+};
+
+const ACTION_LABELS = {
+  create: 'Skapad',
+  update: 'Uppdaterad',
+  delete: 'Raderad',
+  view:   'Visad',
+};
+
+const ACTION_COLORS = {
+  create: { bg: 'rgba(30,120,80,0.10)',   color: '#1E7A50', border: 'rgba(30,120,80,0.25)'   },
+  update: { bg: 'rgba(44,95,191,0.10)',   color: '#2C5FBF', border: 'rgba(44,95,191,0.25)'   },
+  delete: { bg: 'rgba(168,36,36,0.10)',   color: '#A82424', border: 'rgba(168,36,36,0.25)'   },
+  view:   { bg: 'rgba(100,100,100,0.08)', color: '#6B6359', border: 'rgba(100,100,100,0.20)' },
+};
+
+// ─── Before/After diff view ───────────────────────────────────────────────────
+const SKIP_DIFF_KEYS = new Set(['company_id', 'created_at', 'updated_at', 'password_hash', 'invite_token']);
+
+function DiffView({ before, after }) {
+  let bObj = null, aObj = null;
+  try { bObj = before ? JSON.parse(before) : null; } catch {}
+  try { aObj = after  ? JSON.parse(after)  : null; } catch {}
+
+  if (!bObj && !aObj) return <div style={{ padding: '10px 16px', fontFamily: MONO, fontSize: 11, color: MUTED }}>Ingen data</div>;
+
+  const allKeys = [...new Set([
+    ...(bObj ? Object.keys(bObj) : []),
+    ...(aObj ? Object.keys(aObj) : []),
+  ])].filter((k) => !SKIP_DIFF_KEYS.has(k));
+
+  const changed = allKeys.filter((k) => JSON.stringify(bObj?.[k]) !== JSON.stringify(aObj?.[k]));
+
+  if (changed.length === 0 && (bObj || aObj)) {
+    return <div style={{ padding: '10px 16px', fontFamily: INTER, fontSize: 11, color: MUTED }}>Inga ändringar i spårade fält.</div>;
+  }
+
+  const cellStyle = {
+    fontFamily: MONO, fontSize: 11, padding: '3px 8px', borderRadius: 4,
+    wordBreak: 'break-all', lineHeight: 1.5,
+  };
+
+  return (
+    <div style={{ display: 'flex', gap: 12, padding: '12px 16px', overflowX: 'auto' }}>
+      {bObj && changed.length > 0 && (
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#A82424', marginBottom: 6, textTransform: 'uppercase' }}>
+            FÖR
+          </div>
+          {changed.map((k) => bObj[k] !== undefined ? (
+            <div key={k} style={{ display: 'flex', gap: 6, marginBottom: 3 }}>
+              <span style={{ ...cellStyle, background: 'rgba(168,36,36,0.08)', color: '#A82424', flexShrink: 0 }}>{k}</span>
+              <span style={{ ...cellStyle, background: 'rgba(168,36,36,0.06)', color: '#c46060' }}>
+                {JSON.stringify(bObj[k])}
+              </span>
+            </div>
+          ) : (
+            <div key={k} style={{ ...cellStyle, color: MUTED, marginBottom: 3 }}>({k} ej satt)</div>
+          ))}
+        </div>
+      )}
+      {aObj && changed.length > 0 && (
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#1E7A50', marginBottom: 6, textTransform: 'uppercase' }}>
+            EFTER
+          </div>
+          {changed.map((k) => aObj[k] !== undefined ? (
+            <div key={k} style={{ display: 'flex', gap: 6, marginBottom: 3 }}>
+              <span style={{ ...cellStyle, background: 'rgba(30,120,80,0.08)', color: '#1E7A50', flexShrink: 0 }}>{k}</span>
+              <span style={{ ...cellStyle, background: 'rgba(30,120,80,0.06)', color: '#3a9a68' }}>
+                {JSON.stringify(aObj[k])}
+              </span>
+            </div>
+          ) : (
+            <div key={k} style={{ ...cellStyle, color: MUTED, marginBottom: 3 }}>({k} raderad)</div>
+          ))}
+        </div>
+      )}
+      {!bObj && aObj && (
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#1E7A50', marginBottom: 6, textTransform: 'uppercase' }}>SKAPAD</div>
+          {Object.entries(aObj).filter(([k]) => !SKIP_DIFF_KEYS.has(k)).map(([k, v]) => (
+            <div key={k} style={{ display: 'flex', gap: 6, marginBottom: 3 }}>
+              <span style={{ ...cellStyle, background: 'rgba(30,120,80,0.08)', color: '#1E7A50', flexShrink: 0 }}>{k}</span>
+              <span style={{ ...cellStyle, background: 'rgba(30,120,80,0.06)', color: '#3a9a68' }}>{JSON.stringify(v)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── AuditPanel ───────────────────────────────────────────────────────────────
+function AuditPanel({ section, sectionHead }) {
+  const [rows,      setRows]      = useState([]);
+  const [total,     setTotal]     = useState(0);
+  const [userList,  setUserList]  = useState([]);
+  const [loading,   setLoading]   = useState(false);
+  const [expanded,  setExpanded]  = useState(null);
+  const [offset,    setOffset]    = useState(0);
+  const LIMIT = 30;
+
+  const [fUser,   setFUser]   = useState('');
+  const [fEntity, setFEntity] = useState('');
+  const [fAction, setFAction] = useState('');
+  const [fFrom,   setFFrom]   = useState('');
+  const [fTo,     setFTo]     = useState('');
+
+  const filterRef = useRef({ fUser, fEntity, fAction, fFrom, fTo });
+
+  async function load(off = 0) {
+    setLoading(true);
+    const f = filterRef.current;
+    const p = new URLSearchParams({ limit: LIMIT, offset: off });
+    if (f.fUser)   p.set('user_id',     f.fUser);
+    if (f.fEntity) p.set('entity_type', f.fEntity);
+    if (f.fAction) p.set('action',      f.fAction);
+    if (f.fFrom)   p.set('date_from',   f.fFrom);
+    if (f.fTo)     p.set('date_to',     f.fTo);
+    try {
+      const r    = await apiFetch(`/api/audit?${p}`);
+      const data = await r.json();
+      setRows(data.rows  ?? []);
+      setTotal(data.total ?? 0);
+      setUserList(data.users ?? []);
+      setOffset(off);
+    } catch {}
+    setLoading(false);
+  }
+
+  function applyFilters() {
+    filterRef.current = { fUser, fEntity, fAction, fFrom, fTo };
+    setExpanded(null);
+    load(0);
+  }
+
+  useEffect(() => { load(0); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function fmtDate(s) {
+    if (!s) return '—';
+    try { return new Intl.DateTimeFormat('sv-SE', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(s.replace(' ', 'T'))); }
+    catch { return s; }
+  }
+
+  const selStyle = {
+    fontFamily: INTER, fontSize: 12, padding: '6px 8px',
+    border: `1px solid ${BORDER}`, borderRadius: 7, background: WHITE, color: TEXT,
+    outline: 'none', cursor: 'pointer',
+  };
+  const inputDateStyle = { ...selStyle, padding: '5px 8px' };
+
+  return (
+    <div style={section}>
+      <div style={sectionHead}>
+        <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
+          Revisionslogg
+        </span>
+        <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>{total} poster</span>
+      </div>
+
+      {/* Filters */}
+      <div style={{
+        padding: '12px 16px', background: SURF, borderBottom: `1px solid ${BORDER}`,
+        display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'flex-end',
+      }}>
+        <select value={fUser} onChange={(e) => setFUser(e.target.value)} style={selStyle}>
+          <option value="">Alla användare</option>
+          {userList.map((u) => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
+        </select>
+
+        <select value={fEntity} onChange={(e) => setFEntity(e.target.value)} style={selStyle}>
+          <option value="">Alla entiteter</option>
+          {Object.entries(ENTITY_LABELS).map(([v, lbl]) => <option key={v} value={v}>{lbl}</option>)}
+          <option value="financial_report">Finansrapport</option>
+        </select>
+
+        <select value={fAction} onChange={(e) => setFAction(e.target.value)} style={selStyle}>
+          <option value="">Alla åtgärder</option>
+          {Object.entries(ACTION_LABELS).map(([v, lbl]) => <option key={v} value={v}>{lbl}</option>)}
+        </select>
+
+        <input type="date" value={fFrom} onChange={(e) => setFFrom(e.target.value)} style={inputDateStyle} title="Från datum" />
+        <input type="date" value={fTo}   onChange={(e) => setFTo(e.target.value)}   style={inputDateStyle} title="Till datum" />
+
+        <button
+          onClick={applyFilters}
+          style={{
+            fontFamily: INTER, fontSize: 12, fontWeight: 600,
+            background: TEXT, color: WHITE, border: 'none',
+            borderRadius: 7, padding: '7px 16px', cursor: 'pointer',
+          }}
+        >
+          Filtrera
+        </button>
+        <button
+          onClick={() => {
+            setFUser(''); setFEntity(''); setFAction(''); setFFrom(''); setFTo('');
+            filterRef.current = { fUser: '', fEntity: '', fAction: '', fFrom: '', fTo: '' };
+            load(0);
+          }}
+          style={{
+            fontFamily: INTER, fontSize: 12, background: 'none',
+            border: `1px solid ${BORDER}`, borderRadius: 7, padding: '7px 12px',
+            cursor: 'pointer', color: MUTED,
+          }}
+        >
+          Rensa
+        </button>
+      </div>
+
+      {loading && (
+        <div style={{ padding: 24, fontFamily: INTER, fontSize: 13, color: MUTED, textAlign: 'center' }}>Laddar…</div>
+      )}
+
+      {!loading && rows.length === 0 && (
+        <div style={{ padding: 32, fontFamily: INTER, fontSize: 13, color: MUTED, textAlign: 'center', fontStyle: 'italic' }}>
+          Inga poster hittades.
+        </div>
+      )}
+
+      {!loading && rows.length > 0 && (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: SURF, borderBottom: `1px solid ${BORDER}` }}>
+                {['Tid', 'Användare', 'Åtgärd', 'Enhet', 'IP', ''].map((h) => (
+                  <th key={h} style={{
+                    padding: '8px 12px', textAlign: 'left',
+                    fontFamily: INTER, fontSize: 10, fontWeight: 600,
+                    letterSpacing: '0.05em', textTransform: 'uppercase', color: MUTED,
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => {
+                const actionCfg = ACTION_COLORS[row.action] ?? ACTION_COLORS.view;
+                const isExpanded = expanded === row.id;
+                const hasDiff = row.before_value || row.after_value;
+                return (
+                  <React.Fragment key={row.id}>
+                    <tr
+                      style={{
+                        borderBottom: `1px solid ${isExpanded ? 'transparent' : BORDER}`,
+                        background: isExpanded ? SURF : 'transparent',
+                        cursor: hasDiff ? 'pointer' : 'default',
+                      }}
+                      onClick={() => hasDiff && setExpanded(isExpanded ? null : row.id)}
+                    >
+                      <td style={{ padding: '9px 12px', fontFamily: MONO, fontSize: 11, color: MUTED, whiteSpace: 'nowrap' }}>
+                        {fmtDate(row.created_at)}
+                      </td>
+                      <td style={{ padding: '9px 12px', fontFamily: INTER, fontSize: 12, color: TEXT, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {row.user_name || row.user_email || '—'}
+                      </td>
+                      <td style={{ padding: '9px 12px' }}>
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, letterSpacing: '0.05em',
+                          padding: '2px 8px', borderRadius: 20, fontFamily: INTER,
+                          background: actionCfg.bg, color: actionCfg.color, border: `1px solid ${actionCfg.border}`,
+                        }}>
+                          {ACTION_LABELS[row.action] ?? row.action}
+                        </span>
+                      </td>
+                      <td style={{ padding: '9px 12px', fontFamily: INTER, fontSize: 12, color: MUTED }}>
+                        {ENTITY_LABELS[row.entity_type] ?? row.entity_type}
+                        {row.entity_id && <span style={{ fontFamily: MONO, fontSize: 10, marginLeft: 4 }}>#{row.entity_id}</span>}
+                      </td>
+                      <td style={{ padding: '9px 12px', fontFamily: MONO, fontSize: 10, color: MUTED }}>
+                        {row.ip_address ?? '—'}
+                      </td>
+                      <td style={{ padding: '9px 12px', textAlign: 'right' }}>
+                        {hasDiff && (
+                          <span style={{ fontFamily: MONO, fontSize: 11, color: MUTED, userSelect: 'none' }}>
+                            {isExpanded ? '▲' : '▼'}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                    {isExpanded && (
+                      <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
+                        <td colSpan={6} style={{ padding: 0, background: '#faf9f6' }}>
+                          <DiffView before={row.before_value} after={row.after_value} />
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {total > LIMIT && (
+        <div style={{
+          padding: '10px 16px', borderTop: `1px solid ${BORDER}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: SURF,
+        }}>
+          <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>
+            {offset + 1}–{Math.min(offset + LIMIT, total)} av {total}
+          </span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              disabled={offset === 0}
+              onClick={() => load(Math.max(0, offset - LIMIT))}
+              style={{
+                fontFamily: INTER, fontSize: 12, padding: '5px 12px',
+                border: `1px solid ${BORDER}`, borderRadius: 7, background: WHITE,
+                color: offset === 0 ? MUTED : TEXT, cursor: offset === 0 ? 'not-allowed' : 'pointer',
+              }}
+            >
+              ← Föregående
+            </button>
+            <button
+              disabled={offset + LIMIT >= total}
+              onClick={() => load(offset + LIMIT)}
+              style={{
+                fontFamily: INTER, fontSize: 12, padding: '5px 12px',
+                border: `1px solid ${BORDER}`, borderRadius: 7, background: WHITE,
+                color: offset + LIMIT >= total ? MUTED : TEXT, cursor: offset + LIMIT >= total ? 'not-allowed' : 'pointer',
+              }}
+            >
+              Nästa →
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── ExportPanel ──────────────────────────────────────────────────────────────
+function ExportPanel({ section, sectionHead }) {
+  const [exporting, setExporting] = useState(false);
+  const [error,     setError]     = useState(null);
+
+  async function handleExport() {
+    setExporting(true);
+    setError(null);
+    try {
+      const r = await apiFetch('/api/data-privacy/export-all');
+      if (!r.ok) { const d = await r.json(); throw new Error(d.error ?? 'Exportfel'); }
+      const blob = await r.blob();
+      const cd   = r.headers.get('Content-Disposition') ?? '';
+      const match = cd.match(/filename="([^"]+)"/);
+      const name  = match ? match[1] : `akaren-export-${new Date().toISOString().slice(0,10)}.json`;
+      const url   = URL.createObjectURL(blob);
+      const a     = document.createElement('a');
+      a.href = url; a.download = name; a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  return (
+    <div style={section}>
+      <div style={sectionHead}>
+        <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
+          Dataexport (GDPR)
+        </span>
+        <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>Portabilitet</span>
+      </div>
+      <div style={{ padding: '20px 20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: 0, lineHeight: 1.6, maxWidth: 520 }}>
+          Exportera all företagsdata som en JSON-fil för GDPR-portabilitet.
+          Filen innehåller offerter, uppdrag, fakturor, förare, fordon, kunder och revisionslogg.
+        </p>
+
+        {error && (
+          <div style={{
+            background: 'rgba(168,36,36,0.08)', border: '1px solid rgba(168,36,36,0.25)',
+            borderRadius: 8, padding: '8px 12px', fontFamily: INTER, fontSize: 12, color: '#A82424',
+          }}>
+            {error}
+          </div>
+        )}
+
+        <div>
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            style={{
+              fontFamily: INTER, fontSize: 13, fontWeight: 600,
+              background: exporting ? SURF : TEXT,
+              color: exporting ? MUTED : WHITE,
+              border: `1px solid ${BORDER}`, borderRadius: 9, padding: '10px 20px',
+              cursor: exporting ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', gap: 8, transition: 'opacity 0.15s',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M7 1v8M4 6l3 3 3-3M2 10v2a1 1 0 001 1h8a1 1 0 001-1v-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            {exporting ? 'Exporterar…' : 'Exportera all data'}
+          </button>
         </div>
       </div>
     </div>

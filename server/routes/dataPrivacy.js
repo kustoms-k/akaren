@@ -419,4 +419,47 @@ router.get('/delete-account', (req, res) => {
   res.json(req2 ?? null);
 });
 
+// ── GET /export-all — GDPR data portability export ───────────────────────────
+router.get('/export-all', (req, res) => {
+  try {
+    const cid = req.companyId;
+    const company  = db.prepare(`SELECT id, name, org_nr, address, phone, email, brand_color, bankgiro, created_at FROM companies WHERE id = ?`).get(cid);
+    const users    = db.prepare(`SELECT id, name, email, role, active, last_login, created_at FROM users WHERE company_id = ?`).all(cid);
+    const quotes   = db.prepare(`SELECT * FROM quotes   WHERE company_id = ? ORDER BY created_at DESC`).all(cid);
+    const jobs     = db.prepare(`SELECT * FROM jobs     WHERE company_id = ? ORDER BY created_at DESC`).all(cid);
+    const drivers  = db.prepare(`SELECT * FROM drivers  WHERE company_id = ?`).all(cid);
+    const fleet    = db.prepare(`SELECT * FROM company_fleet WHERE company_id = ?`).all(cid);
+    const invoices = db.prepare(`SELECT * FROM invoices WHERE company_id = ? ORDER BY created_at DESC`).all(cid);
+    const customers = db.prepare(`SELECT * FROM customers WHERE company_id = ?`).all(cid);
+    const templates = db.prepare(`SELECT * FROM templates WHERE company_id = ?`).all(cid);
+    const auditLog  = db.prepare(
+      `SELECT id, entity_type, entity_id, action, ip_address, created_at,
+              COALESCE(al.user_name, u.name) AS user_name
+       FROM audit_log al LEFT JOIN users u ON u.id = al.user_id
+       WHERE al.company_id = ? ORDER BY al.created_at DESC LIMIT 5000`
+    ).all(cid);
+
+    const payload = {
+      exported_at: new Date().toISOString(),
+      company,
+      users,
+      quotes,
+      jobs,
+      drivers,
+      fleet,
+      invoices,
+      customers,
+      templates,
+      audit_log: auditLog,
+    };
+
+    const filename = `akaren-export-${company?.name?.replace(/[^a-z0-9]/gi, '_') ?? cid}-${new Date().toISOString().slice(0,10)}.json`;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.json(payload);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

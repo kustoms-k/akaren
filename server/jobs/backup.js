@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, randomBytes, createHmac } from 'node:crypto';
-import { existsSync, unlinkSync, copyFileSync } from 'node:fs';
+import { existsSync, unlinkSync, copyFileSync, mkdirSync, readdirSync, statSync } from 'node:fs';
 import { readFile, writeFile, unlink } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -7,9 +7,13 @@ import cron from 'node-cron';
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import db from '../db.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH   = process.env.DB_PATH ?? path.join(__dirname, '../data/kemoffs.db');
-const TMP_DIR   = path.join(__dirname, '../data');
+const __dirname    = path.dirname(fileURLToPath(import.meta.url));
+const DB_PATH      = process.env.DB_PATH ?? path.join(__dirname, '../data/kemoffs.db');
+const TMP_DIR      = path.join(__dirname, '../data');
+const LOCAL_BACKUP = path.join(__dirname, '../backups');
+
+// Ensure local backup directory exists
+try { mkdirSync(LOCAL_BACKUP, { recursive: true }); } catch {}
 
 // ── S3 client (S3-compatible: AWS, R2, Backblaze, MinIO) ─────────────────────
 function getS3() {
@@ -86,7 +90,7 @@ async function runBackup(backupType = 'daily') {
       payload = encrypt(payload, master);
     }
 
-    // 4. Upload to S3 if configured
+    // 4. Upload to S3 or save locally
     if (s3 && bucket) {
       s3Key = `backups/${backupType}/${ts}.db${master ? '.enc' : ''}`;
       await s3.send(new PutObjectCommand({
@@ -101,7 +105,13 @@ async function runBackup(backupType = 'daily') {
         },
       }));
     } else {
-      console.warn('[backup] No S3 configured — backup not uploaded.');
+      // Fallback: write to server/backups/ directory
+      const localFile = path.join(LOCAL_BACKUP, `backup-${backupType}-${ts}${master ? '.db.enc' : '.db'}`);
+      await writeFile(localFile, payload);
+      s3Key = localFile; // reuse s3_key column to store local path
+      console.log(`[backup] Saved locally → ${localFile}`);
+      // Purge local backups older than 30 days
+      enforceLocalRetention(30);
     }
 
     // 5. Clean up temp snapshot
@@ -126,6 +136,20 @@ async function runBackup(backupType = 'daily') {
 
   // 7. Enforce retention: 30 daily, 12 monthly
   enforceRetention(backupType, s3);
+}
+
+// ── Local file retention (delete files older than N days) ────────────────────
+function enforceLocalRetention(days) {
+  try {
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+    const files  = readdirSync(LOCAL_BACKUP).filter((f) => f.startsWith('backup-'));
+    for (const f of files) {
+      const full = path.join(LOCAL_BACKUP, f);
+      try {
+        if (statSync(full).mtimeMs < cutoff) unlinkSync(full);
+      } catch {}
+    }
+  } catch {}
 }
 
 // ── Retention cleanup ─────────────────────────────────────────────────────────
