@@ -5,6 +5,21 @@ import { getConnectionStatus, createFortnoxInvoice } from '../services/fortnox.j
 
 const router = Router();
 
+// EU 561/2006 daily/weekly limits (minutes)
+const EU561_DAILY_MAX  = 9  * 60;  // 540 min
+const EU561_WEEKLY_MAX = 56 * 60;  // 3 360 min
+
+function eu561WeekStart() {
+  const d   = new Date();
+  const day = d.getDay(); // 0 = Sun
+  const off = day === 0 ? -6 : 1 - day;
+  return new Date(d.getTime() + off * 86_400_000).toISOString().slice(0, 10);
+}
+
+function fmtHM(min) {
+  return `${Math.floor(min / 60)}h ${min % 60 > 0 ? (min % 60) + 'min' : ''}`.trim();
+}
+
 const stmtGetAll = db.prepare(`
   SELECT j.id, j.quote_id, j.status, j.faktura_nr, j.fortnox_invoice_nr, j.customer_id, j.created_at,
          q.lasttyp, q.upphämtning, q.leverans, q.totalpris_sek, q.avstand_km, q.datum, q.fordon_id,
@@ -54,15 +69,92 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { quote_id } = req.body;
+  const { quote_id, override, override_reason } = req.body;
   if (quote_id == null) return res.status(400).json({ error: 'quote_id saknas' });
 
   try {
+    const quote  = stmtQuoteById.get(quote_id, req.companyId);
+    const driver = quote?.fordon_id ? stmtDriverByTruck.get(quote.fordon_id, req.companyId) : null;
+
+    // ── EU 561/2006 compliance check ─────────────────────────────────────────
+    if (driver && quote?.avstand_km && !override) {
+      const estMin    = Math.ceil(Number(quote.avstand_km) / 70 * 60);
+      const today     = new Date().toISOString().slice(0, 10);
+      const weekStart = eu561WeekStart();
+
+      const todayMin = db.prepare(
+        'SELECT COALESCE(SUM(driving_minutes),0) AS total FROM driver_hours WHERE company_id=? AND driver_id=? AND date=?'
+      ).get(req.companyId, driver.id, today).total;
+
+      const weekMin = db.prepare(
+        'SELECT COALESCE(SUM(driving_minutes),0) AS total FROM driver_hours WHERE company_id=? AND driver_id=? AND date>=?'
+      ).get(req.companyId, driver.id, weekStart).total;
+
+      const violations = [];
+      if (todayMin + estMin > EU561_DAILY_MAX) {
+        violations.push({
+          rule:    'daily',
+          message: `${driver.name} har redan kört ${fmtHM(todayMin)} idag. Detta uppdrag (${fmtHM(estMin)}) bryter mot dygnsregeln (max 9h).`,
+          current: todayMin,
+          adding:  estMin,
+          limit:   EU561_DAILY_MAX,
+        });
+      }
+      if (weekMin + estMin > EU561_WEEKLY_MAX) {
+        violations.push({
+          rule:    'weekly',
+          message: `${driver.name} har kört ${fmtHM(weekMin)} denna vecka. Detta uppdrag (${fmtHM(estMin)}) bryter mot veckogränsen (max 56h).`,
+          current: weekMin,
+          adding:  estMin,
+          limit:   EU561_WEEKLY_MAX,
+        });
+      }
+
+      if (violations.length > 0) {
+        return res.status(409).json({
+          compliance_error:   true,
+          violations,
+          driver_name:        driver.name,
+          driver_id:          driver.id,
+          estimated_minutes:  estMin,
+          today_driven:       todayMin,
+          week_driven:        weekMin,
+        });
+      }
+    }
+
+    // ── Create the job ────────────────────────────────────────────────────────
     const insertResult = stmtInsert.run(req.companyId, quote_id);
     const job          = stmtGetById.get(insertResult.lastInsertRowid, req.companyId);
 
-    const quote  = stmtQuoteById.get(quote_id, req.companyId);
-    const driver = quote?.fordon_id ? stmtDriverByTruck.get(quote.fordon_id, req.companyId) : null;
+    // Log route estimate to driver_hours (source = route_estimate)
+    if (driver && quote?.avstand_km) {
+      const estMin = Math.ceil(Number(quote.avstand_km) / 70 * 60);
+      const today  = new Date().toISOString().slice(0, 10);
+      try {
+        db.prepare(`
+          INSERT INTO driver_hours (company_id, driver_id, job_id, date, driving_minutes, source)
+          VALUES (?, ?, ?, ?, ?, 'route_estimate')
+        `).run(req.companyId, driver.id, job.id, today, estMin);
+      } catch { /* non-fatal */ }
+    }
+
+    // Log override to audit trail if dispatcher bypassed compliance check
+    if (override && driver) {
+      const estMin = Math.ceil(Number(quote?.avstand_km ?? 0) / 70 * 60);
+      try {
+        db.prepare(`
+          INSERT INTO audit_log (company_id, user_id, user_name, entity_type, entity_id, action, after_value, created_at)
+          VALUES (?, ?, ?, 'driver_hours_override', ?, 'eu561_override', ?, CURRENT_TIMESTAMP)
+        `).run(
+          req.companyId,
+          req.user?.id   ?? null,
+          req.user?.name ?? req.user?.email ?? null,
+          String(driver.id),
+          JSON.stringify({ override_reason: override_reason ?? null, estimated_minutes: estMin }),
+        );
+      } catch { /* non-fatal */ }
+    }
 
     let sms_status      = 'simulated';
     let sms_driver_name = driver?.name ?? null;

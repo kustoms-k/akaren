@@ -60,6 +60,7 @@ import onboardingRouter                 from './routes/onboarding.js';
 import co2Router                        from './routes/co2.js';
 import stripeRouter, { handleStripeWebhook } from './routes/stripe.js';
 import bankidRouter                     from './routes/bankid.js';
+import driverHoursRouter                from './routes/driverHours.js';
 import { authLimiter, analyseLimiter, apiLimiter } from './middleware/rateLimit.js';
 import { requireSubscription } from './middleware/requireSubscription.js';
 import db from './db.js';
@@ -88,12 +89,19 @@ app.use(helmet({
 
 // ── CORS — whitelist only known origins ───────────────────────────────────────
 const allowedOrigins = new Set(
-  [process.env.APP_URL, 'http://localhost:5173', 'http://localhost:3002'].filter(Boolean),
+  [process.env.APP_URL, 'http://localhost:5173', 'http://localhost:3002',
+   ...(process.env.CORS_EXTRA_ORIGINS ?? '').split(',').map(s => s.trim()).filter(Boolean),
+  ].filter(Boolean),
 );
+// Private LAN pattern — allows access from same local network in dev
+const isPrivateLan = (origin) =>
+  process.env.NODE_ENV !== 'production' &&
+  /^https?:\/\/(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(origin);
+
 app.use(cors({
   origin(origin, cb) {
     // Allow no-origin requests (mobile apps, curl, server-to-server)
-    if (!origin || allowedOrigins.has(origin)) return cb(null, true);
+    if (!origin || allowedOrigins.has(origin) || isPrivateLan(origin)) return cb(null, true);
     cb(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: true,
@@ -176,6 +184,9 @@ app.use('/api/onboarding',        apiLimiter, requireAuth, requireRole(...OFFICE
 
 // CO2 — all office staff
 app.use('/api/co2',               apiLimiter, requireAuth, requireRole(...OFFICE_ROLES), co2Router);
+
+// Driver hours (EU 561) — agare + trafikledare
+app.use('/api/driver-hours',      apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE), driverHoursRouter);
 
 // Billing — agare only
 app.use('/api/stripe',            apiLimiter, requireAuth, requireRole(AGARE), stripeRouter);

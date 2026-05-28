@@ -309,6 +309,19 @@ db.exec(`
     beskrivning     TEXT,
     created_at      TEXT    DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS driver_hours (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_id      INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    driver_id       INTEGER NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
+    job_id          INTEGER REFERENCES jobs(id),
+    date            TEXT    NOT NULL,
+    driving_minutes INTEGER NOT NULL DEFAULT 0,
+    work_minutes    INTEGER NOT NULL DEFAULT 0,
+    rest_minutes    INTEGER NOT NULL DEFAULT 0,
+    source          TEXT    NOT NULL DEFAULT 'manual',
+    created_at      TEXT    DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // ── Safe column migrations (pre-existing databases) ───────────────────────────

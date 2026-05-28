@@ -29,6 +29,7 @@ import { Co2 }            from './pages/Co2.jsx';
 import { Onboarding }     from './pages/Onboarding.jsx';
 import { Dispatch }       from './pages/Dispatch.jsx';
 import { DriverView }     from './pages/DriverView.jsx';
+import { Kortider }       from './pages/Kortider.jsx';
 import { SetupAccount }   from './pages/SetupAccount.jsx';
 import { TourOverlay }    from './components/TourOverlay.jsx';
 import { SubscriptionGate } from './components/SubscriptionGate.jsx';
@@ -174,6 +175,7 @@ const NAV_ROLES = {
   operations: ['agare', 'trafikledare', 'ekonomi', 'revisor'],
   fleet:      ['agare', 'trafikledare'],
   settings:   ['agare', 'trafikledare', 'ekonomi', 'revisor'],
+  kortider:   ['agare', 'trafikledare'],
 };
 
 function getNavItems(t, role) {
@@ -183,6 +185,7 @@ function getNavItems(t, role) {
     { id: 'operations',  label: t.nav.operations,   Icon: Briefcase,       group: 'main' },
     { id: 'fleet',       label: t.nav.fleet,        Icon: Truck,           group: 'main' },
     { id: 'settings',    label: t.nav.settings,     Icon: SettingsIcon,    group: 'main' },
+    { id: 'kortider',    label: t.nav.kortider,     Icon: Shield,          group: 'compliance' },
   ];
   return all.filter((n) => !role || (NAV_ROLES[n.id] ?? []).includes(role));
 }
@@ -824,6 +827,106 @@ function PlaceholderPage({ label }) {
   );
 }
 
+// ─── EU 561 Compliance Warning Modal ─────────────────────────────────────────
+function ComplianceWarningModal({ details, overrideReason, onReasonChange, onCancel, onOverride, saving, t }) {
+  const tw = t.complianceWarning;
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 1100,
+    }}>
+      <div style={{
+        background: '#fff', borderRadius: 12, padding: '24px 28px',
+        width: 440, maxWidth: '94vw',
+        boxShadow: '0 12px 48px rgba(0,0,0,0.22)',
+        display: 'flex', flexDirection: 'column', gap: 16,
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{
+            width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+            background: 'rgba(231,76,60,0.10)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 18,
+          }}>⚠</span>
+          <div style={{ fontFamily: INTER, fontSize: 14, fontWeight: 700, color: '#7f1d1d' }}>
+            {tw.heading}
+          </div>
+        </div>
+
+        {/* Violations */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {details.violations?.map((v, i) => (
+            <div key={i} style={{
+              background: 'rgba(231,76,60,0.06)',
+              border: '1px solid rgba(231,76,60,0.22)',
+              borderRadius: 7, padding: '10px 12px',
+              fontFamily: INTER, fontSize: 12, color: '#7f1d1d', lineHeight: 1.5,
+            }}>
+              {v.message}
+            </div>
+          ))}
+        </div>
+
+        {/* Fine risk note */}
+        <div style={{ fontFamily: INTER, fontSize: 11, color: '#b45309', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 6, padding: '8px 12px' }}>
+          {tw.fineRisk}
+        </div>
+
+        {/* Override reason */}
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <span style={{ fontFamily: INTER, fontSize: 11, fontWeight: 600, color: '#6b6359' }}>
+            {tw.overrideLabel}
+          </span>
+          <textarea
+            value={overrideReason}
+            onChange={(e) => onReasonChange(e.target.value)}
+            placeholder={tw.overrideHint}
+            rows={3}
+            style={{
+              fontFamily: INTER, fontSize: 12, color: '#1c1917',
+              background: '#fafaf8', border: '1px solid #e6e2da',
+              borderRadius: 7, padding: '8px 10px', resize: 'none',
+              outline: 'none', lineHeight: 1.5,
+              width: '100%', boxSizing: 'border-box',
+            }}
+          />
+        </label>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={onOverride}
+            disabled={saving || !overrideReason.trim()}
+            style={{
+              flex: 1, fontFamily: INTER, fontSize: 12, fontWeight: 600,
+              padding: '9px 0', borderRadius: 7, cursor: (saving || !overrideReason.trim()) ? 'not-allowed' : 'pointer',
+              background: '#b91c1c', color: '#fff', border: 'none',
+              opacity: (saving || !overrideReason.trim()) ? 0.55 : 1,
+              transition: 'opacity 150ms',
+            }}
+          >
+            {saving ? tw.overriding : tw.override}
+          </button>
+          <button
+            onClick={onCancel}
+            disabled={saving}
+            style={{
+              flex: 1, fontFamily: INTER, fontSize: 12, fontWeight: 500,
+              padding: '9px 0', borderRadius: 7, cursor: 'pointer',
+              background: 'transparent', color: '#6b6359',
+              border: '1px solid #e6e2da',
+            }}
+          >
+            {tw.cancel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── App (inner — only rendered when authenticated) ──────────────────────────
 function AppInner() {
   const { t, lang, setLang } = useLanguage();
@@ -860,6 +963,8 @@ function AppInner() {
   const [fortnoxResult,    setFortnoxResult]    = useState(null);  // toast from OAuth redirect
   const [dpaAccepted,      setDpaAccepted]      = useState(() => Boolean(company?.dpa_accepted_at));
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [complianceWarn,   setComplianceWarn]   = useState(null); // { details, pendingQuoteId }
+  const [overrideReason,   setOverrideReason]   = useState('');
 
   // ── IndexedDB live reads — instant, no spinners ───────────────────────────
   const fleet     = useLiveQuery(() => db.fleet.toArray(),                     [], []) ?? [];
@@ -1129,6 +1234,14 @@ function AppInner() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ quote_id: rawId }),
       });
+      if (jRes.status === 409) {
+        const details = await jRes.json();
+        if (details.compliance_error) {
+          setComplianceWarn({ details, pendingQuoteId: rawId });
+          setSaving(false);
+          return;
+        }
+      }
       if (!jRes.ok) throw new Error(`HTTP ${jRes.status}`);
       const job = await jRes.json();
       // Persist new job to IndexedDB
@@ -1308,6 +1421,11 @@ function AppInner() {
           )}
           {activePage === 'operations' && <OperationsPage />}
           {activePage === 'fleet' && <FleetEnvPage />}
+          {activePage === 'kortider' && (
+            <div style={{ flex: 1, overflow: 'auto' }}>
+              <Kortider />
+            </div>
+          )}
           {/* ── New Quote tab ──────────────────────────────────────────── */}
           {activePage === 'new-quote' && (
           <div className="new-quote-grid" style={{
@@ -2130,6 +2248,43 @@ function AppInner() {
       )}
 
       {toast && <Toast message={toast.message ?? toast} variant={toast.variant ?? 'success'} onDismiss={dismissToast} />}
+
+      {/* EU 561 compliance warning modal */}
+      {complianceWarn && (
+        <ComplianceWarningModal
+          details={complianceWarn.details}
+          pendingQuoteId={complianceWarn.pendingQuoteId}
+          overrideReason={overrideReason}
+          onReasonChange={setOverrideReason}
+          onCancel={() => { setComplianceWarn(null); setOverrideReason(''); }}
+          onOverride={async () => {
+            if (!overrideReason.trim()) return;
+            setSaving(true);
+            try {
+              const jRes = await apiFetch('/api/jobs', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  quote_id:        complianceWarn.pendingQuoteId,
+                  override:        true,
+                  override_reason: overrideReason.trim(),
+                }),
+              });
+              if (!jRes.ok) throw new Error(`HTTP ${jRes.status}`);
+              const job = await jRes.json();
+              await db.jobs.put({ id: job.id, quote_id: complianceWarn.pendingQuoteId, status: 'planerad', created_at: new Date().toISOString() }).catch(() => {});
+              setSmsResult({ status: job.sms_status, driverName: job.sms_driver_name, error: job.sms_error });
+              setToast({ message: `${t.jobs.heading} — ${t.complianceWarning.override}`, variant: 'warning' });
+              setComplianceWarn(null);
+              setOverrideReason('');
+            } catch (e) {
+              setToast({ message: e.message, variant: 'error' });
+            } finally { setSaving(false); }
+          }}
+          saving={saving}
+          t={t}
+        />
+      )}
 
       {/* DPA modal — shown on first login until accepted */}
       {!dpaAccepted && (
