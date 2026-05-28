@@ -1,5 +1,5 @@
-﻿import { useState, useEffect } from 'react';
-import { Download, Mail, FileText } from 'lucide-react';
+import { useState, useEffect, Fragment } from 'react';
+import { Download, Mail, FileText, Truck, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLiveQuery }    from 'dexie-react-hooks';
 import { useAuth }         from '../context/AuthContext.jsx';
 import { useLanguage }     from '../context/LanguageContext.jsx';
@@ -62,6 +62,110 @@ function StatusBadge({ status }) {
     }}>
       {label}
     </span>
+  );
+}
+
+// ── Returlast match card ───────────────────────────────────────────────────────
+function MatchCard({ match, jobId, onLink, linkingId }) {
+  const { t } = useLanguage();
+  const bh = t.backhaul;
+  const isLinking = linkingId === match.quote_id;
+
+  return (
+    <div style={{
+      border: `1px solid rgba(44,95,191,0.20)`,
+      borderRadius: 10, padding: '14px 16px',
+      background: '#f7f9ff',
+      display: 'flex', flexDirection: 'column', gap: 10,
+    }}>
+      <div>
+        <div style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT_PR }}>
+          {match.upphämtning || '—'} → {match.leverans || '—'}
+        </div>
+        <div style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU, marginTop: 2 }}>
+          {match.lasttyp || '—'}
+          {match.datum ? ` · ${new Date(match.datum).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' })}` : ''}
+          {match.avstand_km != null ? ` · ${match.avstand_km} km` : ''}
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+        <div>
+          <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: TEXT_MU }}>{bh.extraRevenue}</div>
+          <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 600, color: AMBER, marginTop: 2 }}>{fmtSEK(match.totalpris_sek)}</div>
+        </div>
+        <div>
+          <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: TEXT_MU }}>{bh.emptyKmSaved(match.empty_km_eliminated)}</div>
+          <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 600, color: SUCCESS, marginTop: 2 }}>{bh.savedSek(match.saved_sek)}</div>
+        </div>
+        <div>
+          <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: TEXT_MU }}>{bh.combinedRevenue}</div>
+          <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: TEXT_PR, marginTop: 2 }}>{fmtSEK(match.combined_revenue)}</div>
+        </div>
+      </div>
+
+      <button
+        onClick={() => onLink(jobId, match.quote_id)}
+        disabled={isLinking}
+        style={{
+          alignSelf: 'flex-start',
+          fontFamily: INTER, fontSize: 12, fontWeight: 600,
+          padding: '6px 14px', borderRadius: 8, cursor: isLinking ? 'not-allowed' : 'pointer',
+          background: isLinking ? 'rgba(44,95,191,0.1)' : '#2C5FBF',
+          color: isLinking ? CYAN : '#fff',
+          border: 'none', opacity: isLinking ? 0.7 : 1,
+          transition: 'opacity 150ms',
+        }}
+        onMouseEnter={(e) => { if (!isLinking) e.currentTarget.style.opacity = '0.85'; }}
+        onMouseLeave={(e) => { if (!isLinking) e.currentTarget.style.opacity = '1'; }}
+      >
+        {isLinking ? bh.linking : bh.linkBtn}
+      </button>
+    </div>
+  );
+}
+
+// ── Returlast expansion panel ─────────────────────────────────────────────────
+function ReturlastPanel({ jobId, job, data, onLink, linkingId }) {
+  const { t } = useLanguage();
+  const bh = t.backhaul;
+
+  if (!data || data.loading) {
+    return (
+      <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT_MU, padding: '12px 0', fontStyle: 'italic' }}>
+        {bh.loading}
+      </div>
+    );
+  }
+
+  if (data.already_paired) {
+    return (
+      <div style={{ fontFamily: INTER, fontSize: 12, color: SUCCESS, padding: '10px 0', fontWeight: 600 }}>
+        {bh.alreadyPaired}
+      </div>
+    );
+  }
+
+  if (!data.matches || data.matches.length === 0) {
+    return (
+      <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT_MU, padding: '10px 0', fontStyle: 'italic' }}>
+        {bh.noMatches}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+      {data.matches.map((match) => (
+        <MatchCard
+          key={match.quote_id}
+          match={match}
+          jobId={jobId}
+          onLink={onLink}
+          linkingId={linkingId}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -251,9 +355,12 @@ function InvoiceModal({ job, customers, onClose, onSuccess }) {
 export function Jobs() {
   const { t } = useLanguage();
   const { company } = useAuth();
-  const [customers, setCustomers] = useState([]);
-  const [modal,     setModal]     = useState(null);
-  const [toast,     setToast]     = useState(null);
+  const [customers,     setCustomers]     = useState([]);
+  const [modal,         setModal]         = useState(null);
+  const [toast,         setToast]         = useState(null);
+  const [expandedJobId, setExpandedJobId] = useState(null);
+  const [backhaulData,  setBackhaulData]  = useState({});
+  const [linkingId,     setLinkingId]     = useState(null);
 
   const jobs    = useLiveQuery(() => db.jobs.orderBy('created_at').reverse().toArray(), [], null) ?? [];
   const loading = useLiveQuery(() => db.jobs.count(), [], null) === null;
@@ -264,6 +371,51 @@ export function Jobs() {
       .then((d) => setCustomers(Array.isArray(d) ? d : []))
       .catch(() => {});
   }, []);
+
+  async function fetchBackhaul(jobId) {
+    setBackhaulData((prev) => ({ ...prev, [jobId]: { loading: true, matches: [], already_paired: false } }));
+    try {
+      const r = await apiFetch(`/api/backhaul/${jobId}`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      setBackhaulData((prev) => ({ ...prev, [jobId]: { loading: false, ...data } }));
+    } catch {
+      setBackhaulData((prev) => ({ ...prev, [jobId]: { loading: false, matches: [], already_paired: false } }));
+    }
+  }
+
+  function toggleReturlast(jobId) {
+    if (expandedJobId === jobId) {
+      setExpandedJobId(null);
+    } else {
+      setExpandedJobId(jobId);
+      if (!backhaulData[jobId]) fetchBackhaul(jobId);
+    }
+  }
+
+  async function handleLink(jobId, quoteId) {
+    setLinkingId(quoteId);
+    try {
+      const r = await apiFetch('/api/backhaul/link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job_id: jobId, quote_id: quoteId }),
+      });
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        throw new Error(body.error || `HTTP ${r.status}`);
+      }
+      setBackhaulData((prev) => ({
+        ...prev,
+        [jobId]: { loading: false, matches: [], already_paired: true },
+      }));
+      setToast({ message: t.backhaul.linked, variant: 'success' });
+    } catch (err) {
+      setToast({ message: err.message, variant: 'error' });
+    } finally {
+      setLinkingId(null);
+    }
+  }
 
   async function handleReDownload(job) {
     const lineItems = (() => {
@@ -325,12 +477,12 @@ export function Jobs() {
 
   const COLS = [
     { label: '#',              w: '8%'  },
-    { label: t.jobs.route,     w: '25%' },
-    { label: t.jobs.cargo,     w: '14%' },
-    { label: t.jobs.amount,    w: '12%', right: true },
-    { label: t.jobs.date,      w: '11%' },
-    { label: t.jobs.status,    w: '14%' },
-    { label: '',               w: '16%' },
+    { label: t.jobs.route,     w: '22%' },
+    { label: t.jobs.cargo,     w: '12%' },
+    { label: t.jobs.amount,    w: '11%', right: true },
+    { label: t.jobs.date,      w: '10%' },
+    { label: t.jobs.status,    w: '12%' },
+    { label: '',               w: '25%' },
   ];
 
   return (
@@ -396,132 +548,190 @@ export function Jobs() {
                 const hasInvoice   = Boolean(job.invoice_id);
                 const fakturaNr    = job.invoice_faktura_nr || job.faktura_nr;
                 const isLast       = i === jobs.length - 1;
+                const isExpanded   = expandedJobId === job.id;
                 const jobNr        = `JOB-${new Date().getFullYear()}-${String(job.id).padStart(3, '0')}`;
 
                 return (
-                  <tr
-                    key={job.id}
-                    style={{ background: 'transparent' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(28,26,22,0.025)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                  >
-                    <td style={{
-                      fontFamily: MONO, fontSize: 12, padding: '12px 16px', color: TEXT_PR,
-                      borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)', verticalAlign: 'middle',
-                    }}>
-                      <span style={{ color: AMBER, fontWeight: 600 }}>{jobNr}</span>
-                    </td>
+                  <Fragment key={job.id}>
+                    <tr
+                      style={{ background: isExpanded ? 'rgba(44,95,191,0.04)' : 'transparent' }}
+                      onMouseEnter={(e) => { if (!isExpanded) e.currentTarget.style.background = 'rgba(28,26,22,0.025)'; }}
+                      onMouseLeave={(e) => { if (!isExpanded) e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      <td style={{
+                        fontFamily: MONO, fontSize: 12, padding: '12px 16px', color: TEXT_PR,
+                        borderBottom: (!isLast || isExpanded) ? '1px solid rgba(255,255,255,0.05)' : 'none', verticalAlign: 'middle',
+                      }}>
+                        <span style={{ color: AMBER, fontWeight: 600 }}>{jobNr}</span>
+                      </td>
 
-                    <td style={{
-                      fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT_PR,
-                      borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)', verticalAlign: 'middle',
-                    }}>
-                      {job.upphämtning || job.leverans ? (
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13 }}>
-                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 100 }}>{job.upphämtning || '—'}</span>
-                            <span style={{ color: TEXT_MU, flexShrink: 0 }}>–</span>
-                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 100 }}>{job.leverans || '—'}</span>
+                      <td style={{
+                        fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT_PR,
+                        borderBottom: (!isLast || isExpanded) ? '1px solid rgba(255,255,255,0.05)' : 'none', verticalAlign: 'middle',
+                      }}>
+                        {job.upphämtning || job.leverans ? (
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13 }}>
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 100 }}>{job.upphämtning || '—'}</span>
+                              <span style={{ color: TEXT_MU, flexShrink: 0 }}>–</span>
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 100 }}>{job.leverans || '—'}</span>
+                            </div>
+                            {job.avstand_km != null && (
+                              <div style={{ fontSize: 11, color: TEXT_MU, marginTop: 2 }}>{job.avstand_km} km</div>
+                            )}
                           </div>
-                          {job.avstand_km != null && (
-                            <div style={{ fontSize: 11, color: TEXT_MU, marginTop: 2 }}>{job.avstand_km} km</div>
-                          )}
+                        ) : <span style={{ color: TEXT_MU }}>—</span>}
+                      </td>
+
+                      <td style={{
+                        fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT_PR,
+                        borderBottom: (!isLast || isExpanded) ? '1px solid rgba(255,255,255,0.05)' : 'none', verticalAlign: 'middle',
+                        maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>
+                        {job.lasttyp || '—'}
+                      </td>
+
+                      <td style={{
+                        fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT_PR,
+                        borderBottom: (!isLast || isExpanded) ? '1px solid rgba(255,255,255,0.05)' : 'none', verticalAlign: 'middle',
+                        textAlign: 'right',
+                      }}>
+                        {job.totalpris_sek != null ? (
+                          <div>
+                            <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 500, color: AMBER }}>{fmtSEK(job.totalpris_sek)}</div>
+                            <div style={{ fontFamily: INTER, fontSize: 10, color: TEXT_MU }}>{t.jobs.exclVat}</div>
+                          </div>
+                        ) : '—'}
+                      </td>
+
+                      <td style={{
+                        fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT_SEC,
+                        borderBottom: (!isLast || isExpanded) ? '1px solid rgba(255,255,255,0.05)' : 'none', verticalAlign: 'middle',
+                      }}>
+                        {fmtDate(job.created_at)}
+                      </td>
+
+                      <td style={{
+                        fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT_PR,
+                        borderBottom: (!isLast || isExpanded) ? '1px solid rgba(255,255,255,0.05)' : 'none', verticalAlign: 'middle',
+                      }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          <StatusBadge status={job.status} />
+                          {fakturaNr && <span style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU }}>{fakturaNr}</span>}
                         </div>
-                      ) : <span style={{ color: TEXT_MU }}>—</span>}
-                    </td>
+                      </td>
 
-                    <td style={{
-                      fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT_PR,
-                      borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)', verticalAlign: 'middle',
-                      maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>
-                      {job.lasttyp || '—'}
-                    </td>
-
-                    <td style={{
-                      fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT_PR,
-                      borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)', verticalAlign: 'middle',
-                      textAlign: 'right',
-                    }}>
-                      {job.totalpris_sek != null ? (
-                        <div>
-                          <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 500, color: AMBER }}>{fmtSEK(job.totalpris_sek)}</div>
-                          <div style={{ fontFamily: INTER, fontSize: 10, color: TEXT_MU }}>{t.jobs.exclVat}</div>
-                        </div>
-                      ) : '—'}
-                    </td>
-
-                    <td style={{
-                      fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT_SEC,
-                      borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)', verticalAlign: 'middle',
-                    }}>
-                      {fmtDate(job.created_at)}
-                    </td>
-
-                    <td style={{
-                      fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT_PR,
-                      borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)', verticalAlign: 'middle',
-                    }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <StatusBadge status={job.status} />
-                        {fakturaNr && <span style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU }}>{fakturaNr}</span>}
-                      </div>
-                    </td>
-
-                    <td style={{
-                      fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT_PR,
-                      borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)', verticalAlign: 'middle',
-                    }}>
-                      {!isFakturerad ? (
-                        <button
-                          onClick={() => setModal(job)}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 6,
-                            fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
-                            padding: '7px 14px', borderRadius: 8,
-                            border: 'none', background: '#1C1A17', color: '#FAF9F7',
-                            cursor: 'pointer', whiteSpace: 'nowrap',
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.background = '#343230'}
-                          onMouseLeave={(e) => e.currentTarget.style.background = '#1C1A17'}
-                        >
-                          <FileText size={13} />
-                          {t.jobs.generateInvoice}
-                        </button>
-                      ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          {hasInvoice && (
+                      <td style={{
+                        fontFamily: INTER, fontSize: 13, padding: '12px 16px', color: TEXT_PR,
+                        borderBottom: (!isLast || isExpanded) ? '1px solid rgba(255,255,255,0.05)' : 'none', verticalAlign: 'middle',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                          {!isFakturerad ? (
                             <button
-                              onClick={() => handleReDownload(job)}
+                              onClick={() => setModal(job)}
                               style={{
                                 display: 'flex', alignItems: 'center', gap: 6,
                                 fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
-                                padding: '6px 12px', borderRadius: 8,
-                                border: `1px solid ${BORDER}`, background: WHITE,
-                                color: TEXT, cursor: 'pointer', whiteSpace: 'nowrap',
+                                padding: '7px 14px', borderRadius: 8,
+                                border: 'none', background: '#1C1A17', color: '#FAF9F7',
+                                cursor: 'pointer', whiteSpace: 'nowrap',
                               }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = '#343230'}
+                              onMouseLeave={(e) => e.currentTarget.style.background = '#1C1A17'}
                             >
-                              <Download size={13} />
-                              {t.jobs.downloadPdf}
+                              <FileText size={13} />
+                              {t.jobs.generateInvoice}
                             </button>
+                          ) : (
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              {hasInvoice && (
+                                <button
+                                  onClick={() => handleReDownload(job)}
+                                  style={{
+                                    display: 'flex', alignItems: 'center', gap: 6,
+                                    fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
+                                    padding: '6px 12px', borderRadius: 8,
+                                    border: `1px solid ${BORDER}`, background: WHITE,
+                                    color: TEXT, cursor: 'pointer', whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  <Download size={13} />
+                                  {t.jobs.downloadPdf}
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleSendEmail(job)}
+                                style={{
+                                  display: 'flex', alignItems: 'center', gap: 6,
+                                  fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
+                                  padding: '6px 12px', borderRadius: 8,
+                                  border: `1px solid ${BORDER}`, background: SURF,
+                                  color: TEXT_PR, cursor: 'pointer', whiteSpace: 'nowrap',
+                                }}
+                              >
+                                <Mail size={13} />
+                                {t.jobs.sendEmail}
+                              </button>
+                            </div>
                           )}
+
+                          {/* Returlast toggle button */}
                           <button
-                            onClick={() => handleSendEmail(job)}
+                            onClick={() => toggleReturlast(job.id)}
+                            title={t.backhaul.panelHeading}
                             style={{
-                              display: 'flex', alignItems: 'center', gap: 6,
-                              fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
+                              display: 'flex', alignItems: 'center', gap: 5,
+                              fontFamily: INTER, fontSize: 12, fontWeight: 600,
                               padding: '6px 12px', borderRadius: 8,
-                              border: `1px solid \$\{BORDER\}`, background: SURF,
-                              color: TEXT_PR, cursor: 'pointer', whiteSpace: 'nowrap',
+                              border: `1px solid ${isExpanded ? 'rgba(44,95,191,0.35)' : BORDER}`,
+                              background: isExpanded ? 'rgba(44,95,191,0.08)' : 'transparent',
+                              color: isExpanded ? CYAN : TEXT_MU,
+                              cursor: 'pointer', whiteSpace: 'nowrap',
+                              transition: 'all 150ms',
                             }}
+                            onMouseEnter={(e) => { if (!isExpanded) { e.currentTarget.style.background = 'rgba(44,95,191,0.06)'; e.currentTarget.style.color = CYAN; } }}
+                            onMouseLeave={(e) => { if (!isExpanded) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = TEXT_MU; } }}
                           >
-                            <Mail size={13} />
-                            {t.jobs.sendEmail}
+                            <Truck size={12} />
+                            {t.backhaul.btnOpen}
+                            {isExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
                           </button>
                         </div>
-                      )}
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
+
+                    {/* ── Returlast expansion row ─────────────────────────── */}
+                    {isExpanded && (
+                      <tr key={`${job.id}-bh`}>
+                        <td colSpan={7} style={{
+                          padding: '0 16px 18px 16px',
+                          background: 'rgba(44,95,191,0.03)',
+                          borderBottom: isLast ? 'none' : '1px solid rgba(44,95,191,0.12)',
+                        }}>
+                          <div style={{ paddingTop: 14 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                              <Truck size={13} color={CYAN} />
+                              <span style={{ fontFamily: INTER, fontSize: 12, fontWeight: 700, color: TEXT_PR, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                                {t.backhaul.panelHeading}
+                              </span>
+                              {job.leverans && (
+                                <span style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU }}>
+                                  {t.backhaul.panelSub(job.leverans)}
+                                </span>
+                              )}
+                            </div>
+                            <ReturlastPanel
+                              jobId={job.id}
+                              job={job}
+                              data={backhaulData[job.id]}
+                              onLink={handleLink}
+                              linkingId={linkingId}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
             </tbody>

@@ -415,6 +415,14 @@ function KpiCard({ label, value, change, changeUp, accentColor, Icon: IconProp }
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
   const { t } = useLanguage();
+  const [backhaulStats, setBackhaulStats] = useState(null);
+
+  useEffect(() => {
+    apiFetch('/api/backhaul/stats')
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => d && setBackhaulStats(d))
+      .catch(() => {});
+  }, []);
 
   const revenueData   = buildRevenueData(quotes);
   const activity      = buildActivity(quotes, t);
@@ -518,6 +526,79 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
           changeUp={true}
         />
       </div>
+
+      {/* ── Tomma mil / Backhaul panel ───────────────────────────────────────── */}
+      {backhaulStats && backhaulStats.job_count > 0 && (
+        <div style={{
+          background: SURF,
+          border: `1px solid rgba(181,101,16,0.22)`,
+          borderRadius: 12, padding: '18px 22px',
+          borderLeft: `4px solid ${D_AMBER}`,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Truck size={14} color={D_AMBER} strokeWidth={1.5} />
+              <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT_PR }}>
+                {t.tommaMillPanel.heading}
+              </span>
+              <span style={{
+                fontFamily: INTER, fontSize: 9, fontWeight: 700, letterSpacing: '0.08em',
+                color: D_AMBER, background: `${D_AMBER}18`, border: `1px solid ${D_AMBER}35`,
+                borderRadius: 4, padding: '1px 6px',
+              }}>
+                {t.tommaMillPanel.badge}
+              </span>
+            </div>
+            {backhaulStats.pair_count > 0 && (
+              <span style={{ fontFamily: INTER, fontSize: 11, color: D_GREEN, fontWeight: 600 }}>
+                {t.tommaMillPanel.pairCount(backhaulStats.pair_count)}
+              </span>
+            )}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 14 }}>
+            <div style={{ borderRight: `1px solid ${BORDER}`, paddingRight: 16 }}>
+              <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: TEXT_MU, marginBottom: 4 }}>
+                {t.tommaMillPanel.badge}
+              </div>
+              <div style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: D_AMBER, letterSpacing: '-0.02em' }}>
+                {t.tommaMillPanel.deadheadKm(backhaulStats.deadhead_km)}
+              </div>
+              <div style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU, marginTop: 2 }}>
+                {t.tommaMillPanel.deadheadSek(backhaulStats.deadhead_sek)}
+              </div>
+            </div>
+
+            <div style={{ borderRight: `1px solid ${BORDER}`, paddingRight: 16 }}>
+              <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: TEXT_MU, marginBottom: 4 }}>
+                {t.tommaMillPanel.recoveredBy}
+              </div>
+              <div style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: D_GREEN, letterSpacing: '-0.02em' }}>
+                {t.tommaMillPanel.recoveredSek(backhaulStats.recovered_sek)}
+              </div>
+              <div style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU, marginTop: 2 }}>
+                {t.tommaMillPanel.recoveredKm(backhaulStats.recovered_km)}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: TEXT_MU, marginBottom: 4 }}>
+                TOTAL KM
+              </div>
+              <div style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: TEXT_PR, letterSpacing: '-0.02em' }}>
+                {backhaulStats.total_km.toLocaleString('sv-SE')} km
+              </div>
+              <div style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU, marginTop: 2 }}>
+                {backhaulStats.job_count} {backhaulStats.job_count === 1 ? 'job' : 'jobs'}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT_SEC, lineHeight: 1.5 }}>
+            {t.tommaMillPanel.summary(backhaulStats.deadhead_km, backhaulStats.deadhead_sek, backhaulStats.recovered_sek)}
+          </div>
+        </div>
+      )}
 
       {/* ── Middle row: chart + live events ──────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '62fr 38fr', gap: 16, minHeight: 300 }}>

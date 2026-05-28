@@ -322,6 +322,15 @@ db.exec(`
     source          TEXT    NOT NULL DEFAULT 'manual',
     created_at      TEXT    DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS job_pairs (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    job_id_a   INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    job_id_b   INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    linked_at  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(company_id, job_id_a, job_id_b)
+  );
 `);
 
 // ── Safe column migrations (pre-existing databases) ───────────────────────────

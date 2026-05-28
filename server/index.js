@@ -61,6 +61,7 @@ import co2Router                        from './routes/co2.js';
 import stripeRouter, { handleStripeWebhook } from './routes/stripe.js';
 import bankidRouter                     from './routes/bankid.js';
 import driverHoursRouter                from './routes/driverHours.js';
+import backhaulRouter                   from './routes/backhaul.js';
 import { authLimiter, analyseLimiter, apiLimiter } from './middleware/rateLimit.js';
 import { requireSubscription } from './middleware/requireSubscription.js';
 import db from './db.js';
@@ -187,6 +188,9 @@ app.use('/api/co2',               apiLimiter, requireAuth, requireRole(...OFFICE
 
 // Driver hours (EU 561) — agare + trafikledare
 app.use('/api/driver-hours',      apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE), driverHoursRouter);
+
+// Backhaul optimisation — agare + trafikledare
+app.use('/api/backhaul',          apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE), backhaulRouter);
 
 // Billing — agare only
 app.use('/api/stripe',            apiLimiter, requireAuth, requireRole(AGARE), stripeRouter);
