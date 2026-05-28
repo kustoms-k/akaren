@@ -822,16 +822,35 @@ export const EN = {
   },
 
   map: {
-    pickup:     'Pickup',
-    delivery:   'Delivery',
-    alertTitle: 'Road Alert',
-    warnings:   (n) => `${n} warning${n !== 1 ? 's' : ''}`,
-    loading:    'Loading map…',
-    error:      'Could not load map',
-    openInMaps: 'Open in Maps',
+    pickup:          'Pickup',
+    delivery:        'Delivery',
+    alertTitle:      'Road Alert',
+    warnings:        (n) => `${n} warning${n !== 1 ? 's' : ''}`,
+    loading:         'Loading map…',
+    error:           'Could not load map',
+    openInMaps:      'Open in Maps',
+    showDirectRoute: 'Show direct route (non-compliant)',
+    hideDirectRoute: 'Hide direct route',
+    directRouteLabel:'Direct route (LEZ violation)',
     trafficDisruption: (delay) => delay > 0
       ? `Traffic disruptions on route — +${delay} min added`
       : 'Traffic disruptions on route',
+    cost: {
+      fuel:           'Fuel',
+      congestion:     'Congestion charge',
+      bridge:         'Bridge toll',
+      lezFine:        'LEZ fine risk',
+      lezFineNote:    '(if direct route taken)',
+      detourExtra:    'LEZ detour surcharge',
+      detourExtraFull:(km, min) => `LEZ detour (+${Math.round(km)} km, +${Math.round(min)} min)`,
+      total:          'Estimated cost',
+      dieselNote:     (p) => `Diesel ${p} kr/L · Costs are estimates, excl. driver time`,
+      allZonesCompliant: 'Vehicle approved for all zones on this route.',
+      lezAvoided:     (zones, vClass, minClass) =>
+        `Route avoids ${zones} — vehicle is Euro ${vClass}, zone requires Euro ${minClass}.`,
+      lezViolationNote: (zones) =>
+        `Route passes through ${zones} — vehicle does not meet emission standard. Detour route not available.`,
+    },
   },
 
   onboarding: {
@@ -2069,16 +2088,35 @@ export const SV = {
   },
 
   map: {
-    pickup:     'Upphämtning',
-    delivery:   'Leverans',
-    alertTitle: 'Vägvarning',
-    warnings:   (n) => `${n} varning${n !== 1 ? 'ar' : ''}`,
-    loading:    'Laddar karta…',
-    error:      'Kunde inte ladda karta',
-    openInMaps: 'Öppna i kartor',
+    pickup:          'Upphämtning',
+    delivery:        'Leverans',
+    alertTitle:      'Vägvarning',
+    warnings:        (n) => `${n} varning${n !== 1 ? 'ar' : ''}`,
+    loading:         'Laddar karta…',
+    error:           'Kunde inte ladda karta',
+    openInMaps:      'Öppna i kartor',
+    showDirectRoute: 'Visa direkt rutt (ej tillåten)',
+    hideDirectRoute: 'Dölj direkt rutt',
+    directRouteLabel:'Direkt rutt (LEZ-överträdelse)',
     trafficDisruption: (delay) => delay > 0
       ? `Trafikstörningar på rutten — +${delay} min tillägg beräknat`
       : 'Trafikstörningar på rutten',
+    cost: {
+      fuel:           'Bränsle',
+      congestion:     'Trängselskatt',
+      bridge:         'Broavgift',
+      lezFine:        'LEZ-böter (risk)',
+      lezFineNote:    '(om direkt rutt tas)',
+      detourExtra:    'LEZ-omvägstillägg',
+      detourExtraFull:(km, min) => `LEZ-omväg (+${Math.round(km)} km, +${Math.round(min)} min)`,
+      total:          'Uppskattad kostnad',
+      dieselNote:     (p) => `Diesel ${p} kr/L · Kostnader är uppskattningar, exkl. förarens tid`,
+      allZonesCompliant: 'Fordonet är godkänt för alla zoner på rutten.',
+      lezAvoided:     (zones, vClass, minClass) =>
+        `Rutten undviker ${zones} — fordonet är Euro ${vClass}, zonen kräver Euro ${minClass}.`,
+      lezViolationNote: (zones) =>
+        `Rutten passerar ${zones} — fordonet uppfyller inte emissionskravet. Omvägsrutt ej tillgänglig.`,
+    },
   },
 
   onboarding: {

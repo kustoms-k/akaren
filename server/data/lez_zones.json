@@ -1,0 +1,153 @@
+{
+  "lez_zones": [
+    {
+      "id": "stockholm_klass_1",
+      "name": "Stockholm Miljözon klass 1",
+      "city": "stockholm",
+      "class": 1,
+      "min_euro_class": 6,
+      "heavy_only": true,
+      "fine_sek": 1000,
+      "info": "Klass 1 — tyngre fordon (>3,5t) kräver minst Euro VI",
+      "polygon": [
+        [18.050, 59.340], [18.085, 59.340], [18.091, 59.328],
+        [18.081, 59.312], [18.056, 59.309], [18.040, 59.319],
+        [18.044, 59.333], [18.050, 59.340]
+      ]
+    },
+    {
+      "id": "stockholm_klass_2",
+      "name": "Stockholm Miljözon klass 2",
+      "city": "stockholm",
+      "class": 2,
+      "min_euro_class": 5,
+      "heavy_only": true,
+      "fine_sek": 1000,
+      "info": "Klass 2 — tyngre fordon kräver minst Euro V",
+      "polygon": [
+        [18.018, 59.359], [18.111, 59.357], [18.120, 59.332],
+        [18.106, 59.297], [18.055, 59.289], [18.008, 59.307],
+        [18.003, 59.332], [18.018, 59.359]
+      ]
+    },
+    {
+      "id": "stockholm_klass_3",
+      "name": "Stockholm Miljözon klass 3",
+      "city": "stockholm",
+      "class": 3,
+      "min_euro_class": 5,
+      "heavy_only": true,
+      "fine_sek": 1000,
+      "info": "Klass 3 — yttre ring, kräver minst Euro V",
+      "polygon": [
+        [17.983, 59.378], [18.132, 59.375], [18.150, 59.343],
+        [18.136, 59.271], [18.067, 59.262], [17.988, 59.281],
+        [17.958, 59.333], [17.983, 59.378]
+      ]
+    },
+    {
+      "id": "gothenburg_lez",
+      "name": "Göteborg Miljözon",
+      "city": "gothenburg",
+      "class": 1,
+      "min_euro_class": 6,
+      "heavy_only": true,
+      "fine_sek": 1000,
+      "info": "Göteborg centrum — tyngre fordon kräver minst Euro VI",
+      "polygon": [
+        [11.942, 57.722], [11.999, 57.720], [12.004, 57.700],
+        [11.991, 57.687], [11.956, 57.687], [11.935, 57.700],
+        [11.942, 57.722]
+      ]
+    },
+    {
+      "id": "malmo_lez",
+      "name": "Malmö Miljözon",
+      "city": "malmo",
+      "class": 1,
+      "min_euro_class": 5,
+      "heavy_only": true,
+      "fine_sek": 1000,
+      "info": "Malmö centrum — tyngre fordon kräver minst Euro V",
+      "polygon": [
+        [12.977, 55.623], [13.031, 55.620], [13.036, 55.600],
+        [13.021, 55.587], [12.987, 55.589], [12.971, 55.602],
+        [12.977, 55.623]
+      ]
+    }
+  ],
+
+  "congestion_zones": [
+    {
+      "id": "stockholm_trangsel",
+      "name": "Stockholm trängselskatt",
+      "city": "stockholm",
+      "daily_max_sek": 135,
+      "charged_days": [1, 2, 3, 4, 5],
+      "slots": [
+        { "from": "06:00", "to": "06:29", "sek": 11 },
+        { "from": "06:30", "to": "06:59", "sek": 22 },
+        { "from": "07:00", "to": "07:59", "sek": 45 },
+        { "from": "08:00", "to": "08:29", "sek": 22 },
+        { "from": "08:30", "to": "14:59", "sek": 11 },
+        { "from": "15:00", "to": "15:29", "sek": 22 },
+        { "from": "15:30", "to": "15:59", "sek": 45 },
+        { "from": "16:00", "to": "17:29", "sek": 45 },
+        { "from": "17:30", "to": "17:59", "sek": 22 },
+        { "from": "18:00", "to": "18:29", "sek": 11 }
+      ],
+      "polygon": [
+        [18.015, 59.358], [18.109, 59.355], [18.117, 59.330],
+        [18.103, 59.297], [18.053, 59.289], [18.009, 59.306],
+        [18.001, 59.330], [18.015, 59.358]
+      ]
+    },
+    {
+      "id": "gothenburg_trangsel",
+      "name": "Göteborg trängselskatt",
+      "city": "gothenburg",
+      "daily_max_sek": 60,
+      "charged_days": [1, 2, 3, 4, 5],
+      "slots": [
+        { "from": "06:00", "to": "06:29", "sek": 8 },
+        { "from": "06:30", "to": "07:29", "sek": 13 },
+        { "from": "07:30", "to": "08:59", "sek": 18 },
+        { "from": "09:00", "to": "09:29", "sek": 13 },
+        { "from": "09:30", "to": "14:59", "sek": 8 },
+        { "from": "15:00", "to": "15:29", "sek": 13 },
+        { "from": "15:30", "to": "16:59", "sek": 18 },
+        { "from": "17:00", "to": "17:59", "sek": 13 },
+        { "from": "18:00", "to": "18:29", "sek": 8 }
+      ],
+      "polygon": [
+        [11.939, 57.721], [12.001, 57.719], [12.006, 57.698],
+        [11.991, 57.685], [11.954, 57.685], [11.933, 57.698],
+        [11.939, 57.721]
+      ]
+    }
+  ],
+
+  "bridge_tolls": [
+    {
+      "id": "oresundsbron",
+      "name": "Öresundsbron",
+      "toll_sek": 350,
+      "midpoint": [12.930, 55.640],
+      "radius_km": 2.5
+    },
+    {
+      "id": "sundsvallsbron",
+      "name": "Sundsvallsbron",
+      "toll_sek": 75,
+      "midpoint": [17.320, 62.393],
+      "radius_km": 1.5
+    },
+    {
+      "id": "motalabron",
+      "name": "Motalabron",
+      "toll_sek": 0,
+      "midpoint": [14.565, 58.549],
+      "radius_km": 1.5
+    }
+  ]
+}

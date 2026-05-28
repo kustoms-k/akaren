@@ -931,11 +931,13 @@ function AppInner() {
     setRouteAdvisory(null);
     setRouteData(null);
 
-    // Primary: /api/route — ORS HGV routing + Trafikverket disruptions + map data
+    // Primary: /api/route — ORS HGV routing + LEZ avoidance + cost breakdown
+    const vehicle_id      = parsed?.fordon_rekommenderat ?? parsed?.fordon_id ?? null;
+    const departure_time  = parsed?.datum ?? null;
     const routeCall = apiFetch('/api/route', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ pickup, delivery }),
+      body:    JSON.stringify({ pickup, delivery, vehicle_id, departure_time }),
     })
       .then((r) => r.ok ? r.json() : null)
       .then((d) => {
