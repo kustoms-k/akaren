@@ -305,7 +305,7 @@ export function AnalysisStream({
               color: 'rgba(201,146,30,0.6)',
               marginBottom: 6,
             }}>
-              Offert / Quote
+              {t.newQuote.quotePrefix}
             </div>
             <div style={{
               fontFamily: MONO,

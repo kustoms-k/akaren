@@ -121,14 +121,14 @@ const fmtPrice = (n) =>
   new Intl.NumberFormat('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 
 // ─── Live dashboard helpers ───────────────────────────────────────────────────
-function fmtTimeAgo(isoStr) {
+function fmtTimeAgo(isoStr, t) {
   const ms   = Date.now() - new Date(String(isoStr).replace(' ', 'T')).getTime();
   const mins = Math.floor(ms / 60000);
-  if (mins < 1)  return 'Nyss';
-  if (mins < 60) return `${mins} min`;
+  if (mins < 1)  return t.topbar.timeAgo.justNow;
+  if (mins < 60) return t.topbar.timeAgo.mins(mins);
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24)  return `${hrs}h`;
-  return `${Math.floor(hrs / 24)}d`;
+  if (hrs < 24)  return t.topbar.timeAgo.hours(hrs);
+  return t.topbar.timeAgo.days(Math.floor(hrs / 24));
 }
 
 function buildRevenueData(quotes) {
@@ -161,7 +161,7 @@ function buildActivity(quotes, t) {
       dot:  isJob ? '#2ecc71' : AMBER,
       text: isJob ? t.dashboard.activity.jobSaved : t.dashboard.activity.quoteCreated,
       sub:  route,
-      time: fmtTimeAgo(q.created_at),
+      time: fmtTimeAgo(q.created_at, t),
     };
   });
 }
@@ -529,7 +529,7 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
               color: D_AMBER, background: `${D_AMBER}18`, border: `1px solid ${D_AMBER}35`,
               borderRadius: 5, padding: '2px 8px',
             }}>
-              MÅNADSVIS
+              {t.dashboard.monthlyBadge}
             </span>
           </div>
           <div style={{ fontSize: 11, color: TEXT_MU, fontFamily: INTER, marginBottom: 18 }}>
@@ -566,7 +566,7 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
                 labelStyle={{ color: TEXT_SEC }}
                 formatter={(v) => [
                   new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(v) + ' kr',
-                  'Intäkt',
+                  t.dashboard.revenueLabel,
                 ]}
               />
               <Bar dataKey="value" radius={[4, 4, 0, 0]}>
@@ -591,7 +591,7 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
               {t.dashboard.recentActivity}
             </span>
             <span style={{ fontSize: 10, color: TEXT_MU, fontFamily: INTER, letterSpacing: '0.06em' }}>
-              {quotes.length} TOTALT
+              {t.dashboard.totalCount(quotes.length)}
             </span>
           </div>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 14, overflowY: 'auto' }}>
@@ -894,9 +894,9 @@ function AppInner() {
     window.history.replaceState({}, '', clean);
     setActivePage('settings');
     if (stripe === 'success') {
-      setFortnoxResult({ message: 'Prenumeration aktiverad — tack!', variant: 'success' });
+      setFortnoxResult({ message: t.subscriptionGate.stripeSuccess, variant: 'success' });
     } else if (stripe === 'cancel') {
-      setFortnoxResult({ message: 'Betalning avbruten — prenumerationen är oförändrad.', variant: 'error' });
+      setFortnoxResult({ message: t.subscriptionGate.stripeCancel, variant: 'error' });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1168,7 +1168,7 @@ function AppInner() {
         });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         setQuoteStatus(statusOnly);
-        setToast({ message: `Offert markerad som ${statusOnly}`, variant: 'success' });
+        setToast({ message: t.newQuote.statusUpdated(statusOnly), variant: 'success' });
         // Re-sync pricing insights so win-rate panel reflects the new outcome
         syncPricingInsights(localStorage.getItem('auth_token')).catch(() => {});
       } catch (e) {
@@ -1198,7 +1198,7 @@ function AppInner() {
     const result = await r.json();
     setQuoteStatus('skickad');
     setSavedCustEmail(to);
-    const msg = result.simulated ? 'E-post simulerad (SMTP ej konfigurerat)' : `Offert skickad till ${to}`;
+    const msg = result.simulated ? t.newQuote.emailSimulated : t.newQuote.emailSentTo(to);
     setToast({ message: msg, variant: result.simulated ? 'warning' : 'success' });
   }
 
@@ -2015,11 +2015,11 @@ function AppInner() {
             boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
           }}>
             <div style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600, color: TEXT_MU, marginBottom: 20 }}>
-              Skicka offert per e-post
+              {t.quoteCard.sendByEmail}
             </div>
             <label style={{ display: 'block', marginBottom: 14 }}>
               <div style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 600, color: TEXT_MU, marginBottom: 5 }}>
-                Kundens e-postadress *
+                {t.quoteCard.emailModal.emailLabel}
               </div>
               <input
                 autoFocus
@@ -2037,7 +2037,7 @@ function AppInner() {
             </label>
             <label style={{ display: 'block', marginBottom: 14 }}>
               <div style={{ fontFamily: INTER, fontSize: '0.5625rem', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 600, color: TEXT_MU, marginBottom: 5 }}>
-                Kundnamn (valfritt)
+                {t.quoteCard.emailModal.nameLabel}
               </div>
               <input
                 type="text"
@@ -2215,6 +2215,7 @@ class ErrorBoundary extends Component {
 // ─── Operations compound page (Jobs + Dispatch) ──────────────────────────────
 function OperationsPage() {
   const [tab, setTab] = useState('jobs');
+  const { t } = useLanguage();
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{
@@ -2223,10 +2224,10 @@ function OperationsPage() {
       }}>
         <div className="sub-tabs">
           <button className={`sub-tab${tab === 'jobs' ? ' active' : ''}`} onClick={() => setTab('jobs')}>
-            Uppdrag
+            {t.nav.jobs}
           </button>
           <button className={`sub-tab${tab === 'dispatch' ? ' active' : ''}`} onClick={() => setTab('dispatch')}>
-            Planering
+            {t.dispatch.planning}
           </button>
         </div>
       </div>
@@ -2241,6 +2242,7 @@ function OperationsPage() {
 // ─── Fleet compound page (Fleet + CO₂) ───────────────────────────────────────
 function FleetEnvPage() {
   const [tab, setTab] = useState('fleet');
+  const { t } = useLanguage();
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{
@@ -2249,10 +2251,10 @@ function FleetEnvPage() {
       }}>
         <div className="sub-tabs">
           <button className={`sub-tab${tab === 'fleet' ? ' active' : ''}`} onClick={() => setTab('fleet')}>
-            Fordon
+            {t.fleet.vehicleTab}
           </button>
           <button className={`sub-tab${tab === 'co2' ? ' active' : ''}`} onClick={() => setTab('co2')}>
-            CO₂ & Utsläpp
+            {t.co2.title}
           </button>
         </div>
       </div>

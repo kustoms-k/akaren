@@ -291,10 +291,10 @@ export function Fleet() {
 
           <div style={{ display: 'flex', gap: 12 }}>
             {[
-              { label: t.fleet.cards.total,                         value: fleet.length,                                          unit: lang === 'sv' ? 'st' : 'pcs' },
+              { label: t.fleet.cards.total,                         value: fleet.length,                                          unit: t.fleet.cards.unitPcs },
               { label: t.fleet.cards.lez(fleet.length),             value: fleet.filter((v) => v.lez_godkänd).length,             unit: '' },
               { label: t.fleet.cards.withData(fleet.length),        value: fleet.filter((v) => v.monthly_hours > 0).length,       unit: '' },
-              { label: t.fleet.cards.underperforming,               value: lowCount,                                              unit: lang === 'sv' ? 'fordon' : 'vehicles', warn: lowCount > 0 },
+              { label: t.fleet.cards.underperforming,               value: lowCount,                                              unit: t.fleet.cards.unitVehicles, warn: lowCount > 0 },
             ].map((card) => (
               <div key={card.label} style={{
                 flex: 1, background: WHITE,

@@ -197,7 +197,7 @@ function BillingCard() {
   if (loading) {
     return (
       <div style={{ padding: 32, fontFamily: OUTFIT, fontSize: 13, color: MUTED2, textAlign: 'center' }}>
-        Laddar…
+        {t.settings.loading}
       </div>
     );
   }
@@ -326,7 +326,7 @@ function FortnoxPanel({ toast, setToast }) {
       const { url } = await r.json();
       window.location.href = url;
     } catch (e) {
-      setToast?.({ message: `Kunde inte starta anslutning: ${e.message}`, variant: 'error' });
+      setToast?.({ message: t.settings.fortnox.connectError(e.message), variant: 'error' });
       setConnecting(false);
     }
   }
@@ -350,7 +350,7 @@ function FortnoxPanel({ toast, setToast }) {
     try {
       const r = await apiFetch('/api/fortnox/disconnect', { method: 'DELETE' });
       if (!r.ok) throw new Error((await r.json()).error);
-      setToast?.({ message: 'Fortnox frånkopplad / Fortnox disconnected', variant: 'success' });
+      setToast?.({ message: t.settings.fortnox.disconnected, variant: 'success' });
       fetchStatus();
     } catch (e) {
       setToast?.({ message: `Frånkoppling misslyckades: ${e.message}`, variant: 'error' });
@@ -366,7 +366,7 @@ function FortnoxPanel({ toast, setToast }) {
   if (loading) {
     return (
       <div style={{ padding: 32, fontFamily: INTER, fontSize: 13, color: MUTED, textAlign: 'center' }}>
-        Laddar…
+        {t.settings.loading}
       </div>
     );
   }
@@ -575,7 +575,7 @@ export function Settings({ onFortnoxResult }) {
 
         {loading ? (
           <div style={{ padding: 32, fontFamily: INTER, fontSize: 13, color: MUTED, textAlign: 'center' }}>
-            Laddar…
+            {t.settings.loading}
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
@@ -692,26 +692,6 @@ export function Settings({ onFortnoxResult }) {
   );
 }
 
-// ─── Shared label maps ────────────────────────────────────────────────────────
-const ENTITY_LABELS = {
-  quote:           'Offert',
-  job:             'Uppdrag',
-  fleet:           'Fordon',
-  driver:          'Förare',
-  invoice:         'Faktura',
-  template:        'Mall',
-  customer:        'Kund',
-  financial_report:'Finansrapport',
-  customer_portal: 'Kundportal',
-};
-
-const ACTION_LABELS = {
-  create: 'Skapad',
-  update: 'Uppdaterad',
-  delete: 'Raderad',
-  view:   'Visad',
-};
-
 const ACTION_COLORS = {
   create: { bg: 'rgba(30,120,80,0.10)',   color: '#1E7A50', border: 'rgba(30,120,80,0.25)'   },
   update: { bg: 'rgba(44,95,191,0.10)',   color: '#2C5FBF', border: 'rgba(44,95,191,0.25)'   },
@@ -722,12 +702,12 @@ const ACTION_COLORS = {
 // ─── Before/After diff view ───────────────────────────────────────────────────
 const SKIP_DIFF_KEYS = new Set(['company_id', 'created_at', 'updated_at', 'password_hash', 'invite_token']);
 
-function DiffView({ before, after }) {
+function DiffView({ before, after, t }) {
   let bObj = null, aObj = null;
   try { bObj = before ? JSON.parse(before) : null; } catch {}
   try { aObj = after  ? JSON.parse(after)  : null; } catch {}
 
-  if (!bObj && !aObj) return <div style={{ padding: '10px 16px', fontFamily: MONO, fontSize: 11, color: MUTED }}>Ingen data</div>;
+  if (!bObj && !aObj) return <div style={{ padding: '10px 16px', fontFamily: MONO, fontSize: 11, color: MUTED }}>{t.audit.diff.noData}</div>;
 
   const allKeys = [...new Set([
     ...(bObj ? Object.keys(bObj) : []),
@@ -737,7 +717,7 @@ function DiffView({ before, after }) {
   const changed = allKeys.filter((k) => JSON.stringify(bObj?.[k]) !== JSON.stringify(aObj?.[k]));
 
   if (changed.length === 0 && (bObj || aObj)) {
-    return <div style={{ padding: '10px 16px', fontFamily: INTER, fontSize: 11, color: MUTED }}>Inga ändringar i spårade fält.</div>;
+    return <div style={{ padding: '10px 16px', fontFamily: INTER, fontSize: 11, color: MUTED }}>{t.audit.diff.noChanges}</div>;
   }
 
   const cellStyle = {
@@ -750,7 +730,7 @@ function DiffView({ before, after }) {
       {bObj && changed.length > 0 && (
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#A82424', marginBottom: 6, textTransform: 'uppercase' }}>
-            FÖR
+            {t.audit.diff.before}
           </div>
           {changed.map((k) => bObj[k] !== undefined ? (
             <div key={k} style={{ display: 'flex', gap: 6, marginBottom: 3 }}>
@@ -760,14 +740,14 @@ function DiffView({ before, after }) {
               </span>
             </div>
           ) : (
-            <div key={k} style={{ ...cellStyle, color: MUTED, marginBottom: 3 }}>({k} ej satt)</div>
+            <div key={k} style={{ ...cellStyle, color: MUTED, marginBottom: 3 }}>{t.audit.diff.notSet(k)}</div>
           ))}
         </div>
       )}
       {aObj && changed.length > 0 && (
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#1E7A50', marginBottom: 6, textTransform: 'uppercase' }}>
-            EFTER
+            {t.audit.diff.after}
           </div>
           {changed.map((k) => aObj[k] !== undefined ? (
             <div key={k} style={{ display: 'flex', gap: 6, marginBottom: 3 }}>
@@ -777,13 +757,15 @@ function DiffView({ before, after }) {
               </span>
             </div>
           ) : (
-            <div key={k} style={{ ...cellStyle, color: MUTED, marginBottom: 3 }}>({k} raderad)</div>
+            <div key={k} style={{ ...cellStyle, color: MUTED, marginBottom: 3 }}>{t.audit.diff.deleted(k)}</div>
           ))}
         </div>
       )}
       {!bObj && aObj && (
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#1E7A50', marginBottom: 6, textTransform: 'uppercase' }}>SKAPAD</div>
+          <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#1E7A50', marginBottom: 6, textTransform: 'uppercase' }}>
+            {t.audit.diff.created}
+          </div>
           {Object.entries(aObj).filter(([k]) => !SKIP_DIFF_KEYS.has(k)).map(([k, v]) => (
             <div key={k} style={{ display: 'flex', gap: 6, marginBottom: 3 }}>
               <span style={{ ...cellStyle, background: 'rgba(30,120,80,0.08)', color: '#1E7A50', flexShrink: 0 }}>{k}</span>
@@ -798,12 +780,13 @@ function DiffView({ before, after }) {
 
 // ─── AuditPanel ───────────────────────────────────────────────────────────────
 function AuditPanel({ section, sectionHead }) {
-  const [rows,      setRows]      = useState([]);
-  const [total,     setTotal]     = useState(0);
-  const [userList,  setUserList]  = useState([]);
-  const [loading,   setLoading]   = useState(false);
-  const [expanded,  setExpanded]  = useState(null);
-  const [offset,    setOffset]    = useState(0);
+  const { t }                   = useLanguage();
+  const [rows,      setRows]    = useState([]);
+  const [total,     setTotal]   = useState(0);
+  const [userList,  setUserList]= useState([]);
+  const [loading,   setLoading] = useState(false);
+  const [expanded,  setExpanded]= useState(null);
+  const [offset,    setOffset]  = useState(0);
   const LIMIT = 30;
 
   const [fUser,   setFUser]   = useState('');
@@ -859,9 +842,9 @@ function AuditPanel({ section, sectionHead }) {
     <div style={section}>
       <div style={sectionHead}>
         <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
-          Revisionslogg
+          {t.audit.sectionHeading}
         </span>
-        <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>{total} poster</span>
+        <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>{t.audit.eventsTotal(total)}</span>
       </div>
 
       {/* Filters */}
@@ -870,23 +853,26 @@ function AuditPanel({ section, sectionHead }) {
         display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'flex-end',
       }}>
         <select value={fUser} onChange={(e) => setFUser(e.target.value)} style={selStyle}>
-          <option value="">Alla användare</option>
+          <option value="">{t.audit.filters.allUsers}</option>
           {userList.map((u) => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
         </select>
 
         <select value={fEntity} onChange={(e) => setFEntity(e.target.value)} style={selStyle}>
-          <option value="">Alla entiteter</option>
-          {Object.entries(ENTITY_LABELS).map(([v, lbl]) => <option key={v} value={v}>{lbl}</option>)}
-          <option value="financial_report">Finansrapport</option>
+          <option value="">{t.audit.filters.allEntities}</option>
+          {Object.keys(t.audit.entities).map((v) => (
+            <option key={v} value={v}>{t.audit.entities[v]}</option>
+          ))}
         </select>
 
         <select value={fAction} onChange={(e) => setFAction(e.target.value)} style={selStyle}>
-          <option value="">Alla åtgärder</option>
-          {Object.entries(ACTION_LABELS).map(([v, lbl]) => <option key={v} value={v}>{lbl}</option>)}
+          <option value="">{t.audit.filters.all}</option>
+          {Object.keys(t.audit.actions).map((v) => (
+            <option key={v} value={v}>{t.audit.actions[v]}</option>
+          ))}
         </select>
 
-        <input type="date" value={fFrom} onChange={(e) => setFFrom(e.target.value)} style={inputDateStyle} title="Från datum" />
-        <input type="date" value={fTo}   onChange={(e) => setFTo(e.target.value)}   style={inputDateStyle} title="Till datum" />
+        <input type="date" value={fFrom} onChange={(e) => setFFrom(e.target.value)} style={inputDateStyle} title={t.audit.filters.from} />
+        <input type="date" value={fTo}   onChange={(e) => setFTo(e.target.value)}   style={inputDateStyle} title={t.audit.filters.to} />
 
         <button
           onClick={applyFilters}
@@ -896,7 +882,7 @@ function AuditPanel({ section, sectionHead }) {
             borderRadius: 7, padding: '7px 16px', cursor: 'pointer',
           }}
         >
-          Filtrera
+          {t.audit.filters.filterBtn}
         </button>
         <button
           onClick={() => {
@@ -910,17 +896,17 @@ function AuditPanel({ section, sectionHead }) {
             cursor: 'pointer', color: MUTED,
           }}
         >
-          Rensa
+          {t.audit.filters.clearBtn}
         </button>
       </div>
 
       {loading && (
-        <div style={{ padding: 24, fontFamily: INTER, fontSize: 13, color: MUTED, textAlign: 'center' }}>Laddar…</div>
+        <div style={{ padding: 24, fontFamily: INTER, fontSize: 13, color: MUTED, textAlign: 'center' }}>{t.audit.loading}</div>
       )}
 
       {!loading && rows.length === 0 && (
         <div style={{ padding: 32, fontFamily: INTER, fontSize: 13, color: MUTED, textAlign: 'center', fontStyle: 'italic' }}>
-          Inga poster hittades.
+          {t.audit.noResults}
         </div>
       )}
 
@@ -929,7 +915,7 @@ function AuditPanel({ section, sectionHead }) {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: SURF, borderBottom: `1px solid ${BORDER}` }}>
-                {['Tid', 'Användare', 'Åtgärd', 'Enhet', 'IP', ''].map((h) => (
+                {t.audit.tableHeaders.map((h) => (
                   <th key={h} style={{
                     padding: '8px 12px', textAlign: 'left',
                     fontFamily: INTER, fontSize: 10, fontWeight: 600,
@@ -968,11 +954,11 @@ function AuditPanel({ section, sectionHead }) {
                           padding: '2px 8px', borderRadius: 20, fontFamily: INTER,
                           background: actionCfg.bg, color: actionCfg.color, border: `1px solid ${actionCfg.border}`,
                         }}>
-                          {ACTION_LABELS[row.action] ?? row.action}
+                          {t.audit.actions[row.action] ?? row.action}
                         </span>
                       </td>
                       <td style={{ padding: '9px 12px', fontFamily: INTER, fontSize: 12, color: MUTED }}>
-                        {ENTITY_LABELS[row.entity_type] ?? row.entity_type}
+                        {t.audit.entities[row.entity_type] ?? row.entity_type}
                         {row.entity_id && <span style={{ fontFamily: MONO, fontSize: 10, marginLeft: 4 }}>#{row.entity_id}</span>}
                       </td>
                       <td style={{ padding: '9px 12px', fontFamily: MONO, fontSize: 10, color: MUTED }}>
@@ -989,7 +975,7 @@ function AuditPanel({ section, sectionHead }) {
                     {isExpanded && (
                       <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
                         <td colSpan={6} style={{ padding: 0, background: '#faf9f6' }}>
-                          <DiffView before={row.before_value} after={row.after_value} />
+                          <DiffView before={row.before_value} after={row.after_value} t={t} />
                         </td>
                       </tr>
                     )}
@@ -1009,7 +995,7 @@ function AuditPanel({ section, sectionHead }) {
           background: SURF,
         }}>
           <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>
-            {offset + 1}–{Math.min(offset + LIMIT, total)} av {total}
+            {t.audit.eventsRange(offset + 1, Math.min(offset + LIMIT, total), total)}
           </span>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
@@ -1021,7 +1007,7 @@ function AuditPanel({ section, sectionHead }) {
                 color: offset === 0 ? MUTED : TEXT, cursor: offset === 0 ? 'not-allowed' : 'pointer',
               }}
             >
-              ← Föregående
+              ← {t.audit.pagination.prev}
             </button>
             <button
               disabled={offset + LIMIT >= total}
@@ -1032,7 +1018,7 @@ function AuditPanel({ section, sectionHead }) {
                 color: offset + LIMIT >= total ? MUTED : TEXT, cursor: offset + LIMIT >= total ? 'not-allowed' : 'pointer',
               }}
             >
-              Nästa →
+              {t.audit.pagination.next} →
             </button>
           </div>
         </div>
@@ -1043,6 +1029,7 @@ function AuditPanel({ section, sectionHead }) {
 
 // ─── ExportPanel ──────────────────────────────────────────────────────────────
 function ExportPanel({ section, sectionHead }) {
+  const { t }                   = useLanguage();
   const [exporting, setExporting] = useState(false);
   const [error,     setError]     = useState(null);
 
@@ -1071,14 +1058,13 @@ function ExportPanel({ section, sectionHead }) {
     <div style={section}>
       <div style={sectionHead}>
         <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
-          Dataexport (GDPR)
+          {t.settings.export.heading}
         </span>
-        <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>Portabilitet</span>
+        <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>{t.settings.export.portability}</span>
       </div>
       <div style={{ padding: '20px 20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: 0, lineHeight: 1.6, maxWidth: 520 }}>
-          Exportera all företagsdata som en JSON-fil för GDPR-portabilitet.
-          Filen innehåller offerter, uppdrag, fakturor, förare, fordon, kunder och revisionslogg.
+          {t.settings.export.desc}
         </p>
 
         {error && (
@@ -1106,7 +1092,7 @@ function ExportPanel({ section, sectionHead }) {
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M7 1v8M4 6l3 3 3-3M2 10v2a1 1 0 001 1h8a1 1 0 001-1v-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            {exporting ? 'Exporterar…' : 'Exportera all data'}
+            {exporting ? t.settings.export.exporting : t.settings.export.exportBtn}
           </button>
         </div>
       </div>
@@ -1115,14 +1101,6 @@ function ExportPanel({ section, sectionHead }) {
 }
 
 // ─── UsersPanel ───────────────────────────────────────────────────────────────
-const ROLE_LABELS = {
-  agare:        'Ägare',
-  trafikledare: 'Trafikledare',
-  ekonomi:      'Ekonomi',
-  forare:       'Förare',
-  revisor:      'Revisor',
-};
-
 const ROLE_COLORS = {
   agare:        { bg: 'rgba(168,120,24,0.10)', color: '#A87818', border: 'rgba(168,120,24,0.25)' },
   trafikledare: { bg: 'rgba(44,95,191,0.10)',  color: '#2C5FBF', border: 'rgba(44,95,191,0.25)'  },
@@ -1131,7 +1109,7 @@ const ROLE_COLORS = {
   revisor:      { bg: 'rgba(100,100,100,0.10)',color: '#606060', border: 'rgba(100,100,100,0.25)'},
 };
 
-function RoleBadge({ role }) {
+function RoleBadge({ role, t }) {
   const cfg = ROLE_COLORS[role] ?? ROLE_COLORS.revisor;
   return (
     <span style={{
@@ -1139,12 +1117,13 @@ function RoleBadge({ role }) {
       padding: '2px 8px', borderRadius: 20, fontFamily: INTER,
       background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
     }}>
-      {ROLE_LABELS[role] ?? role}
+      {t.settings.roles[role] ?? role}
     </span>
   );
 }
 
 function UsersPanel({ section, sectionHead, setToast }) {
+  const { t }                   = useLanguage();
   const [users,    setUsers]    = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -1172,11 +1151,11 @@ function UsersPanel({ section, sectionHead, setToast }) {
         body: JSON.stringify(invite),
       });
       const data = await r.json();
-      if (!r.ok) throw new Error(data.error ?? 'Fel');
+      if (!r.ok) throw new Error(data.error ?? t.settings.users.errorFallback);
       setToast({
         message: data.simulated
-          ? `Inbjudan simulerad (SMTP ej konfigurerat) — ${invite.email}`
-          : `Inbjudan skickad till ${invite.email}`,
+          ? t.settings.users.inviteSimulated(invite.email)
+          : t.settings.users.inviteSent(invite.email),
         variant: 'success',
       });
       setInvite({ email: '', name: '', role: 'trafikledare' });
@@ -1196,7 +1175,7 @@ function UsersPanel({ section, sectionHead, setToast }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active: u.active === 0 ? true : false }),
       });
-      if (!r.ok) throw new Error('Fel vid uppdatering');
+      if (!r.ok) throw new Error(t.settings.users.updateError);
       load();
     } catch (err) {
       setToast({ message: err.message, variant: 'error' });
@@ -1218,7 +1197,7 @@ function UsersPanel({ section, sectionHead, setToast }) {
     <div style={section}>
       <div style={sectionHead}>
         <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
-          Användare
+          {t.settings.users.heading}
         </span>
         <button
           onClick={() => setShowForm((v) => !v)}
@@ -1228,7 +1207,7 @@ function UsersPanel({ section, sectionHead, setToast }) {
             borderRadius: 7, padding: '6px 14px', cursor: 'pointer',
           }}
         >
-          + Bjud in
+          {t.settings.users.invite}
         </button>
       </div>
 
@@ -1239,7 +1218,7 @@ function UsersPanel({ section, sectionHead, setToast }) {
         }}>
           <label style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 180px' }}>
             <span style={{ fontFamily: INTER, fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: MUTED }}>
-              E-post *
+              {t.settings.users.emailLabel}
             </span>
             <input
               autoFocus type="email" required
@@ -1251,7 +1230,7 @@ function UsersPanel({ section, sectionHead, setToast }) {
           </label>
           <label style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 140px' }}>
             <span style={{ fontFamily: INTER, fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: MUTED }}>
-              Namn (valfritt)
+              {t.settings.users.nameLabel}
             </span>
             <input
               type="text"
@@ -1263,15 +1242,15 @@ function UsersPanel({ section, sectionHead, setToast }) {
           </label>
           <label style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '0 0 150px' }}>
             <span style={{ fontFamily: INTER, fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: MUTED }}>
-              Roll
+              {t.settings.users.roleLabel}
             </span>
             <select
               value={invite.role}
               onChange={(e) => setInvite((p) => ({ ...p, role: e.target.value }))}
               style={{ fontFamily: INTER, fontSize: 13, padding: '8px 10px', border: `1px solid ${BORDER}`, borderRadius: 7, outline: 'none', background: WHITE, color: TEXT }}
             >
-              {Object.entries(ROLE_LABELS).map(([v, label]) => (
-                <option key={v} value={v}>{label}</option>
+              {Object.keys(t.settings.roles).map((v) => (
+                <option key={v} value={v}>{t.settings.roles[v]}</option>
               ))}
             </select>
           </label>
@@ -1285,13 +1264,13 @@ function UsersPanel({ section, sectionHead, setToast }) {
                 cursor: sending ? 'not-allowed' : 'pointer',
               }}
             >
-              {sending ? 'Skickar…' : 'Skicka inbjudan'}
+              {sending ? t.settings.users.sending : t.settings.users.sendInvite}
             </button>
             <button
               type="button" onClick={() => setShowForm(false)}
               style={{ fontFamily: INTER, fontSize: 12, background: 'none', border: `1px solid ${BORDER}`, borderRadius: 7, padding: '8px 14px', cursor: 'pointer', color: MUTED }}
             >
-              Avbryt
+              {t.settings.users.cancel}
             </button>
           </div>
         </form>
@@ -1299,14 +1278,14 @@ function UsersPanel({ section, sectionHead, setToast }) {
 
       {loading ? (
         <div style={{ padding: 24, fontFamily: INTER, fontSize: 13, color: MUTED, textAlign: 'center' }}>
-          Laddar…
+          {t.settings.users.loading}
         </div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: SURF, borderBottom: `1px solid ${BORDER}` }}>
-                {['Namn', 'E-post', 'Roll', 'Status', ''].map((h) => (
+                {t.settings.users.tableHeaders.map((h) => (
                   <th key={h} style={{
                     padding: '9px 14px', textAlign: h === '' ? 'right' : 'left',
                     fontFamily: INTER, fontSize: 11, fontWeight: 600,
@@ -1334,7 +1313,7 @@ function UsersPanel({ section, sectionHead, setToast }) {
                   </td>
                   <td style={{ padding: '10px 14px' }}>
                     {u.id === me?.id ? (
-                      <RoleBadge role={u.role} />
+                      <RoleBadge role={u.role} t={t} />
                     ) : (
                       <select
                         value={u.role}
@@ -1345,7 +1324,7 @@ function UsersPanel({ section, sectionHead, setToast }) {
                           background: WHITE, color: TEXT, cursor: 'pointer',
                         }}
                       >
-                        {Object.entries(ROLE_LABELS).map(([v, label]) => (
+                        {Object.entries(t.settings.roles).map(([v, label]) => (
                           <option key={v} value={v}>{label}</option>
                         ))}
                       </select>
@@ -1359,7 +1338,7 @@ function UsersPanel({ section, sectionHead, setToast }) {
                       color: u.active ? '#1E7A50' : '#A82424',
                       border: `1px solid ${u.active ? 'rgba(30,120,80,0.25)' : 'rgba(168,36,36,0.22)'}`,
                     }}>
-                      {u.active ? 'Aktiv' : 'Inaktiv'}
+                      {u.active ? t.settings.users.statusActive : t.settings.users.statusInactive}
                     </span>
                   </td>
                   <td style={{ padding: '10px 14px', textAlign: 'right' }}>
@@ -1374,7 +1353,7 @@ function UsersPanel({ section, sectionHead, setToast }) {
                           borderRadius: 6, padding: '4px 10px', cursor: 'pointer',
                         }}
                       >
-                        {u.active ? 'Inaktivera' : 'Aktivera'}
+                        {u.active ? t.settings.users.deactivate : t.settings.users.activate}
                       </button>
                     )}
                   </td>

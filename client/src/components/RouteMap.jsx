@@ -79,7 +79,7 @@ function disruptionIcon(Lf) {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function RouteMap({ routeData, loading }) {
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
   const containerRef = useRef(null);
   const mapRef       = useRef(null);
 
@@ -194,7 +194,6 @@ export function RouteMap({ routeData, loading }) {
 
   const disruptions    = routeData?.disruptions?.length ?? 0;
   const delayMin       = routeData?.delay_added_minutes ?? 0;
-  const isSv           = lang !== 'en';
 
   // Skeleton while loading
   if (loading && !routeData) {
@@ -256,7 +255,7 @@ export function RouteMap({ routeData, loading }) {
             whiteSpace:     'nowrap',
           }}
         >
-          {isSv ? 'Öppna i kartor' : 'Open in Maps'}
+          {t.map.openInMaps}
         </button>
       </div>
 
@@ -275,9 +274,7 @@ export function RouteMap({ routeData, loading }) {
           fontSize:     11,
         }}>
           <span style={{ color: '#92400e', lineHeight: 1.4 }}>
-            {isSv
-              ? `Trafikstörningar på rutten${delayMin > 0 ? ` — +${delayMin} min tillägg beräknat` : ''}`
-              : `Traffic disruptions on route${delayMin > 0 ? ` — +${delayMin} min added` : ''}`}
+            {t.map.trafficDisruption(delayMin)}
           </span>
         </div>
       )}

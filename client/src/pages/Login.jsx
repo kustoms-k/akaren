@@ -86,21 +86,11 @@ function IconShield() {
   return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2L3 4.5v4C3 11.5 5.5 14 8 14s5-2.5 5-5.5v-4L8 2z" stroke={CYAN} strokeWidth="1.3" strokeLinejoin="round" fill="none"/><path d="M6 8l1.5 1.5L10 6.5" stroke={CYAN} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>;
 }
 
+const FEATURE_ICONS = [IconAI, IconLink, IconChart, IconShield];
+
 // ── Left hero panel ───────────────────────────────────────────────────────────
-function HeroPanel({ lang }) {
-  const features = lang === 'sv'
-    ? [
-        { Icon: IconAI,     text: 'AI extraherar komplett offert på sekunder' },
-        { Icon: IconLink,   text: 'Kundportaler med privata spårningslänkar' },
-        { Icon: IconChart,  text: 'Lönsamhetsanalys per fordon, rutt och kund' },
-        { Icon: IconShield, text: 'GDPR-kompatibel med fullständig revisionslogg' },
-      ]
-    : [
-        { Icon: IconAI,     text: 'AI builds complete quotes in seconds' },
-        { Icon: IconLink,   text: 'Customer portals with private tracking links' },
-        { Icon: IconChart,  text: 'Profitability analysis per vehicle, route & client' },
-        { Icon: IconShield, text: 'GDPR-compliant with full audit trail' },
-      ];
+function HeroPanel({ t }) {
+  const features = t.login.features.map((text, i) => ({ Icon: FEATURE_ICONS[i], text }));
 
   return (
     <div style={{
@@ -132,9 +122,7 @@ function HeroPanel({ lang }) {
         }}>TRANSPORTHANTERING</div>
         <div style={{ width: 40, height: 2, background: `linear-gradient(90deg, ${CYAN} 0%, transparent 100%)`, marginBottom: 28 }}/>
         <p style={{ fontFamily: INTER, fontSize: 16, color: TEXT_SEC, lineHeight: 1.7, marginBottom: 40, maxWidth: 340, fontWeight: 400 }}>
-          {lang === 'sv'
-            ? 'Transporthantering för svenska åkerier — från offert till faktura på ett ställe.'
-            : 'Transport management for Swedish hauliers — from quote to invoice in one place.'}
+          {t.login.heroTagline}
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {features.map((f, i) => (
@@ -448,7 +436,7 @@ export function Login() {
 
         {/* ── Left hero ── */}
         <div className="login-hero" style={{ display: 'flex', flex: '0 0 56%' }}>
-          <HeroPanel lang={lang} />
+          <HeroPanel t={t} />
         </div>
 
         {/* ── Right form panel ── */}

@@ -1,5 +1,6 @@
 import { S } from '../constants/strings.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 const INTER = "'Inter', sans-serif";
 const BLUE  = '#4361ee';
@@ -24,8 +25,9 @@ function HistoryIcon() {
 
 export function Header({ onHistoryOpen, fleetCount, fuelPrice }) {
   const { company } = useAuth();
-  const isLive     = fuelPrice && fuelPrice.source !== 'fallback';
-  const dotColor   = isLive ? 'var(--accent-green)' : 'var(--text-secondary)';
+  const { t }       = useLanguage();
+  const isLive      = fuelPrice && fuelPrice.source !== 'fallback';
+  const dotColor    = isLive ? 'var(--accent-green)' : 'var(--text-secondary)';
 
   return (
     <header
@@ -87,7 +89,7 @@ export function Header({ onHistoryOpen, fleetCount, fuelPrice }) {
                 paddingLeft:  12,
               }}
             >
-              {fleetCount} fordon aktiva
+              {t.header.fleetActive(fleetCount)}
             </span>
           )}
 
@@ -95,7 +97,7 @@ export function Header({ onHistoryOpen, fleetCount, fuelPrice }) {
           {fuelPrice && (
             <span
               className="hide-mobile"
-              title={isLive ? `Källa: ${fuelPrice.source}` : 'Standardpris (live-hämtning misslyckades)'}
+              title={isLive ? t.header.fuelSource(fuelPrice.source) : t.header.fuelFallback}
               style={{
                 fontFamily:    INTER,
                 fontSize:      '0.6875rem',
@@ -108,7 +110,7 @@ export function Header({ onHistoryOpen, fleetCount, fuelPrice }) {
                 gap:           6,
               }}
             >
-              Dieselpris idag: {fmtPrice(fuelPrice.price_per_litre)} kr/L
+              {t.header.fuelToday(fmtPrice(fuelPrice.price_per_litre))}
               <span
                 style={{
                   display:      'inline-block',
@@ -142,7 +144,7 @@ export function Header({ onHistoryOpen, fleetCount, fuelPrice }) {
                 letterSpacing: '0.08em',
               }}
             >
-              {S.header.statusLabel}
+              {t.header.statusLabel}
             </span>
           </div>
 
@@ -150,7 +152,7 @@ export function Header({ onHistoryOpen, fleetCount, fuelPrice }) {
           <button
             className="icon-btn"
             onClick={onHistoryOpen}
-            aria-label={S.header.historyAriaLabel}
+            aria-label={t.header.historyAriaLabel}
           >
             <HistoryIcon />
           </button>

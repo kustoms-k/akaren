@@ -61,10 +61,10 @@ function avgByKey(jobs, keyFn) {
 
 const COMPLETED = new Set(['avslutad', 'slutförd', 'fakturerad']);
 
-function generateRecommendations(data, stats, prevData, lang) {
+function generateRecommendations(data, stats, prevData, t) {
   const recs = [];
   const jobs = (data?.jobs ?? []).filter((j) => COMPLETED.has(j.job_status));
-  const sv = lang === 'sv';
+  const rec  = t.profitability.recommendations;
 
   const marginByKund = avgByKey(jobs, (j) => j.kund);
   const worstKund = Object.entries(marginByKund)
@@ -76,26 +76,22 @@ function generateRecommendations(data, stats, prevData, lang) {
     recs.push({
       id: 'raise-rate',
       type: 'warning',
-      text: sv
-        ? `Höj priserna för ${dk} — nuvarande marginal ${worstKund.avg.toFixed(1)}%, rekommenderad +${increase}% för att nå 20%`
-        : `Raise rates for ${dk} — current margin ${worstKund.avg.toFixed(1)}%, recommended +${increase}% to hit 20%`,
-      applyLabel: sv ? 'Markera för granskning' : 'Mark for review',
-      toastMsg: sv ? 'Prisjustering noterad' : 'Rate review noted',
+      text:       rec.raiseRateText(dk, worstKund.avg.toFixed(1), increase),
+      applyLabel: rec.raiseRateApply,
+      toastMsg:   rec.raiseRateToast,
     });
   }
 
   const underused = (data?.truckUtilisation ?? [])
-    .filter((t) => t.pct < 40)
+    .filter((v) => v.pct < 40)
     .sort((a, b) => a.pct - b.pct)[0];
   if (underused) {
     recs.push({
       id: `truck-${underused.id}`,
       type: 'info',
-      text: sv
-        ? `Lastbil ${underused.id} är underutnyttjad vid ${underused.pct}% — erbjud den på ${underused.typ ?? 'flaklast'}-uppdrag`
-        : `Truck ${underused.id} is underused at ${underused.pct}% utilisation — consider offering it on ${underused.typ ?? 'flatbed'} jobs`,
-      applyLabel: sv ? 'Noterat' : 'Noted',
-      toastMsg: sv ? `Noterat — ${underused.id}` : `Noted — ${underused.id}`,
+      text:       rec.underusedText(underused.id, underused.pct, underused.typ ?? 'flatbed'),
+      applyLabel: rec.underusedApply,
+      toastMsg:   rec.underusedToast(underused.id),
     });
   }
 
@@ -108,11 +104,9 @@ function generateRecommendations(data, stats, prevData, lang) {
     recs.push({
       id: `cargo-${bestType.type}`,
       type: 'opportunity',
-      text: sv
-        ? `Lasttyp '${bestType.type}' har ${bestType.avg.toFixed(0)}% marginal — erbjud till nya kunder`
-        : `Cargo type '${bestType.type}' has ${bestType.avg.toFixed(0)}% margin — pitch this service to new customers`,
-      applyLabel: sv ? 'Kopiera pitch' : 'Copy pitch',
-      toastMsg: sv ? 'Pitchtext kopierad' : 'Pitch text copied',
+      text:       rec.cargoText(bestType.type, bestType.avg.toFixed(0)),
+      applyLabel: rec.cargoApply,
+      toastMsg:   rec.cargoToast,
       pitchText: `Hej! Vi erbjuder ${bestType.type} med snabb leverans och konkurrenskraftiga priser. Kontakta oss för en offert idag!`,
     });
   }
@@ -121,16 +115,14 @@ function generateRecommendations(data, stats, prevData, lang) {
     recs.push({
       id: 'high-acceptance',
       type: 'opportunity',
-      text: sv
-        ? `Acceptansgraden är ${stats.acceptansgrad.pct.toFixed(0)}% — överväg att höja grundpriset med 5–10%`
-        : `Acceptance rate is ${stats.acceptansgrad.pct.toFixed(0)}% — consider raising base rates by 5–10%`,
-      applyLabel: sv ? 'Noterat' : 'Noted',
-      toastMsg: sv ? 'Noterat' : 'Noted',
+      text:       rec.acceptanceText(stats.acceptansgrad.pct.toFixed(0)),
+      applyLabel: rec.acceptanceApply,
+      toastMsg:   rec.acceptanceToast,
     });
   }
 
   if (prevData) {
-    const curRev  = jobs.reduce((s, j) => s + (j.intakt ?? 0), 0);
+    const curRev   = jobs.reduce((s, j) => s + (j.intakt ?? 0), 0);
     const prevJobs = (prevData.jobs ?? []).filter((j) => COMPLETED.has(j.job_status));
     const prevRev  = prevJobs.reduce((s, j) => s + (j.intakt ?? 0), 0);
     if (prevRev > 0 && curRev < prevRev * 0.85) {
@@ -138,11 +130,9 @@ function generateRecommendations(data, stats, prevData, lang) {
       recs.push({
         id: 'revenue-drop',
         type: 'warning',
-        text: sv
-          ? `Intäkter ner ${drop}% jämfört med förra månaden — överväg att kontakta befintliga kunder`
-          : `Revenue down ${drop}% vs last month — consider proactive outreach to existing customers`,
-        applyLabel: sv ? 'Bekräftad' : 'Acknowledged',
-        toastMsg: sv ? 'Noterat' : 'Noted',
+        text:       rec.revDropText(drop),
+        applyLabel: rec.revDropApply,
+        toastMsg:   rec.revDropToast,
       });
     }
   }
@@ -595,7 +585,7 @@ export function Profitability() {
   })();
 
   const allRecs = data
-    ? generateRecommendations(data, stats, prevData, lang).filter((r) => !dismissed.has(r.id))
+    ? generateRecommendations(data, stats, prevData, t).filter((r) => !dismissed.has(r.id))
     : [];
 
   const monthLabel = MONTH_OPTIONS.find((o) => o.value === month)?.label ?? '';
