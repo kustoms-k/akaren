@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
-const INTER = "'Inter', system-ui, sans-serif";
-const MONO  = "'DM Mono', monospace";
+const INTER = "'Plus Jakarta Sans', system-ui, sans-serif";
+const MONO  = "'Plus Jakarta Sans', system-ui, sans-serif";
 
-const STATUS_CFG = {
-  planerad:  { label: 'Planerad',  bg: 'rgba(180,100,20,0.10)',  color: '#B46418', border: 'rgba(180,100,20,0.25)' },
-  aktiv:     { label: 'Aktiv',     bg: 'rgba(30,120,80,0.12)',   color: '#1E7A50', border: 'rgba(30,120,80,0.30)'  },
-  avslutad:  { label: 'Avslutad',  bg: 'rgba(60,100,180,0.10)',  color: '#3C64B4', border: 'rgba(60,100,180,0.25)' },
-  fakturerad:{ label: 'Fakturerad',bg: 'rgba(28,25,23,0.07)',    color: '#6B6359', border: 'rgba(28,25,23,0.15)'   },
+const STATUS_COLORS = {
+  planerad:  { bg: 'rgba(180,100,20,0.10)',  color: '#B46418', border: 'rgba(180,100,20,0.25)' },
+  aktiv:     { bg: 'rgba(30,120,80,0.12)',   color: '#1E7A50', border: 'rgba(30,120,80,0.30)'  },
+  avslutad:  { bg: 'rgba(60,100,180,0.10)',  color: '#3C64B4', border: 'rgba(60,100,180,0.25)' },
+  fakturerad:{ bg: 'rgba(28,25,23,0.07)',    color: '#6B6359', border: 'rgba(28,25,23,0.15)'   },
 };
 
 function fmtDate(str) {
@@ -31,10 +32,11 @@ function fmtSEK(n) {
 }
 
 export function DriverView({ user, onLogout }) {
+  const { t } = useLanguage();
   const [jobs,    setJobs]    = useState([]);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState(null);
-  const [busy,    setBusy]    = useState(null); // jobId being updated
+  const [busy,    setBusy]    = useState(null);
 
   useEffect(() => {
     apiFetch('/api/jobs')
@@ -73,7 +75,7 @@ export function DriverView({ user, onLogout }) {
       }}>
         <div>
           <div style={{ fontWeight: 700, fontSize: 16, color: '#F4F0E8', letterSpacing: '-0.01em' }}>
-            Åkaren
+            {t.driverView.appName}
           </div>
           <div style={{ fontSize: 11, color: '#5A544E', marginTop: 2 }}>
             {user?.name ?? user?.email}
@@ -87,21 +89,21 @@ export function DriverView({ user, onLogout }) {
             borderRadius: 7, padding: '5px 12px', cursor: 'pointer',
           }}
         >
-          Logga ut
+          {t.driverView.logOut}
         </button>
       </div>
 
       {/* Content */}
       <div style={{ flex: 1, padding: '24px 16px', maxWidth: 640, width: '100%', margin: '0 auto' }}>
         <div style={{ fontSize: 18, fontWeight: 700, color: '#1C1917', marginBottom: 4, letterSpacing: '-0.02em' }}>
-          Mina uppdrag
+          {t.driverView.myJobs}
         </div>
         <div style={{ fontSize: 12, color: '#9A9088', marginBottom: 24 }}>
           {new Date().toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}
         </div>
 
         {loading && (
-          <div style={{ fontSize: 13, color: '#9A9088', fontStyle: 'italic' }}>Laddar uppdrag…</div>
+          <div style={{ fontSize: 13, color: '#9A9088', fontStyle: 'italic' }}>{t.driverView.loading}</div>
         )}
         {error && (
           <div style={{
@@ -117,13 +119,14 @@ export function DriverView({ user, onLogout }) {
             padding: '40px 24px', textAlign: 'center',
             fontSize: 13, color: '#9A9088', fontStyle: 'italic',
           }}>
-            Inga tilldelade uppdrag just nu.
+            {t.driverView.noJobs}
           </div>
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {jobs.map((job) => {
-            const cfg        = STATUS_CFG[job.status] ?? STATUS_CFG.planerad;
+            const cfg        = STATUS_COLORS[job.status] ?? STATUS_COLORS.planerad;
+            const statusLabel = t.dispatch?.statuses?.[job.status] ?? job.status;
             const isBusy     = busy === job.id;
             const canStart   = job.status === 'planerad';
             const canFinish  = job.status === 'aktiv';
@@ -139,7 +142,7 @@ export function DriverView({ user, onLogout }) {
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 600, fontSize: 14, color: '#1C1917', marginBottom: 2 }}>
-                      {job.lasttyp ?? 'Transport'}
+                      {job.lasttyp ?? t.driverView.defaultCargo}
                     </div>
                     <div style={{ fontSize: 12, color: '#6B6359', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {route}
@@ -151,7 +154,7 @@ export function DriverView({ user, onLogout }) {
                     background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
                     flexShrink: 0,
                   }}>
-                    {cfg.label}
+                    {statusLabel}
                   </span>
                 </div>
 
@@ -189,7 +192,7 @@ export function DriverView({ user, onLogout }) {
                         transition: 'opacity 0.15s', opacity: isBusy ? 0.6 : 1,
                       }}
                     >
-                      {isBusy ? 'Startar…' : '▶ Starta uppdrag'}
+                      {isBusy ? t.driverView.starting : `▶ ${t.driverView.startJob}`}
                     </button>
                   )}
                   {canFinish && (
@@ -205,12 +208,12 @@ export function DriverView({ user, onLogout }) {
                         transition: 'opacity 0.15s', opacity: isBusy ? 0.6 : 1,
                       }}
                     >
-                      {isBusy ? 'Avslutar…' : '✓ Markera avslutad'}
+                      {isBusy ? t.driverView.completing : `✓ ${t.driverView.markComplete}`}
                     </button>
                   )}
                   {!canStart && !canFinish && (
                     <div style={{ fontSize: 11, color: '#9A9088', padding: '9px 0', fontStyle: 'italic' }}>
-                      {job.status === 'avslutad' ? 'Uppdraget är avslutat.' : 'Uppdraget är fakturerat.'}
+                      {job.status === 'avslutad' ? t.driverView.completed : t.driverView.invoiced}
                     </div>
                   )}
                 </div>

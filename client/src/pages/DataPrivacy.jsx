@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const OUTFIT  = "'Outfit', system-ui, sans-serif";
+const OUTFIT  = "'Plus Jakarta Sans', system-ui, sans-serif";
 const INTER   = OUTFIT;
 const AMBER   = '#c9921e';
 const BLUE    = AMBER;

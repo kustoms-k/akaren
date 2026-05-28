@@ -14,9 +14,9 @@ const BORDER  = '#ececef';
 const TEXT    = '#1a1d24';
 const MUTED   = '#6b7280';
 const FAINT   = '#9ca3af';
-const OUTFIT  = "'Inter', system-ui, sans-serif";
+const OUTFIT  = "'Plus Jakarta Sans', system-ui, sans-serif";
 const SURF    = '#ffffff';
-const MONO    = "'DM Mono', monospace";
+const MONO    = "'Plus Jakarta Sans', system-ui, sans-serif";
 
 function currentMonth() {
   return new Date().toISOString().slice(0, 7);

@@ -59,7 +59,7 @@ const ACCENT    = '#2d3340';   // dark slate — primary buttons + active states
 const ACCENT_SF = '#eef0f3';   // accent-soft background
 const ICON_BG   = '#eef1f5';   // icon container tint
 const INTER     = "'Plus Jakarta Sans', system-ui, sans-serif";
-const MONO      = "'DM Mono', monospace";
+const MONO      = "'Plus Jakarta Sans', system-ui, sans-serif";
 
 // Semantic colours
 const D_GREEN = '#16a34a';
@@ -411,8 +411,9 @@ function KpiCard({ label, value, change, changeUp, accentColor, Icon: IconProp }
         {label}
       </div>
       <div style={{
-        fontFamily: MONO, fontSize: 26, fontWeight: 700,
-        color: TEXT_PR, letterSpacing: '-0.02em', lineHeight: 1,
+        fontFamily: INTER, fontSize: 26, fontWeight: 700,
+        color: TEXT_PR, letterSpacing: '-0.03em', lineHeight: 1,
+        fontVariantNumeric: 'tabular-nums',
       }}>
         {value}
       </div>
@@ -569,7 +570,7 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
               <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: TEXT_MU, marginBottom: 4 }}>
                 {t.tommaMillPanel.badge}
               </div>
-              <div style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: D_AMBER, letterSpacing: '-0.02em' }}>
+              <div style={{ fontFamily: INTER, fontSize: 20, fontWeight: 700, color: D_AMBER, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>
                 {t.tommaMillPanel.deadheadKm(backhaulStats.deadhead_km)}
               </div>
               <div style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU, marginTop: 2 }}>
@@ -581,7 +582,7 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
               <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: TEXT_MU, marginBottom: 4 }}>
                 {t.tommaMillPanel.recoveredBy}
               </div>
-              <div style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: D_GREEN, letterSpacing: '-0.02em' }}>
+              <div style={{ fontFamily: INTER, fontSize: 20, fontWeight: 700, color: D_GREEN, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>
                 {t.tommaMillPanel.recoveredSek(backhaulStats.recovered_sek)}
               </div>
               <div style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU, marginTop: 2 }}>
@@ -593,7 +594,7 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
               <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: TEXT_MU, marginBottom: 4 }}>
                 TOTAL KM
               </div>
-              <div style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: TEXT_PR, letterSpacing: '-0.02em' }}>
+              <div style={{ fontFamily: INTER, fontSize: 20, fontWeight: 700, color: TEXT_PR, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>
                 {backhaulStats.total_km.toLocaleString('sv-SE')} km
               </div>
               <div style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU, marginTop: 2 }}>
@@ -754,7 +755,7 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
                   <td style={{ fontSize: 12, fontFamily: INTER, color: D_AMBER, fontWeight: 600, padding: '11px 16px 11px 0', borderBottom: `1px solid ${BORDER}`, verticalAlign: 'middle' }}>{q.id}</td>
                   <td style={{ fontSize: 12, fontFamily: INTER, color: TEXT_SEC, padding: '11px 16px 11px 0', borderBottom: `1px solid ${BORDER}`, verticalAlign: 'middle' }}>{fmtDate(q.created_at)}</td>
                   <td style={{ fontSize: 12, fontFamily: INTER, color: TEXT_SEC, padding: '11px 16px 11px 0', borderBottom: `1px solid ${BORDER}`, verticalAlign: 'middle', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.lasttyp || '—'}</td>
-                  <td style={{ fontSize: 12, fontFamily: MONO, color: TEXT_PR, fontWeight: 500, padding: '11px 16px 11px 0', borderBottom: `1px solid ${BORDER}`, verticalAlign: 'middle', whiteSpace: 'nowrap' }}>{fmtSEK(q.totalpris_sek)}</td>
+                  <td style={{ fontSize: 12, fontFamily: INTER, color: TEXT_PR, fontWeight: 500, fontVariantNumeric: 'tabular-nums', padding: '11px 16px 11px 0', borderBottom: `1px solid ${BORDER}`, verticalAlign: 'middle', whiteSpace: 'nowrap' }}>{fmtSEK(q.totalpris_sek)}</td>
                   <td style={{ padding: '11px 0', borderBottom: `1px solid ${BORDER}`, verticalAlign: 'middle' }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ width: 6, height: 6, borderRadius: '50%', background: dotC, flexShrink: 0 }} />
@@ -885,7 +886,7 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
                 background: 'rgba(28,26,22,0.04)', border: `1px solid ${BORDER}`,
               }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontFamily: MONO, fontSize: 16, fontWeight: 700, color, letterSpacing: '-0.01em' }}>{pct}</span>
+                  <span style={{ fontFamily: INTER, fontSize: 16, fontWeight: 700, color, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{pct}</span>
                   <span style={{ fontFamily: INTER, fontSize: 11, color: TEXT_SEC, flex: 1, lineHeight: 1.4 }}>{label}</span>
                 </div>
                 <div style={{ fontFamily: INTER, fontSize: 10, color, opacity: 0.78 }}>{insight}</div>

@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
-const INTER = "'Inter', system-ui, sans-serif";
+const INTER = "'Plus Jakarta Sans', system-ui, sans-serif";
 
 export function SetupAccount({ onSetupComplete }) {
+  const { t } = useLanguage();
   const params   = new URLSearchParams(window.location.search);
   const token    = params.get('token') ?? '';
 
@@ -15,9 +17,9 @@ export function SetupAccount({ onSetupComplete }) {
     return (
       <div style={wrapStyle}>
         <div style={cardStyle}>
-          <div style={headStyle}>Ogiltig länk</div>
+          <div style={headStyle}>{t.setupAccount.invalidLink}</div>
           <p style={{ fontSize: 13, color: '#6a6050', margin: 0 }}>
-            Den här inbjudningslänken är ogiltig eller har gått ut. Kontakta din administratör.
+            {t.setupAccount.invalidDesc}
           </p>
         </div>
       </div>
@@ -28,10 +30,10 @@ export function SetupAccount({ onSetupComplete }) {
     e.preventDefault();
     setError(null);
     if (password.length < 8) {
-      return setError('Lösenordet måste vara minst 8 tecken.');
+      return setError(t.setupAccount.errors.tooShort);
     }
     if (password !== password2) {
-      return setError('Lösenorden stämmer inte överens.');
+      return setError(t.setupAccount.errors.mismatch);
     }
     setLoading(true);
     try {
@@ -41,7 +43,7 @@ export function SetupAccount({ onSetupComplete }) {
         body: JSON.stringify({ token, password }),
       });
       const data = await r.json();
-      if (!r.ok) throw new Error(data.error ?? 'Okänt fel');
+      if (!r.ok) throw new Error(data.error ?? t.setupAccount.errors.unknown);
       onSetupComplete(data);
     } catch (err) {
       setError(err.message);
@@ -58,37 +60,37 @@ export function SetupAccount({ onSetupComplete }) {
           padding: '20px 28px', margin: '-28px -28px 24px',
         }}>
           <span style={{ fontWeight: 700, fontSize: 17, color: '#c9921e', letterSpacing: '-0.01em' }}>
-            Åkaren TMS
+            {t.setupAccount.appName}
           </span>
         </div>
 
         <div style={{ fontSize: 18, fontWeight: 700, color: '#1C1917', marginBottom: 6, letterSpacing: '-0.02em' }}>
-          Aktivera ditt konto
+          {t.setupAccount.heading}
         </div>
         <p style={{ fontSize: 13, color: '#6a6050', margin: '0 0 24px', lineHeight: 1.6 }}>
-          Välj ett lösenord för att aktivera ditt konto i Åkaren TMS.
+          {t.setupAccount.desc}
         </p>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <span style={labelStyle}>Lösenord</span>
+            <span style={labelStyle}>{t.setupAccount.passwordLabel}</span>
             <input
               autoFocus
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Minst 8 tecken"
+              placeholder={t.setupAccount.passwordHint}
               required
               style={inputStyle}
             />
           </label>
           <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <span style={labelStyle}>Bekräfta lösenord</span>
+            <span style={labelStyle}>{t.setupAccount.confirmLabel}</span>
             <input
               type="password"
               value={password2}
               onChange={(e) => setPassword2(e.target.value)}
-              placeholder="Upprepa lösenordet"
+              placeholder={t.setupAccount.confirmHint}
               required
               style={inputStyle}
             />
@@ -117,7 +119,7 @@ export function SetupAccount({ onSetupComplete }) {
               marginTop: 4,
             }}
           >
-            {loading ? 'Aktiverar…' : 'Aktivera konto'}
+            {loading ? t.setupAccount.activating : t.setupAccount.activate}
           </button>
         </form>
       </div>

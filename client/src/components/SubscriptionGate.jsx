@@ -3,23 +3,8 @@ import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 const AMBER  = '#c9921e';
-const BG     = '#edeae1';
-const BORDER = '#cfc9bb';
-const TEXT   = '#151210';
-const MUTED  = '#6a6050';
-const OUTFIT = "'Outfit', system-ui, sans-serif";
-const MONO   = "'DM Mono', monospace";
-
-const FEATURES = [
-  'AI-driven offertanalys på sekunder',
-  'Prisberäkning med live dieselkostnad',
-  'Fordonsmatchning baserad på last & zon',
-  'LEZ-kontroll & tillståndsvarning',
-  'HGV-rutt med ORS truckkartläggning',
-  'CO₂-rapportering & klimatkalkylator',
-  'Klientportal för direktkommunikation',
-  'Fortnox-integration & fakturaexport',
-];
+const OUTFIT = "'Plus Jakarta Sans', system-ui, sans-serif";
+const MONO   = "'Plus Jakarta Sans', system-ui, sans-serif";
 
 export function SubscriptionGate({ onClose }) {
   const { t } = useLanguage();
@@ -73,18 +58,18 @@ export function SubscriptionGate({ onClose }) {
             fontFamily: MONO, fontSize: 10, letterSpacing: '0.14em',
             color: 'rgba(201,146,30,0.6)', textTransform: 'uppercase', marginBottom: 10,
           }}>
-            Åkaren TMS
+            {t.subscriptionGate.brand}
           </div>
           <div style={{
             fontFamily: OUTFIT, fontSize: 22, fontWeight: 800,
             color: '#ffffff', lineHeight: 1.2, letterSpacing: '-0.02em', marginBottom: 8,
           }}>
-            Aktivera din prenumeration
+            {t.subscriptionGate.heading}
           </div>
           <div style={{
             fontFamily: OUTFIT, fontSize: 13, color: 'rgba(255,255,255,0.5)', lineHeight: 1.65, marginBottom: 24,
           }}>
-            AI-analys och avancerade funktioner kräver en aktiv prenumeration.
+            {t.subscriptionGate.desc}
           </div>
         </div>
 
@@ -92,14 +77,14 @@ export function SubscriptionGate({ onClose }) {
         <div style={{ padding: '0 28px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
             <span style={{ fontFamily: MONO, fontSize: 36, fontWeight: 500, color: AMBER, lineHeight: 1, letterSpacing: '-0.02em' }}>
-              15 000
+              {t.subscriptionGate.price}
             </span>
             <span style={{ fontFamily: OUTFIT, fontSize: 14, color: 'rgba(201,146,30,0.6)' }}>
-              kr / mån
+              {t.subscriptionGate.currency}
             </span>
           </div>
           <div style={{ fontFamily: OUTFIT, fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>
-            Exkl. moms · Ingen bindningstid · Avsluta när som helst
+            {t.subscriptionGate.disclaimer}
           </div>
         </div>
 
@@ -110,10 +95,10 @@ export function SubscriptionGate({ onClose }) {
             letterSpacing: '0.10em', textTransform: 'uppercase',
             color: 'rgba(255,255,255,0.28)', marginBottom: 12,
           }}>
-            Inkluderat
+            {t.subscriptionGate.included}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {FEATURES.map((f) => (
+            {t.subscriptionGate.features.map((f) => (
               <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{
                   width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
@@ -160,7 +145,7 @@ export function SubscriptionGate({ onClose }) {
             onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.97)'; }}
             onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
           >
-            {loading ? 'Öppnar betalning…' : 'Starta prenumeration'}
+            {loading ? t.subscriptionGate.subscribing : t.subscriptionGate.subscribe}
           </button>
           {onClose && (
             <button
@@ -175,7 +160,7 @@ export function SubscriptionGate({ onClose }) {
               onMouseEnter={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.65)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
             >
-              Fortsätt utan prenumeration
+              {t.subscriptionGate.skip}
             </button>
           )}
         </div>

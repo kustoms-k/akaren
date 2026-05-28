@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../context/LanguageContext.jsx';
 import { LogoFull } from '../assets/Logo.jsx';
 
-const OUTFIT  = "'Outfit', system-ui, sans-serif";
+const OUTFIT  = "'Plus Jakarta Sans', system-ui, sans-serif";
 const INTER   = OUTFIT;
 const AMBER   = '#c9921e';
 const BLUE    = AMBER;

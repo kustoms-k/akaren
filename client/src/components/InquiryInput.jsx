@@ -8,7 +8,7 @@ const BORDER = '#cfc9bb';
 const TEXT   = '#151210';
 const MUTED  = '#6a6050';
 const OUTFIT = "'Plus Jakarta Sans', system-ui, sans-serif";
-const MONO   = "'DM Mono', monospace";
+const MONO   = "'Plus Jakarta Sans', system-ui, sans-serif";
 
 const MAX_LEN = 4000;
 

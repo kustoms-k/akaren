@@ -9,7 +9,7 @@ const BORDER  = '#cfc9bb';
 const TEXT    = '#151210';
 const MUTED   = '#6a6050';
 const FAINT   = '#9a9082';
-const OUTFIT  = "'Outfit', system-ui, sans-serif";
+const OUTFIT  = "'Plus Jakarta Sans', system-ui, sans-serif";
 
 const fmtSEK = (n) =>
   n == null ? '—' :

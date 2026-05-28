@@ -9,7 +9,7 @@ const MUTED   = '#6a6050';
 const FAINT   = '#9a9082';
 const OUTFIT  = "'Plus Jakarta Sans', system-ui, sans-serif";
 const SURF    = '#f4f0e7';
-const MONO    = "'DM Mono', monospace";
+const MONO    = "'Plus Jakarta Sans', system-ui, sans-serif";
 
 const EURO = {
   6: { label: 'E6', color: '#16a34a', bg: 'rgba(22,163,74,0.08)' },

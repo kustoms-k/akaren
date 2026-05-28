@@ -3,7 +3,7 @@
 /* ── Fonts ───────────────────────────────────────────────────────────────── */
 :root {
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-mono: 'DM Mono', 'Fira Code', monospace;
+  --font-mono: 'Plus Jakarta Sans', system-ui, sans-serif;
 }
 
 /* ── Palette — dark glassmorphic executive panel ──────────────────────────── */

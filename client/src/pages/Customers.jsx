@@ -11,8 +11,8 @@ const BORDER  = 'rgba(28,26,22,0.09)';
 const TEXT    = '#1C1A17';
 const MUTED   = '#625E58';
 const FAINT   = '#A09C96';
-const OUTFIT  = "'Outfit', system-ui, sans-serif";
-const MONO    = "'DM Mono', monospace";
+const OUTFIT  = "'Plus Jakarta Sans', system-ui, sans-serif";
+const MONO    = "'Plus Jakarta Sans', system-ui, sans-serif";
 
 const fmtSEK = (n) =>
   n == null ? '—' :

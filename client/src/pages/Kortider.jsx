@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const INTER = "'Inter', system-ui, sans-serif";
-const MONO  = "'DM Mono', monospace";
+const INTER = "'Plus Jakarta Sans', system-ui, sans-serif";
+const MONO  = "'Plus Jakarta Sans', system-ui, sans-serif";
 
 function fmtHM(minutes) {
   const h = Math.floor(minutes / 60);

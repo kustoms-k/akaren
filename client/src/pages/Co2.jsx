@@ -3,8 +3,8 @@ import { Leaf, TrendingDown, TrendingUp, Award, Download } from 'lucide-react';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const OUTFIT = "'Outfit', system-ui, sans-serif";
-const MONO   = "'DM Mono', monospace";
+const OUTFIT = "'Plus Jakarta Sans', system-ui, sans-serif";
+const MONO   = "'Plus Jakarta Sans', system-ui, sans-serif";
 const AMBER  = '#c9921e';
 const GREEN  = '#1d6b45';
 const RED    = '#c45454';
@@ -119,7 +119,7 @@ function MonthBars({ months }) {
 }
 
 // ── Empty state ───────────────────────────────────────────────────────────────
-function EmptyState({ lang }) {
+function EmptyState({ t }) {
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
@@ -135,12 +135,10 @@ function EmptyState({ lang }) {
         <Leaf size={28} color={AMBER} strokeWidth={1.5} />
       </div>
       <div style={{ fontFamily: OUTFIT, fontSize: 17, fontWeight: 700, color: TEXT, textAlign: 'center' }}>
-        {lang === 'sv' ? 'Inga transportdata ännu' : 'No transport data yet'}
+        {t.co2.emptyHeading}
       </div>
       <div style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED, maxWidth: 320, textAlign: 'center', lineHeight: 1.65 }}>
-        {lang === 'sv'
-          ? 'Skapa jobb och offerter för att se ditt företags CO₂-avtryck per rutt, fordon och månad.'
-          : 'Create jobs and quotes to see your company CO₂ footprint by route, vehicle, and month.'}
+        {t.co2.emptyDesc}
       </div>
     </div>
   );
@@ -148,8 +146,7 @@ function EmptyState({ lang }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export function Co2() {
-  const { lang } = useLanguage();
-  const sv = lang === 'sv';
+  const { t, lang } = useLanguage();
 
   const [summary, setSummary]     = useState(null);
   const [byCargo, setByCargo]     = useState([]);
@@ -191,11 +188,20 @@ export function Co2() {
     return (
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: BG }}>
         <div style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED }}>
-          {sv ? 'Laddar utsläppsdata…' : 'Loading emissions data…'}
+          {t.co2.loading}
         </div>
       </div>
     );
   }
+
+  const certFields = [
+    { l: t.co2.cert.fields.company,   v: certData?.company },
+    { l: t.co2.cert.fields.orgNr,     v: certData?.org_nr || '—' },
+    { l: t.co2.cert.fields.jobs,      v: certData?.job_count },
+    { l: t.co2.cert.fields.distance,  v: `${fmtNum(certData?.total_km)} km` },
+    { l: t.co2.cert.fields.co2Total,  v: `${fmtNum(certData?.co2_kg, 1)} kg` },
+    { l: t.co2.cert.fields.co2Tonnes, v: `${fmtNum(certData?.co2_tonnes, 2)} t` },
+  ];
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', background: BG, padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -208,13 +214,11 @@ export function Co2() {
               <Leaf size={17} color={GREEN} strokeWidth={1.8} />
             </div>
             <h1 style={{ fontFamily: OUTFIT, fontSize: 20, fontWeight: 800, color: TEXT, margin: 0, letterSpacing: '-0.02em' }}>
-              {sv ? 'CO₂ & Utsläpp' : 'CO₂ & Emissions'}
+              {t.co2.title}
             </h1>
           </div>
           <p style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED, margin: 0, lineHeight: 1.5 }}>
-            {sv
-              ? 'Klimatavtryck baserat på NTMCalc-faktorer och Trafikanalys 2024'
-              : 'Carbon footprint based on NTMCalc factors and Trafikanalys 2024'}
+            {t.co2.subtitle}
           </p>
         </div>
 
@@ -234,45 +238,45 @@ export function Co2() {
             onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
           >
             <Award size={14} strokeWidth={2} />
-            {sv ? 'Hämta certifikat' : 'Get certificate'}
+            {t.co2.getCert}
           </button>
         )}
       </div>
 
       {!hasData ? (
-        <EmptyState lang={lang} />
+        <EmptyState t={t} />
       ) : (
         <>
           {/* ── KPI row ──────────────────────────────────────────────────── */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
             <StatCard
               icon={Leaf} accent={GREEN} delay={0}
-              label={sv ? 'Total CO₂' : 'Total CO₂'}
+              label={t.co2.stats.totalCo2}
               value={fmtNum(totals.co2_tonnes, 1)}
               unit="ton"
-              sub={`${fmtNum(totals.co2_kg, 0)} kg · 12 månader`}
+              sub={t.co2.stats.co2Sub(fmtNum(totals.co2_kg, 0))}
             />
             <StatCard
               icon={TrendingDown} accent={AMBER} delay={60}
-              label={sv ? 'Körda km' : 'Distance driven'}
+              label={t.co2.stats.distance}
               value={fmtNum(totals.total_km)}
               unit="km"
-              sub={sv ? 'Total körsträcka' : 'Total distance'}
+              sub={t.co2.stats.totalDistance}
             />
             <StatCard
               icon={vsBench != null && better ? TrendingDown : TrendingUp}
               accent={better ? GREEN : RED}
               delay={120}
-              label={sv ? 'vs. branschsnitt' : 'vs. industry avg'}
+              label={t.co2.stats.vsBenchmark}
               value={vsBench != null ? `${vsBench > 0 ? '+' : ''}${fmtNum(vsBench, 1)}%` : '—'}
-              sub={sv ? 'Jämfört med genomsnittligt åkeri' : 'Compared to average haulier'}
+              sub={t.co2.stats.vsBenchSub}
             />
             <StatCard
               icon={Award} accent={AMBER} delay={180}
-              label={sv ? 'Intensitet' : 'Intensity'}
+              label={t.co2.stats.intensity}
               value={totals.total_revenue > 0 ? fmtNum((totals.co2_kg / totals.total_revenue) * 1000, 1) : '—'}
-              unit={sv ? 'kg/tkr' : 'kg/kSEK'}
-              sub={sv ? 'CO₂ per 1 000 kr intäkt' : 'CO₂ per 1 000 SEK revenue'}
+              unit={t.co2.stats.intensityUnit}
+              sub={t.co2.stats.intensitySub}
             />
           </div>
 
@@ -288,10 +292,10 @@ export function Co2() {
             }}>
               <div style={{ marginBottom: 18 }}>
                 <div style={{ fontFamily: OUTFIT, fontSize: 14, fontWeight: 700, color: TEXT, marginBottom: 3 }}>
-                  {sv ? 'Månadsvis CO₂ (ton)' : 'Monthly CO₂ (tonnes)'}
+                  {t.co2.monthly.heading}
                 </div>
                 <div style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED }}>
-                  {sv ? 'Senaste 12 månaderna' : 'Last 12 months'}
+                  {t.co2.monthly.sub}
                 </div>
               </div>
               <MonthBars months={months.slice(0, 12)} />
@@ -306,15 +310,15 @@ export function Co2() {
             }}>
               <div style={{ marginBottom: 18 }}>
                 <div style={{ fontFamily: OUTFIT, fontSize: 14, fontWeight: 700, color: TEXT, marginBottom: 3 }}>
-                  {sv ? 'CO₂ per lasttyp' : 'CO₂ by cargo type'}
+                  {t.co2.cargo.heading}
                 </div>
                 <div style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED }}>
-                  {sv ? 'Ackumulerat, alla månader' : 'Cumulative, all months'}
+                  {t.co2.cargo.sub}
                 </div>
               </div>
               {byCargo.length === 0 ? (
                 <div style={{ fontFamily: OUTFIT, fontSize: 13, color: FAINT, textAlign: 'center', paddingTop: 20 }}>
-                  {sv ? 'Ingen data' : 'No data'}
+                  {t.co2.cargo.noData}
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -342,24 +346,17 @@ export function Co2() {
           }}>
             <div style={{ padding: '18px 22px 14px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ fontFamily: OUTFIT, fontSize: 14, fontWeight: 700, color: TEXT }}>
-                {sv ? 'Månadsdetaljer' : 'Monthly breakdown'}
+                {t.co2.table.heading}
               </div>
               <div style={{ fontFamily: OUTFIT, fontSize: 11, color: FAINT, letterSpacing: '0.04em' }}>
-                {sv ? 'Klicka på en månad för certifikat' : 'Click a month for certificate'}
+                {t.co2.table.hint}
               </div>
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
-                    {[
-                      sv ? 'Månad' : 'Month',
-                      sv ? 'Jobb' : 'Jobs',
-                      sv ? 'Km' : 'km',
-                      sv ? 'CO₂ (kg)' : 'CO₂ (kg)',
-                      sv ? 'CO₂ (ton)' : 'CO₂ (t)',
-                      sv ? 'Intensitet' : 'Intensity',
-                    ].map((h, i) => (
+                    {t.co2.table.headers.map((h, i) => (
                       <th key={i} style={{
                         fontFamily: OUTFIT, fontSize: 10, fontWeight: 700, letterSpacing: '0.07em',
                         textTransform: 'uppercase', color: FAINT,
@@ -410,9 +407,7 @@ export function Co2() {
           }}>
             <Leaf size={14} color={GREEN} strokeWidth={1.8} style={{ flexShrink: 0, marginTop: 1 }} />
             <div style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED, lineHeight: 1.65 }}>
-              {sv
-                ? 'Utsläppsberäkningar baseras på NTMCalc-emissionsfaktorer och Trafikanalys 2024-rapport. Faktorer varierar 0,68–1,15 kg CO₂e/km beroende på fordonstyp. Dubbelräkning av returtransport ingår. Används som underlag för miljörapportering till kommuner och byggherrar.'
-                : 'Emission calculations use NTMCalc factors and Trafikanalys 2024 report. Factors range 0.68–1.15 kg CO₂e/km depending on vehicle type. Round-trip factor applied. Used as supporting documentation for environmental reporting to municipalities and developers.'}
+              {t.co2.methodology}
             </div>
           </div>
         </>
@@ -440,13 +435,13 @@ export function Co2() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Amber header */}
+            {/* Dark header */}
             <div style={{ background: 'linear-gradient(135deg, #111118 0%, #1c1b22 100%)', padding: '24px 28px', borderBottom: `1px solid rgba(201,168,76,0.18)` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <Award size={22} color={AMBER} strokeWidth={1.5} />
                 <div>
                   <div style={{ fontFamily: OUTFIT, fontWeight: 800, fontSize: 16, color: WHITE, letterSpacing: '-0.01em' }}>
-                    {sv ? 'CO₂-certifikat' : 'CO₂ Certificate'}
+                    {t.co2.cert.title}
                   </div>
                   <div style={{ fontFamily: OUTFIT, fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>
                     {certMonth}
@@ -458,19 +453,12 @@ export function Co2() {
             <div style={{ padding: '24px 28px' }}>
               {certLoading ? (
                 <div style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED, textAlign: 'center', padding: '20px 0' }}>
-                  {sv ? 'Genererar…' : 'Generating…'}
+                  {t.co2.cert.generating}
                 </div>
               ) : certData ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                    {[
-                      { l: sv ? 'Företag' : 'Company',   v: certData.company },
-                      { l: sv ? 'Org.nr'  : 'Reg. nr',   v: certData.org_nr || '—' },
-                      { l: sv ? 'Jobb'    : 'Jobs',       v: certData.job_count },
-                      { l: sv ? 'Körsträcka' : 'Distance', v: `${fmtNum(certData.total_km)} km` },
-                      { l: sv ? 'CO₂ total' : 'CO₂ total', v: `${fmtNum(certData.co2_kg, 1)} kg` },
-                      { l: sv ? 'CO₂ (ton)' : 'CO₂ (t)',   v: `${fmtNum(certData.co2_tonnes, 2)} t` },
-                    ].map(({ l, v }) => (
+                    {certFields.map(({ l, v }) => (
                       <div key={l} style={{ background: BG, borderRadius: 9, padding: '12px 14px' }}>
                         <div style={{ fontFamily: OUTFIT, fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: FAINT, marginBottom: 4 }}>{l}</div>
                         <div style={{ fontFamily: OUTFIT, fontSize: 16, fontWeight: 700, color: TEXT }}>{v}</div>
@@ -480,10 +468,10 @@ export function Co2() {
 
                   <div style={{ background: `${GREEN}08`, border: `1px solid ${GREEN}20`, borderRadius: 8, padding: '10px 14px' }}>
                     <div style={{ fontFamily: OUTFIT, fontSize: 11, color: MUTED, lineHeight: 1.65 }}>
-                      {sv ? `Metodik: ${certData.methodology}` : `Methodology: ${certData.methodology}`}
+                      {t.co2.cert.methodology}: {certData.methodology}
                     </div>
                     <div style={{ fontFamily: MONO, fontSize: 10, color: FAINT, marginTop: 4 }}>
-                      {sv ? 'Genererat' : 'Generated'}: {new Date(certData.generated_at).toLocaleString(sv ? 'sv-SE' : 'en-GB')}
+                      {t.co2.cert.generated}: {new Date(certData.generated_at).toLocaleString(lang === 'sv' ? 'sv-SE' : 'en-GB')}
                     </div>
                   </div>
 
@@ -508,12 +496,12 @@ export function Co2() {
                     onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
                   >
                     <Download size={14} strokeWidth={2} />
-                    {sv ? 'Ladda ned JSON' : 'Download JSON'}
+                    {t.co2.cert.download}
                   </button>
                 </div>
               ) : (
                 <div style={{ fontFamily: OUTFIT, fontSize: 13, color: RED, textAlign: 'center', padding: '20px 0' }}>
-                  {sv ? 'Kunde inte hämta certifikat.' : 'Could not load certificate.'}
+                  {t.co2.cert.error}
                 </div>
               )}
             </div>

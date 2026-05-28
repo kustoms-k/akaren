@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, CalendarDays, MapPin, Truck } from 'lucide-r
 import { useLiveQuery } from 'dexie-react-hooks';
 import { apiFetch } from '../utils/apiFetch.js';
 import { db } from '../db/dexie.js';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const AMBER  = '#c9a84c';
@@ -12,14 +13,14 @@ const BORDER = '#e6e2da';
 const TEXT   = '#17161a';
 const MUTED  = '#6b6574';
 const FAINT  = '#a09aa8';
-const OUTFIT = "'Outfit', system-ui, sans-serif";
-const MONO   = "'DM Mono', monospace";
+const OUTFIT = "'Plus Jakarta Sans', system-ui, sans-serif";
+const MONO   = "'Plus Jakarta Sans', system-ui, sans-serif";
 
-const STATUS_CFG = {
-  planerad:   { label: 'Planerad',   color: '#d97706', bg: '#fff7ed' },
-  aktiv:      { label: 'Aktiv',      color: '#15803d', bg: '#f0fdf4' },
-  avslutad:   { label: 'Avslutad',   color: '#6b6574', bg: '#f5f3ee' },
-  fakturerad: { label: 'Fakturerad', color: '#3b82f6', bg: '#eff6ff' },
+const STATUS_COLORS = {
+  planerad:   { color: '#d97706', bg: '#fff7ed' },
+  aktiv:      { color: '#15803d', bg: '#f0fdf4' },
+  avslutad:   { color: '#6b6574', bg: '#f5f3ee' },
+  fakturerad: { color: '#3b82f6', bg: '#eff6ff' },
 };
 
 const SWEDISH_MONTHS = {
@@ -29,7 +30,6 @@ const SWEDISH_MONTHS = {
   juli: 6, augusti: 7, september: 8, oktober: 9, november: 10, december: 11,
 };
 
-const WEEK_DAYS = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
 
 function parseJobDate(datum) {
   if (!datum) return null;
@@ -58,8 +58,8 @@ function fmtSEK(n) {
 }
 
 // ── Status pill ───────────────────────────────────────────────────────────────
-function StatusPill({ status }) {
-  const cfg = STATUS_CFG[status] ?? STATUS_CFG.planerad;
+function StatusPill({ status, label }) {
+  const cfg = STATUS_COLORS[status] ?? STATUS_COLORS.planerad;
   return (
     <span style={{
       fontFamily: OUTFIT, fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
@@ -67,19 +67,19 @@ function StatusPill({ status }) {
       color: cfg.color, background: cfg.bg,
       padding: '2px 8px', borderRadius: 4, whiteSpace: 'nowrap',
     }}>
-      {cfg.label}
+      {label}
     </span>
   );
 }
 
 // ── Job card ──────────────────────────────────────────────────────────────────
-function JobCard({ job, fleet, drivers, onAdvance, advancing }) {
+function JobCard({ job, fleet, drivers, onAdvance, advancing, t }) {
   const truck    = fleet.find((f) => String(f.id) === String(job.fordon_id));
   const driver   = drivers.find((d) => String(d.truck_id) === String(job.fordon_id));
-  const cfg      = STATUS_CFG[job.status] ?? STATUS_CFG.planerad;
   const canStart = job.status === 'planerad';
   const canEnd   = job.status === 'aktiv';
   const busy     = advancing === job.id;
+  const statusLabel = t.dispatch.statuses[job.status] ?? job.status;
 
   return (
     <div style={{
@@ -93,7 +93,7 @@ function JobCard({ job, fleet, drivers, onAdvance, advancing }) {
     }}>
       {/* Status + price */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-        <StatusPill status={job.status} />
+        <StatusPill status={job.status} label={statusLabel} />
         <span style={{ fontFamily: MONO, fontSize: 11, color: TEXT, fontWeight: 500, flexShrink: 0 }}>
           {fmtSEK(job.totalpris_sek)}
         </span>
@@ -144,7 +144,7 @@ function JobCard({ job, fleet, drivers, onAdvance, advancing }) {
             transition: 'opacity 150ms',
           }}
         >
-          {busy ? '…' : canStart ? 'Starta körning' : 'Avsluta uppdrag'}
+          {busy ? '…' : canStart ? t.dispatch.startJob : t.dispatch.endJob}
         </button>
       )}
     </div>
@@ -152,9 +152,8 @@ function JobCard({ job, fleet, drivers, onAdvance, advancing }) {
 }
 
 // ── Day column ────────────────────────────────────────────────────────────────
-function DayColumn({ day, jobs, isToday, fleet, drivers, onAdvance, advancing }) {
-  const dayIndex = day.getDay() === 0 ? 6 : day.getDay() - 1;
-  const count    = jobs.length;
+function DayColumn({ day, jobs, isToday, fleet, drivers, onAdvance, advancing, t, weekDayLabel }) {
+  const count = jobs.length;
   return (
     <div style={{ flex: 1, minWidth: 150, display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
@@ -170,11 +169,11 @@ function DayColumn({ day, jobs, isToday, fleet, drivers, onAdvance, advancing })
             fontFamily: OUTFIT, fontSize: 9, fontWeight: 700, letterSpacing: '0.12em',
             textTransform: 'uppercase', color: isToday ? AMBER : MUTED,
           }}>
-            {WEEK_DAYS[dayIndex]}
+            {weekDayLabel}
           </span>
           {isToday && (
             <span style={{ fontFamily: OUTFIT, fontSize: 8, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: AMBER, background: 'rgba(201,168,76,0.14)', padding: '1px 5px', borderRadius: 3 }}>
-              Idag
+              {t.dispatch.today}
             </span>
           )}
           {count > 0 && (
@@ -204,6 +203,7 @@ function DayColumn({ day, jobs, isToday, fleet, drivers, onAdvance, advancing })
             drivers={drivers}
             onAdvance={onAdvance}
             advancing={advancing}
+            t={t}
           />
         ))}
       </div>
@@ -213,6 +213,7 @@ function DayColumn({ day, jobs, isToday, fleet, drivers, onAdvance, advancing })
 
 // ── Dispatch ──────────────────────────────────────────────────────────────────
 export function Dispatch() {
+  const { t, lang } = useLanguage();
   const [weekOffset, setWeekOffset] = useState(0);
   const [advancing,  setAdvancing]  = useState(null);
 
@@ -233,10 +234,15 @@ export function Dispatch() {
     });
   }, [weekOffset]);
 
+  const locale = lang === 'sv' ? 'sv-SE' : 'en-GB';
   const weekLabel = useMemo(() => {
-    const fmt = (d) => new Intl.DateTimeFormat('sv-SE', { day: 'numeric', month: 'short' }).format(d);
+    const fmt = (d) => new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(d);
     return `${fmt(weekDays[0])} – ${fmt(weekDays[6])} ${weekDays[6].getFullYear()}`;
-  }, [weekDays]);
+  }, [weekDays, locale]);
+
+  const weekDayLabels = useMemo(() =>
+    weekDays.map((d) => new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(d).slice(0, 3)),
+  [weekDays, locale]);
 
   const todayStr = new Date().toDateString();
 
@@ -297,18 +303,18 @@ export function Dispatch() {
         {/* Title */}
         <div style={{ flex: 1 }}>
           <div style={{ fontFamily: OUTFIT, fontSize: 12, fontWeight: 700, letterSpacing: '0.10em', textTransform: 'uppercase', color: TEXT }}>
-            Dispatch Board
+            {t.dispatch.title}
           </div>
           <div style={{ fontFamily: MONO, fontSize: 10, color: FAINT, marginTop: 1 }}>
             {weekLabel}
             {activeCount > 0 && (
               <span style={{ marginLeft: 10, color: '#15803d', fontWeight: 600 }}>
-                · {activeCount} aktiv{activeCount === 1 ? 't' : 'a'}
+                {t.dispatch.active(activeCount)}
               </span>
             )}
             {plannedCount > 0 && (
               <span style={{ marginLeft: 6, color: '#d97706' }}>
-                · {plannedCount} planerad{plannedCount === 1 ? '' : 'e'}
+                {t.dispatch.planned(plannedCount)}
               </span>
             )}
           </div>
@@ -335,7 +341,7 @@ export function Dispatch() {
               transition: 'background 150ms, color 150ms, border-color 150ms',
             }}
           >
-            Denna vecka
+            {t.dispatch.thisWeek}
           </button>
           <button
             onClick={() => setWeekOffset((w) => w + 1)}
@@ -353,7 +359,7 @@ export function Dispatch() {
 
         {/* Week grid */}
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-          {weekDays.map((day) => (
+          {weekDays.map((day, idx) => (
             <DayColumn
               key={day.toDateString()}
               day={day}
@@ -363,6 +369,8 @@ export function Dispatch() {
               drivers={drivers}
               onAdvance={advanceStatus}
               advancing={advancing}
+              t={t}
+              weekDayLabel={weekDayLabels[idx]}
             />
           ))}
         </div>
@@ -371,7 +379,7 @@ export function Dispatch() {
         {unscheduled.length > 0 && (
           <div style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '14px 18px' }}>
             <div style={{ fontFamily: OUTFIT, fontSize: 10, fontWeight: 700, letterSpacing: '0.10em', textTransform: 'uppercase', color: MUTED, marginBottom: 12 }}>
-              Ej schemalagda · {unscheduledCount}
+              {t.dispatch.unscheduled(unscheduledCount)}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {unscheduled.map((job) => (
@@ -382,6 +390,7 @@ export function Dispatch() {
                     drivers={drivers}
                     onAdvance={advanceStatus}
                     advancing={advancing}
+                    t={t}
                   />
                 </div>
               ))}
@@ -394,10 +403,10 @@ export function Dispatch() {
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: 10 }}>
             <CalendarDays size={32} color={FAINT} />
             <div style={{ fontFamily: OUTFIT, fontSize: 14, fontWeight: 600, color: MUTED }}>
-              Inga aktiva uppdrag denna vecka
+              {t.dispatch.emptyHeading}
             </div>
             <div style={{ fontFamily: OUTFIT, fontSize: 12, color: FAINT, textAlign: 'center', maxWidth: 320 }}>
-              Godkänn en offert som uppdrag — den dyker upp här baserat på transportdatum.
+              {t.dispatch.emptyDesc}
             </div>
           </div>
         )}

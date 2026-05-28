@@ -10,7 +10,7 @@ const MUTED   = '#6a6050';
 const FAINT   = '#9a9082';
 const OUTFIT  = "'Plus Jakarta Sans', system-ui, sans-serif";
 const SURF    = '#f4f0e7';
-const MONO    = "'DM Mono', monospace";
+const MONO    = "'Plus Jakarta Sans', system-ui, sans-serif";
 
 const fmtSEK = (n) =>
   n == null ? '—' : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n) + ' kr';

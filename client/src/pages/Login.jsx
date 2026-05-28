@@ -4,7 +4,7 @@ import { useLanguage } from '../context/LanguageContext.jsx';
 import { LogoMark }    from '../assets/Logo.jsx';
 
 const INTER       = "'Plus Jakarta Sans', system-ui, sans-serif";
-const MONO        = "'DM Mono', monospace";
+const MONO        = "'Plus Jakarta Sans', system-ui, sans-serif";
 const BG_BASE     = '#f4f5f7';
 const SURF        = '#ffffff';
 const BORDER      = '#ececef';

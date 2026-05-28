@@ -8,7 +8,7 @@ import { db }           from '../db/dexie.js';
 import { generateDpa }  from '../utils/generateDpa.js';
 import { generateTos }  from '../utils/generateTos.js';
 
-const OUTFIT  = "'Outfit', system-ui, sans-serif";
+const OUTFIT  = "'Plus Jakarta Sans', system-ui, sans-serif";
 const INTER   = OUTFIT;  // alias — remove after full migration
 const AMBER   = '#c9921e';
 const BLUE    = AMBER;   // alias
@@ -19,7 +19,7 @@ const BORDER  = '#cfc9bb';
 const TEXT    = '#151210';
 const MUTED   = '#6a6050';
 const SURF    = '#f4f0e7';
-const MONO    = "'DM Mono', monospace";
+const MONO    = "'Plus Jakarta Sans', system-ui, sans-serif";
 
 function SmsStatusPill({ enabled }) {
   const { t } = useLanguage();
@@ -187,7 +187,7 @@ function BillingCard() {
   const meta   = STATUS_META[status] ?? STATUS_META.none;
   const isActive = status === 'active' || status === 'trialing';
 
-  const OUTFIT = "'Outfit', system-ui, sans-serif";
+  const OUTFIT = "'Plus Jakarta Sans', system-ui, sans-serif";
   const AMBER  = '#c9a84c';
   const BG2    = '#f5f3ee';
   const TEXT2  = '#17161a';
