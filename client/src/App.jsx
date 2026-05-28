@@ -22,7 +22,8 @@ import { Login }          from './pages/Login.jsx';
 import { Audit }          from './pages/Audit.jsx';
 import { Jobs }           from './pages/Jobs.jsx';
 import { DpaModal }       from './components/DpaModal.jsx';
-import { RouteMap }       from './components/RouteMap.jsx';
+import { RouteMap }               from './components/RouteMap.jsx';
+import { VehicleComparisonPanel } from './components/VehicleComparisonPanel.jsx';
 import { Customers }      from './pages/Customers.jsx';
 import { Co2 }            from './pages/Co2.jsx';
 import { Onboarding }     from './pages/Onboarding.jsx';
@@ -931,19 +932,24 @@ function AppInner() {
     setRouteAdvisory(null);
     setRouteData(null);
 
-    // Primary: /api/route — ORS HGV routing + LEZ avoidance + cost breakdown
-    const vehicle_id      = parsed?.fordon_rekommenderat ?? parsed?.fordon_id ?? null;
-    const departure_time  = parsed?.datum ?? null;
+    // Primary: /api/route — ORS HGV routing + LEZ avoidance + multi-vehicle cost comparison
+    const vehicle_id     = parsed?.fordon_rekommenderat ?? parsed?.fordon_id ?? null;
+    const departure_time = parsed?.datum ?? null;
+    const weight_kg      = weight_ton != null ? Math.round(weight_ton * 1000) : null;
     const routeCall = apiFetch('/api/route', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ pickup, delivery, vehicle_id, departure_time }),
+      body:    JSON.stringify({ pickup, delivery, vehicle_id, departure_time, weight_kg, lasttyp: parsed?.lasttyp }),
     })
       .then((r) => r.ok ? r.json() : null)
       .then((d) => {
         if (!d) return;
         setRouteData(d);
         if (d.distance_km != null) applyRoute(d.distance_km);
+        // Auto-apply cost-optimal vehicle if it differs from AI recommendation
+        if (d.optimal_vehicle?.ext_id && d.optimal_vehicle.ext_id !== vehicle_id) {
+          setField('fordon_rekommenderat', d.optimal_vehicle.ext_id);
+        }
       })
       .catch(() => {});
 
@@ -1478,9 +1484,17 @@ function AppInner() {
                     </div>
                   )}
 
-                  {/* Route map — ORS HGV routing + Trafikverket disruptions */}
+                  {/* Route map — ORS HGV routing + LEZ avoidance + cost breakdown */}
                   {(routeData || routeLoading) && (
                     <RouteMap routeData={routeData} loading={routeLoading} />
+                  )}
+
+                  {/* Vehicle cost comparison — cost-optimal vehicle selection */}
+                  {routeData?.vehicle_comparison?.length > 0 && (
+                    <VehicleComparisonPanel
+                      routeData={routeData}
+                      onOverride={(vehicleId) => setField('fordon_rekommenderat', vehicleId)}
+                    />
                   )}
 
                   {lezVarning && (

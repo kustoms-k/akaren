@@ -11,12 +11,27 @@ const TRV_URL = 'https://api.trafikinfo.trafikverket.se/v2/data.json';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const fleet    = JSON.parse(readFileSync(path.join(__dirname, '../data/fleet.json'),     'utf8'));
-const lezData  = JSON.parse(readFileSync(path.join(__dirname, '../data/lez_zones.json'), 'utf8'));
+const fleetJson = JSON.parse(readFileSync(path.join(__dirname, '../data/fleet.json'),     'utf8'));
+const lezData   = JSON.parse(readFileSync(path.join(__dirname, '../data/lez_zones.json'), 'utf8'));
+
+// Index fleet.json by id for O(1) fuel-consumption lookup
+const fleetJsonMap = Object.fromEntries(fleetJson.map((v) => [v.id.toUpperCase(), v]));
+
+// ── DB queries ────────────────────────────────────────────────────────────────
+
+const stmtFleet = db.prepare(`
+  SELECT ext_id, namn, typ, lasttyp, max_last_kg, volym_m3,
+         lez_godkand, euro_klass, timkostnad_sek, priskm_sek, startavgift_sek,
+         forbrukning_l_per_km
+  FROM company_fleet WHERE company_id = ?
+`);
+
+const stmtFuel = db.prepare(
+  'SELECT price_per_litre FROM fuel_price_cache ORDER BY id DESC LIMIT 1'
+);
 
 // ── Geometry helpers ─────────────────────────────────────────────────────────
 
-// Ray-casting point-in-polygon. polygon is [[lon,lat],...] exterior ring.
 function pointInPolygon(px, py, polygon) {
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -29,7 +44,6 @@ function pointInPolygon(px, py, polygon) {
   return inside;
 }
 
-// Haversine distance in km between two [lon,lat] points.
 function distKm([lon1, lat1], [lon2, lat2]) {
   const R   = 6371;
   const dLa = (lat2 - lat1) * Math.PI / 180;
@@ -39,8 +53,6 @@ function distKm([lon1, lat1], [lon2, lat2]) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// Check whether a route geometry (array of [lon,lat]) passes through a polygon.
-// Samples every 4th point for performance.
 function routeIntersectsPolygon(geometry, polygon) {
   for (let i = 0; i < geometry.length; i += 4) {
     const [lon, lat] = geometry[i];
@@ -49,7 +61,6 @@ function routeIntersectsPolygon(geometry, polygon) {
   return false;
 }
 
-// Check whether a route geometry passes within radius_km of a point.
 function routeNearPoint(geometry, midpoint, radiusKm) {
   for (let i = 0; i < geometry.length; i += 4) {
     if (distKm(geometry[i], midpoint) <= radiusKm) return true;
@@ -57,7 +68,20 @@ function routeNearPoint(geometry, midpoint, radiusKm) {
   return false;
 }
 
-// ── Congestion charge calculator ─────────────────────────────────────────────
+// ── Cargo suitability filter ─────────────────────────────────────────────────
+
+function isSuitable(vehicle, weightKg, lasttyp) {
+  if (weightKg && vehicle.max_last_kg && vehicle.max_last_kg < weightKg) return false;
+  const lt  = (lasttyp ?? '').toLowerCase();
+  const typ = (vehicle.typ ?? '').toLowerCase();
+  if ((lt.includes('kyl') || lt.includes('frys')) && !typ.includes('kyl')) return false;
+  if ((lt.includes('tank') || lt.includes('flytande') || lt.includes('adr'))
+    && !typ.includes('tank')) return false;
+  if ((lt.includes('kran') || lt.includes('lyft')) && !typ.includes('kran')) return false;
+  return true;
+}
+
+// ── Congestion charge ─────────────────────────────────────────────────────────
 
 function parseMins(hhmm) {
   const [h, m] = hhmm.split(':').map(Number);
@@ -66,14 +90,12 @@ function parseMins(hhmm) {
 
 function congestionFee(zone, departureISO) {
   if (!departureISO) return 0;
-  const d    = new Date(departureISO);
-  const dow  = d.getDay(); // 0=Sun,1=Mon,...,5=Fri,6=Sat
+  const d   = new Date(departureISO);
+  const dow = d.getDay();
   if (!zone.charged_days.includes(dow)) return 0;
   const mins = d.getHours() * 60 + d.getMinutes();
   for (const slot of zone.slots) {
-    if (mins >= parseMins(slot.from) && mins <= parseMins(slot.to)) {
-      return slot.sek;
-    }
+    if (mins >= parseMins(slot.from) && mins <= parseMins(slot.to)) return slot.sek;
   }
   return 0;
 }
@@ -88,7 +110,7 @@ async function geocodeORS(address) {
   const d = await r.json();
   const f = d.features?.[0];
   if (!f) throw new Error(`ORS: no result for "${address}"`);
-  return f.geometry.coordinates; // [lon, lat]
+  return f.geometry.coordinates;
 }
 
 async function geocodeNominatim(address) {
@@ -109,29 +131,23 @@ function geocode(address) {
 
 async function routeORS(from, to, avoidPolygons = null) {
   const body = {
-    coordinates:     [from, to],
-    units:           'km',
-    geometry:        true,
-    geometry_format: 'geojson',
-    instructions:    false,
+    coordinates: [from, to], units: 'km',
+    geometry: true, geometry_format: 'geojson', instructions: false,
   };
-  if (avoidPolygons) {
-    body.options = { avoid_polygons: avoidPolygons };
-  }
+  if (avoidPolygons) body.options = { avoid_polygons: avoidPolygons };
   const r = await fetch('https://api.openrouteservice.org/v2/directions/driving-hgv', {
-    method:  'POST',
+    method: 'POST',
     headers: { Authorization: ORS_KEY, 'Content-Type': 'application/json' },
-    body:    JSON.stringify(body),
-    signal:  AbortSignal.timeout(15000),
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(15000),
   });
   if (!r.ok) throw new Error(`ORS directions ${r.status}`);
   const data  = await r.json();
   const route = data.routes?.[0];
   if (!route) throw new Error('ORS: no route returned');
-  const geometry = route.geometry?.coordinates ?? []; // [[lon,lat], ...]
-  const polyline = geometry.map(([lon, lat]) => [lat, lon]); // Leaflet [lat,lon]
+  const geometry = route.geometry?.coordinates ?? [];
   return {
-    polyline,
+    polyline:         geometry.map(([lon, lat]) => [lat, lon]),
     geometry,
     distance_km:      Math.round(route.summary.distance * 10) / 10,
     duration_minutes: Math.round(route.summary.duration / 60),
@@ -147,9 +163,8 @@ async function routeOSRM(from, to) {
   const route = data.routes?.[0];
   if (!route) throw new Error('OSRM: no route');
   const geometry = route.geometry?.coordinates ?? [];
-  const polyline = geometry.map(([lon, lat]) => [lat, lon]);
   return {
-    polyline,
+    polyline:         geometry.map(([lon, lat]) => [lat, lon]),
     geometry,
     distance_km:      Math.round(route.distance / 100) / 10,
     duration_minutes: Math.round(route.duration / 60),
@@ -165,12 +180,8 @@ async function fetchDisruptions() {
   <LOGIN authenticationkey="${TRV_KEY}"/>
   <QUERY objecttype="Situation" schemaversion="1.5" limit="20">
     <FILTER><EQ name="Deviation.CountyNo" value="1"/></FILTER>
-    <INCLUDE>Deviation.MessageCode</INCLUDE>
-    <INCLUDE>Deviation.SeverityCode</INCLUDE>
-    <INCLUDE>Deviation.StartTime</INCLUDE>
-    <INCLUDE>Deviation.EndTime</INCLUDE>
-    <INCLUDE>Deviation.LocationDescriptor</INCLUDE>
-    <INCLUDE>Deviation.Geometry.WGS84</INCLUDE>
+    <INCLUDE>Deviation.MessageCode</INCLUDE><INCLUDE>Deviation.SeverityCode</INCLUDE>
+    <INCLUDE>Deviation.LocationDescriptor</INCLUDE><INCLUDE>Deviation.Geometry.WGS84</INCLUDE>
     <INCLUDE>Deviation.Header</INCLUDE>
   </QUERY>
 </REQUEST>`;
@@ -187,57 +198,96 @@ async function fetchDisruptions() {
       const devs = Array.isArray(sit.Deviation) ? sit.Deviation
         : sit.Deviation ? [sit.Deviation] : [];
       return devs.map((dev) => {
-        let coordinates = null;
         const wgs84 = dev.Geometry?.WGS84;
+        let coordinates = null;
         if (wgs84) {
           const m = wgs84.match(/(-?\d+\.\d+)\s+(-?\d+\.\d+)/);
-          if (m) coordinates = [parseFloat(m[2]), parseFloat(m[1])]; // [lat,lon] for Leaflet
+          if (m) coordinates = [parseFloat(m[2]), parseFloat(m[1])];
         }
-        return {
-          type:        dev.MessageCode        ?? 'unknown',
-          severity:    dev.SeverityCode       ?? 0,
-          location:    dev.LocationDescriptor ?? '',
-          description: dev.Header             ?? '',
-          coordinates,
-        };
+        return { type: dev.MessageCode ?? 'unknown', severity: dev.SeverityCode ?? 0,
+          location: dev.LocationDescriptor ?? '', description: dev.Header ?? '', coordinates };
       }).filter((d) => d.coordinates);
     });
-  } catch {
-    return [];
-  }
+  } catch { return []; }
+}
+
+// ── Cost calculation for one vehicle ─────────────────────────────────────────
+
+function calcVehicleCost(vehicle, directGeo, directKm, compliantKm, cZones, bridges, dieselPrice) {
+  const isHeavy  = (vehicle.max_last_kg ?? 0) > 3500;
+  const euroKl   = vehicle.euro_klass ?? 6;
+  const forbruk  = vehicle.forbrukning_l_per_km
+    ?? fleetJsonMap[vehicle.ext_id?.toUpperCase()]?.forbrukning_l_per_km
+    ?? 0.32;
+
+  // LEZ check for this vehicle
+  const violations = directGeo?.length
+    ? lezData.lez_zones.filter((z) =>
+        routeIntersectsPolygon(directGeo, z.polygon) &&
+        isHeavy && euroKl < z.min_euro_class
+      )
+    : [];
+
+  const compliant    = violations.length === 0;
+  const routeKm      = compliant ? (directKm ?? 0) : (compliantKm ?? directKm ?? 0);
+  const detourKmExtra= compliant ? 0 : Math.max(0, (compliantKm ?? 0) - (directKm ?? 0));
+
+  const fuelKr       = Math.round(routeKm * forbruk * dieselPrice);
+  const congKr       = cZones.reduce((s, z) => s + z.fee_sek, 0);
+  const tollsKr      = bridges.reduce((s, b) => s + b.toll_sek, 0);
+  const detourKr     = Math.round(detourKmExtra * forbruk * dieselPrice);
+  const totalKr      = fuelKr + congKr + tollsKr + detourKr;
+
+  return {
+    ext_id:         vehicle.ext_id,
+    namn:           vehicle.namn,
+    typ:            vehicle.typ,
+    euro_klass:     vehicle.euro_klass,
+    lez_compliant:  compliant,
+    lez_violations: violations.map((z) => z.name),
+    distance_km:    routeKm,
+    detour_km:      detourKmExtra,
+    forbrukning:    forbruk,
+    cost: {
+      fuel_kr:        fuelKr,
+      congestion_kr:  congKr,
+      tolls_kr:       tollsKr,
+      detour_kr:      detourKr,
+      total_kr:       totalKr,
+    },
+  };
 }
 
 // ── POST /api/route ───────────────────────────────────────────────────────────
 
 router.post('/', async (req, res) => {
-  const { pickup, delivery, vehicle_id, departure_time } = req.body ?? {};
+  const { pickup, delivery, vehicle_id, departure_time, weight_kg, lasttyp } = req.body ?? {};
   if (!pickup?.trim() || !delivery?.trim()) {
     return res.status(400).json({ error: 'pickup and delivery are required' });
   }
 
-  // ── Vehicle lookup ─────────────────────────────────────────────────────────
-  const vehicle = vehicle_id
-    ? (fleet.find((v) => v.id.toUpperCase() === String(vehicle_id).toUpperCase())
-       ?? fleet.find((v) => v.namn.toLowerCase() === String(vehicle_id).toLowerCase())
-       ?? null)
-    : null;
-
-  const isHeavy    = vehicle ? vehicle.maxLast_kg > 3500 : true; // assume heavy if unknown
-  const euroKlass  = vehicle?.euro_klass ?? null;
-
-  // ── Live diesel price from cache ────────────────────────────────────────────
-  const fuelRow    = db.prepare(
-    'SELECT price_per_litre FROM fuel_price_cache ORDER BY id DESC LIMIT 1'
-  ).get();
+  // ── Live diesel price ──────────────────────────────────────────────────────
+  const fuelRow     = stmtFuel.get();
   const dieselPrice = fuelRow?.price_per_litre ?? 18.50;
 
-  // ── Geocode both ends ──────────────────────────────────────────────────────
-  let fromCoord = null;
-  let toCoord   = null;
+  // ── Company fleet from DB (with fleet.json fuel-consumption fallback) ──────
+  const dbFleet = req.companyId ? stmtFleet.all(req.companyId) : [];
+
+  // ── Specific vehicle from the AI recommendation ────────────────────────────
+  const findVehicle = (id) => {
+    if (!id) return null;
+    const up = String(id).toUpperCase();
+    return dbFleet.find((v) => v.ext_id?.toUpperCase() === up)
+      ?? dbFleet.find((v) => v.namn?.toLowerCase() === String(id).toLowerCase())
+      ?? null;
+  };
+  const vehicle = findVehicle(vehicle_id);
+
+  // ── Geocode ────────────────────────────────────────────────────────────────
+  let fromCoord = null, toCoord = null;
   try {
     [fromCoord, toCoord] = await Promise.all([
-      geocode(pickup.trim()),
-      geocode(delivery.trim()),
+      geocode(pickup.trim()), geocode(delivery.trim()),
     ]);
   } catch (err) {
     console.warn('[route] geocode error:', err.message);
@@ -249,10 +299,11 @@ router.post('/', async (req, res) => {
       apple_maps_url:  `https://maps.apple.com/?saddr=${encodeURIComponent(pickup)}&daddr=${encodeURIComponent(delivery)}&dirflg=r`,
       lez_compliant: true, lez_violations: [], direct_route: null, compliant_route: null,
       cost_breakdown: null, lez_zone_polygons: [], congestion_zone_polygons: [],
+      vehicle_comparison: [], optimal_vehicle: null, reasoning: null,
     });
   }
 
-  // ── Direct route ────────────────────────────────────────────────────────────
+  // ── Direct route ───────────────────────────────────────────────────────────
   let directRoute = null;
   try {
     directRoute = ORS_KEY
@@ -261,135 +312,152 @@ router.post('/', async (req, res) => {
   } catch (err) {
     console.warn('[route] direct route error:', err.message);
     directRoute = {
-      polyline: [[fromCoord[1], fromCoord[0]], [toCoord[1], toCoord[0]]],
-      geometry: [fromCoord, toCoord],
-      distance_km: null, duration_minutes: null,
+      polyline:         [[fromCoord[1], fromCoord[0]], [toCoord[1], toCoord[0]]],
+      geometry:         [fromCoord, toCoord],
+      distance_km:      null,
+      duration_minutes: null,
     };
   }
 
-  // ── LEZ compliance check ───────────────────────────────────────────────────
+  // ── Zone checks on direct route ────────────────────────────────────────────
   const lezViolations    = [];
   const cZonesOnRoute    = [];
   const bridgeTolls      = [];
   const lezZonePolygons  = [];
   const congZonePolygons = [];
 
-  if (directRoute.geometry?.length) {
-    const geo = directRoute.geometry;
+  const geo       = directRoute.geometry ?? [];
+  const isHeavy   = vehicle ? vehicle.max_last_kg > 3500 : true;
+  const euroKlass = vehicle?.euro_klass ?? null;
 
-    // Check LEZ zones
-    for (const zone of lezData.lez_zones) {
-      if (routeIntersectsPolygon(geo, zone.polygon)) {
-        lezZonePolygons.push({
-          id:    zone.id,
-          name:  zone.name,
-          class: zone.class,
-          polygon: zone.polygon,
-        });
-        if (isHeavy && euroKlass != null && euroKlass < zone.min_euro_class) {
-          lezViolations.push({
-            id:             zone.id,
-            name:           zone.name,
-            min_euro_class: zone.min_euro_class,
-            vehicle_class:  euroKlass,
-            fine_sek:       zone.fine_sek,
-            info:           zone.info,
-          });
-        }
+  for (const zone of lezData.lez_zones) {
+    if (routeIntersectsPolygon(geo, zone.polygon)) {
+      lezZonePolygons.push({ id: zone.id, name: zone.name, class: zone.class, polygon: zone.polygon });
+      if (isHeavy && euroKlass != null && euroKlass < zone.min_euro_class) {
+        lezViolations.push({ id: zone.id, name: zone.name,
+          min_euro_class: zone.min_euro_class, vehicle_class: euroKlass, fine_sek: zone.fine_sek });
       }
     }
-
-    // Check congestion zones
-    for (const zone of lezData.congestion_zones) {
-      if (routeIntersectsPolygon(geo, zone.polygon)) {
-        const fee = congestionFee(zone, departure_time);
-        congZonePolygons.push({
-          id:      zone.id,
-          name:    zone.name,
-          polygon: zone.polygon,
-        });
-        if (fee > 0) {
-          cZonesOnRoute.push({ id: zone.id, name: zone.name, fee_sek: fee });
-        }
-      }
+  }
+  for (const zone of lezData.congestion_zones) {
+    if (routeIntersectsPolygon(geo, zone.polygon)) {
+      congZonePolygons.push({ id: zone.id, name: zone.name, polygon: zone.polygon });
+      const fee = congestionFee(zone, departure_time);
+      if (fee > 0) cZonesOnRoute.push({ id: zone.id, name: zone.name, fee_sek: fee });
     }
-
-    // Check bridge tolls
-    for (const toll of lezData.bridge_tolls) {
-      if (routeNearPoint(geo, toll.midpoint, toll.radius_km)) {
-        bridgeTolls.push({ id: toll.id, name: toll.name, toll_sek: toll.toll_sek });
-      }
+  }
+  for (const toll of lezData.bridge_tolls) {
+    if (routeNearPoint(geo, toll.midpoint, toll.radius_km)) {
+      bridgeTolls.push({ id: toll.id, name: toll.name, toll_sek: toll.toll_sek });
     }
   }
 
   const isLezCompliant = lezViolations.length === 0;
 
-  // ── Compliant route (ORS avoid_polygons if needed) ─────────────────────────
-  let compliantRoute = null;
+  // ── Compliant detour route (only if zones are violated AND ORS key exists) ──
+  let compliantRoute      = null;
   let lezAvoidanceApplied = false;
 
-  if (!isLezCompliant && ORS_KEY && lezViolations.length > 0) {
+  if (!isLezCompliant && ORS_KEY) {
     const avoidPolygons = {
       type: 'MultiPolygon',
       coordinates: lezViolations.map((v) => {
         const zone = lezData.lez_zones.find((z) => z.id === v.id);
-        return [zone.polygon]; // each polygon is [[coords]] in MultiPolygon
+        return [zone.polygon];
       }),
     };
     try {
-      compliantRoute = await routeORS(fromCoord, toCoord, avoidPolygons);
-      lezAvoidanceApplied = true;
+      compliantRoute       = await routeORS(fromCoord, toCoord, avoidPolygons);
+      lezAvoidanceApplied  = true;
     } catch (err) {
       console.warn('[route] compliant route error:', err.message);
-      compliantRoute = directRoute; // fallback — same route but flagged
+      compliantRoute = directRoute;
     }
   }
 
-  // The primary route shown on map = compliant if avoidance was applied, else direct
+  const directKm    = directRoute?.distance_km    ?? null;
+  const compliantKm = compliantRoute?.distance_km ?? directKm;
   const primaryRoute = compliantRoute ?? directRoute;
 
-  // ── Cost breakdown ──────────────────────────────────────────────────────────
-  const fuelPerKm = vehicle?.forbrukning_l_per_km ?? 0.32;
+  // ── Cost breakdown for the requested vehicle ───────────────────────────────
+  const primaryVehicle = vehicle ?? dbFleet[0] ?? null;
+  const forbruk = primaryVehicle?.forbrukning_l_per_km
+    ?? fleetJsonMap[primaryVehicle?.ext_id?.toUpperCase()]?.forbrukning_l_per_km
+    ?? 0.32;
 
-  function calcFuel(distKmVal) {
-    if (!distKmVal) return null;
-    return Math.round(distKmVal * fuelPerKm * dieselPrice);
-  }
-
-  const directDistKm    = directRoute?.distance_km    ?? null;
-  const compliantDistKm = compliantRoute?.distance_km ?? directDistKm;
-  const primaryDistKm   = primaryRoute?.distance_km   ?? null;
-  const primaryDurMin   = primaryRoute?.duration_minutes ?? null;
-
-  const bransleKr          = calcFuel(primaryDistKm);
-  const directBransleKr    = calcFuel(directDistKm);
-  const trangselskattKr    = cZonesOnRoute.reduce((s, z) => s + z.fee_sek, 0);
-  const infrastrukturKr    = bridgeTolls.reduce((s, b) => s + b.toll_sek, 0);
-  const lezBotRisk         = isLezCompliant ? 0 : lezViolations.reduce((s, v) => s + v.fine_sek, 0);
-  const detourDistExtra    = (compliantDistKm && directDistKm)
-    ? Math.max(0, compliantDistKm - directDistKm) : 0;
-  const detourTimeExtra    = (compliantRoute && directRoute)
-    ? Math.max(0, (compliantRoute.duration_minutes ?? 0) - (directRoute.duration_minutes ?? 0)) : 0;
-  const detourMerkostnad   = calcFuel(detourDistExtra) ?? 0;
-
-  const primaryTotal = (bransleKr ?? 0) + trangselskattKr + infrastrukturKr;
-  const directTotal  = (directBransleKr ?? 0) + trangselskattKr + infrastrukturKr;
+  const primaryKm   = primaryRoute?.distance_km ?? 0;
+  const fuelKr      = Math.round(primaryKm * forbruk * dieselPrice);
+  const congKr      = cZonesOnRoute.reduce((s, z) => s + z.fee_sek, 0);
+  const tollsKr     = bridgeTolls.reduce((s, b) => s + b.toll_sek, 0);
+  const lezBotRisk  = isLezCompliant ? 0 : lezViolations.reduce((s, v) => s + v.fine_sek, 0);
+  const detourExtra = lezAvoidanceApplied
+    ? Math.max(0, (compliantKm ?? 0) - (directKm ?? 0)) : 0;
+  const detourKr    = Math.round(detourExtra * forbruk * dieselPrice);
 
   const costBreakdown = {
-    diesel_price_kr_l:     dieselPrice,
-    forbrukning_l_per_km:  fuelPerKm,
-    bransle_kr:            bransleKr,
-    trangselskatt_kr:      trangselskattKr,
-    infrastrukturavgift_kr: infrastrukturKr,
-    lez_bot_risk_kr:       lezBotRisk,
-    detour_merkostnad_kr:  lezAvoidanceApplied ? detourMerkostnad : 0,
-    detour_km_extra:       lezAvoidanceApplied ? detourDistExtra  : 0,
-    detour_min_extra:      lezAvoidanceApplied ? detourTimeExtra  : 0,
-    total_kr:              primaryTotal,
-    direct_total_kr:       directTotal,
-    congestion_zones:      cZonesOnRoute,
-    bridge_tolls:          bridgeTolls,
+    diesel_price_kr_l:      dieselPrice,
+    forbrukning_l_per_km:   forbruk,
+    bransle_kr:             fuelKr,
+    trangselskatt_kr:       congKr,
+    infrastrukturavgift_kr: tollsKr,
+    lez_bot_risk_kr:        lezBotRisk,
+    detour_merkostnad_kr:   detourKr,
+    detour_km_extra:        detourExtra,
+    detour_min_extra:       lezAvoidanceApplied
+      ? Math.max(0, (compliantRoute?.duration_minutes ?? 0) - (directRoute?.duration_minutes ?? 0)) : 0,
+    total_kr:               fuelKr + congKr + tollsKr + detourKr,
+    direct_total_kr:        Math.round((directKm ?? 0) * forbruk * dieselPrice) + congKr + tollsKr,
+    congestion_zones:       cZonesOnRoute,
+    bridge_tolls:           bridgeTolls,
   };
+
+  // ── Multi-vehicle comparison ───────────────────────────────────────────────
+  const weightKg       = weight_kg ? Number(weight_kg) : null;
+  const candidates     = dbFleet.filter((v) => isSuitable(v, weightKg, lasttyp));
+
+  const comparison = candidates
+    .map((v) => calcVehicleCost(v, geo, directKm, compliantKm, cZonesOnRoute, bridgeTolls, dieselPrice))
+    .sort((a, b) => {
+      if (a.lez_compliant !== b.lez_compliant) return a.lez_compliant ? -1 : 1;
+      return a.cost.total_kr - b.cost.total_kr;
+    });
+
+  // Optimal = cheapest compliant (or cheapest overall if all non-compliant)
+  const compliantCandidates = comparison.filter((v) => v.lez_compliant);
+  const optimal             = compliantCandidates[0] ?? comparison[0] ?? null;
+
+  // Build a human-readable reasoning string for the recommendation
+  let reasoning = null;
+  if (optimal && comparison.length > 1) {
+    const aiVehicle  = comparison.find((v) => v.ext_id === (vehicle?.ext_id ?? ''));
+    const savedKr    = aiVehicle && aiVehicle.ext_id !== optimal.ext_id
+      ? aiVehicle.cost.total_kr - optimal.cost.total_kr : null;
+    const savedMin   = aiVehicle && aiVehicle.detour_km > 0 && optimal.lez_compliant && aiVehicle.lez_compliant
+      ? null
+      : (aiVehicle && !aiVehicle.lez_compliant && optimal.lez_compliant ? optimal.detour_km === 0 : false)
+        ? null : null;
+
+    if (!aiVehicle || aiVehicle.ext_id === optimal.ext_id) {
+      reasoning = optimal.lez_compliant
+        ? `${optimal.ext_id} (Euro ${optimal.euro_klass}) är det mest kostnadseffektiva fordonet och är godkänt för alla zoner på rutten.`
+        : `${optimal.ext_id} (Euro ${optimal.euro_klass}) är det billigaste tillgängliga fordonet men uppfyller inte LEZ-kraven.`;
+    } else if (savedKr != null && savedKr > 0) {
+      const lezNote = !aiVehicle.lez_compliant && optimal.lez_compliant
+        ? ` Sparar ${optimal.detour_km > 0 ? `${Math.round(optimal.detour_km)} km omväg och ` : ''}${savedKr} kr jämfört med ${aiVehicle.ext_id} (Euro ${aiVehicle.euro_klass}) som måste ta omväg.`
+        : ` Sparar ${savedKr} kr jämfört med ${aiVehicle.ext_id}.`;
+      reasoning = `${optimal.ext_id} (Euro ${optimal.euro_klass}) rekommenderas.${lezNote}`;
+    } else if (!aiVehicle.lez_compliant && optimal.lez_compliant) {
+      const detourKmRounded = Math.round((aiVehicle.detour_km ?? 0));
+      const detourMin       = Math.round(detourKmRounded / 70 * 60); // rough estimate
+      reasoning = `${optimal.ext_id} (Euro ${optimal.euro_klass}) vald — får köra genom Miljözon och sparar ${detourMin > 0 ? `${detourMin} min och ` : ''}${Math.abs(aiVehicle.cost.total_kr - optimal.cost.total_kr)} kr jämfört med ${aiVehicle.ext_id} (Euro ${aiVehicle.euro_klass}) som måste ta omväg.`;
+    } else {
+      reasoning = `${optimal.ext_id} (Euro ${optimal.euro_klass}) är det mest kostnadseffektiva fordonet för denna rutt.`;
+    }
+  } else if (optimal) {
+    reasoning = optimal.lez_compliant
+      ? `${optimal.ext_id} (Euro ${optimal.euro_klass}) är godkänt för alla zoner på rutten.`
+      : `${optimal.ext_id} (Euro ${optimal.euro_klass}) uppfyller inte LEZ-kraven på rutten.`;
+  }
 
   // ── Trafikverket disruptions ───────────────────────────────────────────────
   const disruptions = await fetchDisruptions();
@@ -403,15 +471,13 @@ router.post('/', async (req, res) => {
     90,
   );
 
-  // ── Response ───────────────────────────────────────────────────────────────
   const pickupEnc   = encodeURIComponent(pickup.trim());
   const deliveryEnc = encodeURIComponent(delivery.trim());
 
   res.json({
-    // Primary fields (backwards-compatible)
     polyline:          primaryRoute.polyline,
-    distance_km:       primaryDistKm,
-    duration_minutes:  primaryDurMin,
+    distance_km:       primaryRoute.distance_km,
+    duration_minutes:  primaryRoute.duration_minutes,
     pickup_coords:     [fromCoord[1], fromCoord[0]],
     delivery_coords:   [toCoord[1],   toCoord[0]],
     disruptions,
@@ -419,20 +485,21 @@ router.post('/', async (req, res) => {
     google_maps_url:   `https://www.google.com/maps/dir/${pickupEnc}/${deliveryEnc}`,
     apple_maps_url:    `https://maps.apple.com/?saddr=${pickupEnc}&daddr=${deliveryEnc}&dirflg=r`,
 
-    // LEZ / routing intelligence
-    vehicle:              vehicle ? { id: vehicle.id, namn: vehicle.namn, euro_klass: vehicle.euro_klass } : null,
-    lez_compliant:        isLezCompliant,
-    lez_violations:       lezViolations,
+    vehicle:               vehicle ? { id: vehicle.ext_id, namn: vehicle.namn, euro_klass: vehicle.euro_klass } : null,
+    lez_compliant:         isLezCompliant,
+    lez_violations:        lezViolations,
     lez_avoidance_applied: lezAvoidanceApplied,
-    direct_route:         directRoute  ? { polyline: directRoute.polyline,  distance_km: directDistKm,    duration_minutes: directRoute.duration_minutes }  : null,
-    compliant_route:      compliantRoute ? { polyline: compliantRoute.polyline, distance_km: compliantDistKm, duration_minutes: compliantRoute.duration_minutes } : null,
+    direct_route:          directRoute  ? { polyline: directRoute.polyline,  distance_km: directKm,    duration_minutes: directRoute.duration_minutes } : null,
+    compliant_route:       compliantRoute ? { polyline: compliantRoute.polyline, distance_km: compliantKm, duration_minutes: compliantRoute.duration_minutes } : null,
 
-    // Cost breakdown
     cost_breakdown: costBreakdown,
 
-    // Zone polygons for map rendering
-    lez_zone_polygons:       lezZonePolygons,
+    lez_zone_polygons:        lezZonePolygons,
     congestion_zone_polygons: congZonePolygons,
+
+    vehicle_comparison: comparison,
+    optimal_vehicle:    optimal,
+    reasoning,
   });
 });
 

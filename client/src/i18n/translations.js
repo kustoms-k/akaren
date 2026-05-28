@@ -853,6 +853,17 @@ export const EN = {
     },
   },
 
+  vehicleComparison: {
+    heading:     'Cost-optimal vehicle',
+    useThis:     'Use this vehicle',
+    showAll:     (n) => `Compare all ${n} vehicles`,
+    recommended: 'Recommended',
+    fuel:        'Fuel',
+    congestion:  'Congestion',
+    bridge:      'Tolls',
+    detour:      'LEZ detour',
+  },
+
   onboarding: {
     setup:          'Setup wizard',
     loadDemo:       'Load demo data',
@@ -2117,6 +2128,17 @@ export const SV = {
       lezViolationNote: (zones) =>
         `Rutten passerar ${zones} — fordonet uppfyller inte emissionskravet. Omvägsrutt ej tillgänglig.`,
     },
+  },
+
+  vehicleComparison: {
+    heading:     'Kostnadsoptimalt fordon',
+    useThis:     'Använd detta fordon',
+    showAll:     (n) => `Jämför alla ${n} fordon`,
+    recommended: 'Rekommenderas',
+    fuel:        'Bränsle',
+    congestion:  'Trängselskatt',
+    bridge:      'Broavgift',
+    detour:      'LEZ-omväg',
   },
 
   onboarding: {

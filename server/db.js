@@ -361,6 +361,8 @@ const migrations = [
   `ALTER TABLE audit_log ADD COLUMN user_name TEXT`,
   // User created_at — was missing from original schema; existing rows get NULL
   `ALTER TABLE users ADD COLUMN created_at TEXT`,
+  // Vehicle fuel consumption for route cost calculation
+  `ALTER TABLE company_fleet ADD COLUMN forbrukning_l_per_km REAL`,
 ];
 
 // Backfill: companies created before the onboarding feature launch are already set up
