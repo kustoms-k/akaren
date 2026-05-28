@@ -7,14 +7,14 @@ import { useLanguage } from '../context/LanguageContext.jsx';
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const AMBER   = '#B56510';
 const AMBER_DK= '#9A6410';
-const BG      = '#EDECEA';
+const BG      = '#f4f5f7';
 const WHITE   = '#ffffff';
-const BORDER  = 'rgba(28,26,22,0.09)';
-const TEXT    = '#1C1A17';
-const MUTED   = '#625E58';
-const FAINT   = '#A09C96';
-const OUTFIT  = "'Outfit', system-ui, sans-serif";
-const SURF    = '#FAF9F7';
+const BORDER  = '#ececef';
+const TEXT    = '#1a1d24';
+const MUTED   = '#6b7280';
+const FAINT   = '#9ca3af';
+const OUTFIT  = "'Inter', system-ui, sans-serif";
+const SURF    = '#ffffff';
 const MONO    = "'DM Mono', monospace";
 
 function currentMonth() {

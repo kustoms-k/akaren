@@ -44,66 +44,72 @@ import { SyncProvider, useSync } from './context/SyncContext.jsx';
 import { LanguageProvider, useLanguage } from './context/LanguageContext.jsx';
 import { db }             from './db/dexie.js';
 
-// ─── Design tokens — warm analytical ─────────────────────────────────────────
-const SAGE      = '#5C8A6E';
-const SAGE_DIM  = '#4A7A5C';
-const TERRA     = '#C06040';
-const SLATE_A   = '#4A6FA8';
-const AMBER_C   = '#A87818';
-const MAUVE_C   = '#8B6FA8';
-const CORAL_C   = '#C85448';
-const BG_BASE   = '#F5F3EF';
-const SURF      = '#FFFFFF';
-const SURF_SOLID = '#FFFFFF';
-const SURF_ELV  = '#F0EDE8';
-const BORDER    = '#E3DDD6';
-const BORDER_ST = '#CCC6BC';
-const TEXT_PR   = '#1C1917';
-const TEXT_SEC  = '#6B6359';
-const TEXT_MU   = '#A09590';
+// ─── Design tokens — clean light premium ─────────────────────────────────────
+const BG_BASE   = '#f4f5f7';
+const SURF      = '#ffffff';
+const SURF_SOFT = '#fafbfc';
+const SURF_ELV  = '#f0f2f5';
+const SURF_SOLID = '#ffffff';
+const BORDER    = '#ececef';
+const BORDER_ST = '#dde0e5';
+const TEXT_PR   = '#1a1d24';
+const TEXT_SEC  = '#6b7280';
+const TEXT_MU   = '#9ca3af';
+const ACCENT    = '#2d3340';   // dark slate — primary buttons + active states
+const ACCENT_SF = '#eef0f3';   // accent-soft background
+const ICON_BG   = '#eef1f5';   // icon container tint
 const INTER     = "'Inter', system-ui, sans-serif";
 const MONO      = "'DM Mono', monospace";
 
+// Semantic colours
+const D_GREEN = '#16a34a';
+const D_RED   = '#dc2626';
+const D_AMBER = '#b56510';
+const D_BLUE  = '#2563eb';
+
+// Shadows — soft only
+const SHADOW_SM   = '0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)';
+const SHADOW_CARD = '0 1px 4px rgba(0,0,0,0.05), 0 8px 24px rgba(0,0,0,0.06)';
+
 // Aliases — keep compatibility with existing inline styles
-const OUTFIT   = INTER;
-const WHITE    = '#ffffff';
-const TEXT     = TEXT_PR;
-const MUTED    = TEXT_SEC;
-const FAINT    = TEXT_MU;
-const CYAN     = SAGE;
-const CYAN_BR  = SAGE_DIM;
-const VIOLET   = MAUVE_C;
-const BLUE_ACC = SLATE_A;
-const SUCCESS  = SAGE;
-const WARNING_C = AMBER_C;
-const DANGER   = CORAL_C;
-const AMBER    = AMBER_C;
-const BLUE     = SLATE_A;
-const BLUE_DK  = '#3A5F98';
-const AMBER_LT = AMBER_C;
-const AMBER_DK = '#8A6010';
+const OUTFIT      = INTER;
+const WHITE       = '#ffffff';
+const TEXT        = TEXT_PR;
+const MUTED       = TEXT_SEC;
+const FAINT       = TEXT_MU;
+const CYAN        = '#2563eb';
+const CYAN_BR     = '#1d4ed8';
+const BLUE_ACC    = '#2563eb';
+const SUCCESS     = D_GREEN;
+const WARNING_C   = D_AMBER;
+const DANGER      = D_RED;
+const AMBER       = D_AMBER;
+const BLUE        = D_BLUE;
+const BLUE_DK     = '#1d4ed8';
+const AMBER_LT    = D_AMBER;
+const AMBER_DK    = '#92400e';
 const BORDER_GLOW = BORDER;
+const VIOLET      = '#7c3aed';
+const DARK        = ACCENT;
+const DARK_SURF   = '#1a1d24';
+const DARK_SURF2  = '#2d3340';
+const DARK_BDR    = 'rgba(255,255,255,0.10)';
+const GREEN_LIVE  = D_GREEN;
+const SAGE        = D_GREEN;
+const SAGE_DIM    = '#15803d';
+const TERRA       = D_AMBER;
+const SLATE_A     = D_BLUE;
+const AMBER_C     = D_AMBER;
+const MAUVE_C     = VIOLET;
+const CORAL_C     = D_RED;
+const NOISE_URI   = '';
 
 const glassCard = {
   background: SURF,
   border: `1px solid ${BORDER}`,
-  borderRadius: 12,
-  boxShadow: '0 1px 4px rgba(28,25,23,0.06), 0 2px 8px rgba(28,25,23,0.04)',
+  borderRadius: 20,
+  boxShadow: SHADOW_SM,
 };
-
-const DARK       = '#1F1C19';
-const DARK_SURF  = '#2A2622';
-const DARK_SURF2 = '#342E2A';
-const DARK_BDR   = 'rgba(255,255,255,0.08)';
-const GREEN_LIVE = SAGE;
-
-const NOISE_URI = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E")`;
-
-const D_BLUE  = '#2C5FBF';
-const ACCENT  = '#2C5FBF';
-const D_GREEN = '#1E7A50';
-const D_AMBER = '#B56510';
-const D_RED   = '#A82424';
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 const fmtSEK = (n) =>
@@ -211,18 +217,19 @@ function NavItem({ id, label, Icon, isActive, onClick }) {
       onMouseLeave={() => setHovered(false)}
       style={{
         width: '100%',
-        display: 'flex', alignItems: 'center', gap: 9,
-        padding: '7px 12px 7px 14px',
-        background: isActive ? 'rgba(44,95,191,0.10)' : hovered ? 'rgba(255,255,255,0.04)' : 'transparent',
+        display: 'flex', alignItems: 'center', gap: 8,
+        padding: '8px 12px',
+        background: isActive ? ACCENT_SF : hovered ? '#f5f6f8' : 'transparent',
         border: 'none',
-        borderLeft: `2px solid ${isActive ? '#7DBB95' : 'transparent'}`,
-        borderRadius: '0 7px 7px 0',
-        color: isActive ? '#F4F0E8' : hovered ? '#D4CCC4' : '#9B9088',
-        fontSize: 13, fontFamily: INTER, fontWeight: isActive ? 500 : 400,
+        borderRadius: 10,
+        color: isActive ? ACCENT : hovered ? TEXT_PR : TEXT_SEC,
+        fontSize: 11, fontFamily: INTER, fontWeight: isActive ? 600 : 500,
+        letterSpacing: '0.04em',
+        textTransform: 'uppercase',
         cursor: 'pointer', textAlign: 'left',
-        transition: 'all 150ms cubic-bezier(0.23,1,0.32,1)',
+        transition: 'all 120ms ease',
         lineHeight: 1.3,
-        marginBottom: 1,
+        marginBottom: 2,
       }}
     >
       <Icon size={14} strokeWidth={isActive ? 2 : 1.5} style={{ flexShrink: 0 }} />
@@ -244,60 +251,47 @@ function Sidebar({ activePage, onNavigate, company, onLogout, userRole, mobileOp
       {mobileOpen && (
         <div className="mobile-backdrop" onClick={onMobileClose} aria-hidden />
       )}
-    <aside className={`app-sidebar${mobileOpen ? ' mobile-open' : ''}`} style={{
-      width: 220, flexShrink: 0,
-      background: '#1F1C19',
-      borderRight: '1px solid rgba(255,255,255,0.06)',
-      display: 'flex', flexDirection: 'column',
-      height: '100vh',
-    }}>
-      {/* Logo */}
-      <div style={{
-        padding: '22px 16px 18px',
-        borderBottom: '1px solid rgba(255,255,255,0.07)',
-        flexShrink: 0,
+      <aside className={`app-sidebar${mobileOpen ? ' mobile-open' : ''}`} style={{
+        width: 232, flexShrink: 0,
+        background: BG_BASE,
+        padding: '12px',
+        display: 'flex', flexDirection: 'column',
+        height: '100vh',
+        boxSizing: 'border-box',
       }}>
+        {/* Floating card */}
         <div style={{
-          fontFamily: INTER, fontWeight: 700, fontSize: 17,
-          color: '#F4F0E8',
-          letterSpacing: '-0.02em',
-          lineHeight: 1,
+          flex: 1, background: SURF,
+          borderRadius: 20, boxShadow: SHADOW_CARD,
+          border: `1px solid ${BORDER}`,
+          display: 'flex', flexDirection: 'column',
+          padding: '20px 12px 16px',
+          overflow: 'hidden',
         }}>
-          Åkaren
-        </div>
-        <div style={{
-          fontSize: 9, color: '#5A544E',
-          fontFamily: INTER, marginTop: 5,
-          letterSpacing: '0.18em', textTransform: 'uppercase',
-        }}>
-          {t.sidebar.tagline}
-        </div>
-      </div>
-
-      {/* Main nav */}
-      <nav style={{ flex: 1, padding: '10px 8px 10px 0', overflowY: 'auto' }}>
-        {mainItems.map(({ id, label, Icon }) => (
-          <NavItem
-            key={id}
-            id={id}
-            label={label}
-            Icon={Icon}
-            isActive={activePage === id}
-            onClick={() => onNavigate(id)}
-          />
-        ))}
-
-        {/* Compliance section — owner only */}
-        {complianceItems.length > 0 && (
-          <>
+          {/* Logo */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '0 4px', marginBottom: 28, flexShrink: 0,
+          }}>
             <div style={{
-              fontSize: 9, fontFamily: INTER, fontWeight: 700,
-              letterSpacing: '0.14em', textTransform: 'uppercase',
-              color: '#3E3830', padding: '16px 14px 6px',
+              width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+              background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              {t.sidebar.compliance}
+              <span style={{ color: '#fff', fontWeight: 800, fontSize: 15, fontFamily: INTER, letterSpacing: '-0.02em' }}>Å</span>
             </div>
-            {complianceItems.map(({ id, label, Icon }) => (
+            <div>
+              <div style={{ fontFamily: INTER, fontWeight: 700, fontSize: 14, color: TEXT_PR, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+                Åkaren
+              </div>
+              <div style={{ fontSize: 8, color: TEXT_MU, fontFamily: INTER, marginTop: 1, letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+                {t.sidebar.tagline}
+              </div>
+            </div>
+          </div>
+
+          {/* Main nav */}
+          <nav style={{ flex: 1, padding: '0 0 10px', overflowY: 'auto' }}>
+            {mainItems.map(({ id, label, Icon }) => (
               <NavItem
                 key={id}
                 id={id}
@@ -307,52 +301,66 @@ function Sidebar({ activePage, onNavigate, company, onLogout, userRole, mobileOp
                 onClick={() => onNavigate(id)}
               />
             ))}
-          </>
-        )}
-      </nav>
 
-      {/* Footer */}
-      <div style={{
-        borderTop: '1px solid rgba(255,255,255,0.07)',
-        padding: '12px 14px 16px', flexShrink: 0,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 10 }}>
-          <div style={{
-            width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-            background: 'rgba(255,255,255,0.07)',
-            border: '1px solid rgba(255,255,255,0.10)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: INTER, fontSize: 10, fontWeight: 700, color: '#C8C0B6',
-          }}>
-            {(company?.name ?? 'Å').slice(0, 2).toUpperCase()}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              fontFamily: INTER, fontSize: 11, fontWeight: 500, color: '#9B9088',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>
-              {company?.name ?? 'Åkaren'}
+            {/* Compliance section */}
+            {complianceItems.length > 0 && (
+              <>
+                <div style={{
+                  fontSize: 9, fontFamily: INTER, fontWeight: 700,
+                  letterSpacing: '0.14em', textTransform: 'uppercase',
+                  color: TEXT_MU, padding: '16px 12px 6px',
+                }}>
+                  {t.sidebar.compliance}
+                </div>
+                {complianceItems.map(({ id, label, Icon }) => (
+                  <NavItem
+                    key={id}
+                    id={id}
+                    label={label}
+                    Icon={Icon}
+                    isActive={activePage === id}
+                    onClick={() => onNavigate(id)}
+                  />
+                ))}
+              </>
+            )}
+          </nav>
+
+          {/* Footer */}
+          <div style={{ borderTop: `1px solid ${BORDER}`, padding: '12px 4px 4px', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+                background: ACCENT_SF, border: `1px solid ${BORDER}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: INTER, fontSize: 10, fontWeight: 700, color: ACCENT,
+              }}>
+                {(company?.name ?? 'Å').slice(0, 2).toUpperCase()}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: INTER, fontSize: 11, fontWeight: 500, color: TEXT_SEC, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {company?.name ?? 'Åkaren'}
+                </div>
+              </div>
             </div>
+            <button
+              onClick={onLogout}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 7,
+                color: TEXT_MU, fontSize: 11, fontFamily: INTER,
+                background: 'none', border: 'none', cursor: 'pointer',
+                padding: '4px 0', width: '100%', borderRadius: 5,
+                transition: 'color 150ms ease',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = TEXT_PR; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = TEXT_MU; }}
+            >
+              <LogOut size={12} strokeWidth={1.5} />
+              <span>{t.nav.logOut}</span>
+            </button>
           </div>
         </div>
-        <button
-          onClick={onLogout}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 7,
-            color: '#5A544E', fontSize: 12, fontFamily: INTER,
-            background: 'none', border: 'none', cursor: 'pointer',
-            padding: '4px 0', width: '100%',
-            borderRadius: 5,
-            transition: 'color 150ms ease',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = '#9B9088'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = '#5A544E'; }}
-        >
-          <LogOut size={12} strokeWidth={1.5} />
-          <span>{t.nav.logOut}</span>
-        </button>
-      </div>
-    </aside>
+      </aside>
     </>
   );
 }

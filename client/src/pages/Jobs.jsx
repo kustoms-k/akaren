@@ -11,16 +11,16 @@ import { db }              from '../db/dexie.js';
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const AMBER   = '#B56510';
 const AMBER_DK= '#9A6410';
-const CYAN    = '#2C5FBF';
+const CYAN    = '#2563eb';
 const CYAN_BR = '#2A5FAA';
-const SUCCESS = '#1E7A50';
-const DANGER  = '#A82424';
+const SUCCESS = '#16a34a';
+const DANGER  = '#dc2626';
 const WARNING_C = '#B56510';
-const BG_BASE = '#EDECEA';
-const BORDER  = 'rgba(28,26,22,0.09)';
-const TEXT_PR = '#1C1A17';
-const TEXT_SEC= '#625E58';
-const TEXT_MU = '#A09C96';
+const BG_BASE = '#f4f5f7';
+const BORDER  = '#ececef';
+const TEXT_PR = '#1a1d24';
+const TEXT_SEC= '#6b7280';
+const TEXT_MU = '#9ca3af';
 const INTER   = "'Inter', 'Outfit', system-ui, sans-serif";
 const MONO    = "'DM Mono', monospace";
 // Legacy aliases
@@ -29,7 +29,7 @@ const WHITE   = '#ffffff';
 const TEXT    = TEXT_PR;
 const MUTED   = TEXT_SEC;
 const FAINT   = TEXT_MU;
-const SURF    = '#FAF9F7';
+const SURF    = '#ffffff';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtSEK = (n) =>
