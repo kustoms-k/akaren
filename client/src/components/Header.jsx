@@ -2,7 +2,7 @@ import { S } from '../constants/strings.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const INTER = "'Inter', sans-serif";
+const INTER = "'Plus Jakarta Sans', sans-serif";
 const BLUE  = '#4361ee';
 
 const fmtPrice = (n) =>

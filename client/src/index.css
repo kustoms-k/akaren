@@ -2,7 +2,7 @@
 
 /* ── Fonts ───────────────────────────────────────────────────────────────── */
 :root {
-  --font-sans: 'Inter', 'Outfit', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-mono: 'DM Mono', 'Fira Code', monospace;
 }
 

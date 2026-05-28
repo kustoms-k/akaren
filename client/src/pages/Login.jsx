@@ -3,7 +3,7 @@ import { useAuth }     from '../context/AuthContext.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
 import { LogoMark }    from '../assets/Logo.jsx';
 
-const INTER       = "'Inter', system-ui, sans-serif";
+const INTER       = "'Plus Jakarta Sans', system-ui, sans-serif";
 const MONO        = "'DM Mono', monospace";
 const BG_BASE     = '#f4f5f7';
 const SURF        = '#ffffff';

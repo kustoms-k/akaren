@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const INTER = "'Inter', system-ui, sans-serif";
+const INTER = "'Plus Jakarta Sans', system-ui, sans-serif";
 const MONO  = "'DM Mono', monospace";
 
 const fmtKr = (n) => n == null ? '—'

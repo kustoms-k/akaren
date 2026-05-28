@@ -58,7 +58,7 @@ const TEXT_MU   = '#9ca3af';
 const ACCENT    = '#2d3340';   // dark slate — primary buttons + active states
 const ACCENT_SF = '#eef0f3';   // accent-soft background
 const ICON_BG   = '#eef1f5';   // icon container tint
-const INTER     = "'Inter', system-ui, sans-serif";
+const INTER     = "'Plus Jakarta Sans', system-ui, sans-serif";
 const MONO      = "'DM Mono', monospace";
 
 // Semantic colours
@@ -2459,7 +2459,7 @@ class ErrorBoundary extends Component {
     if (this.state.error) {
       return (
         <div style={{
-          color: '#e74c3c', padding: 32, fontFamily: "'Inter', sans-serif",
+          color: '#e74c3c', padding: 32, fontFamily: "'Plus Jakarta Sans', sans-serif",
           background: BG, minHeight: '100vh', whiteSpace: 'pre-wrap',
         }}>
           <div style={{ fontSize: 14, marginBottom: 16, color: TEXT }}>Render error</div>

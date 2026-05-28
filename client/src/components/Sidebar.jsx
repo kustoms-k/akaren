@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { S } from '../constants/strings.js';
 
-const OUTFIT = "'Outfit', system-ui, sans-serif";
+const OUTFIT = "'Plus Jakarta Sans', system-ui, sans-serif";
 const INTER  = OUTFIT;
 const AMBER  = '#c9921e';
 const BLUE   = AMBER;

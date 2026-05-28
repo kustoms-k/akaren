@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const OUTFIT = "'Outfit', system-ui, sans-serif";
+const OUTFIT = "'Plus Jakarta Sans', system-ui, sans-serif";
 
 const VARIANTS = {
   success: {

@@ -21,7 +21,7 @@ const BORDER  = '#ececef';
 const TEXT_PR = '#1a1d24';
 const TEXT_SEC= '#6b7280';
 const TEXT_MU = '#9ca3af';
-const INTER   = "'Inter', 'Outfit', system-ui, sans-serif";
+const INTER   = "'Plus Jakarta Sans', system-ui, sans-serif";
 const MONO    = "'DM Mono', monospace";
 // Legacy aliases
 const OUTFIT  = INTER;

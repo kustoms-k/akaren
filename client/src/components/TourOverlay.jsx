@@ -7,7 +7,7 @@ const BLUE  = '#4361ee';
 const WHITE = '#ffffff';
 const TEXT  = '#1a1a2e';
 const MUTED = '#6c757d';
-const INTER = "'Inter', sans-serif";
+const INTER = "'Plus Jakarta Sans', sans-serif";
 
 const TOUR_NAV = [
   { navId: 'new-quote', key: 'newQuote'      },
