@@ -29,7 +29,9 @@ function avg(arr) {
 
 function computeMarginPct(row) {
   if (!row.totalpris_sek) return null;
-  const cost = (row['bränsle_kostnad'] ?? 0) + (row['arbetstid_kostnad'] ?? 0);
+  // Prefer actual reconciled fuel cost over estimate
+  const fuel = row['actual_bränsle_sek'] ?? row['bränsle_kostnad'] ?? 0;
+  const cost = fuel + (row['arbetstid_kostnad'] ?? 0);
   return ((row.totalpris_sek - cost) / row.totalpris_sek) * 100;
 }
 
@@ -226,6 +228,37 @@ export function computeInsightsForCompany(companyId) {
     }))
     .sort((a, b) => a.month - b.month);
   upsertInsight(companyId, 'seasonal_curve', { items: seasonItems }, 0.75);
+
+  // ── 7. Actual vs estimated fuel cost gap ─────────────────────────────────────
+  const fuelRows = db.prepare(`
+    SELECT q.fordon_id, q.bränsle_kostnad AS estimated, q.actual_bränsle_sek AS actual,
+           q.avstand_km
+    FROM quotes q
+    WHERE q.company_id = ? AND q.actual_bränsle_sek IS NOT NULL
+      AND q.bränsle_kostnad IS NOT NULL AND q.bränsle_kostnad > 0
+  `).all(companyId);
+
+  if (fuelRows.length >= 5) {
+    const gapMap = {};
+    for (const r of fuelRows) {
+      const veh = r.fordon_id ?? 'okänd';
+      if (!gapMap[veh]) gapMap[veh] = { gaps: [], est: [], actual: [] };
+      const gapPct = (r.actual - r.estimated) / r.estimated * 100;
+      gapMap[veh].gaps.push(gapPct);
+      gapMap[veh].est.push(r.estimated);
+      gapMap[veh].actual.push(r.actual);
+    }
+    const fuelGapItems = Object.entries(gapMap).map(([vehicle_id, d]) => ({
+      vehicle_id,
+      avg_gap_pct:       Math.round(avg(d.gaps) * 10) / 10,
+      avg_estimated:     Math.round(avg(d.est)),
+      avg_actual:        Math.round(avg(d.actual)),
+      n:                 d.gaps.length,
+      overestimating:    avg(d.gaps) < -5,
+      underestimating:   avg(d.gaps) > 5,
+    }));
+    upsertInsight(companyId, 'fuel_cost_gap', { items: fuelGapItems, sample_n: fuelRows.length }, 0.9);
+  }
 }
 
 export function runPricingInsightsJob() {

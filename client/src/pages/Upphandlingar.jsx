@@ -244,10 +244,10 @@ export function Upphandlingar() {
     if (filters.watched_only) params.set('watched_only', '1');
 
     const [list, s] = await Promise.all([
-      apiFetch(`/api/upphandlingar?${params}`),
-      apiFetch('/api/upphandlingar/stats'),
+      apiFetch(`/api/upphandlingar?${params}`).then((r) => r.ok ? r.json() : []),
+      apiFetch('/api/upphandlingar/stats').then((r) => r.ok ? r.json() : null),
     ]);
-    if (list) setTenders(list);
+    if (Array.isArray(list)) setTenders(list);
     if (s)    setStats(s);
     setLoading(false);
   }, [filters]);
@@ -262,7 +262,7 @@ export function Upphandlingar() {
   };
 
   const handleWatch = async (id, currentlyWatched) => {
-    const res = await apiFetch(`/api/upphandlingar/${id}/watch`, { method: 'PUT' });
+    const res = await apiFetch(`/api/upphandlingar/${id}/watch`, { method: 'PUT' }).then((r) => r.ok ? r.json() : null);
     if (res) {
       setTenders(prev => prev.map(t => t.id === id ? { ...t, watched: res.watched ? 1 : 0 } : t));
       if (stats) setStats(s => ({ ...s, watched: s.watched + (res.watched ? 1 : -1) }));

@@ -14,6 +14,7 @@ export const EN = {
     kortider:        'Driving Hours',
     upphandlingar:   'Tenders',
     natverk:         'Network',
+    drivmedel:       'Fuel Cards',
   },
 
   sidebar: {
@@ -1385,6 +1386,7 @@ export const SV = {
     kortider:        'Körtider',
     upphandlingar:   'Upphandlingar',
     natverk:         'Nätverk',
+    drivmedel:       'Drivmedelskort',
   },
 
   sidebar: {

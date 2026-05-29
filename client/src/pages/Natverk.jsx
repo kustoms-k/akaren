@@ -96,8 +96,9 @@ function PartnerModal({ partner, onClose, onSave }) {
     try {
       const method = partner ? 'PUT' : 'POST';
       const url    = partner ? `/api/natverk/partners/${partner.id}` : '/api/natverk/partners';
-      const saved  = await apiFetch(url, { method, body: form });
-      onSave(saved);
+      const r = await apiFetch(url, { method, body: JSON.stringify(form) });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? `HTTP ${r.status}`);
+      onSave();
     } catch (ex) {
       setErr(ex.message ?? 'Fel vid sparning');
     } finally {
@@ -210,8 +211,9 @@ function ReferralModal({ partners, onClose, onSave }) {
         overenskommet_totalpris_sek: total || null,
         formedlingsavgift_pct:       pct,
       };
-      const saved = await apiFetch('/api/natverk/referrals', { method: 'POST', body });
-      onSave(saved);
+      const r = await apiFetch('/api/natverk/referrals', { method: 'POST', body: JSON.stringify(body) });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? `HTTP ${r.status}`);
+      onSave();
     } catch (ex) {
       setErr(ex.message ?? 'Fel');
     } finally {
@@ -373,6 +375,7 @@ function SettlementPanel({ partners, onClose }) {
     if (!partnerId) return;
     setLoading(true);
     apiFetch(`/api/natverk/settlement/${partnerId}?month=${month}`)
+      .then((r) => r.ok ? r.json() : null)
       .then(setData).catch(() => setData(null)).finally(() => setLoading(false));
   }, [partnerId, month]);
 
@@ -548,13 +551,14 @@ export default function Natverk() {
 
   const load = useCallback(() => {
     setLoading(true);
+    const j = (r) => r.ok ? r.json() : Promise.reject(r.status);
     Promise.all([
-      apiFetch('/api/natverk/partners'),
-      apiFetch('/api/natverk/referrals'),
-      apiFetch('/api/natverk/stats'),
+      apiFetch('/api/natverk/partners').then(j),
+      apiFetch('/api/natverk/referrals').then(j),
+      apiFetch('/api/natverk/stats').then(j),
     ]).then(([p, r, s]) => {
-      setPartners(p);
-      setReferrals(r);
+      setPartners(Array.isArray(p) ? p : []);
+      setReferrals(Array.isArray(r) ? r : []);
       setStats(s);
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
@@ -568,7 +572,7 @@ export default function Natverk() {
   }
 
   async function updateReferralStatus(id, status) {
-    await apiFetch(`/api/natverk/referrals/${id}`, { method: 'PUT', body: { status } });
+    await apiFetch(`/api/natverk/referrals/${id}`, { method: 'PUT', body: JSON.stringify({ status }) });
     load();
   }
 

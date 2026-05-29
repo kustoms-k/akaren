@@ -5,7 +5,7 @@ import {
 import {
   LayoutDashboard, FilePlus, Briefcase, Truck, TrendingUp,
   Settings as SettingsIcon, LogOut, Bell, Search, X, DollarSign, FileText,
-  AlertTriangle, Fuel, Shield, Lock, Users, Leaf, CalendarDays, ScrollText, Network,
+  AlertTriangle, Fuel, Shield, Lock, Users, Leaf, CalendarDays, ScrollText, Network, CreditCard,
 } from 'lucide-react';
 import { useLiveQuery }   from 'dexie-react-hooks';
 import { InquiryInput }              from './components/InquiryInput.jsx';
@@ -32,6 +32,7 @@ import { DriverView }     from './pages/DriverView.jsx';
 import { Kortider }          from './pages/Kortider.jsx';
 import { Upphandlingar }     from './pages/Upphandlingar.jsx';
 import Natverk               from './pages/Natverk.jsx';
+import Drivmedel             from './pages/Drivmedel.jsx';
 import { SetupAccount }   from './pages/SetupAccount.jsx';
 import { TourOverlay }    from './components/TourOverlay.jsx';
 import { SubscriptionGate } from './components/SubscriptionGate.jsx';
@@ -186,6 +187,7 @@ const NAV_ROLES = {
   kortider:        ['agare', 'trafikledare'],
   upphandlingar:   ['agare', 'trafikledare'],
   natverk:         ['agare', 'trafikledare'],
+  drivmedel:       ['agare', 'trafikledare'],
 };
 
 function getNavItems(t, role) {
@@ -198,6 +200,7 @@ function getNavItems(t, role) {
     { id: 'kortider',      label: t.nav.kortider,      Icon: Shield,      group: 'compliance' },
     { id: 'upphandlingar', label: t.nav.upphandlingar, Icon: ScrollText,  group: 'compliance' },
     { id: 'natverk',       label: t.nav.natverk,       Icon: Network,     group: 'network' },
+    { id: 'drivmedel',     label: t.nav.drivmedel,     Icon: CreditCard,  group: 'network' },
   ];
   return all.filter((n) => !role || (NAV_ROLES[n.id] ?? []).includes(role));
 }
@@ -1554,6 +1557,11 @@ function AppInner() {
           {activePage === 'natverk' && (
             <div style={{ flex: 1, overflow: 'auto' }}>
               <Natverk />
+            </div>
+          )}
+          {activePage === 'drivmedel' && (
+            <div style={{ flex: 1, overflow: 'auto' }}>
+              <Drivmedel />
             </div>
           )}
           {/* ── New Quote tab ──────────────────────────────────────────── */}

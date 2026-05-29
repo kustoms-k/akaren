@@ -365,6 +365,45 @@ db.exec(`
     UNIQUE(company_id, upphandling_id)
   );
 
+  CREATE TABLE IF NOT EXISTS fuel_cards (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_id    INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    card_number   TEXT    NOT NULL,
+    vehicle_id    INTEGER REFERENCES company_fleet(id),
+    provider      TEXT,
+    holder_name   TEXT,
+    aktiv         INTEGER NOT NULL DEFAULT 1,
+    created_at    TEXT    DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(company_id, card_number)
+  );
+
+  CREATE TABLE IF NOT EXISTS fuel_imports (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_id    INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    filename      TEXT    NOT NULL,
+    provider      TEXT,
+    row_count     INTEGER NOT NULL DEFAULT 0,
+    matched_count INTEGER NOT NULL DEFAULT 0,
+    imported_at   TEXT    DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS fuel_transactions (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_id       INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    import_id        INTEGER REFERENCES fuel_imports(id) ON DELETE SET NULL,
+    card_number      TEXT,
+    vehicle_id       INTEGER REFERENCES company_fleet(id),
+    transaction_date TEXT    NOT NULL,
+    station_name     TEXT,
+    fuel_type        TEXT,
+    litres           REAL,
+    amount_sek       REAL,
+    price_per_litre  REAL,
+    job_id           INTEGER REFERENCES jobs(id),
+    reconciled_at    TEXT,
+    created_at       TEXT    DEFAULT CURRENT_TIMESTAMP
+  );
+
   CREATE TABLE IF NOT EXISTS partner_companies (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     company_id    INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
@@ -451,6 +490,8 @@ const migrations = [
   `ALTER TABLE users ADD COLUMN created_at TEXT`,
   // Vehicle fuel consumption for route cost calculation
   `ALTER TABLE company_fleet ADD COLUMN forbrukning_l_per_km REAL`,
+  // Actual reconciled fuel cost per job (set during fuel card reconciliation)
+  `ALTER TABLE quotes ADD COLUMN actual_bränsle_sek REAL`,
 ];
 
 // Backfill: companies created before the onboarding feature launch are already set up
