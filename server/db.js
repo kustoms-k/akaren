@@ -364,6 +364,39 @@ db.exec(`
     skapad_at       TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(company_id, upphandling_id)
   );
+
+  CREATE TABLE IF NOT EXISTS partner_companies (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_id    INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    partner_name  TEXT    NOT NULL,
+    org_nr        TEXT,
+    contact_name  TEXT,
+    contact_phone TEXT,
+    contact_email TEXT,
+    notes         TEXT,
+    aktiv         INTEGER NOT NULL DEFAULT 1,
+    created_at    TEXT    DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(company_id, partner_name)
+  );
+
+  CREATE TABLE IF NOT EXISTS job_referrals (
+    id                          INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_id                  INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    partner_company_id          INTEGER NOT NULL REFERENCES partner_companies(id) ON DELETE CASCADE,
+    quote_id                    INTEGER REFERENCES quotes(id),
+    riktning                    TEXT    NOT NULL CHECK(riktning IN ('ut', 'in')),
+    lasttyp                     TEXT,
+    upphämtning                 TEXT,
+    leverans                    TEXT,
+    datum                       TEXT,
+    overenskommet_totalpris_sek REAL,
+    formedlingsavgift_pct       REAL    NOT NULL DEFAULT 10,
+    partner_pris_sek            REAL,
+    status                      TEXT    NOT NULL DEFAULT 'föreslagen',
+    noteringar                  TEXT,
+    created_at                  TEXT    DEFAULT CURRENT_TIMESTAMP,
+    updated_at                  TEXT    DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // ── Safe column migrations (pre-existing databases) ───────────────────────────

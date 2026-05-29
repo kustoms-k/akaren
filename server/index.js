@@ -64,6 +64,7 @@ import bankidRouter                     from './routes/bankid.js';
 import driverHoursRouter                from './routes/driverHours.js';
 import backhaulRouter                   from './routes/backhaul.js';
 import upphandlingarRouter              from './routes/upphandlingar.js';
+import natverkRouter                   from './routes/natverk.js';
 import { authLimiter, analyseLimiter, apiLimiter } from './middleware/rateLimit.js';
 import { requireSubscription } from './middleware/requireSubscription.js';
 import db from './db.js';
@@ -196,6 +197,9 @@ app.use('/api/backhaul',          apiLimiter, requireAuth, requireRole(AGARE, TR
 
 // Upphandlingar — agare + trafikledare
 app.use('/api/upphandlingar',     apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE), upphandlingarRouter);
+
+// Nätverk (subcontractor overflow) — agare + trafikledare
+app.use('/api/natverk',           apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE), natverkRouter);
 
 // Billing — agare only
 app.use('/api/stripe',            apiLimiter, requireAuth, requireRole(AGARE), stripeRouter);

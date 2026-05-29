@@ -5,7 +5,7 @@ import {
 import {
   LayoutDashboard, FilePlus, Briefcase, Truck, TrendingUp,
   Settings as SettingsIcon, LogOut, Bell, Search, X, DollarSign, FileText,
-  AlertTriangle, Fuel, Shield, Lock, Users, Leaf, CalendarDays, ScrollText,
+  AlertTriangle, Fuel, Shield, Lock, Users, Leaf, CalendarDays, ScrollText, Network,
 } from 'lucide-react';
 import { useLiveQuery }   from 'dexie-react-hooks';
 import { InquiryInput }              from './components/InquiryInput.jsx';
@@ -31,6 +31,7 @@ import { Dispatch }       from './pages/Dispatch.jsx';
 import { DriverView }     from './pages/DriverView.jsx';
 import { Kortider }          from './pages/Kortider.jsx';
 import { Upphandlingar }     from './pages/Upphandlingar.jsx';
+import Natverk               from './pages/Natverk.jsx';
 import { SetupAccount }   from './pages/SetupAccount.jsx';
 import { TourOverlay }    from './components/TourOverlay.jsx';
 import { SubscriptionGate } from './components/SubscriptionGate.jsx';
@@ -184,6 +185,7 @@ const NAV_ROLES = {
   settings:   ['agare', 'trafikledare', 'ekonomi', 'revisor'],
   kortider:        ['agare', 'trafikledare'],
   upphandlingar:   ['agare', 'trafikledare'],
+  natverk:         ['agare', 'trafikledare'],
 };
 
 function getNavItems(t, role) {
@@ -195,6 +197,7 @@ function getNavItems(t, role) {
     { id: 'settings',    label: t.nav.settings,     Icon: SettingsIcon,    group: 'main' },
     { id: 'kortider',      label: t.nav.kortider,      Icon: Shield,      group: 'compliance' },
     { id: 'upphandlingar', label: t.nav.upphandlingar, Icon: ScrollText,  group: 'compliance' },
+    { id: 'natverk',       label: t.nav.natverk,       Icon: Network,     group: 'network' },
   ];
   return all.filter((n) => !role || (NAV_ROLES[n.id] ?? []).includes(role));
 }
@@ -249,6 +252,7 @@ function Sidebar({ activePage, onNavigate, company, onLogout, userRole, mobileOp
   const allItems        = getNavItems(t, userRole);
   const mainItems       = allItems.filter((n) => n.group === 'main');
   const complianceItems = allItems.filter((n) => n.group === 'compliance');
+  const networkItems    = allItems.filter((n) => n.group === 'network');
   return (
     <>
       {mobileOpen && (
@@ -316,6 +320,29 @@ function Sidebar({ activePage, onNavigate, company, onLogout, userRole, mobileOp
                   {t.sidebar.compliance}
                 </div>
                 {complianceItems.map(({ id, label, Icon }) => (
+                  <NavItem
+                    key={id}
+                    id={id}
+                    label={label}
+                    Icon={Icon}
+                    isActive={activePage === id}
+                    onClick={() => onNavigate(id)}
+                  />
+                ))}
+              </>
+            )}
+
+            {/* Network section */}
+            {networkItems.length > 0 && (
+              <>
+                <div style={{
+                  fontSize: 9, fontFamily: INTER, fontWeight: 700,
+                  letterSpacing: '0.14em', textTransform: 'uppercase',
+                  color: TEXT_MU, padding: '16px 12px 6px',
+                }}>
+                  {t.sidebar.network}
+                </div>
+                {networkItems.map(({ id, label, Icon }) => (
                   <NavItem
                     key={id}
                     id={id}
@@ -1522,6 +1549,11 @@ function AppInner() {
           {activePage === 'upphandlingar' && (
             <div style={{ flex: 1, overflow: 'auto' }}>
               <Upphandlingar />
+            </div>
+          )}
+          {activePage === 'natverk' && (
+            <div style={{ flex: 1, overflow: 'auto' }}>
+              <Natverk />
             </div>
           )}
           {/* ── New Quote tab ──────────────────────────────────────────── */}

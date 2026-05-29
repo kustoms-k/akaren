@@ -13,11 +13,13 @@ export const EN = {
     logOut:       'Log Out',
     kortider:        'Driving Hours',
     upphandlingar:   'Tenders',
+    natverk:         'Network',
   },
 
   sidebar: {
     tagline:    'Transport Intelligence',
     compliance: 'Compliance',
+    network:    'Network',
   },
 
   topbar: {
@@ -1382,11 +1384,13 @@ export const SV = {
     logOut:       'Logga ut',
     kortider:        'Körtider',
     upphandlingar:   'Upphandlingar',
+    natverk:         'Nätverk',
   },
 
   sidebar: {
     tagline:    'Transportstyrning',
     compliance: 'Regelefterlevnad',
+    network:    'Nätverk',
   },
 
   topbar: {
