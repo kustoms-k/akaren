@@ -52,6 +52,7 @@ import { requireAuth, requireOwner, requireRole,
 import { auditMutation, auditView }     from './middleware/auditLog.js';
 import usersRouter from './routes/users.js';
 import { runPricingInsightsJob }        from './jobs/pricingInsights.js';
+import { scheduleTenderFetch }          from './jobs/tenderFetch.js';
 import { scheduleDailyBackup }          from './jobs/backup.js';
 import dataPrivacyRouter                from './routes/dataPrivacy.js';
 import portalRouter                     from './routes/portal.js';
@@ -62,6 +63,7 @@ import stripeRouter, { handleStripeWebhook } from './routes/stripe.js';
 import bankidRouter                     from './routes/bankid.js';
 import driverHoursRouter                from './routes/driverHours.js';
 import backhaulRouter                   from './routes/backhaul.js';
+import upphandlingarRouter              from './routes/upphandlingar.js';
 import { authLimiter, analyseLimiter, apiLimiter } from './middleware/rateLimit.js';
 import { requireSubscription } from './middleware/requireSubscription.js';
 import db from './db.js';
@@ -192,6 +194,9 @@ app.use('/api/driver-hours',      apiLimiter, requireAuth, requireRole(AGARE, TR
 // Backhaul optimisation — agare + trafikledare
 app.use('/api/backhaul',          apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE), backhaulRouter);
 
+// Upphandlingar — agare + trafikledare
+app.use('/api/upphandlingar',     apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE), upphandlingarRouter);
+
 // Billing — agare only
 app.use('/api/stripe',            apiLimiter, requireAuth, requireRole(AGARE), stripeRouter);
 
@@ -208,3 +213,4 @@ app.listen(PORT, '0.0.0.0', () => {
 setTimeout(runPricingInsightsJob, 5_000);
 setInterval(runPricingInsightsJob, 24 * 60 * 60 * 1_000);
 scheduleDailyBackup();
+scheduleTenderFetch();

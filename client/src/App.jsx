@@ -5,7 +5,7 @@ import {
 import {
   LayoutDashboard, FilePlus, Briefcase, Truck, TrendingUp,
   Settings as SettingsIcon, LogOut, Bell, Search, X, DollarSign, FileText,
-  AlertTriangle, Fuel, Shield, Lock, Users, Leaf, CalendarDays,
+  AlertTriangle, Fuel, Shield, Lock, Users, Leaf, CalendarDays, ScrollText,
 } from 'lucide-react';
 import { useLiveQuery }   from 'dexie-react-hooks';
 import { InquiryInput }              from './components/InquiryInput.jsx';
@@ -29,7 +29,8 @@ import { Co2 }            from './pages/Co2.jsx';
 import { Onboarding }     from './pages/Onboarding.jsx';
 import { Dispatch }       from './pages/Dispatch.jsx';
 import { DriverView }     from './pages/DriverView.jsx';
-import { Kortider }       from './pages/Kortider.jsx';
+import { Kortider }          from './pages/Kortider.jsx';
+import { Upphandlingar }     from './pages/Upphandlingar.jsx';
 import { SetupAccount }   from './pages/SetupAccount.jsx';
 import { TourOverlay }    from './components/TourOverlay.jsx';
 import { SubscriptionGate } from './components/SubscriptionGate.jsx';
@@ -181,7 +182,8 @@ const NAV_ROLES = {
   operations: ['agare', 'trafikledare', 'ekonomi', 'revisor'],
   fleet:      ['agare', 'trafikledare'],
   settings:   ['agare', 'trafikledare', 'ekonomi', 'revisor'],
-  kortider:   ['agare', 'trafikledare'],
+  kortider:        ['agare', 'trafikledare'],
+  upphandlingar:   ['agare', 'trafikledare'],
 };
 
 function getNavItems(t, role) {
@@ -191,7 +193,8 @@ function getNavItems(t, role) {
     { id: 'operations',  label: t.nav.operations,   Icon: Briefcase,       group: 'main' },
     { id: 'fleet',       label: t.nav.fleet,        Icon: Truck,           group: 'main' },
     { id: 'settings',    label: t.nav.settings,     Icon: SettingsIcon,    group: 'main' },
-    { id: 'kortider',    label: t.nav.kortider,     Icon: Shield,          group: 'compliance' },
+    { id: 'kortider',      label: t.nav.kortider,      Icon: Shield,      group: 'compliance' },
+    { id: 'upphandlingar', label: t.nav.upphandlingar, Icon: ScrollText,  group: 'compliance' },
   ];
   return all.filter((n) => !role || (NAV_ROLES[n.id] ?? []).includes(role));
 }
@@ -1514,6 +1517,11 @@ function AppInner() {
           {activePage === 'kortider' && (
             <div style={{ flex: 1, overflow: 'auto' }}>
               <Kortider />
+            </div>
+          )}
+          {activePage === 'upphandlingar' && (
+            <div style={{ flex: 1, overflow: 'auto' }}>
+              <Upphandlingar />
             </div>
           )}
           {/* ── New Quote tab ──────────────────────────────────────────── */}

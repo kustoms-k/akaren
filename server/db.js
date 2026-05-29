@@ -331,6 +331,39 @@ db.exec(`
     linked_at  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(company_id, job_id_a, job_id_b)
   );
+
+  CREATE TABLE IF NOT EXISTS upphandlingar (
+    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_id           INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    external_id          TEXT    NOT NULL,
+    source               TEXT    NOT NULL DEFAULT 'TED',
+    titel                TEXT    NOT NULL,
+    kopare               TEXT,
+    region               TEXT,
+    nuts_kod             TEXT,
+    cpv_koder            TEXT,
+    estimerat_varde_sek  INTEGER,
+    valuta               TEXT    NOT NULL DEFAULT 'SEK',
+    deadline             TEXT,
+    publiceringsdatum    TEXT,
+    beskrivning          TEXT,
+    url                  TEXT,
+    relevans_score       INTEGER NOT NULL DEFAULT 50,
+    flotta_kan_hantera   INTEGER NOT NULL DEFAULT 1,
+    flotta_orsak         TEXT,
+    co2_fordel           INTEGER NOT NULL DEFAULT 0,
+    dismissed            INTEGER NOT NULL DEFAULT 0,
+    hamtad_at            TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(company_id, external_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS upphandling_watches (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_id      INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    upphandling_id  INTEGER NOT NULL REFERENCES upphandlingar(id) ON DELETE CASCADE,
+    skapad_at       TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(company_id, upphandling_id)
+  );
 `);
 
 // ── Safe column migrations (pre-existing databases) ───────────────────────────

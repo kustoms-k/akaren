@@ -11,7 +11,8 @@ export const EN = {
     audit:        'Audit Log',
     dataPrivacy:  'Data & Privacy',
     logOut:       'Log Out',
-    kortider:     'Driving Hours',
+    kortider:        'Driving Hours',
+    upphandlingar:   'Tenders',
   },
 
   sidebar: {
@@ -1379,7 +1380,8 @@ export const SV = {
     audit:        'Granskningslogg',
     dataPrivacy:  'Data & Sekretess',
     logOut:       'Logga ut',
-    kortider:     'Körtider',
+    kortider:        'Körtider',
+    upphandlingar:   'Upphandlingar',
   },
 
   sidebar: {
