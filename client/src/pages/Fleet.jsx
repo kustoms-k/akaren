@@ -4,6 +4,7 @@ import { db }            from '../db/dexie.js';
 import { syncFleetStats } from '../db/sync.js';
 import { useSync }       from '../context/SyncContext.jsx';
 import { useLanguage }   from '../context/LanguageContext.jsx';
+import { apiFetch }      from '../utils/apiFetch.js';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const AMBER   = '#B56510';
@@ -80,6 +81,34 @@ function EuroBadge({ klass }) {
   );
 }
 
+function MaintenanceBadge({ vehicleId, alerts }) {
+  if (!alerts) return null;
+  const vAlerts = alerts.filter((a) => a.vehicle_id === vehicleId);
+  if (!vAlerts.length) return null;
+  const critical = vAlerts.filter((a) => a.level === 'critical');
+  const warning  = vAlerts.filter((a) => a.level === 'warning');
+  if (critical.length) {
+    return (
+      <span title={critical.map((a) => a.label).join(', ')} style={{
+        background: '#fee2e2', color: '#dc2626', fontFamily: OUTFIT,
+        fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 5,
+        cursor: 'default', whiteSpace: 'nowrap',
+      }}>
+        {critical.length}× kritisk
+      </span>
+    );
+  }
+  return (
+    <span title={warning.map((a) => a.label).join(', ')} style={{
+      background: '#fef3c7', color: '#d97706', fontFamily: OUTFIT,
+      fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 5,
+      cursor: 'default', whiteSpace: 'nowrap',
+    }}>
+      {vAlerts.length}× varning
+    </span>
+  );
+}
+
 export function Fleet() {
   const { t, lang } = useLanguage();
   const { isOnline } = useSync();
@@ -87,21 +116,23 @@ export function Fleet() {
   const [sortKey, setSortKey] = useState('id');
   const [sortDir, setSortDir] = useState('asc');
   const [refreshing, setRefreshing] = useState(false);
+  const [maintAlerts, setMaintAlerts] = useState(null);
 
   const MONTH_OPTIONS = buildMonthOptions(lang);
 
   const COLS = [
     { key: 'id',              label: t.fleet.cols.vehicle,       width: '7%',  align: 'left'   },
-    { key: 'namn',            label: t.fleet.cols.name,          width: '14%', align: 'left'   },
-    { key: 'typ',             label: t.fleet.cols.type,          width: '11%', align: 'left'   },
-    { key: 'maxLast_kg',      label: t.fleet.cols.maxLoad,       width: '9%',  align: 'right'  },
-    { key: 'monthly_revenue', label: t.fleet.cols.revenue,       width: '12%', align: 'right'  },
-    { key: 'monthly_hours',   label: t.fleet.cols.hours,         width: '8%',  align: 'right'  },
+    { key: 'namn',            label: t.fleet.cols.name,          width: '13%', align: 'left'   },
+    { key: 'typ',             label: t.fleet.cols.type,          width: '10%', align: 'left'   },
+    { key: 'maxLast_kg',      label: t.fleet.cols.maxLoad,       width: '8%',  align: 'right'  },
+    { key: 'monthly_revenue', label: t.fleet.cols.revenue,       width: '11%', align: 'right'  },
+    { key: 'monthly_hours',   label: t.fleet.cols.hours,         width: '7%',  align: 'right'  },
     { key: 'profit_per_hour', label: t.fleet.cols.profitPerHour, width: '10%', align: 'right'  },
-    { key: 'timkostnad_sek',  label: t.fleet.cols.costPerHour,   width: '10%', align: 'right'  },
-    { key: 'euro_klass',      label: t.fleet.cols.euro,          width: '7%',  align: 'center' },
-    { key: 'lez_godkänd',     label: t.fleet.cols.lez,           width: '7%',  align: 'center' },
+    { key: 'timkostnad_sek',  label: t.fleet.cols.costPerHour,   width: '9%',  align: 'right'  },
+    { key: 'euro_klass',      label: t.fleet.cols.euro,          width: '6%',  align: 'center' },
+    { key: 'lez_godkänd',     label: t.fleet.cols.lez,           width: '6%',  align: 'center' },
     { key: 'tillstånd',       label: t.fleet.cols.permits,       width: '5%',  align: 'center' },
+    { key: '_maintenance',    label: 'Underhåll',                width: '8%',  align: 'center' },
   ];
 
   const cachedFleet = useLiveQuery(
@@ -121,6 +152,14 @@ export function Fleet() {
       .catch(() => {})
       .finally(() => setRefreshing(false));
   }, [month, isOnline]);
+
+  useEffect(() => {
+    if (!isOnline) return;
+    apiFetch('/api/underhall/alerts')
+      .then((r) => r.ok ? r.json() : [])
+      .then(setMaintAlerts)
+      .catch(() => setMaintAlerts([]));
+  }, [isOnline]);
 
   function handleSort(key) {
     if (sortKey === key) setSortDir((d) => d === 'asc' ? 'desc' : 'asc');
@@ -255,6 +294,9 @@ export function Fleet() {
                               {t.fleet.permitsCount(v.tillstånd.length)}
                             </span>
                           ) : <span style={{ color: FAINT, fontSize: 13 }}>—</span>}
+                        </td>
+                        <td style={{ fontFamily: OUTFIT, fontSize: 12, padding: '12px 16px', textAlign: 'center', verticalAlign: 'middle' }}>
+                          <MaintenanceBadge vehicleId={v.id} alerts={maintAlerts} />
                         </td>
                       </tr>
                     );

@@ -436,6 +436,44 @@ db.exec(`
     created_at                  TEXT    DEFAULT CURRENT_TIMESTAMP,
     updated_at                  TEXT    DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS vehicle_maintenance (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_id          INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    vehicle_id          TEXT    NOT NULL,
+    besiktning_datum    TEXT,
+    forsakring_datum    TEXT,
+    adr_datum           TEXT,
+    service_datum       TEXT,
+    service_km          INTEGER,
+    current_km          INTEGER,
+    sommar_dack_datum   TEXT,
+    vinter_dack_datum   TEXT,
+    updated_at          TEXT    DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(company_id, vehicle_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS maintenance_costs (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_id      INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    vehicle_id      TEXT    NOT NULL,
+    typ             TEXT    NOT NULL,
+    beskrivning     TEXT,
+    belopp_sek      REAL    NOT NULL,
+    datum           TEXT    NOT NULL,
+    km_vid_service  INTEGER,
+    created_at      TEXT    DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS maintenance_alerts (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_id  INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    vehicle_id  TEXT    NOT NULL,
+    alert_type  TEXT    NOT NULL,
+    days_before INTEGER NOT NULL,
+    sent_at     TEXT    NOT NULL,
+    UNIQUE(company_id, vehicle_id, alert_type, days_before)
+  );
 `);
 
 // ── Safe column migrations (pre-existing databases) ───────────────────────────
@@ -530,6 +568,50 @@ if (userCount.n === 0) {
     VALUES (1, 'Admin', 'admin@kemoffs.se', ?, 'agare', 1)
   `).run(hash);
   console.log('Seeded default admin user: admin@kemoffs.se / admin123');
+}
+
+// ── Seed vehicle maintenance records for default company ─────────────────────
+const maintCount = db.prepare('SELECT COUNT(*) AS n FROM vehicle_maintenance WHERE company_id = 1').get();
+if (maintCount.n === 0) {
+  const insMaint = db.prepare(`
+    INSERT INTO vehicle_maintenance
+      (company_id, vehicle_id, besiktning_datum, forsakring_datum, adr_datum,
+       service_datum, service_km, current_km, sommar_dack_datum, vinter_dack_datum)
+    VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  [
+    // id, besiktning, försäkring, ADR, service_datum, service_km, current_km, sommar_däck, vinter_däck
+    ['KEM-01', '2026-11-15', '2027-01-01', '2026-07-20', '2026-08-10', 250000, 236400, '2026-04-10', '2025-11-14'],
+    ['KEM-02', '2026-12-01', '2027-01-01', '2026-06-10', '2026-09-01', 200000, 191200, '2026-04-10', '2025-11-14'],
+    ['KEM-03', '2026-06-15', '2027-01-01', null,         '2026-07-20', 130000, 122800, '2026-04-10', '2025-11-14'],
+    ['KEM-04', '2027-03-01', '2027-01-01', null,         '2026-11-01', 110000,  97300, '2026-04-10', '2025-11-14'],
+    ['KEM-05', '2026-06-05', '2027-01-01', '2026-06-25', '2026-08-15', 190000, 181500, '2026-04-10', '2025-11-14'],
+    ['KEM-06', '2026-12-15', '2027-01-01', '2027-02-01', '2026-10-01',  75000,  62100, '2026-04-10', '2025-11-14'],
+  ].forEach(([id, b, f, a, sd, sk, ck, so, vi]) => insMaint.run(id, b, f, a, sd, sk, ck, so, vi));
+  console.log('Seeded vehicle_maintenance for company 1.');
+}
+
+// ── Seed sample maintenance costs for default company ─────────────────────────
+const costCount = db.prepare('SELECT COUNT(*) AS n FROM maintenance_costs WHERE company_id = 1').get();
+if (costCount.n === 0) {
+  const insCost = db.prepare(`
+    INSERT INTO maintenance_costs (company_id, vehicle_id, typ, beskrivning, belopp_sek, datum, km_vid_service)
+    VALUES (1, ?, ?, ?, ?, ?, ?)
+  `);
+  [
+    ['KEM-01', 'service',     'Periodisk service + oljebyte',          12400,  '2026-01-15', 220000],
+    ['KEM-01', 'reparation',  'Bromsklossar fram',                      8750,  '2026-03-22', 229000],
+    ['KEM-02', 'service',     'Periodisk service',                     11200,  '2026-02-10', 178000],
+    ['KEM-02', 'dack',        'Vinterhjul montering',                   3200,  '2025-11-14',  null  ],
+    ['KEM-03', 'service',     'Periodisk service + filter',            10800,  '2025-12-05', 108000],
+    ['KEM-03', 'reparation',  'Byte av kylarslang',                     2100,  '2026-04-01', 118000],
+    ['KEM-04', 'service',     'Periodisk service',                      9600,  '2026-01-20',  85000],
+    ['KEM-05', 'service',     'Stor service 150 000 km',               18500,  '2025-11-30', 165000],
+    ['KEM-05', 'reparation',  'Turbo reparation',                      24800,  '2026-03-15', 175000],
+    ['KEM-06', 'service',     'Periodisk service',                      9200,  '2026-02-28',  54000],
+    ['KEM-06', 'besiktning',  'Kontrollbesiktning Bilprovningen',        650,  '2026-02-28',  null  ],
+  ].forEach(([vid, typ, besk, belopp, datum, km]) => insCost.run(vid, typ, besk, belopp, datum, km));
+  console.log('Seeded maintenance_costs for company 1.');
 }
 
 // ── Seed 6 drivers for default company (realistic Swedish names) ─────────────

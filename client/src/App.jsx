@@ -5,7 +5,7 @@ import {
 import {
   LayoutDashboard, FilePlus, Briefcase, Truck, TrendingUp,
   Settings as SettingsIcon, LogOut, Bell, Search, X, DollarSign, FileText,
-  AlertTriangle, Fuel, Shield, Lock, Users, Leaf, CalendarDays, ScrollText, Network, CreditCard,
+  AlertTriangle, Fuel, Shield, Lock, Users, Leaf, CalendarDays, ScrollText, Network, CreditCard, Wrench,
 } from 'lucide-react';
 import { useLiveQuery }   from 'dexie-react-hooks';
 import { InquiryInput }              from './components/InquiryInput.jsx';
@@ -33,6 +33,7 @@ import { Kortider }          from './pages/Kortider.jsx';
 import { Upphandlingar }     from './pages/Upphandlingar.jsx';
 import Natverk               from './pages/Natverk.jsx';
 import Drivmedel             from './pages/Drivmedel.jsx';
+import Underhall             from './pages/Underhall.jsx';
 import { SetupAccount }   from './pages/SetupAccount.jsx';
 import { TourOverlay }    from './components/TourOverlay.jsx';
 import { SubscriptionGate } from './components/SubscriptionGate.jsx';
@@ -188,6 +189,7 @@ const NAV_ROLES = {
   upphandlingar:   ['agare', 'trafikledare'],
   natverk:         ['agare', 'trafikledare'],
   drivmedel:       ['agare', 'trafikledare'],
+  underhall:       ['agare', 'trafikledare'],
 };
 
 function getNavItems(t, role) {
@@ -201,6 +203,7 @@ function getNavItems(t, role) {
     { id: 'upphandlingar', label: t.nav.upphandlingar, Icon: ScrollText,  group: 'compliance' },
     { id: 'natverk',       label: t.nav.natverk,       Icon: Network,     group: 'network' },
     { id: 'drivmedel',     label: t.nav.drivmedel,     Icon: CreditCard,  group: 'network' },
+    { id: 'underhall',     label: t.nav.underhall,     Icon: Wrench,      group: 'network' },
   ];
   return all.filter((n) => !role || (NAV_ROLES[n.id] ?? []).includes(role));
 }
@@ -1562,6 +1565,11 @@ function AppInner() {
           {activePage === 'drivmedel' && (
             <div style={{ flex: 1, overflow: 'auto' }}>
               <Drivmedel />
+            </div>
+          )}
+          {activePage === 'underhall' && (
+            <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+              <Underhall />
             </div>
           )}
           {/* ── New Quote tab ──────────────────────────────────────────── */}

@@ -15,6 +15,7 @@ export const EN = {
     upphandlingar:   'Tenders',
     natverk:         'Network',
     drivmedel:       'Fuel Cards',
+    underhall:       'Maintenance',
   },
 
   sidebar: {
@@ -1387,6 +1388,7 @@ export const SV = {
     upphandlingar:   'Upphandlingar',
     natverk:         'Nätverk',
     drivmedel:       'Drivmedelskort',
+    underhall:       'Underhåll',
   },
 
   sidebar: {

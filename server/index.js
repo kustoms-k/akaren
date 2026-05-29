@@ -54,6 +54,7 @@ import usersRouter from './routes/users.js';
 import { runPricingInsightsJob }        from './jobs/pricingInsights.js';
 import { scheduleTenderFetch }          from './jobs/tenderFetch.js';
 import { scheduleDailyBackup }          from './jobs/backup.js';
+import { scheduleMaintenanceAlerts }    from './jobs/maintenanceAlerts.js';
 import dataPrivacyRouter                from './routes/dataPrivacy.js';
 import portalRouter                     from './routes/portal.js';
 import customersRouter                  from './routes/customers.js';
@@ -66,6 +67,7 @@ import backhaulRouter                   from './routes/backhaul.js';
 import upphandlingarRouter              from './routes/upphandlingar.js';
 import natverkRouter                   from './routes/natverk.js';
 import drivmedelRouter                 from './routes/drivmedel.js';
+import underhallRouter                 from './routes/underhall.js';
 import { authLimiter, analyseLimiter, apiLimiter } from './middleware/rateLimit.js';
 import { requireSubscription } from './middleware/requireSubscription.js';
 import db from './db.js';
@@ -204,6 +206,7 @@ app.use('/api/natverk',           apiLimiter, requireAuth, requireRole(AGARE, TR
 
 // Drivmedel (fuel card reconciliation) — agare + trafikledare
 app.use('/api/drivmedel',         apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE), drivmedelRouter);
+app.use('/api/underhall',         apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE), underhallRouter);
 
 // Billing — agare only
 app.use('/api/stripe',            apiLimiter, requireAuth, requireRole(AGARE), stripeRouter);
@@ -222,3 +225,4 @@ setTimeout(runPricingInsightsJob, 5_000);
 setInterval(runPricingInsightsJob, 24 * 60 * 60 * 1_000);
 scheduleDailyBackup();
 scheduleTenderFetch();
+scheduleMaintenanceAlerts();
