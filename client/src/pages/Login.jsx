@@ -3,8 +3,8 @@ import { useAuth }     from '../context/AuthContext.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
 import { LogoMark }    from '../assets/Logo.jsx';
 
-const INTER       = "'Plus Jakarta Sans', system-ui, sans-serif";
-const MONO        = "'Plus Jakarta Sans', system-ui, sans-serif";
+const INTER       = "'Geist', system-ui, sans-serif";
+const MONO        = "'Geist Mono', monospace";
 const BG_BASE     = '#f4f5f7';
 const SURF        = '#ffffff';
 const BORDER      = '#ececef';
@@ -123,7 +123,7 @@ function HeroPanel({ t }) {
         <div style={{ fontFamily: INTER, fontWeight: 800, fontSize: 36, color: '#ffffff', letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 4 }}>
           ÅKAREN
         </div>
-        <div style={{ fontFamily: MONO, fontWeight: 400, fontSize: 10, letterSpacing: '0.22em', color: 'rgba(255,255,255,0.45)', marginBottom: 24, textTransform: 'uppercase' }}>
+        <div style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontWeight: 400, fontSize: 10, letterSpacing: '0.22em', color: 'rgba(255,255,255,0.45)', marginBottom: 24, textTransform: 'uppercase' }}>
           TRANSPORTHANTERING
         </div>
         <div style={{ width: 36, height: 2, background: 'rgba(255,255,255,0.3)', borderRadius: 2, marginBottom: 24 }}/>
@@ -176,7 +176,7 @@ function BankIDCard({ qrCode, hintCode, autoStartUrl, onCancel, simulated }) {
         <span style={{ fontFamily: INTER, fontWeight: 700, fontSize: 14, color: TEXT_PR }}>BankID</span>
         {simulated && (
           <span style={{
-            fontFamily: MONO, fontSize: 9, color: BANKID_BLUE,
+            fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 9, color: BANKID_BLUE,
             background: 'rgba(25,62,143,0.10)', border: '1px solid rgba(25,62,143,0.25)',
             borderRadius: 4, padding: '2px 6px', letterSpacing: '0.06em',
           }}>SIM</span>

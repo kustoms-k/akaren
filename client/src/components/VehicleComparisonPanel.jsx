@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const INTER = "'Plus Jakarta Sans', system-ui, sans-serif";
-const MONO  = "'Plus Jakarta Sans', system-ui, sans-serif";
+const INTER = "'Geist', system-ui, sans-serif";
+const MONO  = "'Geist Mono', monospace";
 
 const fmtKr = (n) => n == null ? '—'
   : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n) + ' kr';
@@ -12,7 +12,7 @@ function EuroBadge({ euroKlass, lez_compliant }) {
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 3,
-      fontSize: 10, fontWeight: 700, fontFamily: MONO,
+      fontSize: 10, fontWeight: 700, fontFamily: MONO, fontFeatureSettings: '"tnum"',
       padding: '2px 6px', borderRadius: 4,
       background: ok ? 'rgba(34,197,94,0.10)' : 'rgba(231,76,60,0.10)',
       color:      ok ? '#15803d'               : '#b91c1c',
@@ -30,7 +30,7 @@ function CostBar({ value, max, accent }) {
       <div style={{ flex: 1, height: 4, background: '#f0ede8', borderRadius: 2, overflow: 'hidden' }}>
         <div style={{ width: `${pct}%`, height: '100%', background: accent, borderRadius: 2 }} />
       </div>
-      <span style={{ fontFamily: MONO, fontSize: 11, color: '#1c1917', minWidth: 60, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+      <span style={{ fontFamily: MONO, fontSize: 11, color: '#1c1917', minWidth: 60, textAlign: 'right', fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>
         {fmtKr(value)}
       </span>
     </div>
@@ -73,7 +73,7 @@ export function VehicleComparisonPanel({ routeData, onOverride }) {
                 {optimal.namn}
               </span>
               <EuroBadge euroKlass={optimal.euro_klass} lez_compliant={optimal.lez_compliant} />
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#22c55e', fontFamily: MONO }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#22c55e', fontFamily: MONO, fontFeatureSettings: '"tnum"' }}>
                 {fmtKr(optimal.cost.total_kr)}
               </span>
             </div>
@@ -133,7 +133,7 @@ export function VehicleComparisonPanel({ routeData, onOverride }) {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#1c1917', fontFamily: MONO }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#1c1917', fontFamily: MONO, fontFeatureSettings: '"tnum"' }}>
                         {v.ext_id}
                       </span>
                       <span style={{ fontSize: 11, color: '#6b6359', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -146,7 +146,7 @@ export function VehicleComparisonPanel({ routeData, onOverride }) {
                         </span>
                       )}
                       {!isOpt && saving != null && saving > 0 && (
-                        <span style={{ fontSize: 10, color: '#e74c3c', fontFamily: MONO }}>
+                        <span style={{ fontSize: 10, color: '#e74c3c', fontFamily: MONO, fontFeatureSettings: '"tnum"' }}>
                           +{fmtKr(saving)}
                         </span>
                       )}

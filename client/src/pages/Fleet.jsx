@@ -15,9 +15,9 @@ const BORDER  = '#ececef';
 const TEXT    = '#1a1d24';
 const MUTED   = '#6b7280';
 const FAINT   = '#9ca3af';
-const OUTFIT  = "'Plus Jakarta Sans', system-ui, sans-serif";
+const OUTFIT  = "'Geist', system-ui, sans-serif";
 const SURF    = '#ffffff';
-const MONO    = "'Plus Jakarta Sans', system-ui, sans-serif";
+const MONO    = "'Geist Mono', monospace";
 
 function currentMonth() {
   return new Date().toISOString().slice(0, 7);
@@ -60,6 +60,7 @@ function ProfitCell({ value }) {
     <span style={{
       display: 'inline-block', padding: '3px 10px', borderRadius: 6,
       fontSize: 12, fontWeight: 600, textAlign: 'center', minWidth: 70,
+      fontFamily: MONO, fontFeatureSettings: '"tnum"',
       color: isLow ? '#d97706' : '#16a34a',
       background: isLow ? '#fff7ed' : '#e8fdf0',
     }}>
@@ -262,20 +263,20 @@ export function Fleet() {
                         onMouseEnter={(e) => e.currentTarget.style.background = SURF}
                         onMouseLeave={(e) => e.currentTarget.style.background = WHITE}
                       >
-                        <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', color: AMBER, fontWeight: 600, verticalAlign: 'middle' }}>{v.id}</td>
+                        <td style={{ fontFamily: MONO, fontSize: 13, padding: '12px 16px', color: AMBER, fontWeight: 600, verticalAlign: 'middle', fontFeatureSettings: '"tnum"' }}>{v.id}</td>
                         <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', color: TEXT, verticalAlign: 'middle' }}>{v.namn}</td>
                         <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', color: MUTED, verticalAlign: 'middle' }}>{v.typ}</td>
-                        <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: MUTED, verticalAlign: 'middle' }}>{fmtNum(v.maxLast_kg)} kg</td>
-                        <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: TEXT, verticalAlign: 'middle' }}>
+                        <td style={{ fontFamily: MONO, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: MUTED, verticalAlign: 'middle', fontFeatureSettings: '"tnum"' }}>{fmtNum(v.maxLast_kg)} kg</td>
+                        <td style={{ fontFamily: MONO, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: TEXT, verticalAlign: 'middle', fontFeatureSettings: '"tnum"' }}>
                           {v.monthly_revenue > 0 ? fmtSEK(v.monthly_revenue) : <span style={{ color: FAINT }}>—</span>}
                         </td>
-                        <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: TEXT, verticalAlign: 'middle' }}>
+                        <td style={{ fontFamily: MONO, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: TEXT, verticalAlign: 'middle', fontFeatureSettings: '"tnum"' }}>
                           {v.monthly_hours > 0 ? <span>{v.monthly_hours.toFixed(1)} h</span> : <span style={{ color: FAINT }}>—</span>}
                         </td>
                         <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'right', verticalAlign: 'middle' }}>
                           <ProfitCell value={v.profit_per_hour} />
                         </td>
-                        <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: MUTED, verticalAlign: 'middle' }}>{fmtNum(v.timkostnad_sek)} kr/h</td>
+                        <td style={{ fontFamily: MONO, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: MUTED, verticalAlign: 'middle', fontFeatureSettings: '"tnum"' }}>{fmtNum(v.timkostnad_sek)} kr/h</td>
                         <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'center', verticalAlign: 'middle' }}>
                           <EuroBadge klass={v.euro_klass} />
                         </td>

@@ -2,8 +2,12 @@
 
 /* ── Fonts ───────────────────────────────────────────────────────────────── */
 :root {
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-mono: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-sans: 'Geist', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', 'Courier New', monospace;
+}
+
+html {
+  font-family: var(--font-sans);
 }
 
 /* ── Palette — dark glassmorphic executive panel ──────────────────────────── */
@@ -114,6 +118,13 @@ body {
   letter-spacing: 0.04em;
 }
 
+/* Tabular numbers — apply to all SEK, km, %, dates, KPI figures */
+.num {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Form inputs ─────────────────────────────────────────────────────────── */
 textarea::placeholder, input::placeholder {
   color: var(--text-muted);
@@ -168,7 +179,9 @@ input:focus   { border-color: var(--accent-cyan) !important; }
   white-space: nowrap;
 }
 .result-value {
-  font-family: var(--font-sans);
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-primary);

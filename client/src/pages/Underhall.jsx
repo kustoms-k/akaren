@@ -3,7 +3,8 @@ import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const OUTFIT  = "'Plus Jakarta Sans', system-ui, sans-serif";
+const OUTFIT  = "'Geist', system-ui, sans-serif";
+const MONO    = "'Geist Mono', monospace";
 const BG      = '#f4f5f7';
 const WHITE   = '#ffffff';
 const BORDER  = '#ececef';

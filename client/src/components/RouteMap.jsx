@@ -11,7 +11,7 @@ async function loadLeaflet() {
     const s = document.createElement('style');
     s.id = 'lf-style-override';
     s.textContent = `
-      .leaflet-popup-content-wrapper{border-radius:10px!important;box-shadow:0 4px 20px rgba(0,0,0,0.15)!important;padding:0!important;font-family:'Plus Jakarta Sans',sans-serif!important;}
+      .leaflet-popup-content-wrapper{border-radius:10px!important;box-shadow:0 4px 20px rgba(0,0,0,0.15)!important;padding:0!important;font-family:'Geist', system-ui, sans-serif!important;}
       .leaflet-popup-content{margin:10px 14px!important;font-size:12px!important;line-height:1.55!important;color:#1a1a2e!important;}
       .leaflet-popup-tip-container{display:none!important;}
       .leaflet-popup-close-button{top:6px!important;right:8px!important;color:#999!important;font-size:16px!important;}
@@ -65,7 +65,7 @@ function disruptionIcon(Lf) {
     className: '',
     html: `<div style="position:relative;width:28px;height:24px">
       <div style="width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:24px solid #f59e0b;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.25))"></div>
-      <span style="position:absolute;top:9px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:800;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;line-height:1">!</span>
+      <span style="position:absolute;top:9px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:800;color:#fff;font-family:'Geist', system-ui, sans-serif;line-height:1">!</span>
     </div>`,
     iconSize: [28, 24], iconAnchor: [14, 24],
   });
@@ -112,7 +112,7 @@ function CostPanel({ cost, violations, t }) {
       borderTop:    'none',
       borderRadius: '0 0 8px 8px',
       padding:      '10px 14px 10px',
-      fontFamily:   "'Plus Jakarta Sans',sans-serif",
+      fontFamily:   "'Geist', system-ui, sans-serif",
     }}>
       {/* Compliance status */}
       {hasLez ? (
@@ -150,7 +150,7 @@ function CostPanel({ cost, violations, t }) {
               {row.label}
               {row.sub && <span style={{ fontSize: 10, marginLeft: 4, opacity: 0.7 }}>{row.sub}</span>}
             </span>
-            <span style={{ fontSize: 12, fontWeight: 600, color: row.accent ?? '#1c1917', fontVariantNumeric: 'tabular-nums' }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: row.accent ?? '#1c1917', fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>
               {row.value}
             </span>
           </div>
@@ -158,7 +158,7 @@ function CostPanel({ cost, violations, t }) {
 
         <div style={{ borderTop: '1px solid #e6e2da', marginTop: 3, paddingTop: 5, display: 'flex', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 11, fontWeight: 700, color: '#1c1917' }}>{cm.total}</span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#1c1917', fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#1c1917', fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>
             {fmtKr(cost.total_kr)}
           </span>
         </div>
@@ -329,7 +329,7 @@ export function RouteMap({ routeData, loading }) {
           animation: 'routeMapShimmer 1.4s infinite',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 12, color: '#bbb' }}>
+          <span style={{ fontFamily: "'Geist', system-ui, sans-serif", fontSize: 12, color: '#bbb' }}>
             {t.map?.loading ?? 'Laddar karta…'}
           </span>
         </div>
@@ -357,7 +357,7 @@ export function RouteMap({ routeData, loading }) {
             background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)',
             WebkitBackdropFilter: 'blur(10px)', border: '1px solid rgba(0,0,0,0.08)',
             borderRadius: 100, padding: '5px 12px', fontSize: 11, fontWeight: 600,
-            fontFamily: "'Plus Jakarta Sans',sans-serif", color: '#4361ee', cursor: 'pointer',
+            fontFamily: "'Geist', system-ui, sans-serif", color: '#4361ee', cursor: 'pointer',
             boxShadow: '0 1px 6px rgba(0,0,0,0.12)', whiteSpace: 'nowrap',
           }}
         >
@@ -374,7 +374,7 @@ export function RouteMap({ routeData, loading }) {
               backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
               border: `1px solid ${showDirect ? 'rgba(231,76,60,0.4)' : 'rgba(0,0,0,0.08)'}`,
               borderRadius: 100, padding: '5px 12px', fontSize: 10, fontWeight: 600,
-              fontFamily: "'Plus Jakarta Sans',sans-serif",
+              fontFamily: "'Geist', system-ui, sans-serif",
               color: showDirect ? '#fff' : '#e74c3c', cursor: 'pointer',
               boxShadow: '0 1px 6px rgba(0,0,0,0.12)', whiteSpace: 'nowrap',
             }}
@@ -390,7 +390,7 @@ export function RouteMap({ routeData, loading }) {
           display: 'flex', alignItems: 'center', gap: 8,
           background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)',
           borderTop: 'none', borderRadius: routeData.cost_breakdown ? 0 : '0 0 8px 8px',
-          padding: '7px 12px', fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11,
+          padding: '7px 12px', fontFamily: "'Geist', system-ui, sans-serif", fontSize: 11,
         }}>
           <span style={{ color: '#92400e', lineHeight: 1.4 }}>
             {t.map.trafficDisruption(delayMin)}

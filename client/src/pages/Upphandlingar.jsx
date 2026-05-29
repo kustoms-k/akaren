@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { ScrollText, RefreshCw, Eye, EyeOff, X, Leaf, Truck, Star, StarOff, Clock, MapPin, Building2, ChevronDown } from 'lucide-react';
 import { apiFetch } from '../utils/apiFetch.js';
 
-const INTER     = "'Plus Jakarta Sans', system-ui, sans-serif";
+const INTER     = "'Geist', system-ui, sans-serif";
+const MONO      = "'Geist Mono', monospace";
 const BG_BASE   = '#f4f5f7';
 const SURF      = '#ffffff';
 const ACCENT    = '#2d3340';
@@ -126,7 +127,7 @@ function TenderCard({ tender, onWatch, onDismiss }) {
             {tender.estimerat_varde_sek && (
               <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: TEXT_SEC, fontFamily: INTER }}>
                 <span style={{ fontSize: 10, opacity: 0.6 }}>Värde</span>
-                <span style={{ fontWeight: 600, color: TEXT_PR, fontVariantNumeric: 'tabular-nums' }}>
+                <span style={{ fontWeight: 600, color: TEXT_PR, fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>
                   {fmt_sek(tender.estimerat_varde_sek)}
                 </span>
               </span>
@@ -320,7 +321,7 @@ export function Upphandlingar() {
               background: SURF, borderRadius: 12, padding: '14px 18px',
               boxShadow: SHADOW, border: `1px solid ${BORDER}`,
             }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em' }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color, fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em' }}>
                 {value ?? '—'}
               </div>
               <div style={{ fontSize: 11, color: TEXT_MUT, marginTop: 2, fontWeight: 500 }}>{label}</div>

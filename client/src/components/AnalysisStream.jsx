@@ -9,8 +9,8 @@ const TEXT    = '#151210';
 const MUTED   = '#6a6050';
 const FAINT   = '#9a9082';
 const SURF    = '#f4f0e7';
-const OUTFIT  = "'Plus Jakarta Sans', system-ui, sans-serif";
-const MONO    = "'Plus Jakarta Sans', system-ui, sans-serif";
+const OUTFIT  = "'Geist', system-ui, sans-serif";
+const MONO    = "'Geist Mono', monospace";
 const WARNING = '#b8600a';
 const ERROR   = '#c45454';
 
@@ -229,6 +229,7 @@ export function AnalysisStream({
                     ) : val != null && !isNone ? (
                       <span style={{
                         fontFamily: mono ? MONO : OUTFIT,
+                        fontFeatureSettings: mono ? '"tnum"' : undefined,
                         fontSize: 14, fontWeight: mono ? 500 : 500, color: TEXT,
                         ...(mock ? { color: FAINT, animation: 'text-pulse 1.2s ease-in-out infinite' } : {}),
                       }}>
@@ -308,7 +309,8 @@ export function AnalysisStream({
               {t.newQuote.quotePrefix}
             </div>
             <div style={{
-              fontFamily: MONO,
+              fontFamily: MONO, fontFeatureSettings: '"tnum"',
+              fontFeatureSettings: '"tnum"',
               fontSize: 30,
               fontWeight: 500,
               color: AMBER,

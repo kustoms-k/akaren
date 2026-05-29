@@ -6,7 +6,8 @@ import {
 } from 'lucide-react';
 import { apiFetch } from '../utils/apiFetch.js';
 
-const INTER    = "'Plus Jakarta Sans', system-ui, sans-serif";
+const INTER    = "'Geist', system-ui, sans-serif";
+const MONO     = "'Geist Mono', monospace";
 const BG_BASE  = '#f4f5f7';
 const SURF     = '#ffffff';
 const ACCENT   = '#2d3340';
@@ -48,7 +49,7 @@ function KpiCard({ label, value, sub, icon: Icon, color = ACCENT }) {
       </div>
       <div>
         <div style={{ fontFamily: INTER, fontSize: 22, fontWeight: 800, color: TEXT_PR,
-          fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>
+          fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>
           {value}
         </div>
         <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT_MUT, marginTop: 2 }}>{label}</div>
@@ -314,7 +315,7 @@ function ReferralModal({ partners, onClose, onSave }) {
                   {form.riktning === 'ut' ? 'Vi behåller (avgift)' : 'Vi betalar (avgift)'}
                 </div>
                 <div style={{ fontFamily: INTER, fontSize: 16, fontWeight: 800, color: form.riktning === 'ut' ? D_GREEN : D_AMBER,
-                  fontVariantNumeric: 'tabular-nums' }}>
+                  fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>
                   {avgift?.toLocaleString('sv-SE')} kr
                 </div>
               </div>
@@ -323,7 +324,7 @@ function ReferralModal({ partners, onClose, onSave }) {
                   Partner {form.riktning === 'ut' ? 'får' : 'fakturerar'}
                 </div>
                 <div style={{ fontFamily: INTER, fontSize: 16, fontWeight: 800, color: TEXT_PR,
-                  fontVariantNumeric: 'tabular-nums' }}>
+                  fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>
                   {partnerFår?.toLocaleString('sv-SE')} kr
                 </div>
               </div>
@@ -438,7 +439,7 @@ function SettlementPanel({ partners, onClose }) {
                 </div>
                 <div style={{ fontFamily: INTER, fontSize: 24, fontWeight: 900,
                   color: data.net_balance_sek >= 0 ? D_GREEN : D_RED,
-                  fontVariantNumeric: 'tabular-nums' }}>
+                  fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>
                   {data.net_balance_sek >= 0 ? '+' : ''}{data.net_balance_sek.toLocaleString('sv-SE')} kr
                 </div>
               </div>
@@ -474,7 +475,7 @@ function SettlementPanel({ partners, onClose }) {
                     ].map(([k, v]) => (
                       <div key={k}>
                         <div style={{ fontFamily: INTER, fontSize: 10, color: TEXT_MUT, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{k}</div>
-                        <div style={{ fontFamily: INTER, fontSize: 14, fontWeight: 700, color: TEXT_PR, fontVariantNumeric: 'tabular-nums' }}>{v}</div>
+                        <div style={{ fontFamily: MONO, fontSize: 14, fontWeight: 700, color: TEXT_PR, fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>{v}</div>
                       </div>
                     ))}
                   </div>
@@ -508,7 +509,7 @@ function SettlementPanel({ partners, onClose }) {
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontFamily: INTER, fontSize: 13, fontWeight: 700, color: TEXT_PR,
-                        fontVariantNumeric: 'tabular-nums' }}>
+                        fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>
                         {r.overenskommet_totalpris_sek?.toLocaleString('sv-SE') ?? '—'} kr
                       </div>
                       <div style={{ fontFamily: INTER, fontSize: 10, color: TEXT_MUT }}>
@@ -747,7 +748,7 @@ export default function Natverk() {
                     ].map(([k, v]) => (
                       <div key={k} style={{ background: BG_BASE, borderRadius: 8, padding: '8px 10px' }}>
                         <div style={{ fontFamily: INTER, fontSize: 9, color: TEXT_MUT, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{k}</div>
-                        <div style={{ fontFamily: INTER, fontSize: 14, fontWeight: 800, color: TEXT_PR, fontVariantNumeric: 'tabular-nums' }}>{v ?? 0}</div>
+                        <div style={{ fontFamily: MONO, fontSize: 14, fontWeight: 800, color: TEXT_PR, fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>{v ?? 0}</div>
                       </div>
                     ))}
                   </div>
@@ -826,7 +827,7 @@ export default function Natverk() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         {r.overenskommet_totalpris_sek != null && (
                           <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 800, color: TEXT_PR,
-                            fontVariantNumeric: 'tabular-nums' }}>
+                            fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>
                             {r.overenskommet_totalpris_sek.toLocaleString('sv-SE')} kr
                           </span>
                         )}
@@ -845,7 +846,7 @@ export default function Natverk() {
                           ].map(([k, v]) => (
                             <div key={k} style={{ background: BG_BASE, borderRadius: 8, padding: '8px 10px' }}>
                               <div style={{ fontFamily: INTER, fontSize: 9, color: TEXT_MUT, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{k}</div>
-                              <div style={{ fontFamily: INTER, fontSize: 13, fontWeight: 700, color: TEXT_PR, fontVariantNumeric: 'tabular-nums' }}>{v}</div>
+                              <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: TEXT_PR, fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>{v}</div>
                             </div>
                           ))}
                         </div>

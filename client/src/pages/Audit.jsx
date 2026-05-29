@@ -11,9 +11,9 @@ const BORDER  = '#cfc9bb';
 const TEXT    = '#151210';
 const MUTED   = '#6a6050';
 const FAINT   = '#9a9082';
-const OUTFIT  = "'Plus Jakarta Sans', system-ui, sans-serif";
+const OUTFIT  = "'Geist', system-ui, sans-serif";
 const SURF    = '#f4f0e7';
-const MONO    = "'Plus Jakarta Sans', system-ui, sans-serif";
+const MONO    = "'Geist Mono', monospace";
 
 const ACTION_COLORS = {
   create: { bg: 'rgba(46,204,113,0.10)',  color: '#1a7a47' },

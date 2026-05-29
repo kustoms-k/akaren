@@ -13,9 +13,9 @@ const BORDER  = '#ececef';
 const TEXT    = '#1a1d24';
 const MUTED   = '#6b7280';
 const FAINT   = '#9ca3af';
-const OUTFIT  = "'Plus Jakarta Sans', system-ui, sans-serif";
+const OUTFIT  = "'Geist', system-ui, sans-serif";
 const SURF    = '#ffffff';
-const MONO    = "'Plus Jakarta Sans', system-ui, sans-serif";
+const MONO    = "'Geist Mono', monospace";
 
 function currentMonth() {
   return new Date().toISOString().slice(0, 7);
@@ -155,11 +155,11 @@ function KpiCard({ label, value, unit, sublabel }) {
         {label}
       </div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
-        <span style={{ fontFamily: OUTFIT, fontSize: 26, fontWeight: 700, color: TEXT, lineHeight: 1 }}>
+        <span style={{ fontFamily: MONO, fontSize: 26, fontWeight: 700, color: TEXT, lineHeight: 1, fontFeatureSettings: '"tnum"' }}>
           {value ?? '—'}
         </span>
         {unit && value != null && (
-          <span style={{ fontFamily: OUTFIT, fontSize: 15, color: MUTED }}>{unit}</span>
+          <span style={{ fontFamily: MONO, fontSize: 15, color: MUTED, fontFeatureSettings: '"tnum"' }}>{unit}</span>
         )}
       </div>
       {sublabel && (
@@ -352,13 +352,13 @@ function JobsTable({ jobs, prevJobs, onFakturaClick, t }) {
                     )}
                   </td>
                   <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', color: TEXT }}>{j.lasttyp}</td>
-                  <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: TEXT, fontWeight: 600 }}>{fmtSEK(j.intakt)}</td>
-                  <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: MUTED }}>{fmtSEK(j.kostnad)}</td>
+                  <td style={{ fontFamily: MONO, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: TEXT, fontWeight: 600, fontFeatureSettings: '"tnum"' }}>{fmtSEK(j.intakt)}</td>
+                  <td style={{ fontFamily: MONO, fontSize: 13, padding: '12px 16px', textAlign: 'right', color: MUTED, fontFeatureSettings: '"tnum"' }}>{fmtSEK(j.kostnad)}</td>
                   <td style={{ fontFamily: OUTFIT, fontSize: 13, padding: '12px 16px', textAlign: 'right' }}>
                     {j.marginal_pct != null ? (
                       <span style={{
                         display: 'inline-block', padding: '3px 10px', borderRadius: 6,
-                        fontSize: 12, fontWeight: 600,
+                        fontSize: 12, fontWeight: 600, fontFamily: MONO, fontFeatureSettings: '"tnum"',
                         color: mc.text, background: mc.bg, minWidth: 52, textAlign: 'center',
                       }}>
                         {j.marginal_pct.toFixed(1)} %
@@ -476,7 +476,7 @@ function CustomerBars({ ranking, prevRanking, t }) {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                 <TrendArrow current={r.profit} prev={prev} showDiff={false} threshold={100} />
-                <span style={{ fontFamily: OUTFIT, fontSize: 16, fontWeight: 700, color: isLoss ? '#e74c3c' : AMBER }}>
+                <span style={{ fontFamily: MONO, fontSize: 16, fontWeight: 700, color: isLoss ? '#e74c3c' : AMBER, fontFeatureSettings: '"tnum"' }}>
                   {isLoss ? '−' : ''}{fmtSEK(Math.abs(r.profit))}
                 </span>
               </div>

@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const INTER = "'Plus Jakarta Sans', system-ui, sans-serif";
-const MONO  = "'Plus Jakarta Sans', system-ui, sans-serif";
+const INTER = "'Geist', system-ui, sans-serif";
+const MONO  = "'Geist Mono', monospace";
 
 function fmtHM(minutes) {
   const h = Math.floor(minutes / 60);
@@ -70,7 +70,7 @@ function DriverRow({ driver, onLog, t }) {
         <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: '#1c1917' }}>
           {driver.name}
         </span>
-        <span style={{ fontFamily: MONO, fontSize: 11, color: '#a09590' }}>
+        <span style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 11, color: '#a09590' }}>
           {driver.truck_id}
         </span>
       </div>
@@ -78,7 +78,7 @@ function DriverRow({ driver, onLog, t }) {
       {/* Today */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontFamily: MONO, fontSize: 12, color: '#1c1917', fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ fontFamily: MONO, fontSize: 12, color: '#1c1917', fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>
             {fmtHM(driver.today.driving_minutes)}
           </span>
           <StatusBadge status={driver.today.status} t={tk} />
@@ -92,7 +92,7 @@ function DriverRow({ driver, onLog, t }) {
       {/* This week */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontFamily: MONO, fontSize: 12, color: '#1c1917', fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ fontFamily: MONO, fontSize: 12, color: '#1c1917', fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>
             {fmtHM(driver.week.driving_minutes)}
           </span>
           <StatusBadge status={driver.week.status} t={tk} />
@@ -106,7 +106,7 @@ function DriverRow({ driver, onLog, t }) {
       {/* Fortnight */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontFamily: MONO, fontSize: 12, color: '#1c1917', fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ fontFamily: MONO, fontSize: 12, color: '#1c1917', fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>
             {fmtHM(driver.fortnight.driving_minutes)}
           </span>
           <StatusBadge status={driver.fortnight.status} t={tk} />

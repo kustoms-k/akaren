@@ -8,7 +8,7 @@ import { db }           from '../db/dexie.js';
 import { generateDpa }  from '../utils/generateDpa.js';
 import { generateTos }  from '../utils/generateTos.js';
 
-const OUTFIT  = "'Plus Jakarta Sans', system-ui, sans-serif";
+const OUTFIT  = "'Geist', system-ui, sans-serif";
 const INTER   = OUTFIT;  // alias — remove after full migration
 const AMBER   = '#c9921e';
 const BLUE    = AMBER;   // alias
@@ -19,7 +19,7 @@ const BORDER  = '#cfc9bb';
 const TEXT    = '#151210';
 const MUTED   = '#6a6050';
 const SURF    = '#f4f0e7';
-const MONO    = "'Plus Jakarta Sans', system-ui, sans-serif";
+const MONO    = "'Geist Mono', monospace";
 
 function SmsStatusPill({ enabled }) {
   const { t } = useLanguage();
@@ -187,7 +187,7 @@ function BillingCard() {
   const meta   = STATUS_META[status] ?? STATUS_META.none;
   const isActive = status === 'active' || status === 'trialing';
 
-  const OUTFIT = "'Plus Jakarta Sans', system-ui, sans-serif";
+  const OUTFIT = "'Geist', system-ui, sans-serif";
   const AMBER  = '#c9a84c';
   const BG2    = '#f5f3ee';
   const TEXT2  = '#17161a';
@@ -707,7 +707,7 @@ function DiffView({ before, after, t }) {
   try { bObj = before ? JSON.parse(before) : null; } catch {}
   try { aObj = after  ? JSON.parse(after)  : null; } catch {}
 
-  if (!bObj && !aObj) return <div style={{ padding: '10px 16px', fontFamily: MONO, fontSize: 11, color: MUTED }}>{t.audit.diff.noData}</div>;
+  if (!bObj && !aObj) return <div style={{ padding: '10px 16px', fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 11, color: MUTED }}>{t.audit.diff.noData}</div>;
 
   const allKeys = [...new Set([
     ...(bObj ? Object.keys(bObj) : []),
@@ -721,7 +721,7 @@ function DiffView({ before, after, t }) {
   }
 
   const cellStyle = {
-    fontFamily: MONO, fontSize: 11, padding: '3px 8px', borderRadius: 4,
+    fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 11, padding: '3px 8px', borderRadius: 4,
     wordBreak: 'break-all', lineHeight: 1.5,
   };
 
@@ -942,7 +942,7 @@ function AuditPanel({ section, sectionHead }) {
                       }}
                       onClick={() => hasDiff && setExpanded(isExpanded ? null : row.id)}
                     >
-                      <td style={{ padding: '9px 12px', fontFamily: MONO, fontSize: 11, color: MUTED, whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '9px 12px', fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 11, color: MUTED, whiteSpace: 'nowrap' }}>
                         {fmtDate(row.created_at)}
                       </td>
                       <td style={{ padding: '9px 12px', fontFamily: INTER, fontSize: 12, color: TEXT, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -959,14 +959,14 @@ function AuditPanel({ section, sectionHead }) {
                       </td>
                       <td style={{ padding: '9px 12px', fontFamily: INTER, fontSize: 12, color: MUTED }}>
                         {t.audit.entities[row.entity_type] ?? row.entity_type}
-                        {row.entity_id && <span style={{ fontFamily: MONO, fontSize: 10, marginLeft: 4 }}>#{row.entity_id}</span>}
+                        {row.entity_id && <span style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 10, marginLeft: 4 }}>#{row.entity_id}</span>}
                       </td>
-                      <td style={{ padding: '9px 12px', fontFamily: MONO, fontSize: 10, color: MUTED }}>
+                      <td style={{ padding: '9px 12px', fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 10, color: MUTED }}>
                         {row.ip_address ?? '—'}
                       </td>
                       <td style={{ padding: '9px 12px', textAlign: 'right' }}>
                         {hasDiff && (
-                          <span style={{ fontFamily: MONO, fontSize: 11, color: MUTED, userSelect: 'none' }}>
+                          <span style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 11, color: MUTED, userSelect: 'none' }}>
                             {isExpanded ? '▲' : '▼'}
                           </span>
                         )}

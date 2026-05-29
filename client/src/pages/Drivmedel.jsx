@@ -6,7 +6,8 @@ import {
 } from 'lucide-react';
 import { apiFetch } from '../utils/apiFetch.js';
 
-const INTER    = "'Plus Jakarta Sans', system-ui, sans-serif";
+const INTER    = "'Geist', system-ui, sans-serif";
+const MONO     = "'Geist Mono', monospace";
 const BG_BASE  = '#f4f5f7';
 const SURF     = '#ffffff';
 const ACCENT   = '#2d3340';
@@ -64,7 +65,7 @@ function KpiCard({ label, value, sub, icon: Icon, color = ACCENT }) {
       </div>
       <div>
         <div style={{ fontFamily: INTER, fontSize: 22, fontWeight: 800, color: TEXT_PR,
-          fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>
+          fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>
           {value}
         </div>
         <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT_MUT, marginTop: 2 }}>{label}</div>
@@ -371,7 +372,7 @@ function ImportTab({ onImported }) {
                 <CreditCard size={14} color={TEXT_MUT} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: INTER, fontSize: 13, fontWeight: 700, color: TEXT_PR,
-                    fontVariantNumeric: 'tabular-nums' }}>
+                    fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>
                     {c.card_number}
                   </div>
                   <div style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MUT }}>
@@ -546,7 +547,7 @@ function FordonTab({ analytics, loading, onRefresh }) {
                   ].map(([k, val]) => (
                     <div key={k} style={{ background: BG_BASE, borderRadius: 8, padding: '8px 10px' }}>
                       <div style={{ fontFamily: INTER, fontSize: 9, color: TEXT_MUT, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{k}</div>
-                      <div style={{ fontFamily: INTER, fontSize: 14, fontWeight: 800, color: TEXT_PR, fontVariantNumeric: 'tabular-nums' }}>{val}</div>
+                      <div style={{ fontFamily: MONO, fontSize: 14, fontWeight: 800, color: TEXT_PR, fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>{val}</div>
                     </div>
                   ))}
                 </div>
@@ -595,7 +596,7 @@ function FordonTab({ analytics, loading, onRefresh }) {
               const h = maxAmt > 0 ? Math.max(4, Math.round(m.amount_sek / maxAmt * 72)) : 4;
               return (
                 <div key={m.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                  <div style={{ fontSize: 9, fontFamily: INTER, color: TEXT_MUT, fontVariantNumeric: 'tabular-nums' }}>
+                  <div style={{ fontSize: 9, fontFamily: MONO, color: TEXT_MUT, fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>
                     {m.amount_sek >= 1000 ? Math.round(m.amount_sek / 1000) + 'k' : Math.round(m.amount_sek)}
                   </div>
                   <div style={{ width: '100%', height: h, borderRadius: 4, background: D_BLUE + '80' }} />
@@ -624,7 +625,7 @@ function FordonTab({ analytics, loading, onRefresh }) {
                 <span style={{ flex: 1, fontFamily: INTER, fontSize: 12, color: TEXT_PR }}>{s.station_name}</span>
                 <span style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MUT }}>{s.tx_count} tank</span>
                 <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 700, color: TEXT_PR,
-                  fontVariantNumeric: 'tabular-nums' }}>{fmt(s.total_sek)}</span>
+                  fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>{fmt(s.total_sek)}</span>
               </div>
             ))}
           </div>
@@ -707,7 +708,7 @@ function TransaktionerTab({ fleet }) {
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id} style={{ borderBottom: `1px solid ${BORDER}` }}>
-                  <td style={{ padding: '8px 12px', color: TEXT_PR, fontVariantNumeric: 'tabular-nums' }}>
+                  <td style={{ padding: '8px 12px', color: TEXT_PR, fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>
                     {r.transaction_date}
                   </td>
                   <td style={{ padding: '8px 12px', color: r.vehicle_id ? TEXT_PR : D_AMBER }}>
@@ -718,13 +719,13 @@ function TransaktionerTab({ fleet }) {
                     {r.station_name ?? '—'}
                   </td>
                   <td style={{ padding: '8px 12px', color: TEXT_SEC }}>{r.fuel_type ?? '—'}</td>
-                  <td style={{ padding: '8px 12px', color: TEXT_PR, fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
+                  <td style={{ padding: '8px 12px', color: TEXT_PR, fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
                     {r.litres != null ? (Math.round(r.litres * 10) / 10).toLocaleString('sv-SE') : '—'}
                   </td>
-                  <td style={{ padding: '8px 12px', color: TEXT_PR, fontVariantNumeric: 'tabular-nums', textAlign: 'right', fontWeight: 700 }}>
+                  <td style={{ padding: '8px 12px', color: TEXT_PR, fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums', textAlign: 'right', fontWeight: 700 }}>
                     {r.amount_sek != null ? Math.round(r.amount_sek).toLocaleString('sv-SE') + ' kr' : '—'}
                   </td>
-                  <td style={{ padding: '8px 12px', color: TEXT_MUT, fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
+                  <td style={{ padding: '8px 12px', color: TEXT_MUT, fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
                     {r.price_per_litre != null ? (Math.round(r.price_per_litre * 100) / 100).toFixed(2) : '—'}
                   </td>
                   <td style={{ padding: '8px 12px' }}>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const INTER = "'Plus Jakarta Sans', system-ui, sans-serif";
+const INTER = "'Geist', system-ui, sans-serif";
 
 export function SetupAccount({ onSetupComplete }) {
   const { t } = useLanguage();

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const INTER  = "'Plus Jakarta Sans', sans-serif";
+const INTER  = "'Geist', system-ui, sans-serif";
 const BLUE   = '#4361ee';
 const BLUE_DK = '#3451d1';
 const WHITE  = '#ffffff';

@@ -7,8 +7,8 @@ const WHITE  = '#ffffff';
 const BORDER = '#cfc9bb';
 const TEXT   = '#151210';
 const MUTED  = '#6a6050';
-const OUTFIT = "'Plus Jakarta Sans', system-ui, sans-serif";
-const MONO   = "'Plus Jakarta Sans', system-ui, sans-serif";
+const OUTFIT = "'Geist', system-ui, sans-serif";
+const MONO   = "'Geist Mono', monospace";
 
 const MAX_LEN = 4000;
 
@@ -44,7 +44,7 @@ export function InquiryInput({ onAnalyse, loading, apiError, isOnline = true }) 
           {t.inquiry.label ?? 'Transportförfrågan'}
         </span>
         <span style={{
-          fontFamily: MONO, fontSize: 10,
+          fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 10,
           color: nearLimit ? '#c45454' : MUTED,
           letterSpacing: '0.04em',
           transition: 'color 0.2s',

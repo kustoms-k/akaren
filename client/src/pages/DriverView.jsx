@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const INTER = "'Plus Jakarta Sans', system-ui, sans-serif";
-const MONO  = "'Plus Jakarta Sans', system-ui, sans-serif";
+const INTER = "'Geist', system-ui, sans-serif";
+const MONO  = "'Geist Mono', monospace";
 
 const STATUS_COLORS = {
   planerad:  { bg: 'rgba(180,100,20,0.10)',  color: '#B46418', border: 'rgba(180,100,20,0.25)' },
@@ -166,7 +166,7 @@ export function DriverView({ user, onLogout }) {
                     </span>
                   )}
                   {job.avstand_km && (
-                    <span style={{ fontSize: 11, color: '#9A9088', fontFamily: MONO }}>
+                    <span style={{ fontSize: 11, color: '#9A9088', fontFamily: MONO, fontFeatureSettings: '"tnum"' }}>
                       {fmtKm(job.avstand_km)}
                     </span>
                   )}
