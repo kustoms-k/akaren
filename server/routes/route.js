@@ -218,7 +218,7 @@ function calcVehicleCost(vehicle, directGeo, directKm, compliantKm, cZones, brid
   const euroKl   = vehicle.euro_klass ?? 6;
   const forbruk  = vehicle.forbrukning_l_per_km
     ?? fleetJsonMap[vehicle.ext_id?.toUpperCase()]?.forbrukning_l_per_km
-    ?? 0.32;
+    ?? 0.35;
 
   // LEZ check for this vehicle
   const violations = directGeo?.length
@@ -268,7 +268,8 @@ router.post('/', async (req, res) => {
 
   // ── Live diesel price ──────────────────────────────────────────────────────
   const fuelRow     = stmtFuel.get();
-  const dieselPrice = fuelRow?.price_per_litre ?? 18.50;
+  // 2026 B7 diesel riksgenomsnitt fallback (Drivmedelsleverantörernas förening)
+  const dieselPrice = fuelRow?.price_per_litre ?? 21.50;
 
   // ── Company fleet from DB (with fleet.json fuel-consumption fallback) ──────
   const dbFleet = req.companyId ? stmtFleet.all(req.companyId) : [];
@@ -383,7 +384,7 @@ router.post('/', async (req, res) => {
   const primaryVehicle = vehicle ?? dbFleet[0] ?? null;
   const forbruk = primaryVehicle?.forbrukning_l_per_km
     ?? fleetJsonMap[primaryVehicle?.ext_id?.toUpperCase()]?.forbrukning_l_per_km
-    ?? 0.32;
+    ?? 0.35;
 
   const primaryKm   = primaryRoute?.distance_km ?? 0;
   const fuelKr      = Math.round(primaryKm * forbruk * dieselPrice);

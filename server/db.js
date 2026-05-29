@@ -458,21 +458,21 @@ if (userCount.n === 0) {
   console.log('Seeded default admin user: admin@kemoffs.se / admin123');
 }
 
-// ── Seed 6 mock drivers (idempotent, uses company_id = 1) ────────────────────
+// ── Seed 6 drivers for default company (realistic Swedish names) ─────────────
 const driverCount = db.prepare('SELECT COUNT(*) AS n FROM drivers WHERE company_id = 1').get();
 if (driverCount.n === 0) {
   const ins = db.prepare(
     `INSERT INTO drivers (company_id, name, phone, truck_id) VALUES (1, ?, ?, ?)`
   );
   [
-    ['Lars Eriksson',   '+46701234001', 'KEM-01'],
-    ['Anna Lindström',  '+46701234002', 'KEM-02'],
-    ['Björn Hansson',   '+46701234003', 'KEM-03'],
-    ['Maria Johansson', '+46701234004', 'KEM-04'],
-    ['Stefan Nilsson',  '+46701234005', 'KEM-05'],
-    ['Karin Persson',   '+46701234006', 'KEM-06'],
+    ['Anders Bergström',  '+46701234001', 'KEM-01'],  // Volvo FH 540 Kranbil
+    ['Johan Lindqvist',   '+46701234002', 'KEM-02'],  // Scania R 500 Lastväxlare
+    ['Erik Nordin',       '+46701234003', 'KEM-03'],  // Volvo FM 460 Flakbil
+    ['Maria Sundberg',    '+46701234004', 'KEM-04'],  // Scania G 410 Boggi
+    ['Lars Karlsson',     '+46701234005', 'KEM-05'],  // Mercedes Actros Truck+Släp
+    ['Karin Persson',     '+46701234006', 'KEM-06'],  // MAN TGX Containerbil
   ].forEach(([name, phone, truck_id]) => ins.run(name, phone, truck_id));
-  console.log('Seeded 6 mock drivers for company 1.');
+  console.log('Seeded 6 drivers for company 1.');
 }
 
 export default db;

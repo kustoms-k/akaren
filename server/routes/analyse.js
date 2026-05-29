@@ -21,7 +21,8 @@ const getCachedFuel = db.prepare(
   'SELECT price_per_litre FROM fuel_price_cache ORDER BY id DESC LIMIT 1'
 );
 
-const FALLBACK_DIESEL = 18.50;
+// 2026 B7 diesel riksgenomsnitt (Drivmedelsleverantörernas förening)
+const FALLBACK_DIESEL = 21.50;
 
 function buildSystemPrompt(fleetText, pricingText, fuelPerKm, dieselPrice) {
   return `Du är ett specialiserat AI-system för ett svenskt transportföretag (åkeri). Din uppgift är att analysera transportförfrågningar och extrahera strukturerad information för offertberäkning.
@@ -29,9 +30,14 @@ function buildSystemPrompt(fleetText, pricingText, fuelPerKm, dieselPrice) {
 Fordon i flottan:
 ${fleetText}
 
-Prisstruktur:
+Prisstruktur (2026 Sve marknadsrater, Sveriges Åkeriföretag):
 ${pricingText}
-- Bränsle: avstånd (km) × 2 × ${fuelPerKm} kr/km (aktuellt dieselpris ${dieselPrice} kr/L, förbrukning ~0.31 L/km inkl. tomkörning)
+- Bränsle: avstånd (km) × förbrukning (l/km) × ${dieselPrice} kr/L (dieselpris B7 riksgenomsnitt)
+- Tung lastbil förbrukar typiskt 3.1–4.2 l/mil (0.31–0.42 l/km) beroende på fordon och last
+- Milpris för långa körningar (>50 km): solobil 255 kr/mil, bil+släp 315 kr/mil (per 10 km)
+- Framkörningsavgift: 1h (standard) eller 1,5h (kran/tung) läggs alltid till
+- Mindebitering: 2 timmar
+- OB-tillägg: +265 kr/h kvällar (16–21), +475 kr/h natt (21–05) och helg
 - Tilläggsavgifter: tungt gods, krantimmar, lastning/lossning
 
 LEZ-zoner i Stockholm som kräver Euro VI eller tillstånd:
@@ -142,7 +148,8 @@ router.post('/', async (req, res) => {
   // ── Build dynamic context from DB ────────────────────────────────────────
   const cachedFuel   = getCachedFuel.get();
   const dieselPrice  = cachedFuel?.price_per_litre ?? FALLBACK_DIESEL;
-  const fuelPerKm    = (dieselPrice * 0.31).toFixed(2);
+  // Weighted average consumption for a mixed heavy fleet: ~0.35 l/km
+  const fuelPerKm    = (dieselPrice * 0.35).toFixed(2);
 
   const fleetRows    = getFleet.all(req.companyId);
   const fleetText    = fleetRows.length > 0

@@ -3,7 +3,8 @@ import db from '../db.js';
 
 const router = Router();
 
-const FALLBACK_PRICE = 18.50;
+// 2026 B7 diesel riksgenomsnitt (Drivmedelsleverantörernas förening)
+const FALLBACK_PRICE = 21.50;
 const CACHE_TTL_MS   = 6 * 60 * 60 * 1000; // 6 hours
 
 const getCached = db.prepare(

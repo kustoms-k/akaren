@@ -112,9 +112,10 @@ router.post('/load-demo-data', (req, res) => {
       }
     }
 
-    // 2. Pricing config
+    // 2. Pricing config (2026 Swedish haulage market rates)
+    // Fuel cost/km based on diesel 21.50 kr/l × avg 0.35 l/km = 7.53 kr/km
     db.prepare('UPDATE companies SET pricing_config = ? WHERE id = ?').run(
-      JSON.stringify({ fuel_cost_km: 2.50, markup_pct: 35 }), cid,
+      JSON.stringify({ fuel_cost_km: 7.53, markup_pct: 30 }), cid,
     );
 
     // 3. Demo customers with portals
@@ -124,9 +125,10 @@ router.post('/load-demo-data', (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?)
     `);
     const customers = [
-      { name: 'Bergström Bygg AB',     phone: '+46701112233', email: 'info@bergstrombygg.se',     notes: 'Regelbunden kund — byggmaterial och maskiner.' },
-      { name: 'Nordlund Logistik AB',  phone: '+46702223344', email: 'order@nordlundlogistik.se', notes: 'Stor aktör, alltid tidsbokning.' },
-      { name: 'Hansson & Söner HB',    phone: '+46703334455', email: null,                        notes: null },
+      { name: 'NCC Anläggning AB',          phone: '+46706112233', email: 'transport@ncc.se',            notes: 'Regelbunden kund — byggmaskiner och anläggningstransporter. Kontakt: Anders Bergström.' },
+      { name: 'Skanska Sverige AB',         phone: '+46707223344', email: 'logistik@skanska.se',         notes: 'Stor aktör, kräver alltid tidsbokning och leveransbekräftelse. Kontakt: Johan Lindqvist.' },
+      { name: 'Mälardalens Schakt AB',      phone: '+46708334455', email: 'order@malardalensschakt.se',  notes: 'Lokalt schaktföretag, löpande maskin- och materialtransporter. Kontakt: Erik Nordin.' },
+      { name: 'Stockholms Byggentreprenad', phone: '+46709445566', email: null,                          notes: 'Ny kund — provtransport bokad. Kontakt: Maria Sundberg.' },
     ];
     const portalIds = customers.map((c) => {
       const r = insPortal.run(cid, c.name, c.phone, c.email, randomUUID(), c.notes);
@@ -141,12 +143,29 @@ router.post('/load-demo-data', (req, res) => {
          customer_phone, noteringar, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
+    // Demo quotes with realistic 2026 Swedish haulage pricing:
+    // Hourly: KEM-01 kran 1150 kr/h, KEM-03 flak 856 kr/h, KEM-04 boggi 792 kr/h, KEM-05 släp 1029 kr/h, KEM-06 container 920 kr/h
+    // Milpris solobil 255 kr/mil (255 kr/10 km), bil+släp 315 kr/mil
+    // Fuel: 21.50 kr/l diesel, KEM-01 3.8 l/mil, KEM-03 3.3 l/mil, KEM-04 3.1 l/mil, KEM-05 4.2 l/mil
     const demoQuotes = [
-      { lasttyp: 'Byggmaterial', from: 'Arlanda flygplats, Sigtuna',   to: 'Solna Business Park, Solna',        km: 42,  price: 8900,  vehicle: 'KEM-03', portal: portalIds[0], name: customers[0].name, phone: customers[0].phone, note: 'Betong och armering. Tidigt morgon.', status: 'accepterad', daysAgo: 14 },
-      { lasttyp: 'Maskintransport', from: 'Nacka Strand, Nacka',        to: 'Kungsholmen, Stockholm',            km: 18,  price: 14200, vehicle: 'KEM-07', portal: portalIds[0], name: customers[0].name, phone: customers[0].phone, note: 'Grävmaskin, tillstånd klart.', status: 'accepterad', daysAgo: 10 },
-      { lasttyp: 'Frakt',         from: 'Stor-Stockholm lager, Upplands Väsby', to: 'Södertälje hamn, Södertälje', km: 67, price: 11400, vehicle: 'KEM-04', portal: portalIds[1], name: customers[1].name, phone: customers[1].phone, note: null, status: 'accepterad', daysAgo: 7 },
-      { lasttyp: 'Kylfrakt',      from: 'Lidingö, Stockholm',          to: 'Uppsala centralstation, Uppsala',   km: 76,  price: 16800, vehicle: 'KEM-06', portal: portalIds[1], name: customers[1].name, phone: customers[1].phone, note: 'Livsmedel, temp max +4°C.', status: 'väntande', daysAgo: 2 },
-      { lasttyp: 'Styckegods',    from: 'Farsta centrum, Stockholm',   to: 'Täby centrum, Täby',               km: 28,  price: 4200,  vehicle: 'KEM-01', portal: portalIds[2], name: customers[2].name, phone: customers[2].phone, note: null, status: 'väntande', daysAgo: 1 },
+      // KEM-01 Kranbil: 12t grävmaskin Hornsgatan→Södertälje 38 km
+      // 1.5h framkörning + 0.6h körning + 1h lastning = 3.1h → 4h billing (min 2h, round up)
+      // 4h × 1150 = 4600 + lastning 1500 + bränsle 3.8 mil × 3.8 l/mil × 21.50 = 311 kr → total ~6400
+      { lasttyp: 'Grävmaskin', from: 'Hornsgatan 36, Stockholm', to: 'Södertälje hamn, Södertälje', km: 38, price: 6500, vehicle: 'KEM-01', portal: portalIds[0], name: customers[0].name, phone: customers[0].phone, note: '12t bandgrävare. Tillstånd klart. Tidig morgon 06:00.', status: 'accepterad', daysAgo: 14 },
+      // KEM-03 Flakbil: byggmaterial Arlanda→Solna 42 km
+      // 1h framkörning + 0.7h körning + 0.5h lastning = 2.2h → 2.5h billing
+      // 2.5h × 856 = 2140 + bränsle 4.2 mil × 3.3 × 21.50 = 298 → total ~2500
+      { lasttyp: 'Byggmaterial', from: 'Arlanda logistikcentrum, Sigtuna', to: 'NCC Solna Business Park, Solna', km: 42, price: 4800, vehicle: 'KEM-03', portal: portalIds[0], name: customers[0].name, phone: customers[0].phone, note: 'Armering och betongblock. Morgonleverans 07:00.', status: 'accepterad', daysAgo: 10 },
+      // KEM-05 Bil+Släp: frakt Upplands Väsby→Södertälje 67 km (>50 km → milpris)
+      // 6.7 mil × 315 kr/mil = 2111 + bränsle 6.7 mil × 4.2 × 21.50 = 605 → total ~2800
+      { lasttyp: 'Frakt', from: 'Stor-Stockholm lager, Upplands Väsby', to: 'Södertälje hamn, Södertälje', km: 67, price: 8900, vehicle: 'KEM-05', portal: portalIds[1], name: customers[1].name, phone: customers[1].phone, note: 'Pallar 22t nettolast. Kvittens krävs vid lossning.', status: 'accepterad', daysAgo: 7 },
+      // KEM-06 Containerbil: Stockholm→Uppsala 76 km (>50 km → milpris)
+      // 7.6 mil × 255 kr/mil = 1938 + bränsle 7.6 × 3.4 × 21.50 = 556 → ~2500
+      { lasttyp: 'Containertransport', from: 'Frihamnen, Stockholm', to: 'Uppsala kombiterminal, Uppsala', km: 76, price: 7200, vehicle: 'KEM-06', portal: portalIds[1], name: customers[1].name, phone: customers[1].phone, note: '20-fots ISO-container, 18t. Tidsbokning kl 10:00.', status: 'väntande', daysAgo: 2 },
+      // KEM-04 Boggi: schaktmaterial Nacka→Kungsholmen 22 km
+      // 1h framkörning + 0.4h körning + 0.5h lastning = 1.9h → 2h billing (minimum)
+      // 2h × 792 = 1584 + bränsle 2.2 × 3.1 × 21.50 = 147 → ~1800
+      { lasttyp: 'Godstransport', from: 'Nacka Strand, Nacka', to: 'Kungsholmen, Stockholm', km: 22, price: 3200, vehicle: 'KEM-04', portal: portalIds[2], name: customers[2].name, phone: customers[2].phone, note: 'Schaktmassor, 8t. LEZ: Kungsholmen — KEM-04 Euro V, kontrollera tillstånd.', status: 'väntande', daysAgo: 1 },
     ];
     const quoteIds = demoQuotes.map((q) => {
       const date = new Date();
@@ -177,11 +196,12 @@ router.post('/load-demo-data', (req, res) => {
     if (driverCount.n === 0) {
       const insDrv = db.prepare('INSERT INTO drivers (company_id, name, phone, truck_id) VALUES (?, ?, ?, ?)');
       [
-        ['Erik Lindgren',    '+46701100001', fleetJson[0]?.id ?? 'V01'],
-        ['Maja Svensson',    '+46701100002', fleetJson[1]?.id ?? 'V02'],
-        ['Anders Björk',     '+46701100003', fleetJson[2]?.id ?? 'V03'],
-        ['Sara Holmström',   '+46701100004', fleetJson[3]?.id ?? 'V04'],
-        ['Mikael Gustafsson','+46701100005', fleetJson[4]?.id ?? 'V05'],
+        ['Anders Bergström',  '+46701100001', fleetJson[0]?.id ?? 'KEM-01'],  // Kranbil
+        ['Johan Lindqvist',   '+46701100002', fleetJson[1]?.id ?? 'KEM-02'],  // Lastväxlare
+        ['Erik Nordin',       '+46701100003', fleetJson[2]?.id ?? 'KEM-03'],  // Flakbil
+        ['Maria Sundberg',    '+46701100004', fleetJson[3]?.id ?? 'KEM-04'],  // Boggi
+        ['Lars Karlsson',     '+46701100005', fleetJson[4]?.id ?? 'KEM-05'],  // Truck+Släp
+        ['Karin Persson',     '+46701100006', fleetJson[5]?.id ?? 'KEM-06'],  // Containerbil
       ].forEach(([name, phone, truck_id]) => insDrv.run(cid, name, phone, truck_id));
     }
 

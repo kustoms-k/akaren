@@ -4,15 +4,19 @@ import db from '../db.js';
 const router = Router();
 
 // ── CO2 emission factors (kg CO2e per km, loaded one-way)
-// Source: Swedish Transport Analysis (Trafikanalys) & NTMCalc
+// Source: Trafikanalys "Lastbilstrafik 2024", NTMCalc 4.0, HBEFA 4.2
+// Figures for heavy diesel trucks (>16t) operating in Sweden 2024/2026.
+// Range 0.80–1.10 kg CO2/km aligns with Trafikanalys riksgenomsnitt ~0.94 kg/km.
 const EMISSION_FACTORS = {
-  'Kranlyft':          1.15,   // Heavy crane truck, diesel, >32t
-  'Grävmaskin':        1.08,   // Heavy flatbed/crane transport
-  'Containertransport':0.92,   // Container truck, 26t
-  'Betongtransport':   0.98,   // Mixer/bulk, heavy
-  'Båttransport':      0.75,   // Flatbed, lighter load
-  'Godstransport':     0.68,   // Standard goods, 18–26t
-  default:             0.70,
+  'Kranlyft':          1.08,   // Crane truck >32t, diesel Euro VI
+  'Grävmaskin':        1.05,   // Heavy flatbed/crane, loaded >20t
+  'Containertransport':0.92,   // Container truck 26t, Euro VI
+  'Betongtransport':   0.98,   // Concrete mixer/bulk, heavy
+  'Båttransport':      0.85,   // Flatbed, boat transport, medium load
+  'Godstransport':     0.88,   // Standard goods 18–26t, Euro VI (Trafikanalys avg)
+  'Lastväxlare':       0.90,   // Hook-lift, 18t
+  'Frakt':             0.94,   // Truck+trailer 40t (Trafikanalys riksgenomsnitt)
+  default:             0.90,   // Conservative default, Trafikanalys heavy truck avg
 };
 
 // Return factor for vehicle or cargo type
@@ -67,8 +71,8 @@ router.get('/summary', (req, res) => {
     const total_km      = summary.reduce((s, r) => s + r.total_km, 0);
     const total_revenue = summary.reduce((s, r) => s + r.revenue, 0);
 
-    // Industry benchmark: average Swedish åkeri ≈ 0.78 kg CO2/km (Trafikanalys 2024)
-    const benchmark_kg  = Math.round(total_km * 2 * 0.78 * 10) / 10;
+    // Industry benchmark: average Swedish åkeri ≈ 0.94 kg CO2/km (Trafikanalys "Lastbilstrafik 2024", heavy diesel)
+    const benchmark_kg  = Math.round(total_km * 2 * 0.94 * 10) / 10;
     const vs_benchmark_pct = benchmark_kg > 0
       ? Math.round(((total_co2_kg - benchmark_kg) / benchmark_kg) * 1000) / 10
       : null;
