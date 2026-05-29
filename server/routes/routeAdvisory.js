@@ -71,32 +71,52 @@ function parseFirstCoord(wgs84) {
   return { lon: parseFloat(m[1]), lat: parseFloat(m[2]) };
 }
 
-async function getAlerts(minLon, minLat, maxLon, maxLat) {
-  const cached = db.prepare('SELECT data, updated_at FROM road_alerts_cache ORDER BY id DESC LIMIT 1').get();
-  if (cached) {
-    const ageMs = Date.now() - new Date(cached.updated_at).getTime();
-    if (ageMs < 30 * 60 * 1000) {
-      return JSON.parse(cached.data);
+// bbox: "minLon minLat, maxLon maxLat" string or null (fetch all Sweden)
+async function getAlerts(bbox = null) {
+  // Only use cache for the no-bbox (full-Sweden) case
+  if (!bbox) {
+    const cached = db.prepare('SELECT data, updated_at FROM road_alerts_cache ORDER BY id DESC LIMIT 1').get();
+    if (cached) {
+      const ageMs = Date.now() - new Date(cached.updated_at).getTime();
+      if (ageMs < 30 * 60 * 1000) return JSON.parse(cached.data);
     }
   }
 
   if (!TRV_KEY) return [];
 
+  const withinCond = bbox ? `<WITHIN name="Geometry.WGS84" shape="box" value="${bbox}"/>` : '';
+
   const body = `<?xml version="1.0" encoding="UTF-8"?>
 <REQUEST>
   <LOGIN authenticationkey="${TRV_KEY}"/>
-  <QUERY objecttype="RoadCondition" schemaversion="1.0">
-    <FILTER><GT name="ConditionCode" value="1"/></FILTER>
+
+  <QUERY objecttype="Situation" schemaversion="1.5" limit="100">
+    <FILTER>
+      <EQ name="Deleted" value="false"/>
+    </FILTER>
+    <INCLUDE>Id</INCLUDE>
+    <INCLUDE>Deviation.Id</INCLUDE>
+    <INCLUDE>Deviation.MessageType</INCLUDE>
+    <INCLUDE>Deviation.MessageCode</INCLUDE>
+    <INCLUDE>Deviation.LocationText</INCLUDE>
+    <INCLUDE>Deviation.RoadNumber</INCLUDE>
+    <INCLUDE>Deviation.SeverityText</INCLUDE>
+    <INCLUDE>Deviation.StartTime</INCLUDE>
+    <INCLUDE>Deviation.EndTime</INCLUDE>
+    <INCLUDE>Deviation.Geometry</INCLUDE>
+  </QUERY>
+
+  <QUERY objecttype="RoadCondition" schemaversion="1.0" limit="300">
+    <FILTER>
+      <GT name="ConditionCode" value="1"/>
+      ${withinCond}
+    </FILTER>
     <INCLUDE>Id</INCLUDE>
     <INCLUDE>RoadNumber</INCLUDE>
     <INCLUDE>LocationText</INCLUDE>
     <INCLUDE>ConditionCode</INCLUDE>
     <INCLUDE>ConditionText</INCLUDE>
-    <INCLUDE>ConditionInfo</INCLUDE>
     <INCLUDE>Warning</INCLUDE>
-    <INCLUDE>Cause</INCLUDE>
-    <INCLUDE>Measurement</INCLUDE>
-    <INCLUDE>CountyNo</INCLUDE>
     <INCLUDE>Geometry</INCLUDE>
     <INCLUDE>ModifiedTime</INCLUDE>
   </QUERY>
@@ -106,30 +126,47 @@ async function getAlerts(minLon, minLat, maxLon, maxLat) {
     method: 'POST',
     headers: { 'Content-Type': 'application/xml' },
     body,
-    signal: AbortSignal.timeout(8000),
+    signal: AbortSignal.timeout(10_000),
   });
   if (!r.ok) return [];
   const json = await r.json();
-  const items = json?.RESPONSE?.RESULT?.[0]?.RoadCondition ?? [];
 
-  const alerts = items.map((item) => ({
-    id:           item.Id,
-    road:         item.RoadNumber,
-    location:     item.LocationText,
-    condition:    item.ConditionText,
-    info:         item.ConditionInfo   ?? [],
-    warnings:     item.Warning         ?? [],
-    causes:       item.Cause           ?? [],
-    measurements: item.Measurement     ?? [],
-    severity:     item.ConditionCode,
-    counties:     item.CountyNo        ?? [],
-    modified_at:  item.ModifiedTime,
-    _wgs84:       item.Geometry?.WGS84 ?? null,
+  const situations = json?.RESPONSE?.RESULT?.[0]?.Situation ?? [];
+  const conditions  = json?.RESPONSE?.RESULT?.[1]?.RoadCondition ?? [];
+
+  const incidents = situations.flatMap((s) =>
+    (Array.isArray(s.Deviation) ? s.Deviation : s.Deviation ? [s.Deviation] : []).map((d) => ({
+      id:        d.Id ?? s.Id,
+      type:      'incident',
+      subtype:   d.MessageType,
+      road:      d.RoadNumber,
+      location:  d.LocationText,
+      severity:  d.SeverityText,
+      end_time:  d.EndTime,
+      _wgs84:    d.Geometry?.WGS84 ?? null,
+    }))
+  );
+
+  const roadConds = conditions.map((c) => ({
+    id:        c.Id,
+    type:      'condition',
+    road:      c.RoadNumber,
+    location:  c.LocationText,
+    condition: c.ConditionText,
+    warnings:  c.Warning ? [].concat(c.Warning) : [],
+    severity:  c.ConditionCode,
+    _wgs84:    c.Geometry?.WGS84 ?? null,
   }));
 
-  const updatedAt = new Date().toISOString();
-  const stripped  = alerts.map(({ _wgs84: _, ...rest }) => rest);
-  db.prepare('INSERT INTO road_alerts_cache (data, updated_at) VALUES (?, ?)').run(JSON.stringify(stripped), updatedAt);
+  const alerts = [...incidents, ...roadConds];
+
+  // Cache full-Sweden result for re-use
+  if (!bbox) {
+    const stripped  = alerts.map(({ _wgs84: _, ...rest }) => rest);
+    db.prepare('INSERT INTO road_alerts_cache (data, updated_at) VALUES (?, ?)').run(
+      JSON.stringify(stripped), new Date().toISOString()
+    );
+  }
 
   return alerts;
 }
@@ -181,31 +218,33 @@ router.post('/', async (req, res) => {
     }
   }
 
-  // ── Trafikverket alerts — filter by bounding box if we have coords ─────────
+  // ── Trafikverket alerts — geographic filter pushed to API when coords known ──
   try {
-    const allAlerts = await getAlerts();
+    let bbox = null;
     if (fromCoord && toCoord) {
-      const pad    = 1.2; // degrees — expand bounding box to catch nearby roads
-      const minLon = Math.min(fromCoord[0], toCoord[0]) - pad;
-      const maxLon = Math.max(fromCoord[0], toCoord[0]) + pad;
-      const minLat = Math.min(fromCoord[1], toCoord[1]) - pad;
-      const maxLat = Math.max(fromCoord[1], toCoord[1]) + pad;
-
-      result.route_alerts = allAlerts.filter((a) => {
-        const coord = parseFirstCoord(a._wgs84 ?? '');
-        if (!coord) return false;
-        return coord.lon >= minLon && coord.lon <= maxLon &&
-               coord.lat >= minLat && coord.lat <= maxLat;
-      }).map(({ _wgs84, ...clean }) => {
-        const c = parseFirstCoord(_wgs84 ?? '');
-        return { ...clean, coord: c ? [c.lon, c.lat] : null };
-      });
-    } else {
-      result.route_alerts = allAlerts.map(({ _wgs84, ...clean }) => {
-        const c = parseFirstCoord(_wgs84 ?? '');
-        return { ...clean, coord: c ? [c.lon, c.lat] : null };
-      });
+      const pad = 0.5; // degrees ~40 km padding around the route bounding box
+      const minLon = (Math.min(fromCoord[0], toCoord[0]) - pad).toFixed(4);
+      const maxLon = (Math.max(fromCoord[0], toCoord[0]) + pad).toFixed(4);
+      const minLat = (Math.min(fromCoord[1], toCoord[1]) - pad).toFixed(4);
+      const maxLat = (Math.max(fromCoord[1], toCoord[1]) + pad).toFixed(4);
+      bbox = `${minLon} ${minLat}, ${maxLon} ${maxLat}`;
     }
+
+    const allAlerts = await getAlerts(bbox);
+
+    // RoadCondition was already filtered by WITHIN at API level.
+    // Situation doesn't support WITHIN, so filter it client-side by bounding box.
+    result.route_alerts = allAlerts.filter((a) => {
+      if (!bbox || a.type !== 'incident') return true;
+      const coord = parseFirstCoord(a._wgs84 ?? '');
+      if (!coord) return false;
+      const [minLon, minLatStr, , maxLon, maxLatStr] = bbox.replace(',', '').split(' ');
+      return coord[0] >= parseFloat(minLon) && coord[0] <= parseFloat(maxLon) &&
+             coord[1] >= parseFloat(minLatStr) && coord[1] <= parseFloat(maxLatStr);
+    }).map(({ _wgs84, ...clean }) => ({
+      ...clean,
+      coord: parseFirstCoord(_wgs84 ?? ''),
+    }));
   } catch (err) {
     console.warn('[route-advisory] Trafikverket error:', err.message);
   }
@@ -219,12 +258,37 @@ router.post('/', async (req, res) => {
       ? 'Route passes through a LEZ zone — confirm the vehicle meets Euro VI standard or apply for an exemption.'
       : 'Rutten passerar en LEZ-zon — bekräfta att fordonet uppfyller Euro VI-kravet eller ansök om undantag.');
   }
-  if (result.route_alerts.length > 0) {
-    const roads = [...new Set(result.route_alerts.map((a) => a.road))].slice(0, 3).join(', ');
+
+  // Separate incident types for more specific messaging
+  const accidents  = result.route_alerts.filter((a) => /olycka|accident/i.test(a.subtype ?? a.condition ?? ''));
+  const roadworks  = result.route_alerts.filter((a) => /vägarbete|arbete/i.test(a.subtype ?? a.condition ?? ''));
+  const icyRoads   = result.route_alerts.filter((a) => /is|halka|snö|frost/i.test(a.condition ?? a.location ?? ''));
+  const otherAlerts = result.route_alerts.filter((a) => !accidents.includes(a) && !roadworks.includes(a) && !icyRoads.includes(a));
+
+  if (accidents.length > 0) {
+    const roads = [...new Set(accidents.map((a) => a.road).filter(Boolean))].slice(0, 3).join(', ');
     recs.push(en
-      ? `Active road warnings near route: ${roads}. Check for alternative roads.`
-      : `Aktiva vägvarningar nära rutten: ${roads}. Kontrollera alternativa vägar.`);
+      ? `Accident reported on route${roads ? ` (${roads})` : ''} — expect delays, keep safe following distance.`
+      : `Olycka rapporterad på rutten${roads ? ` (${roads})` : ''} — räkna med förseningar, håll säkert avstånd.`);
   }
+  if (roadworks.length > 0) {
+    const roads = [...new Set(roadworks.map((a) => a.road).filter(Boolean))].slice(0, 3).join(', ');
+    recs.push(en
+      ? `Active roadworks near route${roads ? ` (${roads})` : ''} — reduced speed zones likely.`
+      : `Pågående vägarbete längs rutten${roads ? ` (${roads})` : ''} — reducerade hastigheter gäller.`);
+  }
+  if (icyRoads.length > 0) {
+    recs.push(en
+      ? 'Ice or snow reported on road sections along this route — winter tyres required, reduce speed.'
+      : 'Is eller snö rapporterat längs delar av rutten — vinterdäck krävs, sänk hastigheten.');
+  }
+  if (otherAlerts.length > 0 && accidents.length === 0 && roadworks.length === 0) {
+    const roads = [...new Set(otherAlerts.map((a) => a.road).filter(Boolean))].slice(0, 3).join(', ');
+    recs.push(en
+      ? `Active road warnings near route${roads ? ` (${roads})` : ''} — check for alternative roads.`
+      : `Aktiva vägvarningar nära rutten${roads ? ` (${roads})` : ''} — kontrollera alternativa vägar.`);
+  }
+
   if (weight_ton && weight_ton > 10) {
     recs.push(en
       ? 'Heavy load (>10 tons) — check road bearing class and transport permit requirements.'
@@ -232,13 +296,13 @@ router.post('/', async (req, res) => {
   }
   if (result.duration_min && result.duration_min > 270) {
     recs.push(en
-      ? 'Drive time exceeds 4.5 h — plan for mandatory break under EU driving time regulations.'
-      : 'Körtid överstiger 4,5 h — planera för obligatorisk rast enligt kör- och vilotidsregler.');
+      ? 'Drive time exceeds 4.5 h — plan for mandatory break under EU driving time regulations (EC 561/2006).'
+      : 'Körtid överstiger 4,5 h — planera för obligatorisk rast enligt EG 561/2006 kör- och vilotidsregler.');
   }
   if (recs.length === 0) {
     recs.push(en
-      ? 'Route looks clear. No active warnings along this stretch.'
-      : 'Rutten ser normal ut. Inga aktiva varningar längs sträckan.');
+      ? 'Route looks clear. No active incidents or warnings along this stretch.'
+      : 'Rutten ser normal ut. Inga aktiva händelser eller varningar längs sträckan.');
   }
 
   result.recommendations = recs;
