@@ -64,7 +64,7 @@ export const EN = {
     recentActivity:  'Recent Activity',
     recentQuotes:    'Recent Quotes',
     newQuoteCta:     'New Quote',
-    newQuoteCtaSub:  'Paste a customer message and AI builds the quote in seconds.',
+    newQuoteCtaSub:  'Paste a customer message and the system calculates a complete quote in seconds.',
     analyseBtn:      'ANALYSE',
     noJobsYet:          'No jobs yet — create a quote to start',
     operationsTitle:    'Operations Overview',
@@ -92,9 +92,9 @@ export const EN = {
     },
     marketIntel: {
       heading: 'Market Intelligence',
-      badge:   'AI ANALYSIS',
+      badge:   'MARKET DATA',
       stats: [
-        { pct: '68%',  label: 'Stockholm truckers still quote by phone/email',      insight: 'Your advantage: AI quote in seconds' },
+        { pct: '68%',  label: 'Stockholm truckers still quote by phone/email',      insight: 'Your advantage: instant digital quote' },
         { pct: '2026', label: 'EU ETS includes road transport — CO₂ costs rising',  insight: 'Åkaren tracks CO₂ per job automatically' },
         { pct: '35%',  label: 'SME truckers lack digital diesel cost integration',   insight: 'Live diesel price updates in every quote' },
       ],
@@ -154,12 +154,12 @@ export const EN = {
     },
     flags: {
       editOrConfirm:     'Edit or confirm all flagged fields before continuing',
-      lowConfidence:     'AI confidence below threshold — manual review required',
+      lowConfidence:     'Confidence below threshold — manual review required',
       overallScore:      (pct) => `Overall score: ${pct}% · threshold 70%`,
       reviewBtn:         'I have reviewed this',
       reviewAcknowledged:'Review acknowledged',
       confirmFields:     'Confirm all flagged fields first',
-      reviewFirst:       'Review and acknowledge AI confidence first',
+      reviewFirst:       'Review and acknowledge confidence score first',
     },
     analysis: {
       idle:          'Waiting for inquiry…',
@@ -194,12 +194,12 @@ export const EN = {
   inquiry: {
     placeholder: 'E.g. "Move 5 tonnes of steel from Hammarby Sjöstad to Solna industrial area on June 20, crane required at unloading."',
     submit:      'Analyse Inquiry',
-    offline:     'AI requires internet connection',
+    offline:     'Internet connection required',
   },
 
   errors: {
     network:     'Something went wrong — check your internet connection.',
-    parse:       'AI analysis failed — please try again.',
+    parse:       'Calculation failed — please try again.',
     emptyInquiry:'Enter an inquiry before submitting.',
     saveError:   'Could not save the quote.',
   },
@@ -925,8 +925,8 @@ export const EN = {
     },
     step3: {
       heading:     'Pricing settings',
-      sub:         'These defaults drive the AI quote engine. You can always adjust per quote.',
-      howItWorks:  'How the AI calculates quotes:',
+      sub:         'These defaults drive the quote calculation engine. You can always adjust per quote.',
+      howItWorks:  'How quotes are calculated:',
       formula:     'Total = (Distance × per-km rate) + (Hours × hourly rate) + start fee × (1 + markup %)',
       fuelCost:    'Default fuel cost / km (kr)',
       fuelHint:    'Typically 2.00–3.50 kr',
@@ -958,11 +958,11 @@ export const EN = {
     },
     step5: {
       heading:       'Generate your first quote',
-      sub:           'Paste a real or example customer inquiry below and watch the AI build a complete quote.',
+      sub:           'Paste a real or example customer inquiry below and the system will generate a complete quote.',
       generate:      'Generate quote',
       generating:    'Generating…',
       readyTitle:    "You're ready!",
-      readyDesc:     'Your first AI quote is done. Welcome to Åkaren!',
+      readyDesc:     'Your first quote is done. Welcome to Åkaren!',
       summaryHeading:'Quote summary',
       fields: {
         cargo:    'Cargo',
@@ -984,8 +984,8 @@ export const EN = {
     done: 'Done',
     steps: {
       newQuote: {
-        title: 'AI Quote Builder',
-        desc:  'Paste any transport inquiry — the AI extracts all details and builds a fully priced, confidence-scored quote in seconds.',
+        title: 'Offertberäkning',
+        desc:  'Paste any transport inquiry — the system extracts all details and builds a fully priced, confidence-scored quote in seconds.',
       },
       customers: {
         title: 'Customer Portals',
@@ -1094,7 +1094,7 @@ export const EN = {
     tagline:  'Transport management for Swedish trucking',
     heroTagline: 'Transport management for Swedish hauliers — from quote to invoice in one place.',
     features: [
-      'AI builds complete quotes in seconds',
+      'Complete quotes calculated in seconds',
       'Customer portals with private tracking links',
       'Profitability analysis per vehicle, route & client',
       'GDPR-compliant with full audit trail',
@@ -1260,13 +1260,13 @@ export const EN = {
   subscriptionGate: {
     brand:       'Åkaren TMS',
     heading:     'Activate your subscription',
-    desc:        'AI analysis and advanced features require an active subscription.',
+    desc:        'Advanced features require an active subscription.',
     price:       '15 000',
     currency:    'kr / month',
     disclaimer:  'Excl. VAT · No commitment · Cancel anytime',
     included:    'Included',
     features: [
-      'AI-powered quote analysis in seconds',
+      'Instant quote calculation',
       'Pricing with live diesel cost',
       'Vehicle matching based on cargo & zone',
       'LEZ check & permit warning',
@@ -1437,7 +1437,7 @@ export const SV = {
     recentActivity:  'Senaste Aktivitet',
     recentQuotes:    'Senaste Offerter',
     newQuoteCta:     'Ny Offert',
-    newQuoteCtaSub:  'Klistra in ett kundmeddelande så skapar AI offerten på sekunder.',
+    newQuoteCtaSub:  'Klistra in ett kundmeddelande och systemet beräknar en komplett offert på sekunder.',
     analyseBtn:      'ANALYSERA',
     noJobsYet:          'Inga uppdrag än — skapa en offert för att börja',
     operationsTitle:    'Operativ Överblick',
@@ -1465,9 +1465,9 @@ export const SV = {
     },
     marketIntel: {
       heading: 'Marknadsintelligens',
-      badge:   'AI-ANALYS',
+      badge:   'MARKNADSDATA',
       stats: [
-        { pct: '68%',  label: 'Stockholmsåkare offerterar fortfarande via telefon/e-post', insight: 'Din konkurrensfördel: AI-offert på sekunder' },
+        { pct: '68%',  label: 'Stockholmsåkare offerterar fortfarande via telefon/e-post', insight: 'Din konkurrensfördel: digitalt offert på sekunder' },
         { pct: '2026', label: 'EU ETS inkluderar vägtransport — CO₂-kostnader stiger',      insight: 'Åkaren spårar redan CO₂ per uppdrag automatiskt' },
         { pct: '35%',  label: 'SME-åkare saknar digital dieselkostnadsintegration',          insight: 'Live dieselpris uppdateras i varje offert' },
       ],
@@ -1527,12 +1527,12 @@ export const SV = {
     },
     flags: {
       editOrConfirm:     'Redigera eller bekräfta alla markerade fält innan du fortsätter',
-      lowConfidence:     'AI-säkerhet under tröskel — manuell granskning krävs',
+      lowConfidence:     'Tillförlitlighet under tröskel — manuell granskning krävs',
       overallScore:      (pct) => `Totalpoäng: ${pct}% · tröskel 70%`,
       reviewBtn:         'Jag har granskat detta',
       reviewAcknowledged:'Granskning bekräftad',
       confirmFields:     'Bekräfta alla markerade fält först',
-      reviewFirst:       'Granska och bekräfta AI-säkerhet först',
+      reviewFirst:       'Granska och bekräfta tillförlitligheten först',
     },
     analysis: {
       idle:          'Väntar på förfrågan…',
@@ -1567,12 +1567,12 @@ export const SV = {
   inquiry: {
     placeholder: 'T.ex. "Flytta 5 ton stål från Hammarby Sjöstad till Solna industriområde den 20 juni, kräver kran vid lossning."',
     submit:      'Analysera förfrågan',
-    offline:     'AI kräver internetanslutning',
+    offline:     'Internetanslutning krävs',
   },
 
   errors: {
     network:     'Något gick fel — kontrollera din internetanslutning.',
-    parse:       'AI-analysen misslyckades — försök igen.',
+    parse:       'Beräkningen misslyckades — försök igen.',
     emptyInquiry:'Ange en förfrågan innan du skickar.',
     saveError:   'Kunde inte spara offerten.',
   },
@@ -2298,8 +2298,8 @@ export const SV = {
     },
     step3: {
       heading:     'Prissättning',
-      sub:         'Dessa standardvärden styr AI:ns offertberäkning. Du kan alltid justera per offert.',
-      howItWorks:  'Hur AI:n räknar:',
+      sub:         'Dessa standardvärden styr offertberäkningen. Du kan alltid justera per offert.',
+      howItWorks:  'Hur offertberäkningen fungerar:',
       formula:     'Pris = (Distans × kr/km) + (Timmar × timkostnad) + startavgift × (1 + påslag %)',
       fuelCost:    'Standardbränslekostnad / km (kr)',
       fuelHint:    'Vanligtvis 2,00–3,50 kr',
@@ -2331,11 +2331,11 @@ export const SV = {
     },
     step5: {
       heading:       'Generera din första offert',
-      sub:           'Klistra in en riktig eller exempelförfrågan och se AI:n skapa en komplett offert.',
+      sub:           'Klistra in en riktig eller exempelförfrågan och systemet skapar en komplett offert.',
       generate:      'Generera offert',
       generating:    'Genererar…',
       readyTitle:    'Du är redo!',
-      readyDesc:     'Din första AI-offert är klar. Välkommen till Åkaren!',
+      readyDesc:     'Din första offert är klar. Välkommen till Åkaren!',
       summaryHeading:'Offertsammanfattning',
       fields: {
         cargo:    'Lasttyp',
@@ -2357,8 +2357,8 @@ export const SV = {
     done: 'Klar',
     steps: {
       newQuote: {
-        title: 'AI-offertverktyg',
-        desc:  'Klistra in valfri förfrågan — AI:n extraherar alla detaljer och skapar en komplett offert på sekunder.',
+        title: 'Offertberäkning',
+        desc:  'Klistra in valfri förfrågan — systemet tolkar alla detaljer och skapar en komplett offert på sekunder.',
       },
       customers: {
         title: 'Kundportaler',
@@ -2467,7 +2467,7 @@ export const SV = {
     tagline:  'Transporthantering för svenska åkerier',
     heroTagline: 'Transporthantering för svenska åkerier — från offert till faktura på ett ställe.',
     features: [
-      'AI extraherar komplett offert på sekunder',
+      'Komplett offert beräknad på sekunder',
       'Kundportaler med privata spårningslänkar',
       'Lönsamhetsanalys per fordon, rutt och kund',
       'GDPR-kompatibel med fullständig revisionslogg',
@@ -2633,13 +2633,13 @@ export const SV = {
   subscriptionGate: {
     brand:       'Åkaren TMS',
     heading:     'Aktivera din prenumeration',
-    desc:        'AI-analys och avancerade funktioner kräver en aktiv prenumeration.',
+    desc:        'Avancerade funktioner kräver en aktiv prenumeration.',
     price:       '15 000',
     currency:    'kr / mån',
     disclaimer:  'Exkl. moms · Ingen bindningstid · Avsluta när som helst',
     included:    'Inkluderat',
     features: [
-      'AI-driven offertanalys på sekunder',
+      'Automatisk offertberäkning på sekunder',
       'Prisberäkning med live dieselkostnad',
       'Fordonsmatchning baserad på last & zon',
       'LEZ-kontroll & tillståndsvarning',

@@ -77,8 +77,8 @@ function BankIDIcon({ size = 22, color = '#fff' }) {
 }
 
 // ── Feature icons ─────────────────────────────────────────────────────────────
-function IconAI() {
-  return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="rgba(255,255,255,0.3)" strokeWidth="1.2"/><path d="M5 8.5L7 10.5L11 6" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+function IconCalc() {
+  return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2.5" y="2" width="11" height="12" rx="1.5" stroke="#ffffff" strokeWidth="1.3" fill="none"/><path d="M5 5.5h6M5 8h2M9 8h2M5 10.5h2M9 10.5h2" stroke="#ffffff" strokeWidth="1.3" strokeLinecap="round"/></svg>;
 }
 function IconLink() {
   return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 10L10 6M7 5.5H4.5a2 2 0 000 4h1M9 10.5h2.5a2 2 0 000-4H9" stroke="#ffffff" strokeWidth="1.4" strokeLinecap="round"/></svg>;
@@ -90,7 +90,7 @@ function IconShield() {
   return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2L3 4.5v4C3 11.5 5.5 14 8 14s5-2.5 5-5.5v-4L8 2z" stroke="#ffffff" strokeWidth="1.3" strokeLinejoin="round" fill="none"/><path d="M6 8l1.5 1.5L10 6.5" stroke="#ffffff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>;
 }
 
-const FEATURE_ICONS = [IconAI, IconLink, IconChart, IconShield];
+const FEATURE_ICONS = [IconCalc, IconLink, IconChart, IconShield];
 
 // ── Left hero panel ───────────────────────────────────────────────────────────
 function HeroPanel({ t }) {

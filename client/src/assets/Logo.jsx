@@ -77,7 +77,7 @@ export function LogoFull({ markSize = 32, variant = 'dark' }) {
           userSelect: 'none',
           textTransform: 'uppercase',
         }}>
-          TRANSPORT AI
+          TRANSPORT TMS
         </span>
       </div>
     </div>

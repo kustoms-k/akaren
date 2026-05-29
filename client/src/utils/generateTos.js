@@ -90,9 +90,9 @@ export function generateTos(company, user) {
   // ── Clauses ───────────────────────────────────────────────────────────────────
   y = clause(doc, y, 1, 'Tjänstebeskrivning', [
     '1.1  Åkaren tillhandahåller en webbaserad plattform för transportföretag med funktioner ' +
-    'för: AI-assisterad offerthantering, kundportaler och offertdelning via unika länkar, ' +
+    'för: automatisk offerthantering, kundportaler och offertdelning via unika länkar, ' +
     'flotta- och förarhantering, prisintelligens och lönsamhetsanalys samt PDF-export av offerter.',
-    '1.2  AI-analys är ett beslutsstöd och inte ett bindande erbjudande. Kunden ansvarar ' +
+    '1.2  Automatisk offertberäkning är ett beslutsstöd och inte ett bindande erbjudande. Kunden ansvarar ' +
     'ensamt för att verifiera och godkänna alla offerter innan de kommuniceras till slutkund.',
     '1.3  Åkaren förbehåller sig rätten att uppdatera och förbättra Tjänsten löpande. ' +
     'Väsentliga förändringar kommuniceras med minst 14 dagars varsel.',
@@ -125,7 +125,7 @@ export function generateTos(company, user) {
     '4.2  Det är inte tillåtet att: (a) vidareförsälja eller underlicensiera Tjänsten; ' +
     '(b) reverse-engineera eller kopiera plattformens källkod; ' +
     '(c) använda Tjänsten för att bygga konkurrerande produkter; ' +
-    '(d) missbruka Tjänstens AI-funktioner för att generera skadligt eller vilseledande innehåll.',
+    '(d) missbruka Tjänstens funktioner för att generera skadligt eller vilseledande innehåll.',
   ]);
 
   y = clause(doc, y, 5, 'Immateriella rättigheter', [

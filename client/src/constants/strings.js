@@ -1,12 +1,12 @@
 export const S = {
   app: {
-    name: 'Åkaren Offert AI',
-    tagline: 'AI-driven offertering för åkerinäringen',
+    name: 'Åkaren TMS',
+    tagline: 'Transportstyrning för åkerinäringen',
   },
 
   header: {
     brand: 'ÅKAREN',
-    product: 'OFFERT AI',
+    product: 'TMS',
     statusLabel: 'aktiv',
     historyAriaLabel: 'Visa offerthistorik',
   },
@@ -103,7 +103,7 @@ export const S = {
 
   errors: {
     network:     'Något gick fel — kontrollera din internetanslutning.',
-    parse:       'AI-analysen misslyckades — försök igen.',
+    parse:       'Beräkningen misslyckades — försök igen.',
     emptyInquiry:'Ange en förfrågan innan du skickar.',
     saveError:   'Kunde inte spara offerten.',
   },

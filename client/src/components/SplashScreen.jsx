@@ -145,7 +145,7 @@ export function SplashScreen({ onDone }) {
               userSelect: 'none', textTransform: 'uppercase',
               animation: 'splashTagIn 0.45s ease 0.45s both',
             }}>
-              OFFERT AI
+              TRANSPORT TMS
             </span>
           </div>
         </div>

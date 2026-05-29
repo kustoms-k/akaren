@@ -550,11 +550,10 @@ export function generatePdf(data, quoteNumber, fleet = [], meta = {}) {
 
   setf(doc, 'helvetica', 'normal', 5);
   col(doc, LIGHT);
-  const userName   = meta.userName    ?? 'Okand';
-  const modelShort = (meta.modelUsed  ?? 'claude-sonnet-4').replace(/-\d{8}$/, '');
-  const genDate    = meta.generatedAt ?? new Date().toISOString().slice(0, 10);
+  const userName = meta.userName    ?? 'Okand';
+  const genDate  = meta.generatedAt ?? new Date().toISOString().slice(0, 10);
   doc.text(
-    `Offert genererad med AI-stod (${modelShort}, ${genDate}). Verifierad och godkand av ${userName}. / AI-assisted quote, verified by ${userName}.`,
+    `Offert skapad ${genDate} via Åkaren TMS. Verifierad och godkand av ${userName}. / Quote created via Åkaren TMS, verified by ${userName}.`,
     M, FY + 15.5,
   );
 

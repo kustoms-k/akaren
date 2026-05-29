@@ -146,7 +146,7 @@ export function generateDpa(company, user) {
   y = clause(doc, y, 2, 'Behandlingens art och ändamål', [
     'Behandlingen sker uteslutande i syfte att tillhandahålla plattformens tjänster, däribland: ' +
     '(a) hantering av offerter och transportuppdrag; (b) kundkommunikation och offertdelning; ' +
-    '(c) flotta- och förarhantering; (d) AI-assisterad analys av offerttext; ' +
+    '(c) flotta- och förarhantering; (d) automatisk tolkning av offerttext; ' +
     '(e) prisintelligens och rapportering; (f) faktura- och PDF-export.',
   ]);
 
@@ -176,7 +176,7 @@ export function generateDpa(company, user) {
   y = clause(doc, y, 6, 'Underbiträden', [
     '6.1  Följande underbiträden är godkända per avtalsdatum:',
     '   Hetzner Online GmbH — serverhosting inom EU/EES (Nürnberg, Deutschland).',
-    '   Anthropic, PBC — AI-bearbetning av offerttext (USA). Dataöverföring sker under ' +
+    '   Underleverantör för textbearbetning (USA). Dataöverföring sker under ' +
     'EU-kommissionens standardavtalsklausuler (SCC, 2021).',
     '6.2  Personuppgiftsbiträdet ska meddela planerade förändringar av underbiträden ' +
     'minst 30 dagar i förväg. Personuppgiftsansvarig har rätt att invända mot förändringar.',

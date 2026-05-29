@@ -1177,7 +1177,7 @@ function AppInner() {
         if (!d) return;
         setRouteData(d);
         if (d.distance_km != null) applyRoute(d.distance_km);
-        // Auto-apply cost-optimal vehicle if it differs from AI recommendation
+        // Auto-apply cost-optimal vehicle if it differs from the calculated recommendation
         if (d.optimal_vehicle?.ext_id && d.optimal_vehicle.ext_id !== vehicle_id) {
           setField('fordon_rekommenderat', d.optimal_vehicle.ext_id);
         }
@@ -1307,7 +1307,7 @@ function AppInner() {
     }
     setSaving(true);
     try {
-      // Compute human overrides: fields changed from original AI output
+      // Compute human overrides: fields changed from original extracted output
       const humanOverrides = {};
       if (originalParsed) {
         for (const key of Object.keys(parsed)) {
@@ -1392,7 +1392,7 @@ function AppInner() {
     if (!parsed) return;
     generatePdf(parsed, quoteNumber, fleet, {
       userName:    user?.name ?? user?.email ?? 'Okänd',
-      modelUsed:   extractionModel ?? 'claude-sonnet-4',
+      modelUsed:   extractionModel ?? 'tms',
       generatedAt: new Date().toISOString().slice(0, 10),
       company:     company,
     });
@@ -1428,7 +1428,7 @@ function AppInner() {
     const { quotePdfBase64 } = await import('./utils/generatePdf.js');
     const { base64, filename } = quotePdfBase64(parsed, quoteNumber, fleet, {
       userName:    user?.name ?? user?.email ?? 'Okänd',
-      modelUsed:   extractionModel ?? 'claude-sonnet-4',
+      modelUsed:   extractionModel ?? 'tms',
       generatedAt: new Date().toISOString().slice(0, 10),
       company,
     });

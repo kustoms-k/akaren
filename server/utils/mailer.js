@@ -48,7 +48,7 @@ export async function sendSubscriptionActivated({ email, companyName, renewsAt }
         </div>
         <div style="border:1px solid #e6e2da;border-top:none;border-radius:0 0 10px 10px;padding:28px">
           <h2 style="margin:0 0 12px;font-size:17px;font-weight:700">Prenumeration aktiverad ✓</h2>
-          <p style="margin:0 0 16px;color:#6a6050;line-height:1.6">Hej <strong>${companyName}</strong>,<br>Din prenumeration på Åkaren TMS är nu aktiv. Du har full tillgång till all AI-assisterad offerthantering.</p>
+          <p style="margin:0 0 16px;color:#6a6050;line-height:1.6">Hej <strong>${companyName}</strong>,<br>Din prenumeration på Åkaren TMS är nu aktiv. Du har full tillgång till samtliga funktioner för offerthantering och transportstyrning.</p>
           ${renews ? `<div style="background:#f4f0e7;border-radius:8px;padding:12px 16px;font-size:13px;color:#6a6050">Förnyas: <strong style="color:#151210">${renews}</strong></div>` : ''}
           <p style="margin:20px 0 0;font-size:12px;color:#9a9082">Du hanterar din prenumeration via Inställningar → Fakturering.</p>
         </div>

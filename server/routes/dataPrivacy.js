@@ -88,8 +88,8 @@ governs that processing in accordance with GDPR Article 28.
 4.3 Tekniska uppgifter: IP-adresser, inloggningstider
     Technical data: IP addresses, login timestamps
 
-4.4 AI-extraktionsdata: offertförfrågningar (kan innehålla namn)
-    AI extraction data: quote inquiries (may contain names)
+4.4 Tolkningsdata: offertförfrågningar (kan innehålla namn)
+    Parsing data: quote inquiries (may contain names)
 
 ═══════════════════════════════════════════════════════════════
 
@@ -146,8 +146,8 @@ governs that processing in accordance with GDPR Article 28.
 7.1 Godkända underbiträden vid tidpunkten för detta avtal:
     Approved sub-processors at the time of this agreement:
 
-    · Anthropic, PBC — AI-textanalys / AI text analysis
-      (San Francisco, CA, USA — Standard Contractual Clauses tillämpas)
+    · Underleverantör för textbearbetning / Text processing sub-processor
+      (USA — Standard Contractual Clauses tillämpas)
     · Amazon Web Services / S3-kompatibel lagring — Säkerhetskopior
       (EU-region när tillgänglig / EU region when available)
     · 46elks AB — SMS-notifikationer till förare (Sverige)

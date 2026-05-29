@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
 
-// Fields the AI now returns as { value, confidence }
+// Fields returned as { value, confidence } from the extraction engine
 const CONFIDENCE_FIELDS = [
   'lasttyp', 'upphämtning', 'leverans', 'datum',
   'fordon_rekommenderat', 'avstand_km', 'totalpris_sek',
