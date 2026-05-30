@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth }     from '../context/AuthContext.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
-import { LogoMark }    from '../assets/Logo.jsx';
+import { LogoWhite } from '../assets/Logo.jsx';
 
 const INTER       = "'Geist', system-ui, sans-serif";
 const MONO        = "'Geist', system-ui, sans-serif";
@@ -110,23 +110,12 @@ function HeroPanel({ t }) {
         pointerEvents: 'none',
       }}/>
       <div style={{ position: 'relative', zIndex: 1 }}>
-        {/* Logo mark */}
-        <div style={{
-          width: 48, height: 48, borderRadius: 14, background: 'rgba(255,255,255,0.12)',
-          border: '1px solid rgba(255,255,255,0.18)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          marginBottom: 32,
-        }}>
-          <span style={{ color: '#fff', fontWeight: 800, fontSize: 22, fontFamily: INTER, letterSpacing: '-0.02em' }}>Å</span>
+        {/* Logo */}
+        <div style={{ marginBottom: 36 }}>
+          <LogoWhite markSize={44} hubColor="#2d3340" />
         </div>
 
-        <div style={{ fontFamily: INTER, fontWeight: 800, fontSize: 36, color: '#ffffff', letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 4 }}>
-          ÅKAREN
-        </div>
-        <div style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontWeight: 400, fontSize: 10, letterSpacing: '0.22em', color: 'rgba(255,255,255,0.45)', marginBottom: 24, textTransform: 'uppercase' }}>
-          TRANSPORTHANTERING
-        </div>
-        <div style={{ width: 36, height: 2, background: 'rgba(255,255,255,0.3)', borderRadius: 2, marginBottom: 24 }}/>
+        <div style={{ width: 36, height: 1.5, background: 'rgba(255,255,255,0.25)', borderRadius: 2, marginBottom: 28 }}/>
         <p style={{ fontFamily: INTER, fontSize: 15, color: 'rgba(255,255,255,0.7)', lineHeight: 1.7, marginBottom: 36, maxWidth: 320, fontWeight: 400, margin: '0 0 36px' }}>
           {t.login.heroTagline}
         </p>

@@ -39,7 +39,7 @@ import { SetupAccount }   from './pages/SetupAccount.jsx';
 import { TourOverlay }    from './components/TourOverlay.jsx';
 import { SubscriptionGate } from './components/SubscriptionGate.jsx';
 import { SplashScreen }  from './components/SplashScreen.jsx';
-import { LogoFull, LogoMark } from './assets/Logo.jsx';
+import { LogoCompact } from './assets/Logo.jsx';
 import { useAnalysis }   from './hooks/useAnalysis.js';
 import { generatePdf }    from './utils/generatePdf.js';
 import { apiFetch }       from './utils/apiFetch.js';
@@ -221,33 +221,33 @@ function getStatusBadge(status, t) {
 
 // ─── NavItem ──────────────────────────────────────────────────────────────────
 function NavItem({ id, label, Icon, isActive, onClick }) {
-  const [hovered, setHovered] = useState(false);
   return (
-    <button
+    <motion.button
       data-nav-id={id}
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      whileHover={{ x: isActive ? 0 : 2 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 28 }}
       style={{
         width: '100%',
         display: 'flex', alignItems: 'center', gap: 8,
         padding: '8px 12px',
-        background: isActive ? ACCENT_SF : hovered ? '#f5f6f8' : 'transparent',
+        background: isActive ? ACCENT_SF : 'transparent',
         border: 'none',
         borderRadius: 10,
-        color: isActive ? ACCENT : hovered ? TEXT_PR : TEXT_SEC,
+        color: isActive ? ACCENT : TEXT_SEC,
         fontSize: 11, fontFamily: INTER, fontWeight: isActive ? 600 : 500,
         letterSpacing: '0.04em',
         textTransform: 'uppercase',
         cursor: 'pointer', textAlign: 'left',
-        transition: 'all 120ms ease',
         lineHeight: 1.3,
         marginBottom: 2,
+        outline: 'none',
       }}
     >
       <Icon size={14} strokeWidth={isActive ? 2 : 1.5} style={{ flexShrink: 0 }} />
       <span>{label}</span>
-    </button>
+    </motion.button>
   );
 }
 
@@ -283,24 +283,8 @@ function Sidebar({ activePage, onNavigate, company, onLogout, userRole, mobileOp
           overflow: 'hidden',
         }}>
           {/* Logo */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '0 4px', marginBottom: 28, flexShrink: 0,
-          }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-              background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <span style={{ color: '#fff', fontWeight: 800, fontSize: 15, fontFamily: INTER, letterSpacing: '-0.02em' }}>Å</span>
-            </div>
-            <div>
-              <div style={{ fontFamily: INTER, fontWeight: 700, fontSize: 14, color: TEXT_PR, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-                Åkaren
-              </div>
-              <div style={{ fontSize: 8, color: TEXT_MU, fontFamily: INTER, marginTop: 1, letterSpacing: '0.18em', textTransform: 'uppercase' }}>
-                {t.sidebar.tagline}
-              </div>
-            </div>
+          <div style={{ padding: '0 4px', marginBottom: 28, flexShrink: 0 }}>
+            <LogoCompact markSize={28} color={TEXT_PR} />
           </div>
 
           {/* Main nav */}
@@ -418,32 +402,41 @@ function AnimatedNumber({ target, format }) {
 // ─── KpiCard ─────────────────────────────────────────────────────────────────
 function KpiCard({ label, value, rawValue, formatFn, change, changeUp, accentColor, Icon: IconProp }) {
   return (
-    <div style={{
-      background: SURF,
-      border: `1px solid ${BORDER}`,
-      borderRadius: 12,
-      padding: '18px 20px 20px',
-      position: 'relative',
-      overflow: 'hidden',
-      boxShadow: '0 1px 4px rgba(28,25,23,0.05)',
-      borderTop: `3px solid ${accentColor}`,
-    }}>
+    <motion.div
+      whileHover={{ y: -2, boxShadow: '0 4px 24px rgba(0,0,0,0.09)' }}
+      transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+      style={{
+        background: SURF,
+        border: `1px solid ${BORDER}`,
+        borderRadius: 14,
+        padding: '18px 20px 20px',
+        position: 'relative',
+        overflow: 'hidden',
+        boxShadow: '0 1px 3px rgba(28,25,23,0.04), 0 4px 16px rgba(28,25,23,0.04)',
+      }}
+    >
+      {/* Left accent rule */}
+      <div style={{
+        position: 'absolute', left: 0, top: 16, bottom: 16, width: 3,
+        borderRadius: '0 2px 2px 0', background: accentColor,
+        opacity: 0.7,
+      }} />
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
         {IconProp && (
           <div style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: `${accentColor}18`,
+            width: 30, height: 30, borderRadius: 8,
+            background: `${accentColor}14`,
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
           }}>
-            <IconProp size={15} color={accentColor} strokeWidth={1.5} />
+            <IconProp size={14} color={accentColor} strokeWidth={1.5} />
           </div>
         )}
         {change && (
           <span style={{
             fontFamily: INTER, fontSize: 10, fontWeight: 600,
             color: changeUp ? D_GREEN : D_RED,
-            background: changeUp ? 'rgba(58,148,104,0.10)' : 'rgba(184,60,60,0.10)',
-            border: `1px solid ${changeUp ? 'rgba(58,148,104,0.22)' : 'rgba(184,60,60,0.22)'}`,
+            background: changeUp ? 'rgba(22,163,74,0.08)' : 'rgba(220,38,38,0.08)',
+            border: `1px solid ${changeUp ? 'rgba(22,163,74,0.18)' : 'rgba(220,38,38,0.18)'}`,
             padding: '2px 7px', borderRadius: 100, whiteSpace: 'nowrap', marginLeft: 'auto',
           }}>
             {changeUp ? '+' : ''}{change}
@@ -451,13 +444,13 @@ function KpiCard({ label, value, rawValue, formatFn, change, changeUp, accentCol
         )}
       </div>
       <div style={{
-        fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.09em',
-        textTransform: 'uppercase', color: TEXT_MU, marginBottom: 6,
+        fontFamily: INTER, fontSize: 10, fontWeight: 600, letterSpacing: '0.08em',
+        textTransform: 'uppercase', color: TEXT_MU, marginBottom: 5,
       }}>
         {label}
       </div>
       <div style={{
-        fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 26, fontWeight: 700,
+        fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 24, fontWeight: 700,
         color: TEXT_PR, letterSpacing: '-0.03em', lineHeight: 1,
         fontVariantNumeric: 'tabular-nums',
       }}>
@@ -465,7 +458,7 @@ function KpiCard({ label, value, rawValue, formatFn, change, changeUp, accentCol
           ? <AnimatedNumber target={rawValue} format={formatFn} />
           : value}
       </div>
-    </div>
+    </motion.div>
   );
 }
 

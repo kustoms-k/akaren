@@ -1,6 +1,12 @@
-const OUTFIT = "'Geist', system-ui, sans-serif";
+const FONT = "'Geist', system-ui, sans-serif";
 
-export function LogoMark({ size = 32, glow = false }) {
+// ── LogoMark ─────────────────────────────────────────────────────────────────
+// Truck side-profile + forward route line.
+// The mark works at 16 px (favicon) through 64 px.
+// The route <path data-route> is stroke-dashoffset-animatable for splash / onboarding.
+
+export function LogoMark({ size = 32, color = '#1a1d24', hubColor }) {
+  const hub = hubColor ?? (color === '#ffffff' || color === 'white' ? '#1a1d24' : 'white');
   return (
     <svg
       width={size}
@@ -8,78 +14,138 @@ export function LogoMark({ size = 32, glow = false }) {
       viewBox="0 0 32 32"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      style={{
-        flexShrink: 0,
-        overflow: 'visible',
-        filter: glow
-          ? 'drop-shadow(0 0 10px rgba(201,168,76,0.65)) drop-shadow(0 0 24px rgba(201,168,76,0.28))'
-          : undefined,
-      }}
+      style={{ flexShrink: 0, display: 'block' }}
     >
-      <defs>
-        <linearGradient id="lm-fg" x1="0.1" y1="0" x2="0.9" y2="1">
-          <stop offset="0%"   stopColor="#e4c978" />
-          <stop offset="40%"  stopColor="#c9a84c" />
-          <stop offset="100%" stopColor="#8a6820" />
-        </linearGradient>
-        <linearGradient id="lm-bg" x1="0.15" y1="0" x2="0.85" y2="1">
-          <stop offset="0%"   stopColor="#f0dfa0" />
-          <stop offset="100%" stopColor="#d4b56a" />
-        </linearGradient>
-        <linearGradient id="lm-side" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="#7a5a14" />
-          <stop offset="100%" stopColor="#5a3e0a" />
-        </linearGradient>
-        <linearGradient id="lm-shine" x1="0" y1="0" x2="0.8" y2="1">
-          <stop offset="0%"   stopColor="rgba(255,255,255,0.80)" />
-          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-        </linearGradient>
-        <filter id="lm-shadow" x="-50%" y="-50%" width="200%" height="200%">
-          <feDropShadow dx="0" dy="3" stdDeviation="2.5"
-            floodColor="#7a5a14" floodOpacity="0.48" />
-        </filter>
-      </defs>
+      {/* ── Truck body ──────────────────────────────────────────── */}
 
-      <polygon points="18,6 27,17 18,28 9,17" fill="url(#lm-bg)" opacity="0.75" />
-      <polygon points="13,3 22,14 13,25 4,14" fill="url(#lm-fg)" filter="url(#lm-shadow)" />
-      <polygon points="22,14 25.5,16.5 16.5,27 13,25" fill="url(#lm-side)" />
-      <polygon points="4,14 8.5,8.5 13,3 17.5,8.5 13,14" fill="url(#lm-shine)" opacity="0.24" />
-      <polyline points="4,14 13,3 22,14" stroke="rgba(255,255,255,0.68)" strokeWidth="1" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      <line x1="4" y1="14" x2="13" y2="25" stroke="rgba(255,255,255,0.14)" strokeWidth="0.7" />
+      {/* Trailer — long flat rectangle */}
+      <rect x="1.5" y="10" width="18" height="8.5" rx="1.5" fill={color} />
+
+      {/* Cab — taller, angular windshield suggests forward motion */}
+      {/* Back edge x=18.5 overlaps trailer slightly for seamless junction */}
+      <path
+        d="M18.5 18.5 L18.5 7 L22.5 7 L28.5 13.5 L28.5 18.5 Z"
+        fill={color}
+      />
+
+      {/* ── Wheels ──────────────────────────────────────────────── */}
+
+      {/* Rear axle wheel */}
+      <circle cx="7" cy="21.5" r="3.5" fill={color} />
+      <circle cx="7" cy="21.5" r="1.75" fill={hub} />
+
+      {/* Front axle wheel */}
+      <circle cx="24" cy="21.5" r="3.5" fill={color} />
+      <circle cx="24" cy="21.5" r="1.75" fill={hub} />
+
+      {/* ── Route line ──────────────────────────────────────────── */}
+
+      {/* Origin dot */}
+      <circle cx="2" cy="28" r="1.75" fill={color} />
+
+      {/* Route path — straight resolved line — animate via strokeDashoffset */}
+      <path
+        data-route
+        d="M2 28 L24.5 28"
+        stroke={color}
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+
+      {/* Forward chevron — destination / direction */}
+      <path
+        d="M22 25.5 L25.5 28 L22 30.5"
+        stroke={color}
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+
+      {/* Destination dot */}
+      <circle cx="28.5" cy="28" r="1.75" fill={color} />
     </svg>
   );
 }
 
-export function LogoFull({ markSize = 32, variant = 'dark' }) {
-  const isLight = variant === 'light';
+// ── LogoCompact ───────────────────────────────────────────────────────────────
+// Mark + wordmark, no tagline — for headers and tight spaces.
+
+export function LogoCompact({ markSize = 32, color = '#1a1d24', hubColor }) {
+  const wordSize = Math.max(12, Math.round(markSize * 0.5));
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-      <LogoMark size={markSize} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: Math.round(markSize * 0.35) }}>
+      <LogoMark size={markSize} color={color} hubColor={hubColor} />
+      <span style={{
+        fontFamily: FONT,
+        fontWeight: 600,
+        fontSize: wordSize,
+        letterSpacing: '-0.02em',
+        color,
+        lineHeight: 1,
+        userSelect: 'none',
+      }}>
+        Åkaren
+      </span>
+    </div>
+  );
+}
+
+// ── LogoFull ──────────────────────────────────────────────────────────────────
+// Mark + wordmark + tagline — for sidebar, login, splash.
+
+export function LogoFull({ markSize = 40, color = '#1a1d24', taglineColor, hubColor }) {
+  const tagline = taglineColor ?? (
+    color === '#ffffff' || color === 'white'
+      ? 'rgba(255,255,255,0.45)'
+      : '#9ca3af'
+  );
+  const wordSize  = Math.max(13, Math.round(markSize * 0.48));
+  const tagSize   = Math.max(8,  Math.round(markSize * 0.22));
+  const gap       = Math.round(markSize * 0.32);
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap }}>
+      <LogoMark size={markSize} color={color} hubColor={hubColor} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         <span style={{
-          fontFamily: OUTFIT,
-          fontWeight: 800,
-          fontSize: Math.round(markSize * 0.58),
-          letterSpacing: '0.14em',
-          color: isLight ? '#ffffff' : '#17161a',
+          fontFamily: FONT,
+          fontWeight: 600,
+          fontSize: wordSize,
+          letterSpacing: '-0.02em',
+          color,
           lineHeight: 1,
           userSelect: 'none',
         }}>
-          ÅKAREN
+          Åkaren
         </span>
         <span style={{
-          fontFamily: OUTFIT,
+          fontFamily: FONT,
           fontWeight: 500,
-          fontSize: Math.round(markSize * 0.26),
-          letterSpacing: '0.22em',
-          color: isLight ? 'rgba(255,255,255,0.40)' : '#a09aa8',
+          fontSize: tagSize,
+          letterSpacing: '0.2em',
+          color: tagline,
           lineHeight: 1,
           userSelect: 'none',
           textTransform: 'uppercase',
         }}>
-          TRANSPORT TMS
+          Transportoptimering
         </span>
       </div>
     </div>
+  );
+}
+
+// ── LogoWhite ─────────────────────────────────────────────────────────────────
+// Inverted variant — white mark + wordmark for dark backgrounds (PDFs, dark headers).
+
+export function LogoWhite({ markSize = 32, hubColor = '#1a1d24', ...props }) {
+  return (
+    <LogoFull
+      markSize={markSize}
+      color="#ffffff"
+      hubColor={hubColor}
+      {...props}
+    />
   );
 }
