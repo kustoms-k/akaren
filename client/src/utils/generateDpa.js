@@ -147,7 +147,7 @@ export function generateDpa(company, user) {
     'Behandlingen sker uteslutande i syfte att tillhandahålla plattformens tjänster, däribland: ' +
     '(a) hantering av offerter och transportuppdrag; (b) kundkommunikation och offertdelning; ' +
     '(c) flotta- och förarhantering; (d) automatisk tolkning av offerttext; ' +
-    '(e) prisintelligens och rapportering; (f) faktura- och PDF-export.',
+    '(e) prisanalys och rapportering; (f) faktura- och PDF-export.',
   ]);
 
   y = clause(doc, y, 3, 'Kategorier av registrerade och personuppgifter', [

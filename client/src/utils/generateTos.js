@@ -91,7 +91,7 @@ export function generateTos(company, user) {
   y = clause(doc, y, 1, 'Tjänstebeskrivning', [
     '1.1  Åkaren tillhandahåller en webbaserad plattform för transportföretag med funktioner ' +
     'för: automatisk offerthantering, kundportaler och offertdelning via unika länkar, ' +
-    'flotta- och förarhantering, prisintelligens och lönsamhetsanalys samt PDF-export av offerter.',
+    'flotta- och förarhantering, prisanalys och lönsamhetsanalys samt PDF-export av offerter.',
     '1.2  Automatisk offertberäkning är ett beslutsstöd och inte ett bindande erbjudande. Kunden ansvarar ' +
     'ensamt för att verifiera och godkänna alla offerter innan de kommuniceras till slutkund.',
     '1.3  Åkaren förbehåller sig rätten att uppdatera och förbättra Tjänsten löpande. ' +
@@ -135,7 +135,7 @@ export function generateTos(company, user) {
     'Åkaren beviljas en begränsad licens att behandla Kunddata uteslutande i syfte att ' +
     'tillhandahålla Tjänsten.',
     '5.3  Åkaren kan använda aggregerade, anonymiserade data för att förbättra Tjänsten, ' +
-    'exempelvis för att kalibriera prisintelligensmodeller.',
+    'exempelvis för att förbättra prisberäkningar och lönsamhetsanalyser.',
   ]);
 
   y = clause(doc, y, 6, 'Sekretess', [

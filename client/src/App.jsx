@@ -908,7 +908,7 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
         </div>
       )}
 
-      {/* ── Compliance + Market Intelligence ─────────────────────────────────── */}
+      {/* ── Compliance + Market Overview ─────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
 
         {/* Compliance Checklist */}
@@ -954,7 +954,7 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
           </div>
         </div>
 
-        {/* Market Intelligence */}
+        {/* Market Overview */}
         <div style={{ background: SURF, border: `1px solid \$\{BORDER\}`, borderRadius: 12, padding: '18px 22px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
             <TrendingUp size={13} color="#7050B0" strokeWidth={1.5} />
@@ -1752,7 +1752,7 @@ function AppInner() {
 
               {status === 'done' && parsed && (
                 <>
-                  {/* Pricing Intelligence — only when we have cargo type + a real price */}
+                  {/* Pricing Analysis — only when we have cargo type + a real price */}
                   {parsed.lasttyp && Number(parsed.totalpris_sek) > 0 && (
                     <PricingIntelligencePanel
                       lasttyp={String(parsed.lasttyp)}

@@ -65,7 +65,7 @@ export const EN = {
     recentQuotes:    'Recent Quotes',
     newQuoteCta:     'New Quote',
     newQuoteCtaSub:  'Paste a customer message and the system calculates a complete quote in seconds.',
-    analyseBtn:      'ANALYSE',
+    analyseBtn:      'NEW QUOTE',
     noJobsYet:          'No jobs yet — create a quote to start',
     operationsTitle:    'Operations Overview',
     systemLive:         'SYSTEM LIVE',
@@ -91,7 +91,7 @@ export const EN = {
       etsDetail:        'Road transport included — CO₂ report required',
     },
     marketIntel: {
-      heading: 'Market Intelligence',
+      heading: 'Market Overview',
       badge:   'MARKET DATA',
       stats: [
         { pct: '68%',  label: 'Stockholm truckers still quote by phone/email',      insight: 'Your advantage: instant digital quote' },
@@ -123,7 +123,7 @@ export const EN = {
   newQuote: {
     title:          'New Quote',
     colInquiry:     'New Inquiry',
-    colAnalysis:    'Analysis',
+    colAnalysis:    'Quote Calculation',
     colFleet:       'Fleet',
     colDrivers:     'Drivers',
     colHistory:     'History',
@@ -154,16 +154,16 @@ export const EN = {
     },
     flags: {
       editOrConfirm:     'Edit or confirm all flagged fields before continuing',
-      lowConfidence:     'Confidence below threshold — manual review required',
-      overallScore:      (pct) => `Overall score: ${pct}% · threshold 70%`,
+      lowConfidence:     'Reliability below threshold — manual review required',
+      overallScore:      (pct) => `Reliability: ${pct}% · threshold 70%`,
       reviewBtn:         'I have reviewed this',
       reviewAcknowledged:'Review acknowledged',
       confirmFields:     'Confirm all flagged fields first',
-      reviewFirst:       'Review and acknowledge confidence score first',
+      reviewFirst:       'Review and confirm reliability first',
     },
     analysis: {
       idle:          'Waiting for inquiry…',
-      whyTruck:      'Why this truck',
+      whyTruck:      'Why this vehicle',
       lezOk:         'LEZ OK',
       lezNo:         'LEZ NO',
       routeLive:     'Route: live',
@@ -193,7 +193,7 @@ export const EN = {
 
   inquiry: {
     placeholder: 'E.g. "Move 5 tonnes of steel from Hammarby Sjöstad to Solna industrial area on June 20, crane required at unloading."',
-    submit:      'Analyse Inquiry',
+    submit:      'Calculate Quote',
     offline:     'Internet connection required',
   },
 
@@ -985,7 +985,7 @@ export const EN = {
     steps: {
       newQuote: {
         title: 'Offertberäkning',
-        desc:  'Paste any transport inquiry — the system extracts all details and builds a fully priced, confidence-scored quote in seconds.',
+        desc:  'Paste any transport inquiry — the system processes all details and builds a complete, priced quote in seconds.',
       },
       customers: {
         title: 'Customer Portals',
@@ -1047,7 +1047,7 @@ export const EN = {
   },
 
   pricingIntel: {
-    heading:   'Pricing Intelligence',
+    heading:   'Pricing Analysis',
     locked:    (n) => `Unlocks after ${n} accepted quotes`,
     unlockProgress: (n, threshold) => `${n} / ${threshold} accepted quotes · unlocks at ${threshold}`,
     notEnoughData: (lasttyp, n) => `Not enough ${lasttyp} data yet (${n} jobs logged)`,
@@ -1062,7 +1062,7 @@ export const EN = {
       high:   'High',
       medium: 'Medium',
       low:    'Low',
-      label:  'Confidence',
+      label:  'Reliability',
     },
     nJobs:          (n, type) => `${n} ${type} jobs`,
     atAvg:          'At your average',
@@ -1779,7 +1779,7 @@ export const SV = {
     recentQuotes:    'Senaste Offerter',
     newQuoteCta:     'Ny Offert',
     newQuoteCtaSub:  'Klistra in ett kundmeddelande och systemet beräknar en komplett offert på sekunder.',
-    analyseBtn:      'ANALYSERA',
+    analyseBtn:      'NY OFFERT',
     noJobsYet:          'Inga uppdrag än — skapa en offert för att börja',
     operationsTitle:    'Operativ Överblick',
     systemLive:         'SYSTEM LIVE',
@@ -1805,7 +1805,7 @@ export const SV = {
       etsDetail:        'Vägtransport ingår — CO₂-rapport krävs',
     },
     marketIntel: {
-      heading: 'Marknadsintelligens',
+      heading: 'Marknadsöversikt',
       badge:   'MARKNADSDATA',
       stats: [
         { pct: '68%',  label: 'Stockholmsåkare offerterar fortfarande via telefon/e-post', insight: 'Din konkurrensfördel: digitalt offert på sekunder' },
@@ -1837,7 +1837,7 @@ export const SV = {
   newQuote: {
     title:          'Ny Offert',
     colInquiry:     'Ny Förfrågan',
-    colAnalysis:    'Analys',
+    colAnalysis:    'Offertberäkning',
     colFleet:       'Fordonsflotta',
     colDrivers:     'Förare',
     colHistory:     'Offerthistorik',
@@ -1868,16 +1868,16 @@ export const SV = {
     },
     flags: {
       editOrConfirm:     'Redigera eller bekräfta alla markerade fält innan du fortsätter',
-      lowConfidence:     'Tillförlitlighet under tröskel — manuell granskning krävs',
-      overallScore:      (pct) => `Totalpoäng: ${pct}% · tröskel 70%`,
+      lowConfidence:     'Tillförlitlighet under tröskel — manuell kontroll krävs',
+      overallScore:      (pct) => `Tillförlitlighet: ${pct}% · tröskel 70%`,
       reviewBtn:         'Jag har granskat detta',
       reviewAcknowledged:'Granskning bekräftad',
       confirmFields:     'Bekräfta alla markerade fält först',
-      reviewFirst:       'Granska och bekräfta tillförlitligheten först',
+      reviewFirst:       'Granska och bekräfta uppgifterna först',
     },
     analysis: {
       idle:          'Väntar på förfrågan…',
-      whyTruck:      'Varför denna lastbil',
+      whyTruck:      'Varför detta fordon',
       lezOk:         'LEZ OK',
       lezNo:         'LEZ EJ OK',
       routeLive:     'Rutt: live',
@@ -1907,7 +1907,7 @@ export const SV = {
 
   inquiry: {
     placeholder: 'T.ex. "Flytta 5 ton stål från Hammarby Sjöstad till Solna industriområde den 20 juni, kräver kran vid lossning."',
-    submit:      'Analysera förfrågan',
+    submit:      'Beräkna offert',
     offline:     'Internetanslutning krävs',
   },
 
@@ -2761,7 +2761,7 @@ export const SV = {
   },
 
   pricingIntel: {
-    heading:   'Prisunderrättelse',
+    heading:   'Prisanalys',
     locked:    (n) => `Låses upp efter ${n} accepterade offerter`,
     unlockProgress: (n, threshold) => `${n} / ${threshold} godkända offertar · låses upp vid ${threshold}`,
     notEnoughData: (lasttyp, n) => `Inte tillräckligt med ${lasttyp}-data ännu (${n} jobb)`,
@@ -2776,7 +2776,7 @@ export const SV = {
       high:   'Hög',
       medium: 'Medium',
       low:    'Låg',
-      label:  'Konfidens',
+      label:  'Tillförlitlighet',
     },
     nJobs:          (n, type) => `${n} ${type}-jobb`,
     atAvg:          'Vid ditt snitt',
