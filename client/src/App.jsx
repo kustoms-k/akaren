@@ -4,7 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell,
 } from 'recharts';
 import {
-  LayoutDashboard, FilePlus, Briefcase, Truck, TrendingUp,
+  LayoutDashboard, FilePlus, Briefcase, Truck,
   Settings as SettingsIcon, LogOut, Bell, Search, X, DollarSign, FileText,
   AlertTriangle, Fuel, Shield, Lock, Users, Leaf, CalendarDays, ScrollText, Network, CreditCard, Wrench,
 } from 'lucide-react';
@@ -901,11 +901,11 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
         </div>
       )}
 
-      {/* ── Compliance + Market Overview ─────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+      {/* ── Compliance Checklist ─────────────────────────────────────────────── */}
+      <div>
 
         {/* Compliance Checklist */}
-        <div style={{ background: SURF, border: `1px solid \$\{BORDER\}`, borderRadius: 12, padding: '18px 22px' }}>
+        <div style={{ background: SURF, border: `1px solid ${BORDER}`, borderRadius: 12, padding: '18px 22px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
             <Shield size={13} color={D_BLUE} strokeWidth={1.5} />
             <span style={{ fontSize: 12, fontWeight: 700, color: TEXT_PR, fontFamily: INTER }}>
@@ -947,34 +947,6 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
           </div>
         </div>
 
-        {/* Market Overview */}
-        <div style={{ background: SURF, border: `1px solid \$\{BORDER\}`, borderRadius: 12, padding: '18px 22px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <TrendingUp size={13} color="#7050B0" strokeWidth={1.5} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: TEXT_PR, fontFamily: INTER }}>
-              {t.dashboard.marketIntel.heading}
-            </span>
-            <span style={{ fontFamily: INTER, fontSize: 9, letterSpacing: '0.07em', color: TEXT_MU, marginLeft: 'auto' }}>{t.dashboard.marketIntel.badge}</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {[
-              { ...t.dashboard.marketIntel.stats[0], color: D_AMBER   },
-              { ...t.dashboard.marketIntel.stats[1], color: '#7050B0' },
-              { ...t.dashboard.marketIntel.stats[2], color: D_GREEN   },
-            ].map(({ pct, label, color, insight }) => (
-              <div key={pct} style={{
-                padding: '10px 12px', borderRadius: 8,
-                background: 'rgba(28,26,22,0.04)', border: `1px solid ${BORDER}`,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontFamily: MONO, fontSize: 16, fontWeight: 700, color, letterSpacing: '-0.02em', fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>{pct}</span>
-                  <span style={{ fontFamily: INTER, fontSize: 11, color: TEXT_SEC, flex: 1, lineHeight: 1.4 }}>{label}</span>
-                </div>
-                <div style={{ fontFamily: INTER, fontSize: 10, color, opacity: 0.78 }}>{insight}</div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       <div style={{ height: 4 }} />

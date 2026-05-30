@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 
 const FONT = "'Geist', system-ui, sans-serif";
-const SESSION_KEY = 'akaren_splash_v2';
+const SESSION_KEY = 'akaren_splash_v3';
 
-// Inline truck+route mark so the route <path> can be animated via Web Animations API
-function SplashMark({ size = 56 }) {
+// Inline the mark so we can imperatively animate the route path
+function SplashMark({ size = 64 }) {
   const routeRef = useRef(null);
 
   useEffect(() => {
@@ -14,17 +14,20 @@ function SplashMark({ size = 56 }) {
     const len = path.getTotalLength();
     path.style.strokeDasharray = len;
     path.style.strokeDashoffset = len;
-    // Route draws after the spring settles (~320ms)
+    // Route draws after the mark springs in (~280ms)
     const timer = setTimeout(() => {
       path.animate(
         [{ strokeDashoffset: len }, { strokeDashoffset: 0 }],
-        { duration: 680, easing: 'cubic-bezier(0,0,0.2,1)', fill: 'forwards' },
+        { duration: 600, easing: 'cubic-bezier(0,0,0.2,1)', fill: 'forwards' },
       );
-    }, 320);
+    }, 280);
     return () => clearTimeout(timer);
   }, []);
 
-  const c = '#1a1d24';
+  const c  = '#1a1d24';
+  const sw = Math.max(1.5, size * 0.08);
+  const r  = Math.max(2.5, size * 0.115);
+
   return (
     <svg
       width={size}
@@ -32,31 +35,18 @@ function SplashMark({ size = 56 }) {
       viewBox="0 0 32 32"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      style={{ display: 'block', flexShrink: 0 }}
+      style={{ display: 'block' }}
     >
-      <rect x="1.5" y="10" width="18" height="8.5" rx="1.5" fill={c} />
-      <path d="M18.5 18.5 L18.5 7 L22.5 7 L28.5 13.5 L28.5 18.5 Z" fill={c} />
-      <circle cx="7" cy="21.5" r="3.5" fill={c} />
-      <circle cx="7" cy="21.5" r="1.75" fill="white" />
-      <circle cx="24" cy="21.5" r="3.5" fill={c} />
-      <circle cx="24" cy="21.5" r="1.75" fill="white" />
-      <circle cx="2" cy="28" r="1.75" fill={c} />
       <path
         ref={routeRef}
-        d="M2 28 L24.5 28"
+        d="M8 8 L8 24 L24 24"
         stroke={c}
-        strokeWidth="1.75"
-        strokeLinecap="round"
-      />
-      <path
-        d="M22 25.5 L25.5 28 L22 30.5"
-        stroke={c}
-        strokeWidth="1.75"
+        strokeWidth={sw}
         strokeLinecap="round"
         strokeLinejoin="round"
-        fill="none"
       />
-      <circle cx="28.5" cy="28" r="1.75" fill={c} />
+      <circle cx="8" cy="8" r={r} stroke={c} strokeWidth={sw} />
+      <circle cx="24" cy="24" r={r + 0.5} fill={c} />
     </svg>
   );
 }
@@ -71,7 +61,7 @@ export function SplashScreen({ onDone }) {
   useEffect(() => {
     if (phase === 'skip') { onDone(); return; }
     const t1 = setTimeout(() => setPhase('out'), 1900);
-    const t2 = setTimeout(onDone, 2280);
+    const t2 = setTimeout(onDone, 2250);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [phase, onDone]);
 
@@ -81,8 +71,8 @@ export function SplashScreen({ onDone }) {
 
   return (
     <motion.div
-      animate={exiting ? { opacity: 0, scale: 1.015 } : { opacity: 1, scale: 1 }}
-      transition={exiting ? { duration: 0.38, ease: [0.4, 0, 1, 1] } : { duration: 0 }}
+      animate={exiting ? { opacity: 0, scale: 1.012 } : { opacity: 1, scale: 1 }}
+      transition={exiting ? { duration: 0.36, ease: [0.4, 0, 1, 1] } : { duration: 0 }}
       style={{
         position: 'fixed', inset: 0, zIndex: 9999,
         background: '#f4f5f7',
@@ -92,24 +82,24 @@ export function SplashScreen({ onDone }) {
         userSelect: 'none',
       }}
     >
-      {/* Truck mark — spring in */}
+      {/* Mark springs in */}
       <motion.div
-        initial={{ scale: 0.82, opacity: 0 }}
+        initial={{ scale: 0.78, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 220, damping: 20 }}
+        transition={{ type: 'spring', stiffness: 240, damping: 20 }}
       >
-        <SplashMark size={56} />
+        <SplashMark size={64} />
       </motion.div>
 
       {/* Wordmark */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ type: 'spring', stiffness: 220, damping: 22, delay: 0.08 }}
-        style={{ marginTop: 20 }}
+        transition={{ type: 'spring', stiffness: 240, damping: 24, delay: 0.07 }}
+        style={{ marginTop: 22 }}
       >
         <span style={{
-          fontFamily: FONT, fontWeight: 600, fontSize: 20,
+          fontFamily: FONT, fontWeight: 600, fontSize: 21,
           letterSpacing: '-0.02em', color: '#1a1d24', lineHeight: 1,
         }}>
           Åkaren
@@ -120,7 +110,7 @@ export function SplashScreen({ onDone }) {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, ease: 'easeOut', delay: 0.2 }}
+        transition={{ duration: 0.38, ease: 'easeOut', delay: 0.18 }}
         style={{ marginTop: 5 }}
       >
         <span style={{
@@ -136,9 +126,9 @@ export function SplashScreen({ onDone }) {
       <motion.div
         initial={{ scaleX: 0, opacity: 0 }}
         animate={{ scaleX: 1, opacity: 1 }}
-        transition={{ duration: 0.45, ease: [0, 0, 0.2, 1], delay: 0.28 }}
+        transition={{ duration: 0.42, ease: [0, 0, 0.2, 1], delay: 0.26 }}
         style={{
-          marginTop: 26, width: 32, height: 1,
+          marginTop: 28, width: 28, height: 1,
           background: '#cbd5e1', transformOrigin: 'left center',
         }}
       />
