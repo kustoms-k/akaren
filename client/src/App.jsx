@@ -1,4 +1,5 @@
 ﻿import { useState, useCallback, useEffect, useRef, useMemo, Component } from 'react';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'motion/react';
 import {
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell,
 } from 'recharts';
@@ -405,8 +406,17 @@ function Sidebar({ activePage, onNavigate, company, onLogout, userRole, mobileOp
 
 
 
+// ─── AnimatedNumber — spring count-up from 0 to target ───────────────────────
+function AnimatedNumber({ target, format }) {
+  const mv = useMotionValue(0);
+  const spring = useSpring(mv, { stiffness: 180, damping: 24 });
+  const display = useTransform(spring, format);
+  useEffect(() => { mv.set(target); }, [target, mv]);
+  return <motion.span>{display}</motion.span>;
+}
+
 // ─── KpiCard ─────────────────────────────────────────────────────────────────
-function KpiCard({ label, value, change, changeUp, accentColor, Icon: IconProp }) {
+function KpiCard({ label, value, rawValue, formatFn, change, changeUp, accentColor, Icon: IconProp }) {
   return (
     <div style={{
       background: SURF,
@@ -449,9 +459,11 @@ function KpiCard({ label, value, change, changeUp, accentColor, Icon: IconProp }
       <div style={{
         fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 26, fontWeight: 700,
         color: TEXT_PR, letterSpacing: '-0.03em', lineHeight: 1,
-        fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums',
+        fontVariantNumeric: 'tabular-nums',
       }}>
-        {value}
+        {rawValue != null && formatFn
+          ? <AnimatedNumber target={rawValue} format={formatFn} />
+          : value}
       </div>
     </div>
   );
@@ -524,8 +536,10 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
               {t.dashboard.systemLive}
             </span>
           </div>
-          <button
+          <motion.button
             onClick={onNewQuote}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
             style={{
               background: TEXT_PR, color: SURF, border: 'none', borderRadius: 8,
               padding: '9px 18px', fontSize: 12, fontWeight: 600, fontFamily: INTER,
@@ -536,41 +550,67 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
             onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
           >
             + {t.dashboard.analyseBtn}
-          </button>
+          </motion.button>
         </div>
       </div>
 
       {/* ── KPI cards ────────────────────────────────────────────────────────── */}
-      <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
-        <KpiCard
-          accentColor={ACCENT} Icon={DollarSign}
-          label={t.dashboard.totalRevenue}
-          value={totalRevenue > 0 ? new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(totalRevenue) + ' kr' : '—'}
-          change={revPct != null ? `${Math.abs(revPct)}% ${t.dashboard.vsYesterday}` : null}
-          changeUp={revPct != null && revPct >= 0}
-        />
-        <KpiCard
-          accentColor={ACCENT} Icon={FileText}
-          label={t.dashboard.quotes}
-          value={String(quotes.length)}
-          change={quotesDelta !== 0 ? `${Math.abs(quotesDelta)} ${t.dashboard.vsYesterday}` : null}
-          changeUp={quotesDelta > 0}
-        />
-        <KpiCard
-          accentColor={lezCount === 0 ? D_GREEN : D_RED} Icon={AlertTriangle}
-          label={t.dashboard.lezCompliance}
-          value={`${lezPct}%`}
-          change={lezCount > 0 ? t.dashboard.lezWarnings(lezCount) : t.dashboard.lezApproved}
-          changeUp={lezCount === 0}
-        />
-        <KpiCard
-          accentColor={D_AMBER} Icon={Fuel}
-          label={t.dashboard.dieselPrice}
-          value={dieselValue}
-          change={fuelPrice?.source !== 'fallback' ? 'LIVE' : null}
-          changeUp={true}
-        />
-      </div>
+      <motion.div
+        className="kpi-grid"
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}
+        initial="hidden"
+        animate="show"
+        variants={{ show: { transition: { staggerChildren: 0.04 } } }}
+      >
+        {[
+          {
+            accentColor: ACCENT, Icon: DollarSign,
+            label: t.dashboard.totalRevenue,
+            value: totalRevenue > 0 ? new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(totalRevenue) + ' kr' : '—',
+            rawValue: totalRevenue > 0 ? totalRevenue : null,
+            formatFn: totalRevenue > 0
+              ? (v) => new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(Math.round(v)) + ' kr'
+              : null,
+            change: revPct != null ? `${Math.abs(revPct)}% ${t.dashboard.vsYesterday}` : null,
+            changeUp: revPct != null && revPct >= 0,
+          },
+          {
+            accentColor: ACCENT, Icon: FileText,
+            label: t.dashboard.quotes,
+            value: String(quotes.length),
+            rawValue: quotes.length,
+            formatFn: (v) => String(Math.round(v)),
+            change: quotesDelta !== 0 ? `${Math.abs(quotesDelta)} ${t.dashboard.vsYesterday}` : null,
+            changeUp: quotesDelta > 0,
+          },
+          {
+            accentColor: lezCount === 0 ? D_GREEN : D_RED, Icon: AlertTriangle,
+            label: t.dashboard.lezCompliance,
+            value: `${lezPct}%`,
+            rawValue: lezPct,
+            formatFn: (v) => `${Math.round(v)}%`,
+            change: lezCount > 0 ? t.dashboard.lezWarnings(lezCount) : t.dashboard.lezApproved,
+            changeUp: lezCount === 0,
+          },
+          {
+            accentColor: D_AMBER, Icon: Fuel,
+            label: t.dashboard.dieselPrice,
+            value: dieselValue,
+            change: fuelPrice?.source !== 'fallback' ? 'LIVE' : null,
+            changeUp: true,
+          },
+        ].map((card, i) => (
+          <motion.div
+            key={i}
+            variants={{
+              hidden: { opacity: 0, y: 8 },
+              show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 220, damping: 22 } },
+            }}
+          >
+            <KpiCard {...card} />
+          </motion.div>
+        ))}
+      </motion.div>
 
       {/* ── Tomma mil / Backhaul panel ───────────────────────────────────────── */}
       {backhaulStats && backhaulStats.job_count > 0 && (
@@ -649,7 +689,11 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
       <div style={{ display: 'grid', gridTemplateColumns: '62fr 38fr', gap: 16, minHeight: 300 }}>
 
         {/* Bar chart */}
-        <div style={{ background: SURF, border: `1px solid \$\{BORDER\}`, borderRadius: 12, padding: '20px 24px' }}>
+        <motion.div
+          whileHover={{ y: -2, boxShadow: '0 4px 20px rgba(0,0,0,0.09)' }}
+          transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+          style={{ background: SURF, border: `1px solid ${BORDER}`, borderRadius: 12, padding: '20px 24px' }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
             <span style={{ fontSize: 13, fontWeight: 600, color: TEXT_PR, fontFamily: INTER }}>
               {t.dashboard.monthlyRevenue}
@@ -712,10 +756,14 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        </motion.div>
 
         {/* Live events feed */}
-        <div style={{ background: SURF, border: `1px solid \$\{BORDER\}`, borderRadius: 12, padding: '20px 22px', display: 'flex', flexDirection: 'column' }}>
+        <motion.div
+          whileHover={{ y: -2, boxShadow: '0 4px 20px rgba(0,0,0,0.09)' }}
+          transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+          style={{ background: SURF, border: `1px solid ${BORDER}`, borderRadius: 12, padding: '20px 22px', display: 'flex', flexDirection: 'column' }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexShrink: 0 }}>
             <span style={{ fontSize: 13, fontWeight: 600, color: TEXT_PR, fontFamily: INTER }}>
               {t.dashboard.recentActivity}
@@ -745,11 +793,15 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* ── Recent Quotes table ──────────────────────────────────────────────── */}
-      <div style={{ background: SURF, border: `1px solid \$\{BORDER\}`, borderRadius: 12, padding: '18px 22px' }}>
+      <motion.div
+        whileHover={{ y: -2, boxShadow: '0 4px 20px rgba(0,0,0,0.09)' }}
+        transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+        style={{ background: SURF, border: `1px solid ${BORDER}`, borderRadius: 12, padding: '18px 22px' }}
+      >
         <div style={{ fontSize: 13, fontWeight: 600, color: TEXT_PR, fontFamily: INTER, marginBottom: 16 }}>
           {t.dashboard.recentQuotes}
         </div>
@@ -803,7 +855,7 @@ function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
             })}
           </tbody>
         </table>
-      </div>
+      </motion.div>
 
       {/* ── Road Alerts ──────────────────────────────────────────────────────── */}
       {roadAlerts !== undefined && (
@@ -1530,7 +1582,15 @@ function AppInner() {
           </div>
         </div>
 
-        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <AnimatePresence mode="wait">
+        <motion.div
+          key={activePage}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15, ease: 'easeInOut' }}
+          style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+        >
           {activePage === 'dashboard' && (
             <Dashboard
               quotes={quotes}
@@ -2126,7 +2186,8 @@ function AppInner() {
 
           </div>
           )}
-        </div>
+        </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* ── Spara som mall modal ─────────────────────────────────────────── */}
@@ -2393,7 +2454,9 @@ function AppInner() {
         />
       )}
 
-      {toast && <Toast message={toast.message ?? toast} variant={toast.variant ?? 'success'} onDismiss={dismissToast} />}
+      <AnimatePresence>
+        {toast && <Toast key="toast" message={toast.message ?? toast} variant={toast.variant ?? 'success'} onDismiss={dismissToast} />}
+      </AnimatePresence>
 
       {/* EU 561 compliance warning modal */}
       {complianceWarn && (

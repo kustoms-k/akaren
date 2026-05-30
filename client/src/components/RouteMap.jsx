@@ -256,7 +256,7 @@ export function RouteMap({ routeData, loading }) {
           color: '#fff', weight: 8, opacity: 1,
           lineCap: 'round', lineJoin: 'round', smoothFactor: 1.5,
         }).addTo(map);
-        Lf.polyline(primaryPolyline, {
+        const colorLine = Lf.polyline(primaryPolyline, {
           color:       hasLez ? '#22c55e' : '#4361ee',
           weight:      4,
           opacity:     0.85,
@@ -264,6 +264,19 @@ export function RouteMap({ routeData, loading }) {
           lineJoin:    'round',
           smoothFactor: 1.5,
         }).addTo(map);
+        // Stroke-dashoffset draw animation — ease-out over 1.2s
+        requestAnimationFrame(() => {
+          const path = colorLine._path;
+          if (path) {
+            const len = path.getTotalLength();
+            path.style.strokeDasharray = len;
+            path.style.strokeDashoffset = len;
+            path.animate(
+              [{ strokeDashoffset: len }, { strokeDashoffset: 0 }],
+              { duration: 1200, easing: 'cubic-bezier(0,0,0.2,1)', fill: 'forwards' },
+            );
+          }
+        });
         primaryPolyline.forEach((ll) => bounds.push(ll));
       }
 

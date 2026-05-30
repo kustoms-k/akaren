@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'motion/react';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 const AMBER   = '#c9921e';
@@ -130,7 +131,12 @@ export function AnalysisStream({
 
       {/* Fields */}
       {showFields && (
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <motion.div
+          style={{ display: 'flex', flexDirection: 'column' }}
+          initial="hidden"
+          animate="show"
+          variants={{ show: { transition: { staggerChildren: 0.055 } } }}
+        >
           {visibleFields.map(({ key, label, unit, mono }, i) => {
             const val         = parsed[key];
             const mock        = isMock(val);
@@ -150,12 +156,13 @@ export function AnalysisStream({
             const hasWhy  = isTruck && isDone && parsed?.fordon_orsak && !isMock(val) && val != null;
 
             return (
-              <div
+              <motion.div
                 key={key}
+                variants={{
+                  hidden: { opacity: 0, y: 6 },
+                  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 22 } },
+                }}
                 style={{
-                  opacity: 0,
-                  animation: 'field-in 0.3s ease forwards',
-                  animationDelay: `${i * STAGGER}ms`,
                   padding: '6px 0 6px 10px',
                   borderBottom: isLast ? 'none' : `1px solid ${BG}`,
                   borderLeft: needsReview && !mock
@@ -281,10 +288,10 @@ export function AnalysisStream({
                     )}
                   </label>
                 )}
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       )}
 
       {/* Price readout — instrument panel style */}
