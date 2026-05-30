@@ -3,7 +3,7 @@ import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 const INTER = "'Geist', system-ui, sans-serif";
-const MONO  = "'Geist Mono', monospace";
+const MONO  = "'Geist', system-ui, sans-serif";
 
 function fmtHM(minutes) {
   const h = Math.floor(minutes / 60);

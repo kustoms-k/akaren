@@ -19,7 +19,7 @@ const BORDER  = '#cfc9bb';
 const TEXT    = '#151210';
 const MUTED   = '#6a6050';
 const SURF    = '#f4f0e7';
-const MONO    = "'Geist Mono', monospace";
+const MONO    = "'Geist', system-ui, sans-serif";
 
 function SmsStatusPill({ enabled }) {
   const { t } = useLanguage();

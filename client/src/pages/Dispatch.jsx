@@ -14,7 +14,7 @@ const TEXT   = '#17161a';
 const MUTED  = '#6b6574';
 const FAINT  = '#a09aa8';
 const OUTFIT = "'Geist', system-ui, sans-serif";
-const MONO   = "'Geist Mono', monospace";
+const MONO   = "'Geist', system-ui, sans-serif";
 
 const STATUS_COLORS = {
   planerad:   { color: '#d97706', bg: '#fff7ed' },

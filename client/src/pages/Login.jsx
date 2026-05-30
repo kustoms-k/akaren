@@ -4,7 +4,7 @@ import { useLanguage } from '../context/LanguageContext.jsx';
 import { LogoMark }    from '../assets/Logo.jsx';
 
 const INTER       = "'Geist', system-ui, sans-serif";
-const MONO        = "'Geist Mono', monospace";
+const MONO        = "'Geist', system-ui, sans-serif";
 const BG_BASE     = '#f4f5f7';
 const SURF        = '#ffffff';
 const BORDER      = '#ececef';

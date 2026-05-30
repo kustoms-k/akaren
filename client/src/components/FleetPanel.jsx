@@ -9,7 +9,7 @@ const MUTED   = '#6a6050';
 const FAINT   = '#9a9082';
 const OUTFIT  = "'Geist', system-ui, sans-serif";
 const SURF    = '#f4f0e7';
-const MONO    = "'Geist Mono', monospace";
+const MONO    = "'Geist', system-ui, sans-serif";
 
 const EURO = {
   6: { label: 'E6', color: '#16a34a', bg: 'rgba(22,163,74,0.08)' },

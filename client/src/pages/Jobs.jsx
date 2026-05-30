@@ -22,7 +22,7 @@ const TEXT_PR = '#1a1d24';
 const TEXT_SEC= '#6b7280';
 const TEXT_MU = '#9ca3af';
 const INTER   = "'Geist', system-ui, sans-serif";
-const MONO    = "'Geist Mono', monospace";
+const MONO    = "'Geist', system-ui, sans-serif";
 // Legacy aliases
 const OUTFIT  = INTER;
 const WHITE   = '#ffffff';

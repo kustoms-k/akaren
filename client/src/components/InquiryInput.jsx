@@ -8,7 +8,7 @@ const BORDER = '#cfc9bb';
 const TEXT   = '#151210';
 const MUTED  = '#6a6050';
 const OUTFIT = "'Geist', system-ui, sans-serif";
-const MONO   = "'Geist Mono', monospace";
+const MONO   = "'Geist', system-ui, sans-serif";
 
 const MAX_LEN = 4000;
 

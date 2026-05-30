@@ -17,7 +17,7 @@ const MUTED   = '#6b7280';
 const FAINT   = '#9ca3af';
 const OUTFIT  = "'Geist', system-ui, sans-serif";
 const SURF    = '#ffffff';
-const MONO    = "'Geist Mono', monospace";
+const MONO    = "'Geist', system-ui, sans-serif";
 
 function currentMonth() {
   return new Date().toISOString().slice(0, 7);

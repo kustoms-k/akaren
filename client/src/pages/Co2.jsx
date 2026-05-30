@@ -4,7 +4,7 @@ import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 const OUTFIT = "'Geist', system-ui, sans-serif";
-const MONO   = "'Geist Mono', monospace";
+const MONO   = "'Geist', system-ui, sans-serif";
 const AMBER  = '#c9921e';
 const GREEN  = '#1d6b45';
 const RED    = '#c45454';

@@ -3,7 +3,7 @@
 /* ── Fonts ───────────────────────────────────────────────────────────────── */
 :root {
   --font-sans: 'Geist', system-ui, -apple-system, sans-serif;
-  --font-mono: 'Geist Mono', 'Courier New', monospace;
+  --font-mono: 'Geist', system-ui, -apple-system, sans-serif;
 }
 
 html {

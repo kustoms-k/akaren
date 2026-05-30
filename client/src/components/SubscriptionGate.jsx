@@ -4,7 +4,7 @@ import { useLanguage } from '../context/LanguageContext.jsx';
 
 const AMBER  = '#c9921e';
 const OUTFIT = "'Geist', system-ui, sans-serif";
-const MONO   = "'Geist Mono', monospace";
+const MONO   = "'Geist', system-ui, sans-serif";
 
 export function SubscriptionGate({ onClose }) {
   const { t } = useLanguage();

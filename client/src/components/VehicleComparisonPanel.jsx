@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 const INTER = "'Geist', system-ui, sans-serif";
-const MONO  = "'Geist Mono', monospace";
+const MONO  = "'Geist', system-ui, sans-serif";
 
 const fmtKr = (n) => n == null ? '—'
   : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n) + ' kr';

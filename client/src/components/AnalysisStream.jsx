@@ -10,7 +10,7 @@ const MUTED   = '#6a6050';
 const FAINT   = '#9a9082';
 const SURF    = '#f4f0e7';
 const OUTFIT  = "'Geist', system-ui, sans-serif";
-const MONO    = "'Geist Mono', monospace";
+const MONO    = "'Geist', system-ui, sans-serif";
 const WARNING = '#b8600a';
 const ERROR   = '#c45454';
 

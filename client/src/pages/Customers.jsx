@@ -12,7 +12,7 @@ const TEXT    = '#1C1A17';
 const MUTED   = '#625E58';
 const FAINT   = '#A09C96';
 const OUTFIT  = "'Geist', system-ui, sans-serif";
-const MONO    = "'Geist Mono', monospace";
+const MONO    = "'Geist', system-ui, sans-serif";
 
 const fmtSEK = (n) =>
   n == null ? '—' :

@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ScrollText, RefreshCw, Eye, EyeOff, X, Leaf, Truck, Star, StarOff, Clock, MapPin, Building2, ChevronDown } from 'lucide-react';
+import { ScrollText, RefreshCw, X, Leaf, Truck, Star, StarOff, Clock, MapPin, Building2, ChevronDown } from 'lucide-react';
 import { apiFetch } from '../utils/apiFetch.js';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 const INTER     = "'Geist', system-ui, sans-serif";
-const MONO      = "'Geist Mono', monospace";
+const MONO      = "'Geist', system-ui, sans-serif";
 const BG_BASE   = '#f4f5f7';
 const SURF      = '#ffffff';
 const ACCENT    = '#2d3340';
@@ -45,7 +46,7 @@ function ScorePill({ score }) {
   );
 }
 
-function DeadlineBadge({ deadline }) {
+function DeadlineBadge({ deadline, t }) {
   const d = days_until(deadline);
   if (d === null) return null;
   const urgent = d <= 7;
@@ -53,12 +54,12 @@ function DeadlineBadge({ deadline }) {
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color, fontSize: 11, fontFamily: INTER }}>
       <Clock size={11} />
-      {d <= 0 ? 'Utgången' : `${d} dagar`}
+      {d <= 0 ? t.upphandlingar.expired : t.upphandlingar.days(d)}
     </span>
   );
 }
 
-function TenderCard({ tender, onWatch, onDismiss }) {
+function TenderCard({ tender, onWatch, onDismiss, t }) {
   const [expanded, setExpanded] = useState(false);
   const d = days_until(tender.deadline);
   const urgent = d !== null && d <= 7;
@@ -98,7 +99,7 @@ function TenderCard({ tender, onWatch, onDismiss }) {
                 background: '#dcfce7', color: D_GREEN,
                 fontSize: 10, fontWeight: 700, fontFamily: INTER,
               }}>
-                <Leaf size={9} /> CO₂-fördel
+                <Leaf size={9} /> {t.upphandlingar.co2}
               </span>
             )}
             {urgent && (
@@ -107,7 +108,7 @@ function TenderCard({ tender, onWatch, onDismiss }) {
                 background: '#fee2e2', color: D_RED,
                 fontSize: 10, fontWeight: 700, fontFamily: INTER,
               }}>
-                Brådskande
+                {t.upphandlingar.urgent}
               </span>
             )}
           </div>
@@ -126,13 +127,13 @@ function TenderCard({ tender, onWatch, onDismiss }) {
             )}
             {tender.estimerat_varde_sek && (
               <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: TEXT_SEC, fontFamily: INTER }}>
-                <span style={{ fontSize: 10, opacity: 0.6 }}>Värde</span>
+                <span style={{ fontSize: 10, opacity: 0.6 }}>{t.upphandlingar.value}</span>
                 <span style={{ fontWeight: 600, color: TEXT_PR, fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>
                   {fmt_sek(tender.estimerat_varde_sek)}
                 </span>
               </span>
             )}
-            <DeadlineBadge deadline={tender.deadline} />
+            <DeadlineBadge deadline={tender.deadline} t={t} />
           </div>
 
           {/* Fleet assessment */}
@@ -146,7 +147,7 @@ function TenderCard({ tender, onWatch, onDismiss }) {
               color: tender.flotta_kan_hantera ? D_GREEN : D_AMBER,
             }}>
               <Truck size={11} />
-              <span style={{ fontWeight: 600 }}>Passar din flotta:</span>
+              <span style={{ fontWeight: 600 }}>{t.upphandlingar.fleetFit}</span>
               <span>{tender.flotta_orsak}</span>
             </div>
           )}
@@ -156,7 +157,7 @@ function TenderCard({ tender, onWatch, onDismiss }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
           <button
             onClick={() => onWatch(tender.id, tender.watched)}
-            title={tender.watched ? 'Sluta bevaka' : 'Bevaka'}
+            title={tender.watched ? t.upphandlingar.unwatch : t.upphandlingar.watch}
             style={{
               padding: '6px 12px', borderRadius: 8,
               background: tender.watched ? ACCENT : BG_BASE,
@@ -168,7 +169,7 @@ function TenderCard({ tender, onWatch, onDismiss }) {
             }}
           >
             {tender.watched ? <Star size={11} fill="currentColor" /> : <StarOff size={11} />}
-            {tender.watched ? 'Bevakad' : 'Bevaka'}
+            {tender.watched ? t.upphandlingar.watched : t.upphandlingar.watch}
           </button>
           {tender.url && (
             <a
@@ -183,12 +184,12 @@ function TenderCard({ tender, onWatch, onDismiss }) {
                 cursor: 'pointer', textDecoration: 'none', textAlign: 'center',
               }}
             >
-              Öppna
+              {t.upphandlingar.open}
             </a>
           )}
           <button
             onClick={() => onDismiss(tender.id)}
-            title="Ignorera"
+            title={t.upphandlingar.dismiss}
             style={{
               padding: '5px 8px', borderRadius: 8,
               background: 'transparent', color: TEXT_MUT,
@@ -197,7 +198,7 @@ function TenderCard({ tender, onWatch, onDismiss }) {
               display: 'flex', alignItems: 'center', gap: 4,
             }}
           >
-            <X size={10} /> Ignorera
+            <X size={10} /> {t.upphandlingar.dismiss}
           </button>
         </div>
       </div>
@@ -216,7 +217,7 @@ function TenderCard({ tender, onWatch, onDismiss }) {
             }}
           >
             <ChevronDown size={11} style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: '120ms' }} />
-            {expanded ? 'Dölj' : 'Visa beskrivning'}
+            {expanded ? t.upphandlingar.collapse : t.upphandlingar.expand}
           </button>
           {expanded && (
             <div style={{ padding: '0 20px 14px', fontSize: 12, color: TEXT_SEC, fontFamily: INTER, lineHeight: 1.6 }}>
@@ -230,6 +231,7 @@ function TenderCard({ tender, onWatch, onDismiss }) {
 }
 
 export function Upphandlingar() {
+  const { t } = useLanguage();
   const [tenders,    setTenders]    = useState([]);
   const [stats,      setStats]      = useState(null);
   const [loading,    setLoading]    = useState(true);
@@ -284,10 +286,10 @@ export function Upphandlingar() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: TEXT_PR, margin: 0, letterSpacing: '-0.02em' }}>
-            Upphandlingar
+            {t.upphandlingar.title}
           </h1>
           <p style={{ fontSize: 13, color: TEXT_MUT, margin: '4px 0 0', fontWeight: 400 }}>
-            Matchade upphandlingar baserade på din flotta och verksamhetsregion
+            {t.upphandlingar.subtitle}
           </p>
         </div>
         <button
@@ -304,7 +306,7 @@ export function Upphandlingar() {
           }}
         >
           <RefreshCw size={13} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
-          {refreshing ? 'Hämtar...' : 'Hämta nya'}
+          {refreshing ? t.upphandlingar.refreshing : t.upphandlingar.refresh}
         </button>
       </div>
 
@@ -312,10 +314,10 @@ export function Upphandlingar() {
       {stats && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
           {[
-            { label: 'Aktiva',        value: stats.total,        color: TEXT_PR },
-            { label: 'Bevakade',      value: stats.watched,      color: ACCENT },
-            { label: 'Utgår snart',   value: stats.expiring_week, color: stats.expiring_week > 0 ? D_AMBER : TEXT_PR },
-            { label: 'CO₂-fördel',   value: stats.co2_advantage, color: D_GREEN },
+            { label: t.upphandlingar.kpi.active,   value: stats.total,         color: TEXT_PR },
+            { label: t.upphandlingar.kpi.watched,  value: stats.watched,       color: ACCENT },
+            { label: t.upphandlingar.kpi.expiring, value: stats.expiring_week, color: stats.expiring_week > 0 ? D_AMBER : TEXT_PR },
+            { label: t.upphandlingar.kpi.co2,      value: stats.co2_advantage, color: D_GREEN },
           ].map(({ label, value, color }) => (
             <div key={label} style={{
               background: SURF, borderRadius: 12, padding: '14px 18px',
@@ -345,7 +347,7 @@ export function Upphandlingar() {
             cursor: 'pointer',
           }}
         >
-          <option value="">Alla regioner</option>
+          <option value="">{t.upphandlingar.filter.allRegions}</option>
           {regions.map(r => <option key={r} value={r}>{r}</option>)}
         </select>
 
@@ -358,15 +360,15 @@ export function Upphandlingar() {
             cursor: 'pointer',
           }}
         >
-          <option value="">Alla relevanspoäng</option>
-          <option value="70">Hög relevans (70+)</option>
-          <option value="50">Medel+ (50+)</option>
-          <option value="30">Alla match (30+)</option>
+          <option value="">{t.upphandlingar.filter.allScores}</option>
+          <option value="70">{t.upphandlingar.filter.highScore}</option>
+          <option value="50">{t.upphandlingar.filter.midScore}</option>
+          <option value="30">{t.upphandlingar.filter.anyScore}</option>
         </select>
 
         {[
-          { key: 'co2_only',    label: 'CO₂-fördel' },
-          { key: 'watched_only', label: 'Bevakade' },
+          { key: 'co2_only',    label: t.upphandlingar.filter.co2 },
+          { key: 'watched_only', label: t.upphandlingar.filter.watched },
         ].map(({ key, label }) => (
           <button
             key={key}
@@ -388,7 +390,7 @@ export function Upphandlingar() {
       {/* Tender list */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: TEXT_MUT, fontFamily: INTER, fontSize: 13 }}>
-          Laddar upphandlingar...
+          {t.upphandlingar.loading}
         </div>
       ) : tenders.length === 0 ? (
         <div style={{
@@ -397,10 +399,10 @@ export function Upphandlingar() {
         }}>
           <ScrollText size={36} color={TEXT_MUT} strokeWidth={1} style={{ marginBottom: 16 }} />
           <p style={{ fontSize: 15, fontWeight: 600, color: TEXT_PR, margin: '0 0 6px' }}>
-            Inga upphandlingar hittades
+            {t.upphandlingar.noTenders}
           </p>
           <p style={{ fontSize: 13, color: TEXT_MUT, margin: 0 }}>
-            Klicka "Hämta nya" för att söka efter aktuella upphandlingar
+            {t.upphandlingar.noTendersDesc}
           </p>
         </div>
       ) : (
@@ -411,6 +413,7 @@ export function Upphandlingar() {
               tender={tender}
               onWatch={handleWatch}
               onDismiss={handleDismiss}
+              t={t}
             />
           ))}
         </div>

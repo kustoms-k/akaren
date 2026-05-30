@@ -13,7 +13,7 @@ const MUTED   = '#6a6050';
 const FAINT   = '#9a9082';
 const OUTFIT  = "'Geist', system-ui, sans-serif";
 const SURF    = '#f4f0e7';
-const MONO    = "'Geist Mono', monospace";
+const MONO    = "'Geist', system-ui, sans-serif";
 
 const ACTION_COLORS = {
   create: { bg: 'rgba(46,204,113,0.10)',  color: '#1a7a47' },

@@ -63,7 +63,7 @@ const ACCENT    = '#2d3340';   // dark slate — primary buttons + active states
 const ACCENT_SF = '#eef0f3';   // accent-soft background
 const ICON_BG   = '#eef1f5';   // icon container tint
 const INTER     = "'Geist', system-ui, sans-serif";
-const MONO      = "'Geist Mono', monospace";
+const MONO      = "'Geist', system-ui, sans-serif";
 
 // Semantic colours
 const D_GREEN = '#16a34a';
