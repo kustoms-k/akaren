@@ -6,7 +6,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "node --watch index.js"
+    "dev": "node --watch index.js",
+    "seed": "node -e \"import('./seed/demoData.js').then(({seedDemoData,isDemoSeeded})=>{ if(isDemoSeeded()){console.log('Already seeded.')}else{const r=seedDemoData();console.log('Seeded',r.seeded,'rows.')} })\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.96.0",
