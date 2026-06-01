@@ -565,6 +565,10 @@ export function Settings({ onFortnoxResult }) {
         <ExportPanel section={section} sectionHead={sectionHead} />
       )}
 
+      {user?.role === 'agare' && (
+        <DemoPanel section={section} sectionHead={sectionHead} />
+      )}
+
       <div style={section}>
         <div style={sectionHead}>
           <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
@@ -686,6 +690,118 @@ export function Settings({ onFortnoxResult }) {
               </button>
             </div>
           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── DemoPanel ────────────────────────────────────────────────────────────────
+function DemoPanel({ section, sectionHead }) {
+  const { t } = useLanguage();
+  const [seeded,   setSeeded]   = useState(null); // null = loading
+  const [working,  setWorking]  = useState(false);
+  const [msg,      setMsg]      = useState(null);  // { text, ok }
+
+  useEffect(() => {
+    apiFetch('/api/demo/status')
+      .then(r => r.json())
+      .then(d => setSeeded(d.seeded))
+      .catch(() => setSeeded(false));
+  }, []);
+
+  async function handleSeed() {
+    setWorking(true); setMsg(null);
+    try {
+      const r = await apiFetch('/api/demo/seed', { method: 'POST' });
+      const d = await r.json();
+      if (!r.ok) { setMsg({ text: d.error ?? 'Fel vid laddning', ok: false }); }
+      else { setSeeded(true); setMsg({ text: `Demodata laddad — ${d.seeded} rader skapade.`, ok: true }); }
+    } catch { setMsg({ text: 'Nätverksfel', ok: false }); }
+    setWorking(false);
+  }
+
+  async function handleReset() {
+    if (!window.confirm('Återställ och ta bort all demodata?')) return;
+    setWorking(true); setMsg(null);
+    try {
+      const r = await apiFetch('/api/demo/reset', { method: 'POST' });
+      if (!r.ok) { const d = await r.json(); setMsg({ text: d.error ?? 'Fel', ok: false }); }
+      else { setSeeded(false); setMsg({ text: 'Demodata återställd.', ok: true }); }
+    } catch { setMsg({ text: 'Nätverksfel', ok: false }); }
+    setWorking(false);
+  }
+
+  return (
+    <div style={section}>
+      <div style={sectionHead}>
+        <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
+          Demodata
+        </span>
+        {seeded === null ? null : (
+          <span style={{
+            fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
+            padding: '2px 8px', borderRadius: 20,
+            background: seeded ? 'rgba(30,120,80,0.08)' : 'rgba(100,100,100,0.07)',
+            border: `1px solid ${seeded ? 'rgba(30,120,80,0.25)' : 'rgba(100,100,100,0.18)'}`,
+            color: seeded ? '#1E7A50' : MUTED,
+          }}>
+            {seeded ? 'INLÄST' : 'EJ INLÄST'}
+          </span>
+        )}
+      </div>
+
+      <div style={{ padding: '16px 20px' }}>
+        <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: '0 0 16px', lineHeight: 1.6 }}>
+          Fyll hela appen med 6 månaders realistisk driftshistorik — 60 offerter, 45 uppdrag,
+          26 fakturor, 6 fordon med servicehistorik, 8 förare, 18 kunder, bränsletransaktioner
+          och mer. Perfekt för kunddemos.
+        </p>
+
+        {msg && (
+          <div style={{
+            marginBottom: 14, padding: '9px 14px', borderRadius: 8,
+            fontFamily: INTER, fontSize: 12,
+            background: msg.ok ? 'rgba(30,120,80,0.07)' : 'rgba(168,36,36,0.07)',
+            border: `1px solid ${msg.ok ? 'rgba(30,120,80,0.25)' : 'rgba(168,36,36,0.25)'}`,
+            color: msg.ok ? '#1E7A50' : '#A82424',
+          }}>
+            {msg.text}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={handleSeed}
+            disabled={working || seeded === true}
+            style={{
+              fontFamily: INTER, fontSize: 12, fontWeight: 600,
+              padding: '9px 20px', borderRadius: 8, cursor: 'pointer',
+              background: seeded ? SURF : TEXT,
+              color: seeded ? MUTED : WHITE,
+              border: `1px solid ${seeded ? BORDER : TEXT}`,
+              opacity: working ? 0.6 : 1,
+            }}
+          >
+            {working && !seeded ? 'Laddar…' : 'Ladda demodata'}
+          </button>
+
+          {seeded && (
+            <button
+              onClick={handleReset}
+              disabled={working}
+              style={{
+                fontFamily: INTER, fontSize: 12, fontWeight: 600,
+                padding: '9px 20px', borderRadius: 8, cursor: 'pointer',
+                background: SURF,
+                color: '#A82424',
+                border: '1px solid rgba(168,36,36,0.35)',
+                opacity: working ? 0.6 : 1,
+              }}
+            >
+              {working ? 'Återställer…' : 'Återställ demodata'}
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -68,6 +68,7 @@ import upphandlingarRouter              from './routes/upphandlingar.js';
 import natverkRouter                   from './routes/natverk.js';
 import drivmedelRouter                 from './routes/drivmedel.js';
 import underhallRouter                 from './routes/underhall.js';
+import demoRouter                      from './routes/demo.js';
 import { authLimiter, analyseLimiter, apiLimiter } from './middleware/rateLimit.js';
 import { requireSubscription } from './middleware/requireSubscription.js';
 import db from './db.js';
@@ -207,6 +208,9 @@ app.use('/api/natverk',           apiLimiter, requireAuth, requireRole(AGARE, TR
 // Drivmedel (fuel card reconciliation) — agare + trafikledare
 app.use('/api/drivmedel',         apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE), drivmedelRouter);
 app.use('/api/underhall',         apiLimiter, requireAuth, requireRole(AGARE, TRAFIKLEDARE), underhallRouter);
+
+// Demo data — agare only
+app.use('/api/demo',              apiLimiter, requireAuth, requireRole(AGARE), demoRouter);
 
 // Billing — agare only
 app.use('/api/stripe',            apiLimiter, requireAuth, requireRole(AGARE), stripeRouter);
