@@ -1,10 +1,13 @@
 export const EN = {
   nav: {
     dashboard:    'Dashboard',
+    quotes:       'Quotes',
     newQuote:     'New Quote',
+    uppdrag:      'Jobs',
     operations:   'Operations',
     jobs:         'Jobs',
     fleet:        'Fleet',
+    ekonomi:      'Finance',
     profitability:'Profitability',
     customers:    'Customers',
     settings:     'Settings',
@@ -16,6 +19,27 @@ export const EN = {
     natverk:         'Network',
     drivmedel:       'Fuel Cards',
     underhall:       'Maintenance',
+  },
+
+  ekonomi: {
+    heading:       'Finance',
+    tabInvoices:   'Invoices',
+    tabProfit:     'Profitability',
+    invoiceCount:  (n) => `${n} invoice${n !== 1 ? 's' : ''}`,
+    noInvoices:    'No invoices yet.',
+    status: {
+      betald:      'Paid',
+      utestaende:  'Outstanding',
+      förfallen:   'Overdue',
+      draft:       'Draft',
+    },
+    cols: {
+      nr:       'Invoice #',
+      customer: 'Customer',
+      amount:   'Amount',
+      due:      'Due',
+      status:   'Status',
+    },
   },
 
   sidebar: {
@@ -1731,10 +1755,13 @@ export const EN = {
 export const SV = {
   nav: {
     dashboard:    'Översikt',
+    quotes:       'Offert',
     newQuote:     'Ny Offert',
+    uppdrag:      'Uppdrag',
     operations:   'Operationer',
     jobs:         'Uppdrag',
-    fleet:        'Fordonspark',
+    fleet:        'Fordon',
+    ekonomi:      'Ekonomi',
     profitability:'Lönsamhet',
     customers:    'Kunder',
     settings:     'Inställningar',
@@ -1746,6 +1773,27 @@ export const SV = {
     natverk:         'Nätverk',
     drivmedel:       'Drivmedelskort',
     underhall:       'Underhåll',
+  },
+
+  ekonomi: {
+    heading:       'Ekonomi',
+    tabInvoices:   'Fakturor',
+    tabProfit:     'Lönsamhet',
+    invoiceCount:  (n) => `${n} faktura${n !== 1 ? 'r' : ''}`,
+    noInvoices:    'Inga fakturor ännu.',
+    status: {
+      betald:      'Betald',
+      utestaende:  'Utestående',
+      förfallen:   'Förfallen',
+      draft:       'Utkast',
+    },
+    cols: {
+      nr:       'Faktura',
+      customer: 'Kund',
+      amount:   'Belopp',
+      due:      'Förfaller',
+      status:   'Status',
+    },
   },
 
   sidebar: {

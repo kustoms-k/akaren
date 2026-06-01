@@ -181,30 +181,30 @@ function buildActivity(quotes, t) {
 
 // Roles that can access each nav item
 const NAV_ROLES = {
-  dashboard:  ['agare', 'trafikledare', 'ekonomi', 'revisor'],
-  'new-quote':['agare', 'trafikledare'],
-  operations: ['agare', 'trafikledare', 'ekonomi', 'revisor'],
-  fleet:      ['agare', 'trafikledare'],
-  settings:   ['agare', 'trafikledare', 'ekonomi', 'revisor'],
-  kortider:        ['agare', 'trafikledare'],
-  upphandlingar:   ['agare', 'trafikledare'],
-  natverk:         ['agare', 'trafikledare'],
-  drivmedel:       ['agare', 'trafikledare'],
-  underhall:       ['agare', 'trafikledare'],
+  quotes:   ['agare', 'trafikledare', 'ekonomi', 'revisor'],
+  uppdrag:  ['agare', 'trafikledare', 'ekonomi', 'revisor'],
+  fleet:    ['agare', 'trafikledare'],
+  ekonomi:  ['agare', 'ekonomi', 'revisor'],
+  settings: ['agare', 'trafikledare', 'ekonomi', 'revisor'],
+  // Hidden — code preserved, not shown in nav:
+  // kortider, upphandlingar, natverk, drivmedel, underhall, dashboard
 };
 
 function getNavItems(t, role) {
   const all = [
-    { id: 'dashboard',   label: t.nav.dashboard,    Icon: LayoutDashboard, group: 'main' },
-    { id: 'new-quote',   label: t.nav.newQuote,     Icon: FilePlus,        group: 'main' },
-    { id: 'operations',  label: t.nav.operations,   Icon: Briefcase,       group: 'main' },
-    { id: 'fleet',       label: t.nav.fleet,        Icon: Truck,           group: 'main' },
-    { id: 'settings',    label: t.nav.settings,     Icon: SettingsIcon,    group: 'main' },
+    { id: 'quotes',   label: t.nav.quotes,   Icon: FilePlus,     group: 'main' },
+    { id: 'uppdrag',  label: t.nav.uppdrag,  Icon: Briefcase,    group: 'main' },
+    { id: 'fleet',    label: t.nav.fleet,    Icon: Truck,        group: 'main' },
+    { id: 'ekonomi',  label: t.nav.ekonomi,  Icon: DollarSign,   group: 'main' },
+    { id: 'settings', label: t.nav.settings, Icon: SettingsIcon, group: 'main' },
+    /* Hidden pages — preserved for future re-activation:
+    { id: 'dashboard',     label: t.nav.dashboard,    Icon: LayoutDashboard, group: 'main' },
     { id: 'kortider',      label: t.nav.kortider,      Icon: Shield,      group: 'compliance' },
     { id: 'upphandlingar', label: t.nav.upphandlingar, Icon: ScrollText,  group: 'compliance' },
     { id: 'natverk',       label: t.nav.natverk,       Icon: Network,     group: 'network' },
     { id: 'drivmedel',     label: t.nav.drivmedel,     Icon: CreditCard,  group: 'network' },
     { id: 'underhall',     label: t.nav.underhall,     Icon: Wrench,      group: 'network' },
+    */
   ];
   return all.filter((n) => !role || (NAV_ROLES[n.id] ?? []).includes(role));
 }
@@ -256,17 +256,14 @@ const DOT_BG = { background: 'transparent' };
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 function Sidebar({ activePage, onNavigate, company, onLogout, userRole, mobileOpen, onMobileClose }) {
   const { t } = useLanguage();
-  const allItems        = getNavItems(t, userRole);
-  const mainItems       = allItems.filter((n) => n.group === 'main');
-  const complianceItems = allItems.filter((n) => n.group === 'compliance');
-  const networkItems    = allItems.filter((n) => n.group === 'network');
+  const navItems = getNavItems(t, userRole);
   return (
     <>
       {mobileOpen && (
         <div className="mobile-backdrop" onClick={onMobileClose} aria-hidden />
       )}
       <aside className={`app-sidebar${mobileOpen ? ' mobile-open' : ''}`} style={{
-        width: 232, flexShrink: 0,
+        width: 220, flexShrink: 0,
         background: BG_BASE,
         padding: '12px',
         display: 'flex', flexDirection: 'column',
@@ -283,13 +280,13 @@ function Sidebar({ activePage, onNavigate, company, onLogout, userRole, mobileOp
           overflow: 'hidden',
         }}>
           {/* Logo */}
-          <div style={{ padding: '0 4px', marginBottom: 28, flexShrink: 0 }}>
+          <div style={{ padding: '0 4px', marginBottom: 32, flexShrink: 0 }}>
             <LogoCompact markSize={28} color={TEXT_PR} />
           </div>
 
-          {/* Main nav */}
-          <nav style={{ flex: 1, padding: '0 0 10px', overflowY: 'auto' }}>
-            {mainItems.map(({ id, label, Icon }) => (
+          {/* Nav — 5 items only */}
+          <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {navItems.map(({ id, label, Icon }) => (
               <NavItem
                 key={id}
                 id={id}
@@ -299,52 +296,6 @@ function Sidebar({ activePage, onNavigate, company, onLogout, userRole, mobileOp
                 onClick={() => onNavigate(id)}
               />
             ))}
-
-            {/* Compliance section */}
-            {complianceItems.length > 0 && (
-              <>
-                <div style={{
-                  fontSize: 9, fontFamily: INTER, fontWeight: 700,
-                  letterSpacing: '0.14em', textTransform: 'uppercase',
-                  color: TEXT_MU, padding: '16px 12px 6px',
-                }}>
-                  {t.sidebar.compliance}
-                </div>
-                {complianceItems.map(({ id, label, Icon }) => (
-                  <NavItem
-                    key={id}
-                    id={id}
-                    label={label}
-                    Icon={Icon}
-                    isActive={activePage === id}
-                    onClick={() => onNavigate(id)}
-                  />
-                ))}
-              </>
-            )}
-
-            {/* Network section */}
-            {networkItems.length > 0 && (
-              <>
-                <div style={{
-                  fontSize: 9, fontFamily: INTER, fontWeight: 700,
-                  letterSpacing: '0.14em', textTransform: 'uppercase',
-                  color: TEXT_MU, padding: '16px 12px 6px',
-                }}>
-                  {t.sidebar.network}
-                </div>
-                {networkItems.map(({ id, label, Icon }) => (
-                  <NavItem
-                    key={id}
-                    id={id}
-                    label={label}
-                    Icon={Icon}
-                    isActive={activePage === id}
-                    onClick={() => onNavigate(id)}
-                  />
-                ))}
-              </>
-            )}
           </nav>
 
           {/* Footer */}
@@ -1085,7 +1036,7 @@ function AppInner() {
 
   const [lowApproved,        setLowApproved]        = useState(() => new Set());
   const [reviewAcknowledged, setReviewAcknowledged] = useState(false);
-  const [activePage,      setActivePage]      = useState('dashboard');
+  const [activePage,      setActivePage]      = useState('quotes');
   const [showNewQuote,    setShowNewQuote]     = useState(false); // kept for SubscriptionGate compat
   const [fuelPrice,       setFuelPrice]       = useState(null);
   const [weather,         setWeather]         = useState(null);
@@ -1257,7 +1208,7 @@ function AppInner() {
     setQuoteNumber(null);
     setShareToken(null);
     setSmsResult(null);
-    setActivePage('new-quote');
+    setActivePage('quotes');
   }
 
   function openMallModal() {
@@ -1556,49 +1507,30 @@ function AppInner() {
           transition={{ duration: 0.15, ease: 'easeInOut' }}
           style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
         >
-          {activePage === 'dashboard' && (
-            <Dashboard
-              quotes={quotes}
-              fuelPrice={fuelPrice}
-              roadAlerts={roadAlerts}
-              onNewQuote={() => setActivePage('new-quote')}
-              fleet={fleet}
-            />
-          )}
+          {/* ── 5 core pages ──────────────────────────────────────────────── */}
           {activePage === 'settings' && (
             <div style={{ flex: 1, overflow: 'auto' }}>
               <Settings onFortnoxResult={fortnoxResult} />
             </div>
           )}
-          {activePage === 'operations' && <OperationsPage />}
-          {activePage === 'fleet' && <FleetEnvPage />}
-          {activePage === 'kortider' && (
-            <div style={{ flex: 1, overflow: 'auto' }}>
-              <Kortider />
-            </div>
+          {activePage === 'uppdrag' && <UppdragPage />}
+          {activePage === 'fleet' && <FordonPage />}
+          {activePage === 'ekonomi' && <EkonomiPage />}
+
+          {/* ── Hidden pages preserved in code, not shown in nav ──────────────
+          {activePage === 'dashboard' && (
+            <Dashboard quotes={quotes} fuelPrice={fuelPrice} roadAlerts={roadAlerts}
+              onNewQuote={() => setActivePage('quotes')} fleet={fleet} />
           )}
-          {activePage === 'upphandlingar' && (
-            <div style={{ flex: 1, overflow: 'auto' }}>
-              <Upphandlingar />
-            </div>
-          )}
-          {activePage === 'natverk' && (
-            <div style={{ flex: 1, overflow: 'auto' }}>
-              <Natverk />
-            </div>
-          )}
-          {activePage === 'drivmedel' && (
-            <div style={{ flex: 1, overflow: 'auto' }}>
-              <Drivmedel />
-            </div>
-          )}
-          {activePage === 'underhall' && (
-            <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-              <Underhall />
-            </div>
-          )}
-          {/* ── New Quote tab ──────────────────────────────────────────── */}
-          {activePage === 'new-quote' && (
+          {activePage === 'kortider'    && <div style={{ flex:1,overflow:'auto' }}><Kortider /></div>}
+          {activePage === 'upphandlingar' && <div style={{ flex:1,overflow:'auto' }}><Upphandlingar /></div>}
+          {activePage === 'natverk'     && <div style={{ flex:1,overflow:'auto' }}><Natverk /></div>}
+          {activePage === 'drivmedel'   && <div style={{ flex:1,overflow:'auto' }}><Drivmedel /></div>}
+          {activePage === 'underhall'   && <div style={{ flex:1,overflow:'auto',display:'flex',flexDirection:'column',minHeight:0 }}><Underhall /></div>}
+          ────────────────────────────────────────────────────────────────── */}
+
+          {/* ── Offert / New Quote ────────────────────────────────────── */}
+          {activePage === 'quotes' && (
           <div className="new-quote-grid" style={{
             flex: 1,
             display: 'grid',
@@ -1712,7 +1644,7 @@ function AppInner() {
 
               {/* Subscription gate — shown when analysis returns 402 */}
               {status === 'error' && error === 'subscription_required' && (
-                <SubscriptionGate onClose={() => setActivePage('dashboard')} />
+                <SubscriptionGate onClose={() => setActivePage('uppdrag')} />
               )}
 
               {status === 'done' && parsed && (
@@ -2557,8 +2489,8 @@ class ErrorBoundary extends Component {
   }
 }
 
-// ─── Operations compound page (Jobs + Dispatch) ──────────────────────────────
-function OperationsPage() {
+// ─── Uppdrag page (Jobs + Dispatch calendar) ─────────────────────────────────
+function UppdragPage() {
   const [tab, setTab] = useState('jobs');
   const { t } = useLanguage();
   return (
@@ -2584,8 +2516,8 @@ function OperationsPage() {
   );
 }
 
-// ─── Fleet compound page (Fleet + CO₂) ───────────────────────────────────────
-function FleetEnvPage() {
+// ─── Fordon page (Fleet + Maintenance tabs) ───────────────────────────────────
+function FordonPage() {
   const [tab, setTab] = useState('fleet');
   const { t } = useLanguage();
   return (
@@ -2598,18 +2530,190 @@ function FleetEnvPage() {
           <button className={`sub-tab${tab === 'fleet' ? ' active' : ''}`} onClick={() => setTab('fleet')}>
             {t.fleet.vehicleTab}
           </button>
-          <button className={`sub-tab${tab === 'co2' ? ' active' : ''}`} onClick={() => setTab('co2')}>
-            {t.co2.title}
+          <button className={`sub-tab${tab === 'underhall' ? ' active' : ''}`} onClick={() => setTab('underhall')}>
+            {t.nav.underhall}
           </button>
         </div>
       </div>
       {tab === 'fleet'
         ? <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}><Fleet /></div>
-        : <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}><Co2 /></div>
+        : <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', minHeight: 0 }}><Underhall /></div>
       }
     </div>
   );
 }
+
+// ─── Ekonomi page (Invoices + Profitability tabs) ─────────────────────────────
+function EkonomiPage() {
+  const [tab, setTab] = useState('invoices');
+  const { t } = useLanguage();
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{
+        padding: '10px 24px', borderBottom: `1px solid ${BORDER}`,
+        background: SURF, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0,
+      }}>
+        <div className="sub-tabs">
+          <button className={`sub-tab${tab === 'invoices' ? ' active' : ''}`} onClick={() => setTab('invoices')}>
+            {t.ekonomi.tabInvoices}
+          </button>
+          <button className={`sub-tab${tab === 'profitability' ? ' active' : ''}`} onClick={() => setTab('profitability')}>
+            {t.ekonomi.tabProfit}
+          </button>
+        </div>
+      </div>
+      {tab === 'invoices'
+        ? <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}><InvoicesTab /></div>
+        : <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}><Profitability /></div>
+      }
+    </div>
+  );
+}
+
+// ─── InvoicesTab — invoice list inside Ekonomi ───────────────────────────────
+function InvoicesTab() {
+  const { t } = useLanguage();
+  const [invoices, setInvoices] = useState([]);
+  const [loading,  setLoading]  = useState(true);
+
+  useEffect(() => {
+    apiFetch('/api/invoices')
+      .then((r) => r.ok ? r.json() : [])
+      .then((d) => setInvoices(Array.isArray(d) ? d : (d.invoices ?? [])))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const STATUS_CFG = {
+    betald:     { color: D_GREEN, bg: 'rgba(22,163,74,0.08)',  border: 'rgba(22,163,74,0.22)'  },
+    utestaende: { color: D_AMBER, bg: 'rgba(181,101,16,0.08)', border: 'rgba(181,101,16,0.22)' },
+    förfallen:  { color: D_RED,   bg: 'rgba(220,38,38,0.08)',  border: 'rgba(220,38,38,0.22)'  },
+  };
+
+  const fmtStatus = (s) => t.ekonomi?.status?.[s] ?? s;
+  const fmtDue    = (s) => {
+    if (!s) return '—';
+    try { return new Intl.DateTimeFormat('sv-SE', { day: 'numeric', month: 'short' }).format(new Date(s)); }
+    catch { return s; }
+  };
+
+  const totals = invoices.reduce((acc, inv) => {
+    const st = inv.status ?? 'utestaende';
+    acc[st] = (acc[st] ?? 0) + (Number(inv.total) || 0);
+    return acc;
+  }, {});
+
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', background: BG_BASE }}>
+      {/* Page heading */}
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontFamily: INTER, fontSize: 24, fontWeight: 600, color: TEXT_PR, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+          {t.ekonomi.heading}
+        </h1>
+        <p style={{ fontFamily: INTER, fontSize: 13, color: TEXT_SEC, margin: 0 }}>
+          {t.ekonomi.invoiceCount(invoices.length)}
+        </p>
+      </div>
+
+      {/* KPI strip */}
+      {invoices.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
+          {[
+            { label: t.ekonomi.status.betald,     amount: totals.betald     ?? 0, cfg: STATUS_CFG.betald     },
+            { label: t.ekonomi.status.utestaende, amount: totals.utestaende ?? 0, cfg: STATUS_CFG.utestaende },
+            { label: t.ekonomi.status.förfallen,  amount: totals.förfallen  ?? 0, cfg: STATUS_CFG.förfallen  },
+          ].map(({ label, amount, cfg }) => (
+            <div key={label} style={{
+              background: SURF, border: `1px solid ${BORDER}`, borderRadius: 14,
+              padding: '16px 20px',
+              boxShadow: SHADOW_SM,
+            }}>
+              <div style={{ fontFamily: INTER, fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: TEXT_MU, marginBottom: 8 }}>
+                {label}
+              </div>
+              <div style={{ fontFamily: INTER, fontSize: 22, fontWeight: 700, color: TEXT_PR, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                {fmtSEK(amount)}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Invoice table */}
+      <div style={{ background: SURF, border: `1px solid ${BORDER}`, borderRadius: 16, boxShadow: SHADOW_SM, overflow: 'hidden' }}>
+        {loading ? (
+          <div style={{ padding: 40, textAlign: 'center', fontFamily: INTER, fontSize: 13, color: TEXT_MU }}>
+            {t.settings.loading}
+          </div>
+        ) : invoices.length === 0 ? (
+          <div style={{ padding: 40, textAlign: 'center', fontFamily: INTER, fontSize: 13, color: TEXT_MU, fontStyle: 'italic' }}>
+            {t.ekonomi.noInvoices}
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: SURF_ELV, borderBottom: `1px solid ${BORDER}` }}>
+                  {[t.ekonomi.cols.nr, t.ekonomi.cols.customer, t.ekonomi.cols.amount, t.ekonomi.cols.due, t.ekonomi.cols.status].map((h) => (
+                    <th key={h} style={{
+                      padding: '10px 16px', textAlign: 'left',
+                      fontFamily: INTER, fontSize: 11, fontWeight: 600,
+                      letterSpacing: '0.06em', textTransform: 'uppercase', color: TEXT_MU,
+                      whiteSpace: 'nowrap',
+                    }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {invoices.map((inv, i) => {
+                  const st  = inv.status ?? 'utestaende';
+                  const cfg = STATUS_CFG[st] ?? STATUS_CFG.utestaende;
+                  return (
+                    <tr
+                      key={inv.id ?? i}
+                      style={{ borderBottom: `1px solid ${BORDER}` }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = SURF_ELV; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      <td style={{ padding: '12px 16px', fontFamily: INTER, fontSize: 13, fontWeight: 600, color: ACCENT, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                        {inv.faktura_nr ?? `#${inv.id}`}
+                      </td>
+                      <td style={{ padding: '12px 16px', fontFamily: INTER, fontSize: 13, color: TEXT_PR, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {inv.customer_name ?? '—'}
+                      </td>
+                      <td style={{ padding: '12px 16px', fontFamily: INTER, fontSize: 13, fontWeight: 500, color: TEXT_PR, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                        {fmtSEK(inv.total)}
+                      </td>
+                      <td style={{ padding: '12px 16px', fontFamily: INTER, fontSize: 12, color: TEXT_SEC, whiteSpace: 'nowrap' }}>
+                        {fmtDue(inv.due_date)}
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{
+                          fontFamily: INTER, fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
+                          padding: '3px 10px', borderRadius: 20,
+                          background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+                        }}>
+                          {fmtStatus(st)}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* Legacy compound pages — kept for reference
+function OperationsPage() { ... }
+function FleetEnvPage() { ... }
+*/
 
 // ─── Auth gate — keeps hook count stable across auth transitions ─────────────
 function AppShell() {
