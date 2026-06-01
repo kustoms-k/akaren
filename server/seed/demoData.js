@@ -81,8 +81,8 @@ const DRIVERS = [
   { name:'Anders Lindgren', phone:'+46 70 456 78 90', truck_id:'KEM-04' },
   { name:'Per Karlsson',    phone:'+46 70 567 89 01', truck_id:'KEM-05' },
   { name:'Magnus Nilsson',  phone:'+46 70 678 90 12', truck_id:'KEM-06' },
-  { name:'Stefan Holmberg', phone:'+46 70 789 01 23', truck_id:'KEM-01' },
-  { name:'Fredrik Olsson',  phone:'+46 70 890 12 34', truck_id:'KEM-02' },
+  { name:'Stefan Holmberg', phone:'+46 70 789 01 23', truck_id: null },
+  { name:'Fredrik Olsson',  phone:'+46 70 890 12 34', truck_id: null },
 ];
 
 const CUSTOMERS = [

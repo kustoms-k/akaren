@@ -699,36 +699,37 @@ export function Settings({ onFortnoxResult }) {
 // ─── DemoPanel ────────────────────────────────────────────────────────────────
 function DemoPanel({ section, sectionHead }) {
   const { t } = useLanguage();
-  const [seeded,   setSeeded]   = useState(null); // null = loading
+  const d = t.settings.demo;
+  const [seeded,   setSeeded]   = useState(null);
   const [working,  setWorking]  = useState(false);
-  const [msg,      setMsg]      = useState(null);  // { text, ok }
+  const [msg,      setMsg]      = useState(null);
 
   useEffect(() => {
     apiFetch('/api/demo/status')
       .then(r => r.json())
-      .then(d => setSeeded(d.seeded))
+      .then(res => setSeeded(res.seeded))
       .catch(() => setSeeded(false));
   }, []);
 
   async function handleSeed() {
     setWorking(true); setMsg(null);
     try {
-      const r = await apiFetch('/api/demo/seed', { method: 'POST' });
-      const d = await r.json();
-      if (!r.ok) { setMsg({ text: d.error ?? 'Fel vid laddning', ok: false }); }
-      else { setSeeded(true); setMsg({ text: `Demodata laddad — ${d.seeded} rader skapade.`, ok: true }); }
-    } catch { setMsg({ text: 'Nätverksfel', ok: false }); }
+      const r   = await apiFetch('/api/demo/seed', { method: 'POST' });
+      const res = await r.json();
+      if (!r.ok) { setMsg({ text: res.error ?? d.errorFallback, ok: false }); }
+      else        { setSeeded(true); setMsg({ text: d.loadedMsg(res.seeded), ok: true }); }
+    } catch { setMsg({ text: d.networkError, ok: false }); }
     setWorking(false);
   }
 
   async function handleReset() {
-    if (!window.confirm('Återställ och ta bort all demodata?')) return;
+    if (!window.confirm(d.resetConfirm)) return;
     setWorking(true); setMsg(null);
     try {
       const r = await apiFetch('/api/demo/reset', { method: 'POST' });
-      if (!r.ok) { const d = await r.json(); setMsg({ text: d.error ?? 'Fel', ok: false }); }
-      else { setSeeded(false); setMsg({ text: 'Demodata återställd.', ok: true }); }
-    } catch { setMsg({ text: 'Nätverksfel', ok: false }); }
+      if (!r.ok) { const res = await r.json(); setMsg({ text: res.error ?? d.resetError, ok: false }); }
+      else        { setSeeded(false); setMsg({ text: d.resetMsg, ok: true }); }
+    } catch { setMsg({ text: d.networkError, ok: false }); }
     setWorking(false);
   }
 
@@ -736,9 +737,9 @@ function DemoPanel({ section, sectionHead }) {
     <div style={section}>
       <div style={sectionHead}>
         <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
-          Demodata
+          {d.heading}
         </span>
-        {seeded === null ? null : (
+        {seeded !== null && (
           <span style={{
             fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
             padding: '2px 8px', borderRadius: 20,
@@ -746,16 +747,14 @@ function DemoPanel({ section, sectionHead }) {
             border: `1px solid ${seeded ? 'rgba(30,120,80,0.25)' : 'rgba(100,100,100,0.18)'}`,
             color: seeded ? '#1E7A50' : MUTED,
           }}>
-            {seeded ? 'INLÄST' : 'EJ INLÄST'}
+            {seeded ? d.seeded : d.notSeeded}
           </span>
         )}
       </div>
 
       <div style={{ padding: '16px 20px' }}>
-        <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: '0 0 16px', lineHeight: 1.6 }}>
-          Fyll hela appen med 6 månaders realistisk driftshistorik — 60 offerter, 45 uppdrag,
-          26 fakturor, 6 fordon med servicehistorik, 8 förare, 18 kunder, bränsletransaktioner
-          och mer. Perfekt för kunddemos.
+        <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: '0 0 16px', lineHeight: 1.6, maxWidth: 560 }}>
+          {d.desc}
         </p>
 
         {msg && (
@@ -775,15 +774,16 @@ function DemoPanel({ section, sectionHead }) {
             onClick={handleSeed}
             disabled={working || seeded === true}
             style={{
-              fontFamily: INTER, fontSize: 12, fontWeight: 600,
-              padding: '9px 20px', borderRadius: 8, cursor: 'pointer',
+              fontFamily: INTER, fontSize: 13, fontWeight: 600,
+              padding: '10px 20px', borderRadius: 9, cursor: seeded ? 'not-allowed' : 'pointer',
               background: seeded ? SURF : TEXT,
               color: seeded ? MUTED : WHITE,
               border: `1px solid ${seeded ? BORDER : TEXT}`,
               opacity: working ? 0.6 : 1,
+              transition: 'opacity 0.15s',
             }}
           >
-            {working && !seeded ? 'Laddar…' : 'Ladda demodata'}
+            {working && !seeded ? d.loading : d.load}
           </button>
 
           {seeded && (
@@ -791,15 +791,16 @@ function DemoPanel({ section, sectionHead }) {
               onClick={handleReset}
               disabled={working}
               style={{
-                fontFamily: INTER, fontSize: 12, fontWeight: 600,
-                padding: '9px 20px', borderRadius: 8, cursor: 'pointer',
+                fontFamily: INTER, fontSize: 13, fontWeight: 600,
+                padding: '10px 20px', borderRadius: 9, cursor: 'pointer',
                 background: SURF,
                 color: '#A82424',
                 border: '1px solid rgba(168,36,36,0.35)',
                 opacity: working ? 0.6 : 1,
+                transition: 'opacity 0.15s',
               }}
             >
-              {working ? 'Återställer…' : 'Återställ demodata'}
+              {working ? d.resetting : d.reset}
             </button>
           )}
         </div>
