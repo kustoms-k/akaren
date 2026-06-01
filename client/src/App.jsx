@@ -4,6 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell,
 } from 'recharts';
 import {
+  Home,
   LayoutDashboard, FilePlus, Briefcase, Truck,
   Settings as SettingsIcon, LogOut, Bell, Search, X, DollarSign, FileText,
   AlertTriangle, Fuel, Shield, Lock, Users, Leaf, CalendarDays, ScrollText, Network, CreditCard, Wrench,
@@ -181,6 +182,7 @@ function buildActivity(quotes, t) {
 
 // Roles that can access each nav item
 const NAV_ROLES = {
+  home:     ['agare', 'trafikledare', 'ekonomi', 'revisor'],
   quotes:   ['agare', 'trafikledare', 'ekonomi', 'revisor'],
   uppdrag:  ['agare', 'trafikledare', 'ekonomi', 'revisor'],
   fleet:    ['agare', 'trafikledare'],
@@ -192,6 +194,7 @@ const NAV_ROLES = {
 
 function getNavItems(t, role) {
   const all = [
+    { id: 'home',     label: t.nav.home,     Icon: Home,         group: 'main' },
     { id: 'quotes',   label: t.nav.quotes,   Icon: FilePlus,     group: 'main' },
     { id: 'uppdrag',  label: t.nav.uppdrag,  Icon: Briefcase,    group: 'main' },
     { id: 'fleet',    label: t.nav.fleet,    Icon: Truck,        group: 'main' },
@@ -1036,7 +1039,7 @@ function AppInner() {
 
   const [lowApproved,        setLowApproved]        = useState(() => new Set());
   const [reviewAcknowledged, setReviewAcknowledged] = useState(false);
-  const [activePage,      setActivePage]      = useState('quotes');
+  const [activePage,      setActivePage]      = useState('home');
   const [showNewQuote,    setShowNewQuote]     = useState(false); // kept for SubscriptionGate compat
   const [fuelPrice,       setFuelPrice]       = useState(null);
   const [weather,         setWeather]         = useState(null);
@@ -1507,7 +1510,8 @@ function AppInner() {
           transition={{ duration: 0.15, ease: 'easeInOut' }}
           style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
         >
-          {/* ── 5 core pages ──────────────────────────────────────────────── */}
+          {/* ── Core pages ────────────────────────────────────────────────── */}
+          {activePage === 'home'     && <HomePage onNavigate={setActivePage} />}
           {activePage === 'settings' && (
             <div style={{ flex: 1, overflow: 'auto' }}>
               <Settings onFortnoxResult={fortnoxResult} />
@@ -2714,6 +2718,238 @@ function InvoicesTab() {
 function OperationsPage() { ... }
 function FleetEnvPage() { ... }
 */
+
+// ─── HomePage ─────────────────────────────────────────────────────────────────
+function HomeKpi({ label, value, sub, accent, onClick }) {
+  return (
+    <motion.div
+      onClick={onClick}
+      whileHover={{ y: -2, boxShadow: SHADOW_CARD }}
+      transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+      style={{
+        background: SURF, border: `1px solid ${BORDER}`, borderRadius: 16,
+        padding: '20px 22px', boxShadow: SHADOW_SM,
+        cursor: onClick ? 'pointer' : 'default',
+      }}
+    >
+      <div style={{ fontFamily: INTER, fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: TEXT_MU, marginBottom: 10 }}>
+        {label}
+      </div>
+      <div style={{ fontFamily: INTER, fontSize: 26, fontWeight: 700, color: accent ?? TEXT_PR, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+        {value}
+      </div>
+      {sub && (
+        <div style={{ fontFamily: INTER, fontSize: 12, color: accent ?? TEXT_SEC, marginTop: 8 }}>
+          {sub}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+function HomePage({ onNavigate }) {
+  const { t, lang } = useLanguage();
+  const hn = t.home ?? {};
+
+  const [jobs,     setJobs]     = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  const [quotes,   setQuotes]   = useState([]);
+  const [fleet,    setFleet]    = useState([]);
+  const [loading,  setLoading]  = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      apiFetch('/api/jobs').then(r => r.ok ? r.json() : []).catch(() => []),
+      apiFetch('/api/invoices').then(r => r.ok ? r.json() : []).catch(() => []),
+      apiFetch('/api/quotes').then(r => r.ok ? r.json() : []).catch(() => []),
+      apiFetch('/api/fleet').then(r => r.ok ? r.json() : []).catch(() => []),
+    ]).then(([j, inv, q, f]) => {
+      setJobs(Array.isArray(j) ? j : []);
+      setInvoices(Array.isArray(inv) ? inv : []);
+      setQuotes(Array.isArray(q) ? q : []);
+      setFleet(Array.isArray(f) ? f : []);
+      setLoading(false);
+    });
+  }, []);
+
+  // KPIs
+  const pågående      = jobs.filter(j => j.status === 'pågående').length;
+  const planerade     = jobs.filter(j => j.status === 'planerad').length;
+  const utestaende    = invoices.filter(i => i.status === 'utestaende').reduce((s, i) => s + (Number(i.total) || 0), 0);
+  const förfallen     = invoices.filter(i => i.status === 'förfallen').reduce((s, i) => s + (Number(i.total) || 0), 0);
+  const outstanding   = utestaende + förfallen;
+  const slutfordNoInv = jobs.filter(j => j.status === 'slutförd' && !j.faktura_nr);
+  const toInvoiceSum  = slutfordNoInv.reduce((s, j) => s + (Number(j.totalpris_sek) || 0), 0);
+  const lezWarnings   = fleet.filter(v => !v.lez_godkand).length;
+
+  // Revenue by month — last 6 months of paid invoices (ex. VAT)
+  const now = new Date();
+  const revenueData = Array.from({ length: 6 }, (_, i) => {
+    const d   = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const lbl = d.toLocaleDateString(lang === 'sv' ? 'sv-SE' : 'en-GB', { month: 'short' });
+    const val = invoices
+      .filter(inv => inv.status === 'betald' && (inv.created_at ?? '').slice(0, 7) === key)
+      .reduce((s, inv) => s + (Number(inv.subtotal) || 0), 0);
+    return { label: lbl, value: val };
+  });
+
+  const dateStr = new Date().toLocaleDateString(lang === 'sv' ? 'sv-SE' : 'en-GB', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  });
+
+  const activeJobs    = jobs.filter(j => j.status === 'pågående' || j.status === 'planerad').slice(0, 6);
+  const pendingQuotes = quotes.filter(q => q.status === 'väntande' || q.status === 'motbud').slice(0, 6);
+
+  const ROW = { padding: '13px 20px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', gap: 12 };
+  const PANEL = { background: SURF, border: `1px solid ${BORDER}`, borderRadius: 16, boxShadow: SHADOW_SM, overflow: 'hidden' };
+  const PANEL_HEAD = { padding: '14px 20px', borderBottom: `1px solid ${BORDER}`, background: SURF_ELV, display: 'flex', alignItems: 'center', justifyContent: 'space-between' };
+  const VIEW_BTN = { fontFamily: INTER, fontSize: 12, color: ACCENT, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 };
+
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', padding: '32px 32px 56px', background: BG_BASE }}>
+
+      {/* Header */}
+      <div style={{ marginBottom: 28 }}>
+        <h1 style={{ fontFamily: INTER, fontSize: 24, fontWeight: 600, color: TEXT_PR, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+          {hn.heading}
+        </h1>
+        <p style={{ fontFamily: INTER, fontSize: 13, color: TEXT_SEC, margin: 0, textTransform: 'capitalize' }}>
+          {dateStr}
+        </p>
+      </div>
+
+      {/* KPI strip */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
+        <HomeKpi
+          label={hn.kpiJobs}
+          value={pågående + planerade}
+          sub={`${pågående} ${hn.ongoing} · ${planerade} ${hn.planned}`}
+          onClick={() => onNavigate('uppdrag')}
+        />
+        <HomeKpi
+          label={hn.kpiToInvoice}
+          value={fmtSEK(toInvoiceSum)}
+          sub={slutfordNoInv.length > 0 ? `${slutfordNoInv.length} ${hn.completedJobs}` : hn.allInvoiced}
+          accent={toInvoiceSum > 0 ? D_AMBER : undefined}
+          onClick={() => onNavigate('ekonomi')}
+        />
+        <HomeKpi
+          label={hn.kpiOutstanding}
+          value={fmtSEK(outstanding)}
+          sub={förfallen > 0 ? `${fmtSEK(förfallen)} ${hn.overdue}` : hn.noOverdue}
+          accent={förfallen > 0 ? D_RED : undefined}
+          onClick={() => onNavigate('ekonomi')}
+        />
+        <HomeKpi
+          label={hn.kpiFleet}
+          value={`${fleet.length - lezWarnings}/${fleet.length}`}
+          sub={lezWarnings > 0 ? `${lezWarnings} ${hn.lezWarning}` : hn.lezOk}
+          accent={lezWarnings > 0 ? D_AMBER : undefined}
+          onClick={() => onNavigate('fleet')}
+        />
+      </div>
+
+      {/* Two-column feed */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+
+        {/* Active jobs */}
+        <div style={PANEL}>
+          <div style={PANEL_HEAD}>
+            <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT_PR }}>{hn.activeJobsTitle}</span>
+            <button style={VIEW_BTN} onClick={() => onNavigate('uppdrag')}>{hn.viewAll} →</button>
+          </div>
+          {loading ? (
+            <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: INTER, fontSize: 13, color: TEXT_MU }}>…</div>
+          ) : activeJobs.length === 0 ? (
+            <div style={{ padding: '24px 20px', fontFamily: INTER, fontSize: 13, color: TEXT_MU, fontStyle: 'italic' }}>{hn.noActiveJobs}</div>
+          ) : activeJobs.map(job => (
+            <div key={job.id} style={ROW}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                  <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT_PR }}>{job.lasttyp ?? '—'}</span>
+                  {job.fordon_id && <span style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU, fontWeight: 500 }}>{job.fordon_id}</span>}
+                </div>
+                <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT_SEC, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {[job.upphämtning, job.leverans].filter(Boolean).join(' → ')}
+                </div>
+              </div>
+              <span style={{
+                fontFamily: INTER, fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
+                padding: '3px 10px', borderRadius: 20, flexShrink: 0,
+                ...(job.status === 'pågående'
+                  ? { background: 'rgba(37,99,235,0.08)',  color: '#2563eb', border: '1px solid rgba(37,99,235,0.2)' }
+                  : { background: 'rgba(107,114,128,0.08)', color: '#6b7280', border: '1px solid rgba(107,114,128,0.2)' }),
+              }}>
+                {job.status}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Quotes needing attention */}
+        <div style={PANEL}>
+          <div style={PANEL_HEAD}>
+            <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT_PR }}>{hn.quotesAttention}</span>
+            <button style={VIEW_BTN} onClick={() => onNavigate('quotes')}>{hn.viewAll} →</button>
+          </div>
+          {loading ? (
+            <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: INTER, fontSize: 13, color: TEXT_MU }}>…</div>
+          ) : pendingQuotes.length === 0 ? (
+            <div style={{ padding: '24px 20px', fontFamily: INTER, fontSize: 13, color: TEXT_MU, fontStyle: 'italic' }}>{hn.noPendingQuotes}</div>
+          ) : pendingQuotes.map(q => (
+            <div key={q.rawId ?? q.id} style={ROW}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: INTER, fontSize: 13, fontWeight: 500, color: TEXT_PR, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>
+                  {q.customer_name ?? '—'}
+                </div>
+                <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT_SEC }}>
+                  {[q.lasttyp, q.avstand_km ? `${q.avstand_km} km` : null, fmtSEK(q.totalpris_sek)].filter(Boolean).join(' · ')}
+                </div>
+              </div>
+              <span style={{
+                fontFamily: INTER, fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
+                padding: '3px 10px', borderRadius: 20, flexShrink: 0,
+                ...(q.status === 'motbud'
+                  ? { background: 'rgba(124,58,237,0.08)', color: '#7c3aed', border: '1px solid rgba(124,58,237,0.2)' }
+                  : { background: 'rgba(181,101,16,0.08)', color: '#b56510', border: '1px solid rgba(181,101,16,0.2)' }),
+              }}>
+                {q.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Revenue chart */}
+      <div style={PANEL}>
+        <div style={{ padding: '14px 20px', borderBottom: `1px solid ${BORDER}`, background: SURF_ELV }}>
+          <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT_PR }}>{hn.revenueTitle}</span>
+        </div>
+        <div style={{ padding: '24px 20px 16px' }}>
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={revenueData} barSize={32} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+              <XAxis dataKey="label" axisLine={false} tickLine={false}
+                tick={{ fontFamily: INTER, fontSize: 12, fill: TEXT_SEC }} />
+              <YAxis hide />
+              <Tooltip
+                formatter={(v) => [fmtSEK(v), hn.paid]}
+                contentStyle={{ fontFamily: INTER, fontSize: 12, border: `1px solid ${BORDER}`, borderRadius: 8, boxShadow: SHADOW_SM }}
+                cursor={{ fill: 'rgba(0,0,0,0.03)' }}
+              />
+              <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                {revenueData.map((_, i) => (
+                  <Cell key={i} fill={i === revenueData.length - 1 ? ACCENT : '#c8cdd8'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+    </div>
+  );
+}
 
 // ─── Auth gate — keeps hook count stable across auth transitions ─────────────
 function AppShell() {

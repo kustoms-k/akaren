@@ -1,5 +1,6 @@
 export const EN = {
   nav: {
+    home:         'Home',
     dashboard:    'Dashboard',
     quotes:       'Quotes',
     newQuote:     'New Quote',
@@ -19,6 +20,29 @@ export const EN = {
     natverk:         'Network',
     drivmedel:       'Fuel Cards',
     underhall:       'Maintenance',
+  },
+
+  home: {
+    heading:         'Overview',
+    kpiJobs:         'Active jobs',
+    kpiToInvoice:    'To invoice',
+    kpiOutstanding:  'Outstanding',
+    kpiFleet:        'Fleet',
+    ongoing:         'ongoing',
+    planned:         'planned',
+    completedJobs:   'completed jobs',
+    allInvoiced:     'All jobs invoiced',
+    overdue:         'overdue',
+    noOverdue:       'No overdue',
+    lezWarning:      'not LEZ approved',
+    lezOk:           'All LEZ approved',
+    activeJobsTitle: 'Active & planned jobs',
+    quotesAttention: 'Quotes needing attention',
+    viewAll:         'View all',
+    noActiveJobs:    'No active jobs',
+    noPendingQuotes: 'No pending quotes',
+    revenueTitle:    'Revenue last 6 months — paid invoices (SEK ex. VAT)',
+    paid:            'Paid',
   },
 
   ekonomi: {
@@ -1751,6 +1775,7 @@ export const EN = {
 
 export const SV = {
   nav: {
+    home:         'Hem',
     dashboard:    'Översikt',
     quotes:       'Offert',
     newQuote:     'Ny Offert',
@@ -1770,6 +1795,29 @@ export const SV = {
     natverk:         'Nätverk',
     drivmedel:       'Drivmedelskort',
     underhall:       'Underhåll',
+  },
+
+  home: {
+    heading:         'Översikt',
+    kpiJobs:         'Aktiva uppdrag',
+    kpiToInvoice:    'Att fakturera',
+    kpiOutstanding:  'Utestående',
+    kpiFleet:        'Fordon',
+    ongoing:         'pågående',
+    planned:         'planerade',
+    completedJobs:   'slutförda uppdrag',
+    allInvoiced:     'Alla uppdrag fakturerade',
+    overdue:         'förfallet',
+    noOverdue:       'Inga förfallna',
+    lezWarning:      'ej LEZ-godkänd',
+    lezOk:           'Alla LEZ-godkända',
+    activeJobsTitle: 'Aktiva och planerade uppdrag',
+    quotesAttention: 'Offerter som behöver åtgärd',
+    viewAll:         'Visa alla',
+    noActiveJobs:    'Inga aktiva uppdrag',
+    noPendingQuotes: 'Inga offerter att åtgärda',
+    revenueTitle:    'Omsättning senaste 6 månader — betalda fakturor (SEK exkl. moms)',
+    paid:            'Betalt',
   },
 
   ekonomi: {
