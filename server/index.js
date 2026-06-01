@@ -69,6 +69,7 @@ import natverkRouter                   from './routes/natverk.js';
 import drivmedelRouter                 from './routes/drivmedel.js';
 import underhallRouter                 from './routes/underhall.js';
 import demoRouter                      from './routes/demo.js';
+import { isDemoSeeded, seedDemoData }  from './seed/demoData.js';
 import { authLimiter, analyseLimiter, apiLimiter } from './middleware/rateLimit.js';
 import { requireSubscription } from './middleware/requireSubscription.js';
 import db from './db.js';
@@ -222,7 +223,16 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`)
+  console.log(`Server running on port ${PORT}`);
+  if (!isDemoSeeded()) {
+    console.log('[demo] Empty database — auto-seeding 2026 Stockholm demo data...');
+    try {
+      const r = seedDemoData();
+      console.log(`[demo] Auto-seeded ${r.seeded} rows.`);
+    } catch (e) {
+      console.error('[demo] Auto-seed error:', e.message);
+    }
+  }
 })
 
 setTimeout(runPricingInsightsJob, 5_000);

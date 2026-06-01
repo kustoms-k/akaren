@@ -700,9 +700,9 @@ export function Settings({ onFortnoxResult }) {
 function DemoPanel({ section, sectionHead }) {
   const { t } = useLanguage();
   const d = t.settings.demo;
-  const [seeded,   setSeeded]   = useState(null);
-  const [working,  setWorking]  = useState(false);
-  const [msg,      setMsg]      = useState(null);
+  const [seeded,  setSeeded]  = useState(null);
+  const [working, setWorking] = useState(false);
+  const [msg,     setMsg]     = useState(null);
 
   useEffect(() => {
     apiFetch('/api/demo/status')
@@ -711,24 +711,20 @@ function DemoPanel({ section, sectionHead }) {
       .catch(() => setSeeded(false));
   }, []);
 
-  async function handleSeed() {
-    setWorking(true); setMsg(null);
-    try {
-      const r   = await apiFetch('/api/demo/seed', { method: 'POST' });
-      const res = await r.json();
-      if (!r.ok) { setMsg({ text: res.error ?? d.errorFallback, ok: false }); }
-      else        { setSeeded(true); setMsg({ text: d.loadedMsg(res.seeded), ok: true }); }
-    } catch { setMsg({ text: d.networkError, ok: false }); }
-    setWorking(false);
-  }
-
   async function handleReset() {
     if (!window.confirm(d.resetConfirm)) return;
     setWorking(true); setMsg(null);
     try {
-      const r = await apiFetch('/api/demo/reset', { method: 'POST' });
-      if (!r.ok) { const res = await r.json(); setMsg({ text: res.error ?? d.resetError, ok: false }); }
-      else        { setSeeded(false); setMsg({ text: d.resetMsg, ok: true }); }
+      const r1 = await apiFetch('/api/demo/reset', { method: 'POST' });
+      if (!r1.ok) {
+        const res = await r1.json();
+        setMsg({ text: res.error ?? d.resetError, ok: false });
+        setWorking(false); return;
+      }
+      const r2  = await apiFetch('/api/demo/seed', { method: 'POST' });
+      const res = await r2.json();
+      if (!r2.ok) { setMsg({ text: res.error ?? d.errorFallback, ok: false }); }
+      else        { setSeeded(true); setMsg({ text: d.resetMsg, ok: true }); }
     } catch { setMsg({ text: d.networkError, ok: false }); }
     setWorking(false);
   }
@@ -769,41 +765,20 @@ function DemoPanel({ section, sectionHead }) {
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button
-            onClick={handleSeed}
-            disabled={working || seeded === true}
-            style={{
-              fontFamily: INTER, fontSize: 13, fontWeight: 600,
-              padding: '10px 20px', borderRadius: 9, cursor: seeded ? 'not-allowed' : 'pointer',
-              background: seeded ? SURF : TEXT,
-              color: seeded ? MUTED : WHITE,
-              border: `1px solid ${seeded ? BORDER : TEXT}`,
-              opacity: working ? 0.6 : 1,
-              transition: 'opacity 0.15s',
-            }}
-          >
-            {working && !seeded ? d.loading : d.load}
-          </button>
-
-          {seeded && (
-            <button
-              onClick={handleReset}
-              disabled={working}
-              style={{
-                fontFamily: INTER, fontSize: 13, fontWeight: 600,
-                padding: '10px 20px', borderRadius: 9, cursor: 'pointer',
-                background: SURF,
-                color: '#A82424',
-                border: '1px solid rgba(168,36,36,0.35)',
-                opacity: working ? 0.6 : 1,
-                transition: 'opacity 0.15s',
-              }}
-            >
-              {working ? d.resetting : d.reset}
-            </button>
-          )}
-        </div>
+        <button
+          onClick={handleReset}
+          disabled={working}
+          style={{
+            fontFamily: INTER, fontSize: 13, fontWeight: 600,
+            padding: '10px 20px', borderRadius: 9, cursor: 'pointer',
+            background: SURF, color: '#A82424',
+            border: '1px solid rgba(168,36,36,0.35)',
+            opacity: working ? 0.6 : 1,
+            transition: 'opacity 0.15s',
+          }}
+        >
+          {working ? d.resetting : d.reset}
+        </button>
       </div>
     </div>
   );
