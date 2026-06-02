@@ -2575,11 +2575,19 @@ function EkonomiPage() {
   );
 }
 
-// ─── InvoicesTab — invoice list inside Ekonomi ───────────────────────────────
+// ─── InvoicesTab — cash flow view inside Ekonomi ─────────────────────────────
 function InvoicesTab() {
-  const { t } = useLanguage();
-  const [invoices, setInvoices] = useState([]);
-  const [loading,  setLoading]  = useState(true);
+  const { t }                         = useLanguage();
+  const { company }                   = useAuth();
+  const [invoices,   setInvoices]     = useState([]);
+  const [loading,    setLoading]      = useState(true);
+  const [showPaid,   setShowPaid]     = useState(false);
+  const [syncing,    setSyncing]      = useState(false);
+  const [syncMsg,    setSyncMsg]      = useState(null);
+  const [fortnoxOk,  setFortnoxOk]   = useState(false);
+  const [markingPaid, setMarkingPaid] = useState(null);
+  const [reminderSending, setReminderSending] = useState(null);
+  const [reminderDone,    setReminderDone]    = useState(new Set());
 
   useEffect(() => {
     apiFetch('/api/invoices')
@@ -2587,130 +2595,351 @@ function InvoicesTab() {
       .then((d) => setInvoices(Array.isArray(d) ? d : (d.invoices ?? [])))
       .catch(() => {})
       .finally(() => setLoading(false));
+    apiFetch('/api/fortnox/status')
+      .then((r) => r.ok ? r.json() : {})
+      .then((d) => setFortnoxOk(d.connected === true))
+      .catch(() => {});
   }, []);
 
-  const STATUS_CFG = {
-    betald:     { color: D_GREEN, bg: 'rgba(22,163,74,0.08)',  border: 'rgba(22,163,74,0.22)'  },
-    utestaende: { color: D_AMBER, bg: 'rgba(181,101,16,0.08)', border: 'rgba(181,101,16,0.22)' },
-    förfallen:  { color: D_RED,   bg: 'rgba(220,38,38,0.08)',  border: 'rgba(220,38,38,0.22)'  },
-  };
-
-  const fmtStatus = (s) => t.ekonomi?.status?.[s] ?? s;
-  const fmtDue    = (s) => {
+  const fmtDue = (s) => {
     if (!s) return '—';
-    try { return new Intl.DateTimeFormat('sv-SE', { day: 'numeric', month: 'short' }).format(new Date(s)); }
+    try { return new Intl.DateTimeFormat('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(s + 'T12:00:00')); }
     catch { return s; }
   };
 
-  const totals = invoices.reduce((acc, inv) => {
-    const st = inv.status ?? 'utestaende';
-    acc[st] = (acc[st] ?? 0) + (Number(inv.total) || 0);
-    return acc;
-  }, {});
+  async function handleMarkPaid(inv) {
+    setMarkingPaid(inv.id);
+    try {
+      const r = await apiFetch(`/api/invoices/${inv.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'betald' }),
+      });
+      if (r.ok) setInvoices((prev) => prev.map((i) => i.id === inv.id ? { ...i, status: 'betald' } : i));
+    } catch { /* ignore */ }
+    finally { setMarkingPaid(null); }
+  }
+
+  async function handleReminder(inv) {
+    setReminderSending(inv.id);
+    try {
+      const { generatePaminelse } = await import('./utils/generatePaminelse.js');
+      const reminderCount = (inv.reminder_count ?? 0) + 1;
+      const { base64, filename } = generatePaminelse(inv, company, reminderCount);
+
+      if (inv.customer_email) {
+        const r = await apiFetch(`/api/invoices/${inv.id}/reminder`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: inv.customer_email, pdf_base64: base64, filename }),
+        });
+        if (r.ok) {
+          setInvoices((prev) => prev.map((i) =>
+            i.id === inv.id
+              ? { ...i, reminder_sent_at: new Date().toISOString(), reminder_count: reminderCount }
+              : i,
+          ));
+        }
+      } else {
+        const link = document.createElement('a');
+        link.href = base64;
+        link.download = filename;
+        link.click();
+      }
+      setReminderDone((prev) => new Set([...prev, inv.id]));
+    } catch { /* ignore */ }
+    finally { setReminderSending(null); }
+  }
+
+  async function handleSyncFortnox() {
+    setSyncing(true);
+    setSyncMsg(null);
+    try {
+      const r = await apiFetch('/api/invoices/sync-fortnox', { method: 'POST' });
+      if (r.ok) {
+        const d = await r.json();
+        setSyncMsg(t.ekonomi.syncDone(d.updated ?? 0));
+        const r2 = await apiFetch('/api/invoices');
+        if (r2.ok) setInvoices(await r2.json());
+      }
+    } catch { /* ignore */ }
+    finally { setSyncing(false); }
+  }
+
+  const overdue     = invoices.filter((i) => i.status === 'förfallen');
+  const outstanding = invoices.filter((i) => i.status === 'utestaende');
+  const paid        = invoices.filter((i) => i.status === 'betald');
+
+  const totalOverdue     = overdue.reduce((s, i) => s + (Number(i.total) || 0), 0);
+  const totalOutstanding = outstanding.reduce((s, i) => s + (Number(i.total) || 0), 0);
+  const totalPaid        = paid.reduce((s, i) => s + (Number(i.total) || 0), 0);
+  const totalToCollect   = totalOverdue + totalOutstanding;
+
+  const cardBase = {
+    background: SURF, border: `1px solid ${BORDER}`, borderRadius: 14,
+    padding: '16px 20px', boxShadow: SHADOW_SM,
+  };
+
+  function SectionHeader({ label, count, color }) {
+    return (
+      <div style={{
+        padding: '9px 16px', background: SURF_ELV,
+        borderBottom: `1px solid ${BORDER}`,
+        display: 'flex', alignItems: 'center', gap: 10,
+      }}>
+        <span style={{ fontFamily: INTER, fontSize: 11, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: color ?? TEXT_MU }}>
+          {label}
+        </span>
+        <span style={{
+          fontFamily: INTER, fontSize: 11, fontWeight: 600,
+          background: color ? `rgba(${color === D_RED ? '220,38,38' : '181,101,16'},0.09)` : SURF_ELV,
+          color: color ?? TEXT_MU,
+          padding: '1px 8px', borderRadius: 10,
+          border: `1px solid ${color ? `rgba(${color === D_RED ? '220,38,38' : '181,101,16'},0.2)` : BORDER}`,
+        }}>
+          {count}
+        </span>
+      </div>
+    );
+  }
+
+  function InvoiceRow({ inv, showActions }) {
+    const isPaying   = markingPaid    === inv.id;
+    const isSending  = reminderSending === inv.id;
+    const doneRemind = reminderDone.has(inv.id) || !!inv.reminder_sent_at;
+    const hasEmail   = !!inv.customer_email;
+
+    return (
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '140px 1fr 120px 120px auto',
+        alignItems: 'center',
+        gap: 0,
+        padding: '11px 16px',
+        borderBottom: `1px solid ${BORDER}`,
+        background: 'transparent',
+        transition: 'background 0.1s',
+      }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = SURF_ELV; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+      >
+        {/* Faktura nr */}
+        <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: ACCENT, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+          {inv.faktura_nr ?? `#${inv.id}`}
+        </span>
+
+        {/* Customer + overdue badge */}
+        <span style={{ fontFamily: INTER, fontSize: 13, color: TEXT_PR, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 12 }}>
+          {inv.customer_name ?? '—'}
+          {inv.days_overdue > 0 && (
+            <span style={{
+              marginLeft: 8, fontFamily: INTER, fontSize: 10, fontWeight: 600,
+              background: 'rgba(220,38,38,0.08)', color: D_RED,
+              border: '1px solid rgba(220,38,38,0.2)', borderRadius: 10,
+              padding: '1px 7px', whiteSpace: 'nowrap',
+            }}>
+              {t.ekonomi.daysOverdue(inv.days_overdue)}
+            </span>
+          )}
+          {doneRemind && inv.days_overdue > 0 && (
+            <span style={{ marginLeft: 6, fontFamily: INTER, fontSize: 10, color: D_AMBER }}>
+              ✓ {t.ekonomi.reminderSent}
+            </span>
+          )}
+        </span>
+
+        {/* Amount */}
+        <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 500, color: TEXT_PR, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', textAlign: 'right', paddingRight: 16 }}>
+          {fmtSEK(inv.total)}
+        </span>
+
+        {/* Due date */}
+        <span style={{ fontFamily: INTER, fontSize: 12, color: inv.days_overdue > 0 ? D_RED : TEXT_SEC, whiteSpace: 'nowrap', paddingRight: 12 }}>
+          {fmtDue(inv.due_date)}
+        </span>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', flexShrink: 0 }}>
+          {showActions && inv.status !== 'betald' && (
+            <>
+              <button
+                disabled={isPaying}
+                onClick={() => handleMarkPaid(inv)}
+                style={{
+                  fontFamily: INTER, fontSize: 11, fontWeight: 600,
+                  padding: '4px 10px', borderRadius: 6,
+                  background: isPaying ? SURF_ELV : ACCENT_SF,
+                  color: isPaying ? TEXT_MU : ACCENT,
+                  border: `1px solid ${BORDER}`,
+                  cursor: isPaying ? 'default' : 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'background 0.15s',
+                }}
+              >
+                {isPaying ? t.ekonomi.markingPaid : t.ekonomi.markPaid}
+              </button>
+              {inv.status === 'förfallen' && (
+                <button
+                  disabled={isSending}
+                  onClick={() => handleReminder(inv)}
+                  title={!hasEmail ? t.ekonomi.noEmail : undefined}
+                  style={{
+                    fontFamily: INTER, fontSize: 11, fontWeight: 600,
+                    padding: '4px 10px', borderRadius: 6,
+                    background: isSending ? SURF_ELV : doneRemind ? 'rgba(22,163,74,0.07)' : 'rgba(220,38,38,0.06)',
+                    color: isSending ? TEXT_MU : doneRemind ? D_GREEN : D_RED,
+                    border: `1px solid ${doneRemind ? 'rgba(22,163,74,0.25)' : 'rgba(220,38,38,0.22)'}`,
+                    cursor: isSending ? 'default' : 'pointer',
+                    whiteSpace: 'nowrap',
+                    transition: 'background 0.15s',
+                  }}
+                >
+                  {isSending
+                    ? t.ekonomi.sendingReminder
+                    : hasEmail
+                      ? (doneRemind ? `↻ ${t.ekonomi.sendReminder}` : t.ekonomi.sendReminder)
+                      : t.ekonomi.reminderDownload}
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', background: BG_BASE }}>
-      {/* Page heading */}
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontFamily: INTER, fontSize: 24, fontWeight: 600, color: TEXT_PR, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
-          {t.ekonomi.heading}
-        </h1>
-        <p style={{ fontFamily: INTER, fontSize: 13, color: TEXT_SEC, margin: 0 }}>
-          {t.ekonomi.invoiceCount(invoices.length)}
-        </p>
-      </div>
 
-      {/* KPI strip */}
-      {invoices.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
-          {[
-            { label: t.ekonomi.status.betald,     amount: totals.betald     ?? 0, cfg: STATUS_CFG.betald     },
-            { label: t.ekonomi.status.utestaende, amount: totals.utestaende ?? 0, cfg: STATUS_CFG.utestaende },
-            { label: t.ekonomi.status.förfallen,  amount: totals.förfallen  ?? 0, cfg: STATUS_CFG.förfallen  },
-          ].map(({ label, amount, cfg }) => (
-            <div key={label} style={{
-              background: SURF, border: `1px solid ${BORDER}`, borderRadius: 14,
-              padding: '16px 20px',
-              boxShadow: SHADOW_SM,
-            }}>
-              <div style={{ fontFamily: INTER, fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: TEXT_MU, marginBottom: 8 }}>
-                {label}
-              </div>
-              <div style={{ fontFamily: INTER, fontSize: 22, fontWeight: 700, color: TEXT_PR, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
-                {fmtSEK(amount)}
-              </div>
-            </div>
-          ))}
+      {/* Page heading + sync button */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 22 }}>
+        <div>
+          <h1 style={{ fontFamily: INTER, fontSize: 20, fontWeight: 700, color: TEXT_PR, margin: '0 0 3px', letterSpacing: '-0.02em' }}>
+            {t.ekonomi.heading}
+          </h1>
+          <p style={{ fontFamily: INTER, fontSize: 13, color: TEXT_SEC, margin: 0 }}>
+            {t.ekonomi.invoiceCount(invoices.length)}
+          </p>
         </div>
-      )}
-
-      {/* Invoice table */}
-      <div style={{ background: SURF, border: `1px solid ${BORDER}`, borderRadius: 16, boxShadow: SHADOW_SM, overflow: 'hidden' }}>
-        {loading ? (
-          <div style={{ padding: 40, textAlign: 'center', fontFamily: INTER, fontSize: 13, color: TEXT_MU }}>
-            {t.settings.loading}
-          </div>
-        ) : invoices.length === 0 ? (
-          <div style={{ padding: 40, textAlign: 'center', fontFamily: INTER, fontSize: 13, color: TEXT_MU, fontStyle: 'italic' }}>
-            {t.ekonomi.noInvoices}
-          </div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: SURF_ELV, borderBottom: `1px solid ${BORDER}` }}>
-                  {[t.ekonomi.cols.nr, t.ekonomi.cols.customer, t.ekonomi.cols.amount, t.ekonomi.cols.due, t.ekonomi.cols.status].map((h) => (
-                    <th key={h} style={{
-                      padding: '10px 16px', textAlign: 'left',
-                      fontFamily: INTER, fontSize: 11, fontWeight: 600,
-                      letterSpacing: '0.06em', textTransform: 'uppercase', color: TEXT_MU,
-                      whiteSpace: 'nowrap',
-                    }}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {invoices.map((inv, i) => {
-                  const st  = inv.status ?? 'utestaende';
-                  const cfg = STATUS_CFG[st] ?? STATUS_CFG.utestaende;
-                  return (
-                    <tr
-                      key={inv.id ?? i}
-                      style={{ borderBottom: `1px solid ${BORDER}` }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = SURF_ELV; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    >
-                      <td style={{ padding: '12px 16px', fontFamily: INTER, fontSize: 13, fontWeight: 600, color: ACCENT, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
-                        {inv.faktura_nr ?? `#${inv.id}`}
-                      </td>
-                      <td style={{ padding: '12px 16px', fontFamily: INTER, fontSize: 13, color: TEXT_PR, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {inv.customer_name ?? '—'}
-                      </td>
-                      <td style={{ padding: '12px 16px', fontFamily: INTER, fontSize: 13, fontWeight: 500, color: TEXT_PR, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
-                        {fmtSEK(inv.total)}
-                      </td>
-                      <td style={{ padding: '12px 16px', fontFamily: INTER, fontSize: 12, color: TEXT_SEC, whiteSpace: 'nowrap' }}>
-                        {fmtDue(inv.due_date)}
-                      </td>
-                      <td style={{ padding: '12px 16px' }}>
-                        <span style={{
-                          fontFamily: INTER, fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
-                          padding: '3px 10px', borderRadius: 20,
-                          background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
-                        }}>
-                          {fmtStatus(st)}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        {fortnoxOk && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+            <button
+              disabled={syncing}
+              onClick={handleSyncFortnox}
+              style={{
+                fontFamily: INTER, fontSize: 12, fontWeight: 600,
+                padding: '6px 14px', borderRadius: 8,
+                background: syncing ? SURF_ELV : ACCENT,
+                color: syncing ? TEXT_MU : '#fff',
+                border: `1px solid ${syncing ? BORDER : ACCENT}`,
+                cursor: syncing ? 'default' : 'pointer',
+                transition: 'background 0.15s',
+              }}
+            >
+              {syncing ? t.ekonomi.syncing : t.ekonomi.syncFortnox}
+            </button>
+            {syncMsg && (
+              <span style={{ fontFamily: INTER, fontSize: 11, color: D_GREEN }}>{syncMsg}</span>
+            )}
           </div>
         )}
       </div>
+
+      {/* KPI cards */}
+      {invoices.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
+          <div style={cardBase}>
+            <div style={{ fontFamily: INTER, fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: TEXT_MU, marginBottom: 8 }}>
+              {t.ekonomi.toCollect}
+            </div>
+            <div style={{ fontFamily: INTER, fontSize: 24, fontWeight: 700, color: TEXT_PR, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+              {fmtSEK(totalToCollect)}
+            </div>
+            <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT_MU, marginTop: 6 }}>
+              {t.ekonomi.invoices(overdue.length + outstanding.length)}
+            </div>
+          </div>
+          <div style={{ ...cardBase, border: totalOverdue > 0 ? `1px solid rgba(220,38,38,0.25)` : `1px solid ${BORDER}` }}>
+            <div style={{ fontFamily: INTER, fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: totalOverdue > 0 ? D_RED : TEXT_MU, marginBottom: 8 }}>
+              {t.ekonomi.overdue}
+            </div>
+            <div style={{ fontFamily: INTER, fontSize: 24, fontWeight: 700, color: totalOverdue > 0 ? D_RED : TEXT_PR, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+              {fmtSEK(totalOverdue)}
+            </div>
+            <div style={{ fontFamily: INTER, fontSize: 12, color: totalOverdue > 0 ? D_RED : TEXT_MU, marginTop: 6, opacity: 0.8 }}>
+              {t.ekonomi.invoices(overdue.length)}
+            </div>
+          </div>
+          <div style={cardBase}>
+            <div style={{ fontFamily: INTER, fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: TEXT_MU, marginBottom: 8 }}>
+              {t.ekonomi.paid}
+            </div>
+            <div style={{ fontFamily: INTER, fontSize: 24, fontWeight: 700, color: D_GREEN, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+              {fmtSEK(totalPaid)}
+            </div>
+            <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT_MU, marginTop: 6 }}>
+              {t.ekonomi.invoices(paid.length)}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div style={{ background: SURF, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 40, textAlign: 'center', fontFamily: INTER, fontSize: 13, color: TEXT_MU, boxShadow: SHADOW_SM }}>
+          {t.settings.loading}
+        </div>
+      ) : invoices.length === 0 ? (
+        <div style={{ background: SURF, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 40, textAlign: 'center', fontFamily: INTER, fontSize: 13, color: TEXT_MU, fontStyle: 'italic', boxShadow: SHADOW_SM }}>
+          {t.ekonomi.noInvoices}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          {/* Overdue section */}
+          {overdue.length > 0 && (
+            <div style={{ background: SURF, border: `1px solid rgba(220,38,38,0.3)`, borderRadius: 16, boxShadow: SHADOW_SM, overflow: 'hidden' }}>
+              <SectionHeader label={t.ekonomi.sectionOverdue} count={overdue.length} color={D_RED} />
+              {overdue.map((inv) => <InvoiceRow key={inv.id} inv={inv} showActions />)}
+            </div>
+          )}
+
+          {/* Outstanding section */}
+          {outstanding.length > 0 && (
+            <div style={{ background: SURF, border: `1px solid ${BORDER}`, borderRadius: 16, boxShadow: SHADOW_SM, overflow: 'hidden' }}>
+              <SectionHeader label={t.ekonomi.sectionOutstanding} count={outstanding.length} color={D_AMBER} />
+              {outstanding.map((inv) => <InvoiceRow key={inv.id} inv={inv} showActions />)}
+            </div>
+          )}
+
+          {/* Paid section — collapsed by default */}
+          {paid.length > 0 && (
+            <div style={{ background: SURF, border: `1px solid ${BORDER}`, borderRadius: 16, boxShadow: SHADOW_SM, overflow: 'hidden' }}>
+              <button
+                onClick={() => setShowPaid((v) => !v)}
+                style={{
+                  width: '100%', padding: '9px 16px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  background: SURF_ELV, border: 'none', cursor: 'pointer',
+                  borderBottom: showPaid ? `1px solid ${BORDER}` : 'none',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontFamily: INTER, fontSize: 11, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: D_GREEN }}>
+                    {t.ekonomi.sectionPaid}
+                  </span>
+                  <span style={{ fontFamily: INTER, fontSize: 11, fontWeight: 600, background: 'rgba(22,163,74,0.09)', color: D_GREEN, border: '1px solid rgba(22,163,74,0.22)', borderRadius: 10, padding: '1px 8px' }}>
+                    {paid.length}
+                  </span>
+                </div>
+                <span style={{ fontFamily: INTER, fontSize: 12, color: TEXT_MU }}>
+                  {showPaid ? t.ekonomi.hidePaid : t.ekonomi.showPaid(paid.length)}
+                </span>
+              </button>
+              {showPaid && paid.map((inv) => <InvoiceRow key={inv.id} inv={inv} showActions={false} />)}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

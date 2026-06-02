@@ -530,6 +530,9 @@ const migrations = [
   `ALTER TABLE company_fleet ADD COLUMN forbrukning_l_per_km REAL`,
   // Actual reconciled fuel cost per job (set during fuel card reconciliation)
   `ALTER TABLE quotes ADD COLUMN actual_bränsle_sek REAL`,
+  // Payment reminders
+  `ALTER TABLE invoices ADD COLUMN reminder_sent_at  TEXT`,
+  `ALTER TABLE invoices ADD COLUMN reminder_count    INTEGER NOT NULL DEFAULT 0`,
 ];
 
 // Backfill: companies created before the onboarding feature launch are already set up

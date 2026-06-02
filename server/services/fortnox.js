@@ -245,6 +245,44 @@ export async function createFortnoxInvoice(companyId, { job, quote, customerNr }
   return result.Invoice?.DocumentNumber ?? null;
 }
 
+// ── Sync invoice payment statuses from Fortnox ───────────────────────────────
+const stmtLocalUnpaid = db.prepare(`
+  SELECT id, fortnox_invoice_nr
+  FROM invoices
+  WHERE company_id = ? AND fortnox_invoice_nr IS NOT NULL AND status != 'betald'
+`);
+const stmtUpdateInvStatus = db.prepare(
+  `UPDATE invoices SET status = ? WHERE id = ? AND company_id = ?`
+);
+
+export async function syncInvoiceStatuses(companyId) {
+  const localInvoices = stmtLocalUnpaid.all(companyId);
+  if (localInvoices.length === 0) return { updated: 0 };
+
+  // Fetch recent Fortnox invoices (up to 500)
+  let allFx = [];
+  for (let page = 1; page <= 5; page++) {
+    const data = await fortnoxFetch(companyId, 'GET', `/invoices?limit=100&offset=${(page - 1) * 100 + 1}`);
+    const rows = data.Invoices ?? [];
+    allFx = allFx.concat(rows);
+    if (rows.length < 100) break;
+  }
+
+  const balanceByNr = new Map(allFx.map((i) => [String(i.DocumentNumber), Number(i.Balance ?? 0)]));
+
+  let updated = 0;
+  for (const inv of localInvoices) {
+    const balance = balanceByNr.get(String(inv.fortnox_invoice_nr));
+    if (balance === 0) {
+      stmtUpdateInvStatus.run('betald', inv.id, companyId);
+      updated++;
+    }
+  }
+
+  stmtSetLastSync.run(companyId);
+  return { updated };
+}
+
 // ── First-connect helper ──────────────────────────────────────────────────────
 export async function connectFortnox(companyId, code) {
   const tokenRes = await postToken({
