@@ -12,7 +12,7 @@ const BG_BASE   = '#f4f5f7';
 const SURF      = '#ffffff';
 const ACCENT    = '#2d3340';
 const ACCENT_SF = '#eef0f3';
-const BORDER    = '#e4e6ea';
+const BORDER    = '#ececef';
 const TEXT_PR   = '#1a1d24';
 const TEXT_SEC  = '#4b5563';
 const TEXT_MUT  = '#6b7280';
@@ -495,7 +495,7 @@ export default function Natverk() {
     <div style={{ padding: '28px 32px', fontFamily: INTER }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontFamily: INTER, fontSize: 22, fontWeight: 900, color: TEXT_PR, margin: 0, letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontFamily: INTER, fontSize: 24, fontWeight: 700, color: TEXT_PR, margin: 0, letterSpacing: '-0.02em' }}>
             {t.natverk.title}
           </h1>
           <p style={{ fontFamily: INTER, fontSize: 13, color: TEXT_MUT, margin: '4px 0 0' }}>

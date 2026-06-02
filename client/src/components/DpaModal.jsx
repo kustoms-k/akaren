@@ -3,13 +3,12 @@ import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 const INTER  = "'Geist', system-ui, sans-serif";
-const BLUE   = '#4361ee';
-const BLUE_DK = '#3451d1';
+const BLUE   = '#2d3340';
 const WHITE  = '#ffffff';
-const BORDER = '#e9ecef';
-const TEXT   = '#1a1a2e';
-const MUTED  = '#6c757d';
-const SURF   = '#f8f9fa';
+const BORDER = '#ececef';
+const TEXT   = '#1a1d24';
+const MUTED  = '#6b7280';
+const SURF   = '#f4f5f7';
 
 export function DpaModal({ onAccepted }) {
   const { t } = useLanguage();
@@ -163,7 +162,7 @@ export function DpaModal({ onAccepted }) {
                 transition: 'background 0.15s, color 0.15s',
                 flexShrink: 0,
               }}
-              onMouseEnter={(e) => { if (scrolled && dpa) e.currentTarget.style.background = BLUE_DK; }}
+              onMouseEnter={(e) => { if (scrolled && dpa) e.currentTarget.style.background = '#1e2530'; }}
               onMouseLeave={(e) => { if (scrolled && dpa) e.currentTarget.style.background = BLUE; }}
             >
               {accepting ? t.dpa.accepting : t.dpa.accept}

@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const AMBER  = '#c9921e';
-const BG     = '#edeae1';
+const AMBER  = '#B56510';
+const BG     = '#f4f5f7';
 const WHITE  = '#ffffff';
-const BORDER = '#cfc9bb';
-const TEXT   = '#151210';
-const MUTED  = '#6a6050';
+const BORDER = '#ececef';
+const TEXT   = '#1a1d24';
+const MUTED  = '#6b7280';
 const OUTFIT = "'Geist', system-ui, sans-serif";
+const INTER  = OUTFIT;
+const WHITE2 = '#ffffff';
 
 
 const MAX_LEN = 4000;
@@ -45,7 +47,7 @@ export function InquiryInput({ onAnalyse, loading, apiError, isOnline = true }) 
         </span>
         <span style={{
           fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 10,
-          color: nearLimit ? '#c45454' : MUTED,
+          color: nearLimit ? '#dc2626' : MUTED,
           letterSpacing: '0.04em',
           transition: 'color 0.2s',
         }}>
@@ -57,7 +59,7 @@ export function InquiryInput({ onAnalyse, loading, apiError, isOnline = true }) 
       <div style={{
         borderRadius: 8,
         border: `1.5px solid ${focused ? AMBER : BORDER}`,
-        boxShadow: focused ? '0 0 0 3px rgba(201,146,30,0.11)' : 'none',
+        boxShadow: focused ? '0 0 0 3px rgba(181,101,16,0.11)' : 'none',
         transition: 'border-color 0.15s, box-shadow 0.15s',
         background: WHITE,
         overflow: 'hidden',
@@ -92,12 +94,12 @@ export function InquiryInput({ onAnalyse, loading, apiError, isOnline = true }) 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         {/* Inline error / offline status */}
         {!isOnline && (
-          <span style={{ fontFamily: OUTFIT, fontSize: 12, color: '#c45454', flex: 1, lineHeight: 1.4 }}>
+          <span style={{ fontFamily: OUTFIT, fontSize: 12, color: '#dc2626', flex: 1, lineHeight: 1.4 }}>
             {t.inquiry.offline}
           </span>
         )}
         {errorMsg && isOnline && (
-          <span style={{ fontFamily: OUTFIT, fontSize: 12, color: '#c45454', flex: 1, lineHeight: 1.4 }}>
+          <span style={{ fontFamily: OUTFIT, fontSize: 12, color: '#dc2626', flex: 1, lineHeight: 1.4 }}>
             {errorMsg}
           </span>
         )}
@@ -114,7 +116,7 @@ export function InquiryInput({ onAnalyse, loading, apiError, isOnline = true }) 
             letterSpacing: '0.07em',
             textTransform: 'uppercase',
             background: disabled ? BG : AMBER,
-            color: disabled ? MUTED : TEXT,
+            color: disabled ? MUTED : WHITE,
             border: `1.5px solid ${disabled ? BORDER : AMBER}`,
             borderRadius: 7,
             padding: '9px 18px',

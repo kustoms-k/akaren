@@ -9,7 +9,7 @@ const BG_BASE   = '#f4f5f7';
 const SURF      = '#ffffff';
 const ACCENT    = '#2d3340';
 const ACCENT_SF = '#eef0f3';
-const BORDER    = '#e4e6ea';
+const BORDER    = '#ececef';
 const TEXT_PR   = '#1a1d24';
 const TEXT_SEC  = '#4b5563';
 const TEXT_MUT  = '#6b7280';
@@ -285,7 +285,7 @@ export function Upphandlingar() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: TEXT_PR, margin: 0, letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: TEXT_PR, margin: 0, letterSpacing: '-0.02em' }}>
             {t.upphandlingar.title}
           </h1>
           <p style={{ fontSize: 13, color: TEXT_MUT, margin: '4px 0 0', fontWeight: 400 }}>

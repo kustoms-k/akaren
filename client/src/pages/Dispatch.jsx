@@ -6,14 +6,15 @@ import { db } from '../db/dexie.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const AMBER  = '#c9a84c';
-const BG     = '#f5f3ee';
+const AMBER  = '#B56510';
+const BG     = '#f4f5f7';
 const WHITE  = '#ffffff';
-const BORDER = '#e6e2da';
-const TEXT   = '#17161a';
-const MUTED  = '#6b6574';
-const FAINT  = '#a09aa8';
+const BORDER = '#ececef';
+const TEXT   = '#1a1d24';
+const MUTED  = '#6b7280';
+const FAINT  = '#9ca3af';
 const OUTFIT = "'Geist', system-ui, sans-serif";
+const INTER  = OUTFIT;
 
 
 const STATUS_COLORS = {
@@ -80,6 +81,7 @@ function JobCard({ job, fleet, drivers, onAdvance, advancing, t }) {
   const canEnd   = job.status === 'aktiv';
   const busy     = advancing === job.id;
   const statusLabel = t.dispatch.statuses[job.status] ?? job.status;
+  const cfg      = STATUS_COLORS[job.status] ?? STATUS_COLORS.planerad;
 
   return (
     <div style={{
@@ -135,8 +137,8 @@ function JobCard({ job, fleet, drivers, onAdvance, advancing, t }) {
             marginTop: 2,
             fontFamily: OUTFIT, fontSize: 10, fontWeight: 700,
             letterSpacing: '0.06em', textTransform: 'uppercase',
-            background: canStart ? AMBER : '#1a6b3a',
-            color: canStart ? '#17161a' : WHITE,
+            background: canStart ? AMBER : '#16a34a',
+            color: WHITE,
             border: 'none', borderRadius: 4, padding: '5px 10px',
             cursor: busy ? 'not-allowed' : 'pointer',
             opacity: busy ? 0.55 : 1,
@@ -160,7 +162,7 @@ function DayColumn({ day, jobs, isToday, fleet, drivers, onAdvance, advancing, t
       <div style={{
         padding: '8px 10px 10px',
         borderBottom: `2px solid ${isToday ? AMBER : BORDER}`,
-        background: isToday ? 'rgba(201,168,76,0.06)' : 'transparent',
+        background: isToday ? 'rgba(181,101,16,0.06)' : 'transparent',
         borderRadius: '6px 6px 0 0',
         marginBottom: 8,
       }}>
@@ -172,7 +174,7 @@ function DayColumn({ day, jobs, isToday, fleet, drivers, onAdvance, advancing, t
             {weekDayLabel}
           </span>
           {isToday && (
-            <span style={{ fontFamily: OUTFIT, fontSize: 8, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: AMBER, background: 'rgba(201,168,76,0.14)', padding: '1px 5px', borderRadius: 3 }}>
+            <span style={{ fontFamily: OUTFIT, fontSize: 8, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: AMBER, background: 'rgba(181,101,16,0.14)', padding: '1px 5px', borderRadius: 3 }}>
               {t.dispatch.today}
             </span>
           )}
@@ -180,8 +182,8 @@ function DayColumn({ day, jobs, isToday, fleet, drivers, onAdvance, advancing, t
             <span style={{
               marginLeft: 'auto',
               fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 10,
-              background: isToday ? AMBER : '#ede9e2',
-              color: isToday ? '#17161a' : MUTED,
+              background: isToday ? AMBER : '#eef0f3',
+              color: isToday ? '#ffffff' : MUTED,
               borderRadius: 10, padding: '1px 6px', flexShrink: 0,
             }}>
               {count}

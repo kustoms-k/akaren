@@ -1,19 +1,18 @@
 import { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
+import { Button } from '../components/Button.jsx';
 
 const OUTFIT  = "'Geist', system-ui, sans-serif";
 const INTER   = OUTFIT;
-const AMBER   = '#c9921e';
-const BLUE    = AMBER;
-const AMBER_DK= '#a87818';
-const BLUE_DK = AMBER_DK;
-const BG      = '#edeae1';
+const AMBER   = '#B56510';
+const BLUE    = '#2d3340';
+const BG      = '#f4f5f7';
 const WHITE   = '#ffffff';
-const BORDER  = '#cfc9bb';
-const TEXT    = '#151210';
-const MUTED   = '#6a6050';
-const SURF    = '#f4f0e7';
+const BORDER  = '#ececef';
+const TEXT    = '#1a1d24';
+const MUTED   = '#6b7280';
+const SURF    = '#ffffff';
 
 function Section({ title, subtitle, children }) {
   return (
@@ -35,42 +34,6 @@ function Section({ title, subtitle, children }) {
   );
 }
 
-function Btn({ onClick, disabled, variant = 'default', children, loading }) {
-  const [hov, setHov] = useState(false);
-  let bg, color, border;
-  if (variant === 'danger') {
-    bg = disabled ? SURF : hov ? '#c0392b' : '#e74c3c';
-    color = disabled ? MUTED : WHITE;
-    border = `1px solid ${disabled ? BORDER : '#e74c3c'}`;
-  } else if (variant === 'primary') {
-    bg = disabled ? SURF : hov ? BLUE_DK : BLUE;
-    color = disabled ? MUTED : WHITE;
-    border = 'none';
-  } else {
-    bg = hov ? SURF : WHITE;
-    color = disabled ? MUTED : TEXT;
-    border = `1px solid ${BORDER}`;
-  }
-
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled || loading}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        fontFamily: INTER, fontSize: 13, fontWeight: 600,
-        padding: '8px 18px', borderRadius: 6,
-        background: bg, color, border,
-        cursor: disabled || loading ? 'not-allowed' : 'pointer',
-        transition: 'background 0.15s',
-        opacity: loading ? 0.6 : 1,
-      }}
-    >
-      {children}
-    </button>
-  );
-}
 
 function fmtBytes(n) {
   if (!n) return '—';
@@ -114,19 +77,20 @@ function ExportSection() {
           {t.dataPrivacy.export.desc}
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <Btn
-            onClick={() => download('/api/data-privacy/export', `akaren-export-${new Date().toISOString().slice(0,10)}.json`)}
-            loading={loading}
+          <Button
             variant="primary"
+            disabled={loading}
+            onClick={() => download('/api/data-privacy/export', `akaren-export-${new Date().toISOString().slice(0,10)}.json`)}
           >
             {t.dataPrivacy.export.jsonBtn}
-          </Btn>
-          <Btn
+          </Button>
+          <Button
+            variant="secondary"
+            disabled={loading}
             onClick={() => download('/api/data-privacy/export/csv', `akaren-offertar-${new Date().toISOString().slice(0,10)}.csv`)}
-            loading={loading}
           >
             {t.dataPrivacy.export.csvBtn}
-          </Btn>
+          </Button>
         </div>
       </div>
     </Section>
@@ -195,9 +159,9 @@ function DeleteSection() {
             {t.dataPrivacy.delete.pending.desc}
           </div>
         </div>
-        <Btn onClick={cancelDeletion} loading={loading}>
+        <Button variant="secondary" onClick={cancelDeletion} disabled={loading}>
           {t.dataPrivacy.delete.pending.cancel}
-        </Btn>
+        </Button>
       </Section>
     );
   }
@@ -231,9 +195,9 @@ function DeleteSection() {
         </label>
 
         <div>
-          <Btn onClick={requestDeletion} disabled={!confirmed} loading={loading} variant="danger">
+          <Button variant="danger" onClick={requestDeletion} disabled={!confirmed || loading}>
             {t.dataPrivacy.delete.button}
-          </Btn>
+          </Button>
         </div>
       </div>
     </Section>
@@ -318,8 +282,8 @@ function BackupsSection() {
               </div>
               {restErr && <div style={{ fontFamily: INTER, fontSize: 12, color: '#e74c3c' }}>{restErr}</div>}
               <div style={{ display: 'flex', gap: 10 }}>
-                <Btn onClick={requestCode} loading={loading} variant="primary">{td.genCode}</Btn>
-                <Btn onClick={() => setRestoring(null)}>{td.cancel}</Btn>
+                <Button variant="primary" onClick={requestCode} disabled={loading}>{td.genCode}</Button>
+                <Button variant="ghost" onClick={() => setRestoring(null)}>{td.cancel}</Button>
               </div>
             </div>
           )}
@@ -351,10 +315,10 @@ function BackupsSection() {
                     letterSpacing: '0.15em', width: 150,
                   }}
                 />
-                <Btn onClick={confirmRestore} loading={loading} disabled={codeInput.length !== 8} variant="primary">
+                <Button variant="primary" onClick={confirmRestore} disabled={codeInput.length !== 8 || loading}>
                   {td.confirmBtn}
-                </Btn>
-                <Btn onClick={() => setRestoring(null)}>{td.cancel}</Btn>
+                </Button>
+                <Button variant="ghost" onClick={() => setRestoring(null)}>{td.cancel}</Button>
               </div>
               {restErr && <div style={{ fontFamily: INTER, fontSize: 12, color: '#e74c3c' }}>{restErr}</div>}
             </div>
@@ -411,20 +375,9 @@ function BackupsSection() {
               </span>
               <div>
                 {b.status === 'ok' && b.s3_key && (
-                  <button
-                    onClick={() => startRestore(b)}
-                    style={{
-                      fontFamily: INTER, fontSize: 12, fontWeight: 500,
-                      background: WHITE, color: BLUE,
-                      border: `1px solid ${BORDER}`, borderRadius: 6,
-                      padding: '4px 12px', cursor: 'pointer',
-                      transition: 'background 0.15s',
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(67,97,238,0.08)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = WHITE; }}
-                  >
+                  <Button variant="secondary" size="sm" onClick={() => startRestore(b)}>
                     {td.restore}
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -440,7 +393,7 @@ export function DataPrivacy() {
   return (
     <div style={{ padding: '28px 32px', maxWidth: 820, display: 'flex', flexDirection: 'column', gap: 24 }}>
       <div>
-        <h1 style={{ fontFamily: INTER, fontSize: 20, fontWeight: 700, color: TEXT, margin: '0 0 6px' }}>
+        <h1 style={{ fontFamily: INTER, fontSize: 24, fontWeight: 700, color: TEXT, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
           {t.dataPrivacy.heading}
         </h1>
         <p style={{ fontFamily: INTER, fontSize: 13, color: MUTED, margin: 0, lineHeight: 1.6 }}>

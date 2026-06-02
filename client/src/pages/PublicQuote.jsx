@@ -4,16 +4,14 @@ import { LogoFull } from '../assets/Logo.jsx';
 
 const OUTFIT  = "'Geist', system-ui, sans-serif";
 const INTER   = OUTFIT;
-const AMBER   = '#c9921e';
-const BLUE    = AMBER;
-const AMBER_DK= '#a87818';
-const BLUE_DK = AMBER_DK;
-const BG      = '#edeae1';
+const AMBER   = '#B56510';
+const BLUE    = '#2d3340';
+const BG      = '#f4f5f7';
 const WHITE   = '#ffffff';
-const TEXT    = '#151210';
-const MUTED   = '#6a6050';
-const BDR     = '#cfc9bb';
-const BDR2    = '#f4f0e7';
+const TEXT    = '#1a1d24';
+const MUTED   = '#6b7280';
+const BDR     = '#ececef';
+const BDR2    = '#f4f5f7';
 
 const fmtSEK = (n) =>
   n == null ? '—' : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n) + ' kr';

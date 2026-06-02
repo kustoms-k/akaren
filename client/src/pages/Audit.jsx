@@ -2,17 +2,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useAuth }  from '../context/AuthContext.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
+import { Button } from '../components/Button.jsx';
 
-const AMBER   = '#c9921e';
-const AMBER_DK= '#a87818';
-const BG      = '#edeae1';
+const AMBER   = '#B56510';
+const BG      = '#f4f5f7';
 const WHITE   = '#ffffff';
-const BORDER  = '#cfc9bb';
-const TEXT    = '#151210';
-const MUTED   = '#6a6050';
-const FAINT   = '#9a9082';
+const BORDER  = '#ececef';
+const TEXT    = '#1a1d24';
+const MUTED   = '#6b7280';
+const FAINT   = '#9ca3af';
 const OUTFIT  = "'Geist', system-ui, sans-serif";
-const SURF    = '#f4f0e7';
+const SURF    = '#ffffff';
 
 
 const ACTION_COLORS = {
@@ -202,9 +202,9 @@ export function Audit() {
     <div style={{ flex: 1, overflowY: 'auto', background: BG, padding: '20px 24px' }}>
 
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontFamily: OUTFIT, fontSize: 20, fontWeight: 700, color: TEXT, marginBottom: 4 }}>
+        <h1 style={{ fontFamily: OUTFIT, fontSize: 24, fontWeight: 700, color: TEXT, marginBottom: 4, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
           {t.audit.heading}
-        </div>
+        </h1>
         <div style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED }}>
           {t.audit.eventsTotal(total)} · {t.audit.ownerOnly}
         </div>
@@ -272,31 +272,20 @@ export function Audit() {
           />
         </label>
 
-        <button
-          type="submit"
-          style={{
-            fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
-            padding: '7px 18px',
-            background: AMBER, color: TEXT, border: 'none',
-            borderRadius: 6, cursor: 'pointer', alignSelf: 'flex-end',
-          }}
-        >
+        <Button type="submit" variant="primary" size="sm" style={{ alignSelf: 'flex-end' }}>
           {t.audit.filters.filterBtn}
-        </button>
+        </Button>
 
         {(entityType || userId || dateFrom || dateTo) && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => { setEntityType(''); setUserId(''); setDateFrom(''); setDateTo(''); }}
-            style={{
-              fontFamily: OUTFIT, fontSize: 13, fontWeight: 500,
-              padding: '7px 14px', background: WHITE,
-              border: `1px solid ${BORDER}`, borderRadius: 6,
-              color: MUTED, cursor: 'pointer', alignSelf: 'flex-end',
-            }}
+            style={{ alignSelf: 'flex-end' }}
           >
             {t.audit.filters.clearBtn}
-          </button>
+          </Button>
         )}
       </form>
 
@@ -343,7 +332,7 @@ export function Audit() {
                   onClick={() => setExpanded(isExp ? null : row.id)}
                   style={{
                     borderBottom: `1px solid ${i < rows.length - 1 ? BORDER : 'transparent'}`,
-                    background: isExp ? 'rgba(201,146,30,0.06)' : i % 2 === 0 ? WHITE : SURF,
+                    background: isExp ? 'rgba(181,101,16,0.06)' : WHITE,
                     cursor: 'pointer',
                     transition: 'background 0.1s',
                   }}
@@ -395,29 +384,22 @@ export function Audit() {
             {t.audit.pagination.summary(currentPage, totalPages, total)}
           </span>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               disabled={offset === 0}
               onClick={() => { const o = Math.max(0, offset - LIMIT); setOffset(o); load(o); }}
-              style={{
-                fontFamily: OUTFIT, fontSize: 13, fontWeight: 500, padding: '6px 14px',
-                background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 6,
-                color: offset === 0 ? MUTED : TEXT, cursor: offset === 0 ? 'not-allowed' : 'pointer',
-              }}
             >
               {t.audit.pagination.prev}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
               disabled={offset + LIMIT >= total}
               onClick={() => { const o = offset + LIMIT; setOffset(o); load(o); }}
-              style={{
-                fontFamily: OUTFIT, fontSize: 13, fontWeight: 500, padding: '6px 14px',
-                background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 6,
-                color: offset + LIMIT >= total ? MUTED : TEXT,
-                cursor: offset + LIMIT >= total ? 'not-allowed' : 'pointer',
-              }}
             >
               {t.audit.pagination.next}
-            </button>
+            </Button>
           </div>
         </div>
       )}

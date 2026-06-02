@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const AMBER  = '#c9921e';
+const AMBER  = '#B56510';
 const OUTFIT = "'Geist', system-ui, sans-serif";
+const INTER  = OUTFIT;
 
 
 export function SubscriptionGate({ onClose }) {
@@ -56,7 +57,7 @@ export function SubscriptionGate({ onClose }) {
         <div style={{ padding: '28px 28px 0' }}>
           <div style={{
             fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 10, letterSpacing: '0.14em',
-            color: 'rgba(201,146,30,0.6)', textTransform: 'uppercase', marginBottom: 10,
+            color: 'rgba(181,101,16,0.6)', textTransform: 'uppercase', marginBottom: 10,
           }}>
             {t.subscriptionGate.brand}
           </div>
@@ -79,7 +80,7 @@ export function SubscriptionGate({ onClose }) {
             <span style={{ fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 36, fontWeight: 500, color: AMBER, lineHeight: 1, letterSpacing: '-0.02em' }}>
               {t.subscriptionGate.price}
             </span>
-            <span style={{ fontFamily: OUTFIT, fontSize: 14, color: 'rgba(201,146,30,0.6)' }}>
+            <span style={{ fontFamily: OUTFIT, fontSize: 14, color: 'rgba(181,101,16,0.6)' }}>
               {t.subscriptionGate.currency}
             </span>
           </div>
@@ -102,8 +103,8 @@ export function SubscriptionGate({ onClose }) {
               <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{
                   width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
-                  background: 'rgba(201,146,30,0.12)',
-                  border: '1px solid rgba(201,146,30,0.3)',
+                  background: 'rgba(181,101,16,0.12)',
+                  border: '1px solid rgba(181,101,16,0.3)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 9, color: AMBER,
                 }}>

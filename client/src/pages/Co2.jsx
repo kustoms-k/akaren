@@ -2,17 +2,20 @@ import { useState, useEffect } from 'react';
 import { Leaf, TrendingDown, TrendingUp, Award, Download } from 'lucide-react';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
+import { Card } from '../components/Card.jsx';
+import { Button } from '../components/Button.jsx';
 
 const OUTFIT = "'Geist', system-ui, sans-serif";
-const AMBER  = '#c9921e';
-const GREEN  = '#1d6b45';
-const RED    = '#c45454';
-const BG     = '#edeae1';
+const INTER  = OUTFIT;
+const AMBER  = '#B56510';
+const GREEN  = '#16a34a';
+const RED    = '#dc2626';
+const BG     = '#f4f5f7';
 const WHITE  = '#ffffff';
-const BORDER = '#cfc9bb';
-const TEXT   = '#151210';
-const MUTED  = '#6a6050';
-const FAINT  = '#9a9082';
+const BORDER = '#ececef';
+const TEXT   = '#1a1d24';
+const MUTED  = '#6b7280';
+const FAINT  = '#9ca3af';
 
 const fmtNum = (n, dec = 0) =>
   n == null ? '—' : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: dec, minimumFractionDigits: dec }).format(n);
@@ -212,7 +215,7 @@ export function Co2() {
             <div style={{ width: 34, height: 34, borderRadius: 9, background: `${GREEN}14`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Leaf size={17} color={GREEN} strokeWidth={1.8} />
             </div>
-            <h1 style={{ fontFamily: OUTFIT, fontSize: 20, fontWeight: 800, color: TEXT, margin: 0, letterSpacing: '-0.02em' }}>
+            <h1 style={{ fontFamily: OUTFIT, fontSize: 24, fontWeight: 700, color: TEXT, margin: 0, letterSpacing: '-0.02em' }}>
               {t.co2.title}
             </h1>
           </div>
@@ -222,23 +225,10 @@ export function Co2() {
         </div>
 
         {hasData && months[0] && (
-          <button
-            onClick={() => loadCert(months[0].month)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 7,
-              fontFamily: OUTFIT, fontSize: 12, fontWeight: 700,
-              color: '#17161a', background: AMBER,
-              border: 'none', borderRadius: 8, padding: '9px 16px',
-              cursor: 'pointer', letterSpacing: '0.04em',
-              boxShadow: '0 2px 10px rgba(201,168,76,0.28)',
-              transition: 'transform 0.15s cubic-bezier(0.22,1,0.36,1)',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
-          >
+          <Button variant="primary" onClick={() => loadCert(months[0].month)}>
             <Award size={14} strokeWidth={2} />
             {t.co2.getCert}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -283,12 +273,7 @@ export function Co2() {
           <div style={{ display: 'grid', gridTemplateColumns: '58fr 42fr', gap: 16 }}>
 
             {/* Monthly trend */}
-            <div style={{
-              background: WHITE, border: `1px solid ${BORDER}`,
-              borderRadius: 14, padding: '20px 22px',
-              boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
-              animation: 'card-up 0.4s cubic-bezier(0.22,1,0.36,1) 0.1s both',
-            }}>
+            <Card padding="20px 22px" style={{ animation: 'card-up 0.4s cubic-bezier(0.22,1,0.36,1) 0.1s both' }}>
               <div style={{ marginBottom: 18 }}>
                 <div style={{ fontFamily: OUTFIT, fontSize: 14, fontWeight: 700, color: TEXT, marginBottom: 3 }}>
                   {t.co2.monthly.heading}
@@ -298,15 +283,10 @@ export function Co2() {
                 </div>
               </div>
               <MonthBars months={months.slice(0, 12)} />
-            </div>
+            </Card>
 
             {/* By cargo type */}
-            <div style={{
-              background: WHITE, border: `1px solid ${BORDER}`,
-              borderRadius: 14, padding: '20px 22px',
-              boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
-              animation: 'card-up 0.4s cubic-bezier(0.22,1,0.36,1) 0.18s both',
-            }}>
+            <Card padding="20px 22px" style={{ animation: 'card-up 0.4s cubic-bezier(0.22,1,0.36,1) 0.18s both' }}>
               <div style={{ marginBottom: 18 }}>
                 <div style={{ fontFamily: OUTFIT, fontSize: 14, fontWeight: 700, color: TEXT, marginBottom: 3 }}>
                   {t.co2.cargo.heading}
@@ -333,16 +313,11 @@ export function Co2() {
                   ))}
                 </div>
               )}
-            </div>
+            </Card>
           </div>
 
           {/* ── Monthly table ─────────────────────────────────────────────── */}
-          <div style={{
-            background: WHITE, border: `1px solid ${BORDER}`,
-            borderRadius: 14, overflow: 'hidden',
-            boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
-            animation: 'card-up 0.4s cubic-bezier(0.22,1,0.36,1) 0.22s both',
-          }}>
+          <Card overflow="hidden" style={{ animation: 'card-up 0.4s cubic-bezier(0.22,1,0.36,1) 0.22s both' }}>
             <div style={{ padding: '18px 22px 14px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ fontFamily: OUTFIT, fontSize: 14, fontWeight: 700, color: TEXT }}>
                 {t.co2.table.heading}
@@ -393,7 +368,7 @@ export function Co2() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
 
           {/* ── Methodology note ──────────────────────────────────────────── */}
           <div style={{
@@ -474,7 +449,8 @@ export function Co2() {
                     </div>
                   </div>
 
-                  <button
+                  <Button
+                    variant="primary"
                     onClick={() => {
                       const text = JSON.stringify(certData, null, 2);
                       const a = document.createElement('a');
@@ -482,21 +458,11 @@ export function Co2() {
                       a.download = `co2-cert-${certMonth}.json`;
                       a.click();
                     }}
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-                      fontFamily: OUTFIT, fontSize: 13, fontWeight: 700,
-                      color: '#17161a', background: AMBER,
-                      border: 'none', borderRadius: 8, padding: '11px',
-                      cursor: 'pointer', letterSpacing: '0.04em',
-                      boxShadow: '0 2px 10px rgba(201,168,76,0.28)',
-                      transition: 'transform 0.15s cubic-bezier(0.22,1,0.36,1)',
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
+                    style={{ width: '100%', justifyContent: 'center' }}
                   >
                     <Download size={14} strokeWidth={2} />
                     {t.co2.cert.download}
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <div style={{ fontFamily: OUTFIT, fontSize: 13, color: RED, textAlign: 'center', padding: '20px 0' }}>

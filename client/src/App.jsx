@@ -1862,7 +1862,7 @@ function SubscriptionPaused({ company, onLogout }) {
         }}>
           <span style={{ fontSize: 22 }}>⏸</span>
         </div>
-        <h1 style={{ fontSize: 18, fontWeight: 700, color: TEXT_PR, margin: '0 0 10px' }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: TEXT_PR, margin: '0 0 10px', letterSpacing: '-0.02em' }}>
           {t.subscriptionPaused.heading}
         </h1>
         <p style={{ fontSize: 13, color: TEXT_SEC, margin: '0 0 28px', lineHeight: 1.7 }}>
@@ -2239,7 +2239,7 @@ function InvoicesTab() {
       {/* Page heading + sync button */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 22 }}>
         <div>
-          <h1 style={{ fontFamily: INTER, fontSize: 20, fontWeight: 700, color: TEXT_PR, margin: '0 0 3px', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontFamily: INTER, fontSize: 24, fontWeight: 700, color: TEXT_PR, margin: '0 0 3px', letterSpacing: '-0.02em' }}>
             {t.ekonomi.heading}
           </h1>
           <p style={{ fontFamily: INTER, fontSize: 13, color: TEXT_SEC, margin: 0 }}>
@@ -2466,7 +2466,7 @@ function HomePage({ onNavigate }) {
 
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontFamily: INTER, fontSize: 24, fontWeight: 600, color: TEXT_PR, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+        <h1 style={{ fontFamily: INTER, fontSize: 24, fontWeight: 700, color: TEXT_PR, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
           {hn.heading}
         </h1>
         <p style={{ fontFamily: INTER, fontSize: 13, color: TEXT_SEC, margin: 0, textTransform: 'capitalize' }}>

@@ -290,10 +290,10 @@ export function Kortider() {
     }}>
       {/* ── Header ────────────────────────────────────────────────────────── */}
       <div>
-        <div style={{ fontFamily: INTER, fontSize: 18, fontWeight: 700, color: '#1c1917', letterSpacing: '-0.02em' }}>
+        <h1 style={{ fontFamily: INTER, fontSize: 24, fontWeight: 700, color: '#1a1d24', letterSpacing: '-0.02em', margin: '0 0 3px' }}>
           {tk.title}
-        </div>
-        <div style={{ fontFamily: INTER, fontSize: 12, color: '#a09590', marginTop: 3 }}>
+        </h1>
+        <div style={{ fontFamily: INTER, fontSize: 12, color: '#9ca3af', marginTop: 3 }}>
           {tk.subtitle}
         </div>
       </div>

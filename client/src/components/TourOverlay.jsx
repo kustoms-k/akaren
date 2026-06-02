@@ -3,10 +3,10 @@ import { apiFetch } from '../utils/apiFetch.js';
 import { useAuth }  from '../context/AuthContext.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const BLUE  = '#4361ee';
+const BLUE  = '#2d3340';
 const WHITE = '#ffffff';
-const TEXT  = '#1a1a2e';
-const MUTED = '#6c757d';
+const TEXT  = '#1a1d24';
+const MUTED = '#6b7280';
 const INTER = "'Geist', system-ui, sans-serif";
 
 const TOUR_NAV = [

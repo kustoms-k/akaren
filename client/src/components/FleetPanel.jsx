@@ -1,14 +1,13 @@
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const AMBER   = '#c9921e';
-const AMBER_DK= '#a87818';
+const AMBER   = '#B56510';
 const WHITE   = '#ffffff';
-const BORDER  = '#cfc9bb';
-const TEXT    = '#151210';
-const MUTED   = '#6a6050';
-const FAINT   = '#9a9082';
+const BORDER  = '#ececef';
+const TEXT    = '#1a1d24';
+const MUTED   = '#6b7280';
+const FAINT   = '#9ca3af';
 const OUTFIT  = "'Geist', system-ui, sans-serif";
-const SURF    = '#f4f0e7';
+const SURF    = '#ffffff';
 
 
 const EURO = {

@@ -4,17 +4,15 @@ import { useAuth }  from '../context/AuthContext.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
 import { LogoFull } from '../assets/Logo.jsx';
 
-const AMBER   = '#c9921e';
-const BLUE    = AMBER;
-const AMBER_DK= '#a87818';
-const BLUE_DK = AMBER_DK;
-const BG      = '#edeae1';
+const AMBER   = '#B56510';
+const BLUE    = '#2d3340';
+const BG      = '#f4f5f7';
 const WHITE   = '#ffffff';
-const SURF    = '#f4f0e7';
-const BORDER  = '#cfc9bb';
-const TEXT    = '#151210';
-const MUTED   = '#6a6050';
-const GREEN   = '#2ecc71';
+const SURF    = '#ffffff';
+const BORDER  = '#ececef';
+const TEXT    = '#1a1d24';
+const MUTED   = '#6b7280';
+const GREEN   = '#16a34a';
 const OUTFIT  = "'Geist', system-ui, sans-serif";
 const INTER   = OUTFIT;
 
@@ -97,7 +95,7 @@ function TextInput({ value, onChange, placeholder, type = 'text', disabled }) {
 function Btn({ onClick, disabled, children, variant = 'primary', small }) {
   const [h, setH] = useState(false);
   const bg = variant === 'primary'
-    ? (disabled ? '#ddd9d2' : h ? BLUE_DK : BLUE)
+    ? (disabled ? '#d1d5db' : h ? '#1e2530' : BLUE)
     : (h ? BG : WHITE);
   return (
     <button
@@ -108,7 +106,7 @@ function Btn({ onClick, disabled, children, variant = 'primary', small }) {
         fontSize: small ? 12 : 14,
         padding: small ? '6px 14px' : '10px 22px',
         borderRadius: 8, border: variant === 'ghost' ? `1px solid ${BORDER}` : 'none',
-        background: bg, color: variant === 'primary' ? (disabled ? '#a09aa8' : TEXT) : TEXT,
+        background: bg, color: variant === 'primary' ? (disabled ? '#9ca3af' : WHITE) : TEXT,
         cursor: disabled ? 'not-allowed' : 'pointer',
         transition: 'background 0.15s',
         whiteSpace: 'nowrap',

@@ -7,10 +7,10 @@ import { generateFaktura } from '../utils/generateFaktura.js';
 import { apiFetch }        from '../utils/apiFetch.js';
 import { Toast }           from '../components/Toast.jsx';
 import { db }              from '../db/dexie.js';
+import { Button }          from '../components/Button.jsx';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const AMBER   = '#B56510';
-const AMBER_DK= '#9A6410';
 const CYAN    = '#2563eb';
 const CYAN_BR = '#2A5FAA';
 const SUCCESS = '#16a34a';
@@ -23,7 +23,7 @@ const TEXT_SEC= '#6b7280';
 const TEXT_MU = '#9ca3af';
 const INTER   = "'Geist', system-ui, sans-serif";
 
-// Legacy aliases
+// Local aliases
 const OUTFIT  = INTER;
 const WHITE   = '#ffffff';
 const TEXT    = TEXT_PR;
@@ -264,10 +264,10 @@ function InvoiceModal({ job, customers, onClose, onSuccess }) {
       <form
         onSubmit={handleSubmit}
         style={{
-          background: '#FAF9F7',
-          border: '1px solid rgba(28,26,22,0.09)',
+          background: '#ffffff',
+          border: `1px solid #ececef`,
           borderRadius: 12,
-          boxShadow: '0 8px 32px rgba(28,26,22,0.14)', padding: 28, width: 460,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.14)', padding: 28, width: 460,
         }}
       >
         <div style={{ fontFamily: INTER, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: TEXT_MU, fontWeight: 700, marginBottom: 6 }}>
@@ -326,25 +326,12 @@ function InvoiceModal({ job, customers, onClose, onSuccess }) {
         {err && <div style={{ fontFamily: INTER, fontSize: 12, color: DANGER, marginBottom: 14 }}>{err}</div>}
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button type="button" onClick={onClose} disabled={busy}
-            style={{
-              fontFamily: INTER, fontSize: 13, fontWeight: 500, padding: '9px 18px',
-              border: '1px solid rgba(94,234,212,0.25)', borderRadius: 10, background: 'transparent',
-              color: CYAN, cursor: 'pointer',
-            }}>
+          <Button type="button" variant="ghost" onClick={onClose} disabled={busy}>
             {t.jobs.invoiceModal.cancel}
-          </button>
-          <button type="submit" disabled={busy || !form.customer_name.trim()}
-            style={{
-              fontFamily: INTER, fontSize: 13, fontWeight: 600, padding: '9px 20px',
-              border: 'none', borderRadius: 10,
-              background: busy || !form.customer_name.trim() ? 'rgba(28,26,22,0.06)' : '#1C1A17',
-              color: busy || !form.customer_name.trim() ? TEXT_MU : '#FAF9F7',
-              cursor: busy || !form.customer_name.trim() ? 'not-allowed' : 'pointer',
-              boxShadow: 'none',
-            }}>
+          </Button>
+          <Button type="submit" variant="primary" disabled={busy || !form.customer_name.trim()}>
             {busy ? t.jobs.invoiceModal.generating : t.jobs.invoiceModal.generate}
-          </button>
+          </Button>
         </div>
       </form>
     </div>
@@ -501,14 +488,14 @@ export function Jobs() {
 
       <div style={{
         background: SURF,
-        border: `1px solid `,
+        border: `1px solid ${BORDER}`,
         borderRadius: 12,
         overflow: 'hidden',
       }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 800 }}>
             <thead>
-              <tr style={{ background: 'transparent', borderBottom: `1px solid ` }}>
+              <tr style={{ background: 'transparent', borderBottom: `1px solid ${BORDER}` }}>
                 {COLS.map((c) => (
                   <th key={c.label} style={{
                     fontFamily: INTER, fontSize: 11, fontWeight: 700,
@@ -627,51 +614,22 @@ export function Jobs() {
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                           {!isFakturerad ? (
-                            <button
-                              onClick={() => setModal(job)}
-                              style={{
-                                display: 'flex', alignItems: 'center', gap: 6,
-                                fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
-                                padding: '7px 14px', borderRadius: 8,
-                                border: 'none', background: '#1C1A17', color: '#FAF9F7',
-                                cursor: 'pointer', whiteSpace: 'nowrap',
-                              }}
-                              onMouseEnter={(e) => e.currentTarget.style.background = '#343230'}
-                              onMouseLeave={(e) => e.currentTarget.style.background = '#1C1A17'}
-                            >
+                            <Button variant="primary" size="sm" onClick={() => setModal(job)}>
                               <FileText size={13} />
                               {t.jobs.generateInvoice}
-                            </button>
+                            </Button>
                           ) : (
                             <div style={{ display: 'flex', gap: 6 }}>
                               {hasInvoice && (
-                                <button
-                                  onClick={() => handleReDownload(job)}
-                                  style={{
-                                    display: 'flex', alignItems: 'center', gap: 6,
-                                    fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
-                                    padding: '6px 12px', borderRadius: 8,
-                                    border: `1px solid ${BORDER}`, background: WHITE,
-                                    color: TEXT, cursor: 'pointer', whiteSpace: 'nowrap',
-                                  }}
-                                >
+                                <Button variant="secondary" size="sm" onClick={() => handleReDownload(job)}>
                                   <Download size={13} />
                                   {t.jobs.downloadPdf}
-                                </button>
+                                </Button>
                               )}
-                              <button
-                                onClick={() => handleSendEmail(job)}
-                                style={{
-                                  display: 'flex', alignItems: 'center', gap: 6,
-                                  fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
-                                  padding: '6px 12px', borderRadius: 8,
-                                  border: `1px solid ${BORDER}`, background: SURF,
-                                  color: TEXT_PR, cursor: 'pointer', whiteSpace: 'nowrap',
-                                }}
-                              >
+                              <Button variant="secondary" size="sm" onClick={() => handleSendEmail(job)}>
                                 <Mail size={13} />
                                 {t.jobs.sendEmail}
-                              </button>
+                              </Button>
                             </div>
                           )}
 

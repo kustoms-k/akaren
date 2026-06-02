@@ -1,16 +1,16 @@
 ﻿import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
+import { Button } from '../components/Button.jsx';
 
 const AMBER   = '#B56510';
-const AMBER_DK= '#9A6410';
 const WHITE   = '#ffffff';
-const BG      = '#EDECEA';
-const SURF    = '#FAF9F7';
-const BORDER  = 'rgba(28,26,22,0.09)';
-const TEXT    = '#1C1A17';
-const MUTED   = '#625E58';
-const FAINT   = '#A09C96';
+const BG      = '#f4f5f7';
+const SURF    = '#ffffff';
+const BORDER  = '#ececef';
+const TEXT    = '#1a1d24';
+const MUTED   = '#6b7280';
+const FAINT   = '#9ca3af';
 const OUTFIT  = "'Geist', system-ui, sans-serif";
 
 
@@ -134,26 +134,16 @@ function CustomerModal({ initial, onSave, onClose }) {
             />
           </label>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-            <button onClick={onClose}
-              style={{
-                fontFamily: OUTFIT, fontSize: 12, fontWeight: 500,
-                background: WHITE, color: MUTED, border: `1px solid ${BORDER}`,
-                borderRadius: 8, padding: '10px 20px', cursor: 'pointer',
-              }}>
+            <Button variant="ghost" onClick={onClose}>
               {cm.cancel}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
               onClick={handleSave}
               disabled={!name.trim() || saving}
-              style={{
-                fontFamily: OUTFIT, fontSize: 12, fontWeight: 600,
-                background: name.trim() ? AMBER : BORDER,
-                color: name.trim() ? TEXT : FAINT,
-                border: 'none', borderRadius: 8, padding: '10px 24px',
-                cursor: name.trim() ? 'pointer' : 'default',
-              }}>
+            >
               {saving ? cm.saving : isEdit ? cm.save : cm.create}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -387,18 +377,15 @@ function CustomerDetail({ customer, onClose, onEdit, onDelete }) {
                     padding: '8px 12px', resize: 'none', outline: 'none', lineHeight: 1.5,
                   }}
                 />
-                <button
+                <Button
+                  variant="primary"
+                  size="sm"
                   onClick={sendMsg}
                   disabled={sending || !msgInput.trim()}
-                  style={{
-                    fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
-                    background: msgInput.trim() ? AMBER : BORDER,
-                    color: msgInput.trim() ? TEXT : FAINT,
-                    border: 'none', borderRadius: 8, padding: '9px 16px',
-                    cursor: msgInput.trim() ? 'pointer' : 'default', flexShrink: 0,
-                  }}>
+                  style={{ flexShrink: 0 }}
+                >
                   {sending ? cd.msgSending : cd.msgSend}
-                </button>
+                </Button>
               </div>
             </>
           )}
@@ -569,7 +556,7 @@ export function Customers() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ fontFamily: OUTFIT, fontSize: 22, fontWeight: 700, color: TEXT,
+          <h1 style={{ fontFamily: OUTFIT, fontSize: 24, fontWeight: 700, color: TEXT,
             margin: '0 0 4px', letterSpacing: '-0.02em' }}>
             {tc.heading}
           </h1>
@@ -577,19 +564,9 @@ export function Customers() {
             {tc.portalsCount(customers.length)}
           </p>
         </div>
-        <button
-          onClick={() => setShowAdd(true)}
-          style={{
-            fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
-            background: AMBER, color: TEXT,
-            border: 'none', borderRadius: 8, padding: '10px 20px',
-            cursor: 'pointer', transition: 'background 0.15s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = AMBER_DK; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = AMBER; }}
-        >
+        <Button variant="primary" onClick={() => setShowAdd(true)}>
           {tc.add}
-        </button>
+        </Button>
       </div>
 
       {customers.length > 0 && (
@@ -645,15 +622,9 @@ export function Customers() {
             {customers.length === 0 ? tc.noCustomersDesc : tc.search}
           </div>
           {customers.length === 0 && (
-            <button
-              onClick={() => setShowAdd(true)}
-              style={{
-                fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
-                background: AMBER, color: TEXT,
-                border: 'none', borderRadius: 8, padding: '10px 24px', cursor: 'pointer',
-              }}>
+            <Button variant="primary" onClick={() => setShowAdd(true)}>
               {tc.addFirst}
-            </button>
+            </Button>
           )}
         </div>
       ) : (

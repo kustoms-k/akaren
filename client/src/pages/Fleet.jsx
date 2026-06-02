@@ -5,10 +5,10 @@ import { syncFleetStats } from '../db/sync.js';
 import { useSync }       from '../context/SyncContext.jsx';
 import { useLanguage }   from '../context/LanguageContext.jsx';
 import { apiFetch }      from '../utils/apiFetch.js';
+import { Card }          from '../components/Card.jsx';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const AMBER   = '#B56510';
-const AMBER_DK= '#9A6410';
 const BG      = '#f4f5f7';
 const WHITE   = '#ffffff';
 const BORDER  = '#ececef';
@@ -16,6 +16,7 @@ const TEXT    = '#1a1d24';
 const MUTED   = '#6b7280';
 const FAINT   = '#9ca3af';
 const OUTFIT  = "'Geist', system-ui, sans-serif";
+const INTER   = OUTFIT;
 const SURF    = '#ffffff';
 
 
@@ -188,7 +189,7 @@ export function Fleet() {
     letterSpacing: '0.5px', textTransform: 'uppercase', color: MUTED,
     padding: '10px 16px', textAlign: col.align, width: col.width,
     whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none',
-    background: sortKey === col.key ? '#e8e2d5' : SURF,
+    background: sortKey === col.key ? '#eef0f3' : SURF,
     transition: 'background 0.1s',
     borderBottom: `1px solid ${BORDER}`,
   });
@@ -198,7 +199,7 @@ export function Fleet() {
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
         <div>
-          <h1 style={{ fontFamily: OUTFIT, fontSize: 20, fontWeight: 700, color: TEXT, margin: '0 0 4px' }}>
+          <h1 style={{ fontFamily: OUTFIT, fontSize: 24, fontWeight: 700, color: TEXT, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
             {t.fleet.heading}
           </h1>
           {!loading && lowCount > 0 && (
@@ -233,10 +234,7 @@ export function Fleet() {
 
       {!loading && (
         <>
-          <div style={{
-            background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12,
-            boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden', marginBottom: 20,
-          }}>
+          <Card overflow="hidden" style={{ marginBottom: 20 }}>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 1020 }}>
                 <thead>
@@ -330,7 +328,7 @@ export function Fleet() {
                 {t.fleet.legend.note}
               </span>
             </div>
-          </div>
+          </Card>
 
           <div style={{ display: 'flex', gap: 12 }}>
             {[
@@ -339,12 +337,7 @@ export function Fleet() {
               { label: t.fleet.cards.withData(fleet.length),        value: fleet.filter((v) => v.monthly_hours > 0).length,       unit: '' },
               { label: t.fleet.cards.underperforming,               value: lowCount,                                              unit: t.fleet.cards.unitVehicles, warn: lowCount > 0 },
             ].map((card) => (
-              <div key={card.label} style={{
-                flex: 1, background: WHITE,
-                border: `1px solid ${card.warn ? '#f59e0b' : BORDER}`,
-                borderRadius: 12, padding: '20px 22px',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-              }}>
+              <Card key={card.label} padding="20px 22px" style={{ flex: 1, border: `1px solid ${card.warn ? '#f59e0b' : BORDER}` }}>
                 <div style={{
                   fontFamily: OUTFIT, fontSize: 11, fontWeight: 600,
                   letterSpacing: '0.5px', textTransform: 'uppercase',
@@ -363,7 +356,7 @@ export function Fleet() {
                     <span style={{ fontFamily: OUTFIT, fontSize: 14, color: MUTED }}>{card.unit}</span>
                   )}
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         </>

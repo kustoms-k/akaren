@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const AMBER   = '#2d3340';
+const ACCENT  = '#2d3340';
 const BG      = '#f4f5f7';
 const WHITE   = '#ffffff';
 const BORDER  = '#ececef';
 const TEXT    = '#1a1d24';
 const MUTED   = '#6b7280';
 const FAINT   = '#9ca3af';
-const SURF    = '#f4f5f7';
+const SURF    = '#ffffff';
 const OUTFIT  = "'Geist', system-ui, sans-serif";
 
 const WARNING = '#b56510';

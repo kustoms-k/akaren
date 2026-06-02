@@ -9,7 +9,7 @@ const BG        = '#f4f5f7';
 const SURF      = '#ffffff';
 const ACCENT    = '#2d3340';
 const ACCENT_SF = '#eef0f3';
-const BORDER    = '#e4e6ea';
+const BORDER    = '#ececef';
 const TEXT      = '#1a1d24';
 const TEXT_SEC  = '#4b5563';
 const TEXT_MUT  = '#6b7280';
@@ -459,7 +459,7 @@ export default function Underhall() {
             <div style={{ width: 36, height: 36, borderRadius: 10, background: ACCENT_SF, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Wrench size={16} color={ACCENT} />
             </div>
-            <h1 style={{ fontFamily: INTER, fontSize: 22, fontWeight: 900, color: TEXT, margin: 0, letterSpacing: '-0.02em' }}>
+            <h1 style={{ fontFamily: INTER, fontSize: 24, fontWeight: 700, color: TEXT, margin: 0, letterSpacing: '-0.02em' }}>
               {t.underhall.title}
             </h1>
           </div>

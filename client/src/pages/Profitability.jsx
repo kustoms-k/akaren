@@ -3,10 +3,11 @@ import { generateFaktura } from '../utils/generateFaktura.js';
 import { Toast } from '../components/Toast.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
+import { Card } from '../components/Card.jsx';
+import { Button } from '../components/Button.jsx';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const AMBER   = '#B56510';
-const AMBER_DK= '#9A6410';
 const BG      = '#f4f5f7';
 const WHITE   = '#ffffff';
 const BORDER  = '#ececef';
@@ -14,6 +15,7 @@ const TEXT    = '#1a1d24';
 const MUTED   = '#6b7280';
 const FAINT   = '#9ca3af';
 const OUTFIT  = "'Geist', system-ui, sans-serif";
+const INTER   = OUTFIT;
 const SURF    = '#ffffff';
 
 
@@ -143,11 +145,7 @@ function generateRecommendations(data, stats, prevData, t) {
 // ── KPI card ───────────────────────────────────────────────────────────────────
 function KpiCard({ label, value, unit, sublabel }) {
   return (
-    <div style={{
-      background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12,
-      boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-      padding: '22px 24px 18px', flex: 1,
-    }}>
+    <Card padding="22px 24px 18px" style={{ flex: 1 }}>
       <div style={{
         fontFamily: OUTFIT, fontSize: 12, fontWeight: 600,
         letterSpacing: '0.5px', textTransform: 'uppercase', color: FAINT, marginBottom: 14,
@@ -167,7 +165,7 @@ function KpiCard({ label, value, unit, sublabel }) {
           {sublabel}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -254,16 +252,7 @@ function RecommendationCards({ recs, onApply, onDismiss, t }) {
                 >
                   {rec.applyLabel}
                 </button>
-                <button
-                  onClick={() => onDismiss(rec.id)}
-                  style={{
-                    fontFamily: OUTFIT, fontSize: 13, fontWeight: 600, padding: '6px 10px', borderRadius: 8,
-                    border: `1.5px solid ${BORDER}`, background: WHITE,
-                    color: MUTED, cursor: 'pointer',
-                  }}
-                >
-                  ×
-                </button>
+                <Button variant="ghost" size="sm" onClick={() => onDismiss(rec.id)}>×</Button>
               </div>
             </div>
           );
@@ -278,14 +267,11 @@ function JobsTable({ jobs, prevJobs, onFakturaClick, t }) {
 
   if (rows.length === 0) {
     return (
-      <div style={{
-        background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12,
-        boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-        padding: 32, textAlign: 'center',
-        fontFamily: OUTFIT, fontSize: 14, color: MUTED, fontStyle: 'italic',
-      }}>
-        {t.profitability.noJobs}
-      </div>
+      <Card padding={32} style={{ textAlign: 'center' }}>
+        <span style={{ fontFamily: OUTFIT, fontSize: 14, color: MUTED, fontStyle: 'italic' }}>
+          {t.profitability.noJobs}
+        </span>
+      </Card>
     );
   }
 
@@ -306,10 +292,7 @@ function JobsTable({ jobs, prevJobs, onFakturaClick, t }) {
   ];
 
   return (
-    <div style={{
-      background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12,
-      boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden',
-    }}>
+    <Card overflow="hidden">
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
           <thead>
@@ -375,19 +358,9 @@ function JobsTable({ jobs, prevJobs, onFakturaClick, t }) {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'flex-start' }}>
                       <StatusBadge status={j.job_status} t={t} />
                       {(j.job_status === 'avslutad' || j.job_status === 'slutförd') && (
-                        <button
-                          onClick={() => onFakturaClick(j)}
-                          style={{
-                            fontFamily: OUTFIT, fontSize: 12, fontWeight: 600,
-                            padding: '4px 10px', borderRadius: 6,
-                            border: 'none', background: AMBER, color: TEXT,
-                            cursor: 'pointer', whiteSpace: 'nowrap',
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.background = AMBER_DK}
-                          onMouseLeave={(e) => e.currentTarget.style.background = AMBER}
-                        >
+                        <Button variant="primary" size="sm" onClick={() => onFakturaClick(j)}>
                           {t.profitability.generateInvoice}
-                        </button>
+                        </Button>
                       )}
                       {j.job_status === 'fakturerad' && j.faktura_nr && (
                         <span style={{ fontFamily: OUTFIT, fontSize: 11, color: FAINT }}>
@@ -420,21 +393,18 @@ function JobsTable({ jobs, prevJobs, onFakturaClick, t }) {
           {t.profitability.legend.note}
         </span>
       </div>
-    </div>
+    </Card>
   );
 }
 
 function CustomerBars({ ranking, prevRanking, t }) {
   if (ranking.length === 0) {
     return (
-      <div style={{
-        background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12,
-        boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-        padding: 28, textAlign: 'center',
-        fontFamily: OUTFIT, fontSize: 14, color: MUTED, fontStyle: 'italic',
-      }}>
-        {t.profitability.noJobs}
-      </div>
+      <Card padding={28} style={{ textAlign: 'center' }}>
+        <span style={{ fontFamily: OUTFIT, fontSize: 14, color: MUTED, fontStyle: 'italic' }}>
+          {t.profitability.noJobs}
+        </span>
+      </Card>
     );
   }
 
@@ -442,10 +412,7 @@ function CustomerBars({ ranking, prevRanking, t }) {
   const maxProfit = Math.max(...ranking.map((r) => Math.abs(r.profit)), 1);
 
   return (
-    <div style={{
-      background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 12,
-      boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden',
-    }}>
+    <Card overflow="hidden">
       {ranking.map((r, i) => {
         const pct    = Math.max((Math.abs(r.profit) / maxProfit) * 100, 2);
         const isLoss = r.profit < 0;
@@ -484,7 +451,7 @@ function CustomerBars({ ranking, prevRanking, t }) {
           </div>
         );
       })}
-    </div>
+    </Card>
   );
 }
 
@@ -604,7 +571,7 @@ export function Profitability() {
     <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px 48px', background: BG, minHeight: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
         <div>
-          <h1 style={{ fontFamily: OUTFIT, fontSize: 20, fontWeight: 700, color: TEXT, margin: '0 0 4px' }}>
+          <h1 style={{ fontFamily: OUTFIT, fontSize: 24, fontWeight: 700, color: TEXT, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
             {t.profitability.heading}
           </h1>
           <p style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED, margin: 0 }}>
@@ -747,32 +714,20 @@ export function Profitability() {
             </label>
 
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => setFakturaJob(null)}
                 disabled={fakturaLoading}
-                style={{
-                  fontFamily: OUTFIT, fontSize: 13, fontWeight: 600, padding: '9px 18px',
-                  border: `1.5px solid ${BORDER}`, borderRadius: 8,
-                  background: WHITE, color: '#374151', cursor: 'pointer',
-                }}
               >
                 {t.profitability.faktura.cancel}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="primary"
                 onClick={handleGenerateFaktura}
                 disabled={fakturaLoading || !kundNamn.trim()}
-                style={{
-                  fontFamily: OUTFIT, fontSize: 13, fontWeight: 600, padding: '9px 18px',
-                  border: 'none', borderRadius: 8,
-                  background: fakturaLoading || !kundNamn.trim() ? '#d1d5db' : AMBER,
-                  color: fakturaLoading || !kundNamn.trim() ? MUTED : TEXT,
-                  cursor: fakturaLoading || !kundNamn.trim() ? 'not-allowed' : 'pointer',
-                }}
-                onMouseEnter={(e) => { if (!fakturaLoading && kundNamn.trim()) e.currentTarget.style.background = AMBER_DK; }}
-                onMouseLeave={(e) => { if (!fakturaLoading && kundNamn.trim()) e.currentTarget.style.background = AMBER; }}
               >
                 {fakturaLoading ? t.profitability.faktura.generating : t.profitability.faktura.generate}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

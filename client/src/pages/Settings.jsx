@@ -7,6 +7,7 @@ import { useLanguage }  from '../context/LanguageContext.jsx';
 import { db }           from '../db/dexie.js';
 import { generateDpa }  from '../utils/generateDpa.js';
 import { generateTos }  from '../utils/generateTos.js';
+import { Button }       from '../components/Button.jsx';
 
 const OUTFIT  = "'Geist', system-ui, sans-serif";
 const INTER   = OUTFIT;
@@ -17,7 +18,7 @@ const WHITE   = '#ffffff';
 const BORDER  = '#ececef';
 const TEXT    = '#1a1d24';
 const MUTED   = '#6b7280';
-const SURF    = '#f4f5f7';
+const SURF    = '#ffffff';
 
 
 function SmsStatusPill({ enabled }) {
@@ -107,20 +108,14 @@ function DriverRow({ driver }) {
             {t.settings.drivers.saved}
           </span>
         ) : (
-          <button
+          <Button
+            variant="primary"
+            size="sm"
             onClick={handleSave}
             disabled={!dirty || saving || !name.trim() || !phone.trim()}
-            style={{
-              fontFamily: INTER, fontSize: 12, fontWeight: 600,
-              padding: '5px 14px', borderRadius: 6, border: 'none',
-              background: (!dirty || !name.trim() || !phone.trim()) ? '#f4f5f7' : ACCENT,
-              color: (!dirty || !name.trim() || !phone.trim()) ? MUTED : WHITE,
-              cursor: (!dirty || saving) ? 'not-allowed' : 'pointer',
-              transition: 'background 0.15s',
-            }}
           >
             {saving ? '…' : t.settings.drivers.save}
-          </button>
+          </Button>
         )}
       </td>
     </tr>
@@ -186,8 +181,6 @@ function BillingCard() {
   const meta   = STATUS_META[status] ?? STATUS_META.none;
   const isActive = status === 'active' || status === 'trialing';
 
-  const OUTFIT = "'Geist', system-ui, sans-serif";
-  const AMBER  = '#2d3340';
   const BG2    = '#f4f5f7';
   const TEXT2  = '#1a1d24';
   const MUTED2 = '#6b7280';
@@ -252,35 +245,15 @@ function BillingCard() {
       {/* Action buttons */}
       <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${BORD}`, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
         {!isActive && sub?.stripe_enabled && (
-          <button
-            onClick={handleCheckout}
-            disabled={acting}
-            style={{
-              fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
-              padding: '8px 20px', borderRadius: 7, border: 'none',
-              background: AMBER, color: TEXT2, cursor: acting ? 'not-allowed' : 'pointer',
-              opacity: acting ? 0.7 : 1,
-            }}
-          >
+          <Button variant="primary" onClick={handleCheckout} disabled={acting}>
             {acting ? '…' : 'Starta prenumeration'}
-          </button>
+          </Button>
         )}
 
         {isActive && (
-          <button
-            onClick={handlePortal}
-            disabled={acting}
-            style={{
-              fontFamily: OUTFIT, fontSize: 13, fontWeight: 500,
-              padding: '8px 20px', borderRadius: 7,
-              border: `1px solid ${BORD}`,
-              background: '#fff', color: TEXT2,
-              cursor: acting ? 'not-allowed' : 'pointer',
-              opacity: acting ? 0.7 : 1,
-            }}
-          >
+          <Button variant="secondary" onClick={handlePortal} disabled={acting}>
             {acting ? '…' : 'Hantera prenumeration'}
-          </button>
+          </Button>
         )}
 
         {!sub?.stripe_enabled && (
@@ -390,17 +363,9 @@ function FortnoxPanel({ toast, setToast }) {
         </div>
 
         {!status?.connected && (
-          <button
-            onClick={handleConnect}
-            disabled={connecting}
-            style={{
-              fontFamily: INTER, fontSize: 13, fontWeight: 600,
-              padding: '7px 16px', borderRadius: 6, border: 'none',
-              background: BLUE, color: WHITE, cursor: 'pointer',
-            }}
-          >
+          <Button variant="primary" size="sm" onClick={handleConnect} disabled={connecting}>
             {connecting ? '…' : t.settings.fortnox.connect}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -430,31 +395,12 @@ function FortnoxPanel({ toast, setToast }) {
           </div>
 
           <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              onClick={handleSync}
-              disabled={syncing}
-              style={{
-                fontFamily: INTER, fontSize: 13, fontWeight: 500,
-                padding: '7px 16px', borderRadius: 6,
-                border: `1px solid ${BORDER}`, background: WHITE,
-                color: TEXT, cursor: 'pointer',
-              }}
-            >
+            <Button variant="secondary" size="sm" onClick={handleSync} disabled={syncing}>
               {syncing ? t.settings.fortnox.syncing : t.settings.fortnox.syncBtn}
-            </button>
-            <button
-              onClick={handleDisconnect}
-              disabled={disconnecting}
-              style={{
-                fontFamily: INTER, fontSize: 13, fontWeight: 500,
-                padding: '7px 16px', borderRadius: 6,
-                border: '1px solid rgba(231,76,60,0.3)',
-                background: 'rgba(231,76,60,0.06)',
-                color: '#e74c3c', cursor: 'pointer',
-              }}
-            >
+            </Button>
+            <Button variant="danger" size="sm" onClick={handleDisconnect} disabled={disconnecting}>
               {disconnecting ? '…' : t.settings.fortnox.disconnect}
-            </button>
+            </Button>
           </div>
         </>
       )}
@@ -505,7 +451,7 @@ export function Settings({ onFortnoxResult }) {
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px 48px', background: BG }}>
       <h1 style={{
-        fontFamily: INTER, fontSize: 18, fontWeight: 700,
+        fontFamily: INTER, fontSize: 24, fontWeight: 700,
         color: TEXT, margin: '0 0 24px', letterSpacing: '-0.02em',
       }}>
         {t.settings.heading}
@@ -673,20 +619,9 @@ export function Settings({ onFortnoxResult }) {
                   {desc}
                 </div>
               </div>
-              <button
-                onClick={onClick}
-                style={{
-                  flexShrink: 0,
-                  fontFamily: INTER, fontSize: 12, fontWeight: 600,
-                  padding: '8px 16px', borderRadius: 7,
-                  background: ACCENT,
-                  color: WHITE, border: 'none', cursor: 'pointer',
-                  boxShadow: '0 1px 4px rgba(45,51,64,0.18)',
-                  whiteSpace: 'nowrap',
-                }}
-              >
+              <Button variant="primary" size="sm" onClick={onClick} style={{ flexShrink: 0 }}>
                 {t.settings.legal.downloadPdf}
-              </button>
+              </Button>
             </div>
           ))}
         </div>
@@ -764,20 +699,9 @@ function DemoPanel({ section, sectionHead }) {
           </div>
         )}
 
-        <button
-          onClick={handleReset}
-          disabled={working}
-          style={{
-            fontFamily: INTER, fontSize: 13, fontWeight: 600,
-            padding: '10px 20px', borderRadius: 9, cursor: 'pointer',
-            background: SURF, color: '#A82424',
-            border: '1px solid rgba(168,36,36,0.35)',
-            opacity: working ? 0.6 : 1,
-            transition: 'opacity 0.15s',
-          }}
-        >
+        <Button variant="danger" onClick={handleReset} disabled={working}>
           {working ? d.resetting : d.reset}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -965,30 +889,20 @@ function AuditPanel({ section, sectionHead }) {
         <input type="date" value={fFrom} onChange={(e) => setFFrom(e.target.value)} style={inputDateStyle} title={t.audit.filters.from} />
         <input type="date" value={fTo}   onChange={(e) => setFTo(e.target.value)}   style={inputDateStyle} title={t.audit.filters.to} />
 
-        <button
-          onClick={applyFilters}
-          style={{
-            fontFamily: INTER, fontSize: 12, fontWeight: 600,
-            background: TEXT, color: WHITE, border: 'none',
-            borderRadius: 7, padding: '7px 16px', cursor: 'pointer',
-          }}
-        >
+        <Button variant="primary" size="sm" onClick={applyFilters}>
           {t.audit.filters.filterBtn}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => {
             setFUser(''); setFEntity(''); setFAction(''); setFFrom(''); setFTo('');
             filterRef.current = { fUser: '', fEntity: '', fAction: '', fFrom: '', fTo: '' };
             load(0);
           }}
-          style={{
-            fontFamily: INTER, fontSize: 12, background: 'none',
-            border: `1px solid ${BORDER}`, borderRadius: 7, padding: '7px 12px',
-            cursor: 'pointer', color: MUTED,
-          }}
         >
           {t.audit.filters.clearBtn}
-        </button>
+        </Button>
       </div>
 
       {loading && (
@@ -1089,28 +1003,22 @@ function AuditPanel({ section, sectionHead }) {
             {t.audit.eventsRange(offset + 1, Math.min(offset + LIMIT, total), total)}
           </span>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               disabled={offset === 0}
               onClick={() => load(Math.max(0, offset - LIMIT))}
-              style={{
-                fontFamily: INTER, fontSize: 12, padding: '5px 12px',
-                border: `1px solid ${BORDER}`, borderRadius: 7, background: WHITE,
-                color: offset === 0 ? MUTED : TEXT, cursor: offset === 0 ? 'not-allowed' : 'pointer',
-              }}
             >
               ← {t.audit.pagination.prev}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
               disabled={offset + LIMIT >= total}
               onClick={() => load(offset + LIMIT)}
-              style={{
-                fontFamily: INTER, fontSize: 12, padding: '5px 12px',
-                border: `1px solid ${BORDER}`, borderRadius: 7, background: WHITE,
-                color: offset + LIMIT >= total ? MUTED : TEXT, cursor: offset + LIMIT >= total ? 'not-allowed' : 'pointer',
-              }}
             >
               {t.audit.pagination.next} →
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -1168,23 +1076,12 @@ function ExportPanel({ section, sectionHead }) {
         )}
 
         <div>
-          <button
-            onClick={handleExport}
-            disabled={exporting}
-            style={{
-              fontFamily: INTER, fontSize: 13, fontWeight: 600,
-              background: exporting ? SURF : TEXT,
-              color: exporting ? MUTED : WHITE,
-              border: `1px solid ${BORDER}`, borderRadius: 9, padding: '10px 20px',
-              cursor: exporting ? 'not-allowed' : 'pointer',
-              display: 'flex', alignItems: 'center', gap: 8, transition: 'opacity 0.15s',
-            }}
-          >
+          <Button variant="primary" onClick={handleExport} disabled={exporting}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M7 1v8M4 6l3 3 3-3M2 10v2a1 1 0 001 1h8a1 1 0 001-1v-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             {exporting ? t.settings.export.exporting : t.settings.export.exportBtn}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -1290,16 +1187,9 @@ function UsersPanel({ section, sectionHead, setToast }) {
         <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
           {t.settings.users.heading}
         </span>
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          style={{
-            fontFamily: INTER, fontSize: 12, fontWeight: 600,
-            background: TEXT, color: WHITE, border: 'none',
-            borderRadius: 7, padding: '6px 14px', cursor: 'pointer',
-          }}
-        >
+        <Button variant="primary" size="sm" onClick={() => setShowForm((v) => !v)}>
           {t.settings.users.invite}
-        </button>
+        </Button>
       </div>
 
       {showForm && (
@@ -1346,23 +1236,12 @@ function UsersPanel({ section, sectionHead, setToast }) {
             </select>
           </label>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              type="submit" disabled={sending}
-              style={{
-                fontFamily: INTER, fontSize: 12, fontWeight: 600,
-                background: sending ? SURF : TEXT, color: sending ? MUTED : WHITE,
-                border: `1px solid ${BORDER}`, borderRadius: 7, padding: '8px 16px',
-                cursor: sending ? 'not-allowed' : 'pointer',
-              }}
-            >
+            <Button type="submit" variant="primary" size="sm" disabled={sending}>
               {sending ? t.settings.users.sending : t.settings.users.sendInvite}
-            </button>
-            <button
-              type="button" onClick={() => setShowForm(false)}
-              style={{ fontFamily: INTER, fontSize: 12, background: 'none', border: `1px solid ${BORDER}`, borderRadius: 7, padding: '8px 14px', cursor: 'pointer', color: MUTED }}
-            >
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setShowForm(false)}>
               {t.settings.users.cancel}
-            </button>
+            </Button>
           </div>
         </form>
       )}
