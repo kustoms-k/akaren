@@ -205,7 +205,7 @@ router.post('/', async (req, res) => {
       antal:  avstand > 0 ? avstand : 1,
       unit:   avstand > 0 ? 'km' : 'st',
       apris:  avstand > 0 ? transpKost / avstand : transpKost,
-      belopp: transpKost || total,
+      belopp: transpKost,
     });
     if (bränsle > 0) {
       lineItems.push({ desc: `Bränsletillägg${avstand > 0 ? ` (${avstand} km)` : ''}`, antal: 1, unit: 'st', apris: bränsle, belopp: bränsle });

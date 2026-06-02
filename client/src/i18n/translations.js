@@ -1065,7 +1065,7 @@ export const EN = {
     done: 'Done',
     steps: {
       newQuote: {
-        title: 'Offertberäkning',
+        title: 'Quote Calculation',
         desc:  'Paste any transport inquiry — the system processes all details and builds a complete, priced quote in seconds.',
       },
       customers: {
@@ -1222,6 +1222,8 @@ export const EN = {
     saveFirst:   'Save the quote first',
     sendByEmail: 'Send quote by email',
     statusLabel: 'Status:',
+    accepted:    'Accepted',
+    declined:    'Declined',
   },
 
   co2: {
@@ -1333,7 +1335,7 @@ export const EN = {
     brand:       'Åkaren TMS',
     heading:     'Activate your subscription',
     desc:        'Advanced features require an active subscription.',
-    price:       '15 000',
+    price:       '2 990',
     currency:    'kr / month',
     disclaimer:  'Excl. VAT · No commitment · Cancel anytime',
     included:    'Included',
@@ -3008,6 +3010,8 @@ export const SV = {
     saveFirst:   'Spara offerten först',
     sendByEmail: 'Skicka offert per e-post',
     statusLabel: 'Status:',
+    accepted:    'Godkänd',
+    declined:    'Avböjd',
   },
 
   co2: {
@@ -3119,7 +3123,7 @@ export const SV = {
     brand:       'Åkaren TMS',
     heading:     'Aktivera din prenumeration',
     desc:        'Avancerade funktioner kräver en aktiv prenumeration.',
-    price:       '15 000',
+    price:       '2 990',
     currency:    'kr / mån',
     disclaimer:  'Exkl. moms · Ingen bindningstid · Avsluta när som helst',
     included:    'Inkluderat',

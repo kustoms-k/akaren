@@ -1910,7 +1910,7 @@ function AppInner() {
                       onMouseEnter={(e) => { if (savedQuoteRawId && quoteStatus !== 'skickad') { e.currentTarget.style.borderColor = CYAN; e.currentTarget.style.color = CYAN; } }}
                       onMouseLeave={(e) => { if (savedQuoteRawId && quoteStatus !== 'skickad') { e.currentTarget.style.borderColor = 'rgba(94,234,212,0.3)'; e.currentTarget.style.color = TEXT_SEC; } }}
                     >
-                      {quoteStatus === 'skickad' ? '✓ Skickad' : '✉ Skicka till kund'}
+                      {quoteStatus === 'skickad' ? t.quoteCard.sentBtn : t.quoteCard.sendBtn}
                     </button>}
                   </div>
 
@@ -1919,8 +1919,8 @@ function AppInner() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                       <span style={{ fontFamily: INTER, fontSize: '0.625rem', color: TEXT_MU }}>Status:</span>
                       {[
-                        { s: 'godkänd', label: 'Godkänd', ok: true },
-                        { s: 'avböjd',  label: 'Avböjd',  ok: false },
+                        { s: 'godkänd', label: t.quoteCard.accepted, ok: true },
+                        { s: 'avböjd',  label: t.quoteCard.declined, ok: false },
                       ].map(({ s, label, ok }) => (
                         <button
                           key={s}
@@ -3003,12 +3003,12 @@ function HomePage({ onNavigate }) {
   }, []);
 
   // KPIs
-  const pågående      = jobs.filter(j => j.status === 'pågående').length;
+  const aktiva        = jobs.filter(j => j.status === 'aktiv').length;
   const planerade     = jobs.filter(j => j.status === 'planerad').length;
   const utestaende    = invoices.filter(i => i.status === 'utestaende').reduce((s, i) => s + (Number(i.total) || 0), 0);
   const förfallen     = invoices.filter(i => i.status === 'förfallen').reduce((s, i) => s + (Number(i.total) || 0), 0);
   const outstanding   = utestaende + förfallen;
-  const slutfordNoInv = jobs.filter(j => j.status === 'slutförd' && !j.faktura_nr);
+  const slutfordNoInv = jobs.filter(j => j.status === 'avslutad' && !j.faktura_nr);
   const toInvoiceSum  = slutfordNoInv.reduce((s, j) => s + (Number(j.totalpris_sek) || 0), 0);
   const lezWarnings   = fleet.filter(v => !v.lez_godkand).length;
 
@@ -3028,7 +3028,7 @@ function HomePage({ onNavigate }) {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
 
-  const activeJobs    = jobs.filter(j => j.status === 'pågående' || j.status === 'planerad').slice(0, 6);
+  const activeJobs    = jobs.filter(j => j.status === 'aktiv' || j.status === 'planerad').slice(0, 6);
   const pendingQuotes = quotes.filter(q => q.status === 'väntande' || q.status === 'motbud').slice(0, 6);
 
   const ROW = { padding: '13px 20px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', gap: 12 };
@@ -3053,8 +3053,8 @@ function HomePage({ onNavigate }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
         <HomeKpi
           label={hn.kpiJobs}
-          value={pågående + planerade}
-          sub={`${pågående} ${hn.ongoing} · ${planerade} ${hn.planned}`}
+          value={aktiva + planerade}
+          sub={`${aktiva} ${hn.ongoing} · ${planerade} ${hn.planned}`}
           onClick={() => onNavigate('uppdrag')}
         />
         <HomeKpi
@@ -3107,7 +3107,7 @@ function HomePage({ onNavigate }) {
               <span style={{
                 fontFamily: INTER, fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
                 padding: '3px 10px', borderRadius: 20, flexShrink: 0,
-                ...(job.status === 'pågående'
+                ...(job.status === 'aktiv'
                   ? { background: 'rgba(37,99,235,0.08)',  color: '#2563eb', border: '1px solid rgba(37,99,235,0.2)' }
                   : { background: 'rgba(107,114,128,0.08)', color: '#6b7280', border: '1px solid rgba(107,114,128,0.2)' }),
               }}>
