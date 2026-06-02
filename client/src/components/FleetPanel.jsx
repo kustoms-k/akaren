@@ -9,7 +9,7 @@ const MUTED   = '#6a6050';
 const FAINT   = '#9a9082';
 const OUTFIT  = "'Geist', system-ui, sans-serif";
 const SURF    = '#f4f0e7';
-const MONO    = "'Geist', system-ui, sans-serif";
+
 
 const EURO = {
   6: { label: 'E6', color: '#16a34a', bg: 'rgba(22,163,74,0.08)' },
@@ -52,7 +52,7 @@ function VehicleRow({ v }) {
       </span>
 
       <span style={{
-        fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 12, color: MUTED,
+        fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 12, color: MUTED,
         flexShrink: 0, textAlign: 'right', minWidth: 78,
       }}>
         {fmtSEK(v.timkostnad_sek)} kr/tim

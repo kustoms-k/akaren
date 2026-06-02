@@ -4,7 +4,6 @@ import { apiFetch } from '../utils/apiFetch.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 const OUTFIT = "'Geist', system-ui, sans-serif";
-const MONO   = "'Geist', system-ui, sans-serif";
 const AMBER  = '#c9921e';
 const GREEN  = '#1d6b45';
 const RED    = '#c45454';
@@ -77,7 +76,7 @@ function HBar({ label, value, max, unit = 'kg', color = AMBER, delay = 0 }) {
           transition: 'width 0.8s cubic-bezier(0.22,1,0.36,1)',
         }} />
       </div>
-      <div style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 12, color: MUTED, width: 80, textAlign: 'right', flexShrink: 0 }}>
+      <div style={{ fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 12, color: MUTED, width: 80, textAlign: 'right', flexShrink: 0 }}>
         {fmtNum(value, 0)} {unit}
       </div>
     </div>
@@ -105,12 +104,12 @@ function MonthBars({ months }) {
             }}>
               <div style={{
                 position: 'absolute', top: -22, left: '50%', transform: 'translateX(-50%)',
-                fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 9, color: MUTED, whiteSpace: 'nowrap',
+                fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 9, color: MUTED, whiteSpace: 'nowrap',
               }}>
                 {fmtNum(m.co2_tonnes, 1)}t
               </div>
             </div>
-            <div style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 9, color: FAINT }}>{label}</div>
+            <div style={{ fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 9, color: FAINT }}>{label}</div>
           </div>
         );
       })}
@@ -383,11 +382,11 @@ export function Co2() {
                     >
                       {[
                         <td key="month" style={{ fontFamily: OUTFIT, fontSize: 13, fontWeight: 600, color: TEXT, padding: '11px 16px' }}>{m.month}</td>,
-                        <td key="jobs" style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 12, color: MUTED, padding: '11px 16px', textAlign: 'right' }}>{m.job_count}</td>,
-                        <td key="km" style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 12, color: MUTED, padding: '11px 16px', textAlign: 'right' }}>{fmtNum(m.total_km)}</td>,
-                        <td key="co2kg" style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 12, color: TEXT, padding: '11px 16px', textAlign: 'right', fontWeight: 500 }}>{fmtNum(m.co2_kg, 1)}</td>,
-                        <td key="co2t" style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 12, color: AMBER, padding: '11px 16px', textAlign: 'right', fontWeight: 600 }}>{fmtNum(m.co2_tonnes, 2)}</td>,
-                        <td key="int" style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 12, color: MUTED, padding: '11px 16px', textAlign: 'right' }}>{m.intensity != null ? fmtNum(m.intensity, 1) : '—'}</td>,
+                        <td key="jobs" style={{ fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 12, color: MUTED, padding: '11px 16px', textAlign: 'right' }}>{m.job_count}</td>,
+                        <td key="km" style={{ fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 12, color: MUTED, padding: '11px 16px', textAlign: 'right' }}>{fmtNum(m.total_km)}</td>,
+                        <td key="co2kg" style={{ fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 12, color: TEXT, padding: '11px 16px', textAlign: 'right', fontWeight: 500 }}>{fmtNum(m.co2_kg, 1)}</td>,
+                        <td key="co2t" style={{ fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 12, color: AMBER, padding: '11px 16px', textAlign: 'right', fontWeight: 600 }}>{fmtNum(m.co2_tonnes, 2)}</td>,
+                        <td key="int" style={{ fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 12, color: MUTED, padding: '11px 16px', textAlign: 'right' }}>{m.intensity != null ? fmtNum(m.intensity, 1) : '—'}</td>,
                       ]}
                     </tr>
                   ))}
@@ -470,7 +469,7 @@ export function Co2() {
                     <div style={{ fontFamily: OUTFIT, fontSize: 11, color: MUTED, lineHeight: 1.65 }}>
                       {t.co2.cert.methodology}: {certData.methodology}
                     </div>
-                    <div style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 10, color: FAINT, marginTop: 4 }}>
+                    <div style={{ fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 10, color: FAINT, marginTop: 4 }}>
                       {t.co2.cert.generated}: {new Date(certData.generated_at).toLocaleString(lang === 'sv' ? 'sv-SE' : 'en-GB')}
                     </div>
                   </div>

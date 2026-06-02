@@ -272,7 +272,7 @@ export function generatePdf(data, quoteNumber, fleet = [], meta = {}) {
   y += 6;
 
   const items = [
-    {
+    transBase > 0 && {
       desc:   data.lasttyp
         ? `Transport — ${safe(String(data.lasttyp))}`
         : 'Transport',

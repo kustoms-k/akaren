@@ -18,7 +18,7 @@ const BORDER  = '#ececef';
 const TEXT    = '#1a1d24';
 const MUTED   = '#6b7280';
 const SURF    = '#f4f5f7';
-const MONO    = "'Geist', system-ui, sans-serif";
+
 
 function SmsStatusPill({ enabled }) {
   const { t } = useLanguage();
@@ -798,7 +798,7 @@ function DiffView({ before, after, t }) {
   try { bObj = before ? JSON.parse(before) : null; } catch {}
   try { aObj = after  ? JSON.parse(after)  : null; } catch {}
 
-  if (!bObj && !aObj) return <div style={{ padding: '10px 16px', fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 11, color: MUTED }}>{t.audit.diff.noData}</div>;
+  if (!bObj && !aObj) return <div style={{ padding: '10px 16px', fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 11, color: MUTED }}>{t.audit.diff.noData}</div>;
 
   const allKeys = [...new Set([
     ...(bObj ? Object.keys(bObj) : []),
@@ -812,7 +812,7 @@ function DiffView({ before, after, t }) {
   }
 
   const cellStyle = {
-    fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 11, padding: '3px 8px', borderRadius: 4,
+    fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 11, padding: '3px 8px', borderRadius: 4,
     wordBreak: 'break-all', lineHeight: 1.5,
   };
 
@@ -1033,7 +1033,7 @@ function AuditPanel({ section, sectionHead }) {
                       }}
                       onClick={() => hasDiff && setExpanded(isExpanded ? null : row.id)}
                     >
-                      <td style={{ padding: '9px 12px', fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 11, color: MUTED, whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '9px 12px', fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 11, color: MUTED, whiteSpace: 'nowrap' }}>
                         {fmtDate(row.created_at)}
                       </td>
                       <td style={{ padding: '9px 12px', fontFamily: INTER, fontSize: 12, color: TEXT, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -1050,14 +1050,14 @@ function AuditPanel({ section, sectionHead }) {
                       </td>
                       <td style={{ padding: '9px 12px', fontFamily: INTER, fontSize: 12, color: MUTED }}>
                         {t.audit.entities[row.entity_type] ?? row.entity_type}
-                        {row.entity_id && <span style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 10, marginLeft: 4 }}>#{row.entity_id}</span>}
+                        {row.entity_id && <span style={{ fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 10, marginLeft: 4 }}>#{row.entity_id}</span>}
                       </td>
-                      <td style={{ padding: '9px 12px', fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 10, color: MUTED }}>
+                      <td style={{ padding: '9px 12px', fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 10, color: MUTED }}>
                         {row.ip_address ?? '—'}
                       </td>
                       <td style={{ padding: '9px 12px', textAlign: 'right' }}>
                         {hasDiff && (
-                          <span style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 11, color: MUTED, userSelect: 'none' }}>
+                          <span style={{ fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 11, color: MUTED, userSelect: 'none' }}>
                             {isExpanded ? '▲' : '▼'}
                           </span>
                         )}

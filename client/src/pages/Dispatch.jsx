@@ -14,7 +14,7 @@ const TEXT   = '#17161a';
 const MUTED  = '#6b6574';
 const FAINT  = '#a09aa8';
 const OUTFIT = "'Geist', system-ui, sans-serif";
-const MONO   = "'Geist', system-ui, sans-serif";
+
 
 const STATUS_COLORS = {
   planerad:   { color: '#d97706', bg: '#fff7ed' },
@@ -94,7 +94,7 @@ function JobCard({ job, fleet, drivers, onAdvance, advancing, t }) {
       {/* Status + price */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
         <StatusPill status={job.status} label={statusLabel} />
-        <span style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 11, color: TEXT, fontWeight: 500, flexShrink: 0 }}>
+        <span style={{ fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 11, color: TEXT, fontWeight: 500, flexShrink: 0 }}>
           {fmtSEK(job.totalpris_sek)}
         </span>
       </div>
@@ -179,7 +179,7 @@ function DayColumn({ day, jobs, isToday, fleet, drivers, onAdvance, advancing, t
           {count > 0 && (
             <span style={{
               marginLeft: 'auto',
-              fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 10,
+              fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 10,
               background: isToday ? AMBER : '#ede9e2',
               color: isToday ? '#17161a' : MUTED,
               borderRadius: 10, padding: '1px 6px', flexShrink: 0,
@@ -188,7 +188,7 @@ function DayColumn({ day, jobs, isToday, fleet, drivers, onAdvance, advancing, t
             </span>
           )}
         </div>
-        <div style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 13, color: TEXT, fontWeight: 500, marginTop: 3 }}>
+        <div style={{ fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 13, color: TEXT, fontWeight: 500, marginTop: 3 }}>
           {fmtDayLabel(day)}
         </div>
       </div>
@@ -305,7 +305,7 @@ export function Dispatch() {
           <div style={{ fontFamily: OUTFIT, fontSize: 12, fontWeight: 700, letterSpacing: '0.10em', textTransform: 'uppercase', color: TEXT }}>
             {t.dispatch.title}
           </div>
-          <div style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 10, color: FAINT, marginTop: 1 }}>
+          <div style={{ fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 10, color: FAINT, marginTop: 1 }}>
             {weekLabel}
             {activeCount > 0 && (
               <span style={{ marginLeft: 10, color: '#15803d', fontWeight: 600 }}>

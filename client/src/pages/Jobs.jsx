@@ -22,7 +22,7 @@ const TEXT_PR = '#1a1d24';
 const TEXT_SEC= '#6b7280';
 const TEXT_MU = '#9ca3af';
 const INTER   = "'Geist', system-ui, sans-serif";
-const MONO    = "'Geist', system-ui, sans-serif";
+
 // Legacy aliases
 const OUTFIT  = INTER;
 const WHITE   = '#ffffff';
@@ -92,15 +92,15 @@ function MatchCard({ match, jobId, onLink, linkingId }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
         <div>
           <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: TEXT_MU }}>{bh.extraRevenue}</div>
-          <div style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 13, fontWeight: 600, color: AMBER, marginTop: 2 }}>{fmtSEK(match.totalpris_sek)}</div>
+          <div style={{ fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 13, fontWeight: 600, color: AMBER, marginTop: 2 }}>{fmtSEK(match.totalpris_sek)}</div>
         </div>
         <div>
           <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: TEXT_MU }}>{bh.emptyKmSaved(match.empty_km_eliminated)}</div>
-          <div style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 13, fontWeight: 600, color: SUCCESS, marginTop: 2 }}>{bh.savedSek(match.saved_sek)}</div>
+          <div style={{ fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 13, fontWeight: 600, color: SUCCESS, marginTop: 2 }}>{bh.savedSek(match.saved_sek)}</div>
         </div>
         <div>
           <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: TEXT_MU }}>{bh.combinedRevenue}</div>
-          <div style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 13, fontWeight: 700, color: TEXT_PR, marginTop: 2 }}>{fmtSEK(match.combined_revenue)}</div>
+          <div style={{ fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 13, fontWeight: 700, color: TEXT_PR, marginTop: 2 }}>{fmtSEK(match.combined_revenue)}</div>
         </div>
       </div>
 
@@ -280,7 +280,7 @@ function InvoiceModal({ job, customers, onClose, onSuccess }) {
           <div style={{ fontFamily: INTER, fontSize: 13, color: TEXT_SEC, marginBottom: 20 }}>
             {[job.upphämtning, job.leverans].filter(Boolean).join(' – ')}
             {job.totalpris_sek != null && (
-              <span style={{ color: AMBER, marginLeft: 10, fontWeight: 600, fontFamily: MONO, fontFeatureSettings: '"tnum"' }}>{fmtSEK(job.totalpris_sek)} {t.jobs.exclVat}</span>
+              <span style={{ color: AMBER, marginLeft: 10, fontWeight: 600, fontFamily: INTER, fontFeatureSettings: '"tnum"' }}>{fmtSEK(job.totalpris_sek)} {t.jobs.exclVat}</span>
             )}
           </div>
         )}
@@ -559,7 +559,7 @@ export function Jobs() {
                       onMouseLeave={(e) => { if (!isExpanded) e.currentTarget.style.background = 'transparent'; }}
                     >
                       <td style={{
-                        fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 12, padding: '12px 16px', color: TEXT_PR,
+                        fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 12, padding: '12px 16px', color: TEXT_PR,
                         borderBottom: (!isLast || isExpanded) ? '1px solid rgba(255,255,255,0.05)' : 'none', verticalAlign: 'middle',
                       }}>
                         <span style={{ color: AMBER, fontWeight: 600 }}>{jobNr}</span>
@@ -598,7 +598,7 @@ export function Jobs() {
                       }}>
                         {job.totalpris_sek != null ? (
                           <div>
-                            <div style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 13, fontWeight: 500, color: AMBER }}>{fmtSEK(job.totalpris_sek)}</div>
+                            <div style={{ fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 13, fontWeight: 500, color: AMBER }}>{fmtSEK(job.totalpris_sek)}</div>
                             <div style={{ fontFamily: INTER, fontSize: 10, color: TEXT_MU }}>{t.jobs.exclVat}</div>
                           </div>
                         ) : '—'}

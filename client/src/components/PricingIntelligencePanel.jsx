@@ -3,7 +3,7 @@ import { db } from '../db/dexie.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 const INTER  = "'Geist', system-ui, sans-serif";
-const MONO   = "'Geist', system-ui, sans-serif";
+
 const TEXT   = '#1a1d24';
 const MUTED  = '#6b7280';
 const FAINT  = '#9ca3af';
@@ -42,7 +42,7 @@ function TierBar({ label, rate, count, highlight }) {
         }} />
       </div>
       <span style={{
-        fontFamily: MONO, fontSize: 11,
+        fontFamily: INTER, fontSize: 11,
         color: highlight ? ACCENT : FAINT,
         width: 30, textAlign: 'right', flexShrink: 0,
         fontFeatureSettings: '"tnum"',
@@ -50,7 +50,7 @@ function TierBar({ label, rate, count, highlight }) {
         {Math.round(rate * 100)}%
       </span>
       <span style={{
-        fontFamily: MONO, fontSize: 10, color: FAINT,
+        fontFamily: INTER, fontSize: 10, color: FAINT,
         width: 30, flexShrink: 0, fontFeatureSettings: '"tnum"',
       }}>
         n={count}
@@ -247,7 +247,7 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, parsed, onAppl
                   {pi.totalCost}
                 </span>
                 <span style={{
-                  fontFamily: MONO, fontSize: 13, fontWeight: 700, color: TEXT,
+                  fontFamily: INTER, fontSize: 13, fontWeight: 700, color: TEXT,
                   fontFeatureSettings: '"tnum"',
                 }}>
                   {fmtSEK(costFloor)}
@@ -271,7 +271,7 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, parsed, onAppl
                 {pi.quotePrice}
               </div>
               <div style={{
-                fontFamily: MONO, fontSize: 19, fontWeight: 700,
+                fontFamily: INTER, fontSize: 19, fontWeight: 700,
                 color: TEXT, letterSpacing: '-0.02em',
                 fontFeatureSettings: '"tnum"',
               }}>
@@ -288,14 +288,14 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, parsed, onAppl
                   {pi.margin}
                 </div>
                 <div style={{
-                  fontFamily: MONO, fontSize: 19, fontWeight: 700,
+                  fontFamily: INTER, fontSize: 19, fontWeight: 700,
                   color: marginColor(marginPct), letterSpacing: '-0.02em',
                   fontFeatureSettings: '"tnum"',
                 }}>
                   {marginPct}%
                 </div>
                 <div style={{
-                  fontFamily: MONO, fontSize: 11, fontWeight: 500,
+                  fontFamily: INTER, fontSize: 11, fontWeight: 500,
                   color: marginColor(marginPct), opacity: 0.75,
                   fontFeatureSettings: '"tnum"',
                 }}>
@@ -325,7 +325,7 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, parsed, onAppl
                     </span>
                   )}
                   <span style={{
-                    fontFamily: MONO, fontSize: 13, fontWeight: 600, color: TEXT,
+                    fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT,
                     fontFeatureSettings: '"tnum"',
                   }}>
                     {fmtSEK(histAvg)}
@@ -408,7 +408,7 @@ function CostRow({ label, value }) {
       padding: '3px 0',
     }}>
       <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>{label}</span>
-      <span style={{ fontFamily: MONO, fontSize: 12, color: TEXT, fontFeatureSettings: '"tnum"' }}>
+      <span style={{ fontFamily: INTER, fontSize: 12, color: TEXT, fontFeatureSettings: '"tnum"' }}>
         {value}
       </span>
     </div>

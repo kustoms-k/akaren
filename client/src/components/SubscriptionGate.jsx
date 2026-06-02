@@ -4,7 +4,7 @@ import { useLanguage } from '../context/LanguageContext.jsx';
 
 const AMBER  = '#c9921e';
 const OUTFIT = "'Geist', system-ui, sans-serif";
-const MONO   = "'Geist', system-ui, sans-serif";
+
 
 export function SubscriptionGate({ onClose }) {
   const { t } = useLanguage();
@@ -55,7 +55,7 @@ export function SubscriptionGate({ onClose }) {
         {/* Header */}
         <div style={{ padding: '28px 28px 0' }}>
           <div style={{
-            fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 10, letterSpacing: '0.14em',
+            fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 10, letterSpacing: '0.14em',
             color: 'rgba(201,146,30,0.6)', textTransform: 'uppercase', marginBottom: 10,
           }}>
             {t.subscriptionGate.brand}
@@ -76,7 +76,7 @@ export function SubscriptionGate({ onClose }) {
         {/* Price */}
         <div style={{ padding: '0 28px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-            <span style={{ fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 36, fontWeight: 500, color: AMBER, lineHeight: 1, letterSpacing: '-0.02em' }}>
+            <span style={{ fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 36, fontWeight: 500, color: AMBER, lineHeight: 1, letterSpacing: '-0.02em' }}>
               {t.subscriptionGate.price}
             </span>
             <span style={{ fontFamily: OUTFIT, fontSize: 14, color: 'rgba(201,146,30,0.6)' }}>

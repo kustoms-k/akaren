@@ -11,7 +11,7 @@ const MUTED   = '#6b7280';
 const FAINT   = '#9ca3af';
 const SURF    = '#f4f5f7';
 const OUTFIT  = "'Geist', system-ui, sans-serif";
-const MONO    = "'Geist', system-ui, sans-serif";
+
 const WARNING = '#b56510';
 const ERROR   = '#dc2626';
 
@@ -216,7 +216,7 @@ export function AnalysisStream({
                           placeholder={isNone ? t.newQuote.analysis.idle : undefined}
                           onChange={(e) => onFieldChange(key, e.target.value)}
                           style={{
-                            fontFamily: mono ? MONO : OUTFIT, fontSize: 14,
+                            fontFamily: mono ? INTER : OUTFIT, fontSize: 14,
                             color: val == null ? WARNING : TEXT,
                             background: WHITE,
                             border: `1.5px solid ${needsReview ? WARNING : BORDER}`,
@@ -235,7 +235,7 @@ export function AnalysisStream({
                       </span>
                     ) : val != null && !isNone ? (
                       <span style={{
-                        fontFamily: mono ? MONO : OUTFIT,
+                        fontFamily: mono ? INTER : OUTFIT,
                         fontFeatureSettings: mono ? '"tnum"' : undefined,
                         fontSize: 14, fontWeight: mono ? 500 : 500, color: TEXT,
                         ...(mock ? { color: FAINT, animation: 'text-pulse 1.2s ease-in-out infinite' } : {}),
@@ -316,7 +316,7 @@ export function AnalysisStream({
               {t.newQuote.quotePrefix}
             </div>
             <div style={{
-              fontFamily: MONO, fontFeatureSettings: '"tnum"',
+              fontFamily: INTER, fontFeatureSettings: '"tnum"',
               fontFeatureSettings: '"tnum"',
               fontSize: 30,
               fontWeight: 500,

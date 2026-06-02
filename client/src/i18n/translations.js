@@ -43,6 +43,13 @@ export const EN = {
     noPendingQuotes: 'No pending quotes',
     revenueTitle:    'Revenue last 6 months — paid invoices (SEK ex. VAT)',
     paid:            'Paid',
+    quoteStatuses: {
+      väntande: 'Pending',
+      motbud:   'Counter offer',
+      skickad:  'Sent',
+      godkänd:  'Accepted',
+      avböjd:   'Declined',
+    },
   },
 
   ekonomi: {
@@ -253,6 +260,7 @@ export const EN = {
     routeAdvisory: {
       heading:      'Route Analysis',
       distanceTime: (km, min) => `${km} km · ${min} min (HGV)`,
+      moreAlerts:   (n) => `+${n} more…`,
     },
     statusUpdated:  (s) => `Quote marked as ${s}`,
     emailSimulated: 'Email simulated (SMTP not configured)',
@@ -1010,7 +1018,7 @@ export const EN = {
       howItWorks:  'How quotes are calculated:',
       formula:     'Total = (Distance × per-km rate) + (Hours × hourly rate) + start fee × (1 + markup %)',
       fuelCost:    'Default fuel cost / km (kr)',
-      fuelHint:    'Typically 2.00–3.50 kr',
+      fuelHint:    'Typically 5.00–9.00 kr',
       markup:      'Default markup %',
       markupHint:  'Typically 25–45%',
       preview:     'Example quote (50 km, truck, 3 h)',
@@ -1431,6 +1439,8 @@ export const EN = {
     noData:       'No jobs this month.',
     summary:      (km, sek, rSek) =>
       `You have driven ${km.toLocaleString('sv-SE')} empty km this month (~${sek.toLocaleString('sv-SE')} kr). Backhaul matching has recovered ${rSek.toLocaleString('sv-SE')} kr.`,
+    totalKm:      'TOTAL KM',
+    jobCount:     (n) => `${n} route${n !== 1 ? 's' : ''}`,
   },
 
   complianceWarning: {
@@ -1831,6 +1841,13 @@ export const SV = {
     noPendingQuotes: 'Inga offerter att åtgärda',
     revenueTitle:    'Omsättning senaste 6 månader — betalda fakturor (SEK exkl. moms)',
     paid:            'Betalt',
+    quoteStatuses: {
+      väntande: 'Väntande',
+      motbud:   'Motbud',
+      skickad:  'Skickad',
+      godkänd:  'Godkänd',
+      avböjd:   'Avböjd',
+    },
   },
 
   ekonomi: {
@@ -2041,6 +2058,7 @@ export const SV = {
     routeAdvisory: {
       heading:      'Ruttanalys',
       distanceTime: (km, min) => `${km} km · ${min} min (HGV)`,
+      moreAlerts:   (n) => `+${n} till…`,
     },
     statusUpdated:  (s) => `Offert markerad som ${s}`,
     emailSimulated: 'E-post simulerad (SMTP ej konfigurerat)',
@@ -2798,7 +2816,7 @@ export const SV = {
       howItWorks:  'Hur offertberäkningen fungerar:',
       formula:     'Pris = (Distans × kr/km) + (Timmar × timkostnad) + startavgift × (1 + påslag %)',
       fuelCost:    'Standardbränslekostnad / km (kr)',
-      fuelHint:    'Vanligtvis 2,00–3,50 kr',
+      fuelHint:    'Vanligtvis 5,00–9,00 kr',
       markup:      'Standard påslag %',
       markupHint:  'Vanligtvis 25–45 %',
       preview:     'Exempeloffert (50 km, lastbil, 3 h)',
@@ -3219,6 +3237,8 @@ export const SV = {
     noData:       'Inga uppdrag denna månad.',
     summary:      (km, sek, rSek) =>
       `Du har kört ${km.toLocaleString('sv-SE')} tomma mil denna månad (~${sek.toLocaleString('sv-SE')} kr). Returlast-matchning har återvunnit ${rSek.toLocaleString('sv-SE')} kr.`,
+    totalKm:      'TOTALT KM',
+    jobCount:     (n) => `${n} rutt${n !== 1 ? 'er' : ''}`,
   },
 
   complianceWarning: {

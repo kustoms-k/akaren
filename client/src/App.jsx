@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 import {
   Home,
-  LayoutDashboard, FilePlus, Briefcase, Truck,
+  FilePlus, Briefcase, Truck,
   Settings as SettingsIcon, LogOut, Bell, Search, X, DollarSign, FileText,
   AlertTriangle, Fuel, Shield, Lock, Users, Leaf, CalendarDays, ScrollText, Network, CreditCard, Wrench,
 } from 'lucide-react';
@@ -31,10 +31,6 @@ import { Co2 }            from './pages/Co2.jsx';
 import { Onboarding }     from './pages/Onboarding.jsx';
 import { Dispatch }       from './pages/Dispatch.jsx';
 import { DriverView }     from './pages/DriverView.jsx';
-import { Kortider }          from './pages/Kortider.jsx';
-import { Upphandlingar }     from './pages/Upphandlingar.jsx';
-import Natverk               from './pages/Natverk.jsx';
-import Drivmedel             from './pages/Drivmedel.jsx';
 import Underhall             from './pages/Underhall.jsx';
 import { SetupAccount }   from './pages/SetupAccount.jsx';
 import { TourOverlay }    from './components/TourOverlay.jsx';
@@ -65,7 +61,6 @@ const ACCENT    = '#2d3340';   // dark slate — primary buttons + active states
 const ACCENT_SF = '#eef0f3';   // accent-soft background
 const ICON_BG   = '#eef1f5';   // icon container tint
 const INTER     = "'Geist', system-ui, sans-serif";
-const MONO      = "'Geist', system-ui, sans-serif";
 
 // Semantic colours
 const D_GREEN = '#16a34a';
@@ -134,51 +129,6 @@ const fmtDate = (str) => {
 const fmtPrice = (n) =>
   new Intl.NumberFormat('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 
-// ─── Live dashboard helpers ───────────────────────────────────────────────────
-function fmtTimeAgo(isoStr, t) {
-  const ms   = Date.now() - new Date(String(isoStr).replace(' ', 'T')).getTime();
-  const mins = Math.floor(ms / 60000);
-  if (mins < 1)  return t.topbar.timeAgo.justNow;
-  if (mins < 60) return t.topbar.timeAgo.mins(mins);
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24)  return t.topbar.timeAgo.hours(hrs);
-  return t.topbar.timeAgo.days(Math.floor(hrs / 24));
-}
-
-function buildRevenueData(quotes) {
-  const now    = new Date();
-  const months = Array.from({ length: 6 }, (_, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
-    return {
-      month: d.toLocaleDateString('sv-SE', { month: 'short' }),
-      key:   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
-      value: 0,
-    };
-  });
-  for (const q of quotes) {
-    if (!q.created_at || !q.totalpris_sek) continue;
-    const key = String(q.created_at).slice(0, 7);
-    const m   = months.find((mo) => mo.key === key);
-    if (m) m.value += Number(q.totalpris_sek) || 0;
-  }
-  return months.map(({ month, value }) => ({ month, value }));
-}
-
-function buildActivity(quotes, t) {
-  const sorted = [...quotes]
-    .sort((a, b) => new Date(String(b.created_at).replace(' ', 'T')) - new Date(String(a.created_at).replace(' ', 'T')))
-    .slice(0, 5);
-  return sorted.map((q) => {
-    const route = [q.upphämtning, q.leverans].filter(Boolean).join(' – ') || q.lasttyp || '—';
-    const isJob = q.status === 'godkänd' || q.status === 'aktiv' || q.status === 'avslutad';
-    return {
-      dot:  isJob ? '#2ecc71' : AMBER,
-      text: isJob ? t.dashboard.activity.jobSaved : t.dashboard.activity.quoteCreated,
-      sub:  route,
-      time: fmtTimeAgo(q.created_at, t),
-    };
-  });
-}
 
 // Roles that can access each nav item
 const NAV_ROLES = {
@@ -188,8 +138,6 @@ const NAV_ROLES = {
   fleet:    ['agare', 'trafikledare'],
   ekonomi:  ['agare', 'ekonomi', 'revisor'],
   settings: ['agare', 'trafikledare', 'ekonomi', 'revisor'],
-  // Hidden — code preserved, not shown in nav:
-  // kortider, upphandlingar, natverk, drivmedel, underhall, dashboard
 };
 
 function getNavItems(t, role) {
@@ -200,26 +148,8 @@ function getNavItems(t, role) {
     { id: 'fleet',    label: t.nav.fleet,    Icon: Truck,        group: 'main' },
     { id: 'ekonomi',  label: t.nav.ekonomi,  Icon: DollarSign,   group: 'main' },
     { id: 'settings', label: t.nav.settings, Icon: SettingsIcon, group: 'main' },
-    /* Hidden pages — preserved for future re-activation:
-    { id: 'dashboard',     label: t.nav.dashboard,    Icon: LayoutDashboard, group: 'main' },
-    { id: 'kortider',      label: t.nav.kortider,      Icon: Shield,      group: 'compliance' },
-    { id: 'upphandlingar', label: t.nav.upphandlingar, Icon: ScrollText,  group: 'compliance' },
-    { id: 'natverk',       label: t.nav.natverk,       Icon: Network,     group: 'network' },
-    { id: 'drivmedel',     label: t.nav.drivmedel,     Icon: CreditCard,  group: 'network' },
-    { id: 'underhall',     label: t.nav.underhall,     Icon: Wrench,      group: 'network' },
-    */
   ];
   return all.filter((n) => !role || (NAV_ROLES[n.id] ?? []).includes(role));
-}
-
-function getStatusBadge(status, t) {
-  if (status === 'PAID' || status === 'BETALD') {
-    return { label: t.dashboard.status.paid,     bg: '#e8fdf0', color: '#16a34a' };
-  }
-  if (status === 'DECLINED' || status === 'AVBÖJD') {
-    return { label: t.dashboard.status.declined, bg: '#fff0f0', color: '#e74c3c' };
-  }
-  return   { label: t.dashboard.status.pending,  bg: '#fff7ed', color: '#d97706' };
 }
 
 // ─── NavItem ──────────────────────────────────────────────────────────────────
@@ -404,7 +334,7 @@ function KpiCard({ label, value, rawValue, formatFn, change, changeUp, accentCol
         {label}
       </div>
       <div style={{
-        fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 24, fontWeight: 700,
+        fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 24, fontWeight: 700,
         color: TEXT_PR, letterSpacing: '-0.03em', lineHeight: 1,
         fontVariantNumeric: 'tabular-nums',
       }}>
@@ -415,500 +345,6 @@ function KpiCard({ label, value, rawValue, formatFn, change, changeUp, accentCol
     </motion.div>
   );
 }
-
-// ─── Dashboard ────────────────────────────────────────────────────────────────
-function Dashboard({ quotes, fuelPrice, roadAlerts, onNewQuote, fleet = [] }) {
-  const { t } = useLanguage();
-  const [backhaulStats, setBackhaulStats] = useState(null);
-
-  useEffect(() => {
-    apiFetch('/api/backhaul/stats')
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => d && setBackhaulStats(d))
-      .catch(() => {});
-  }, []);
-
-  const revenueData   = buildRevenueData(quotes);
-  const activity      = buildActivity(quotes, t);
-  const chartSubtitle = revenueData.length >= 2
-    ? `${revenueData[0].month} – ${revenueData[revenueData.length - 1].month} ${new Date().getFullYear()}`
-    : '';
-
-  const todayStr    = new Date().toDateString();
-  const yestStr     = new Date(Date.now() - 86400000).toDateString();
-  const toDay       = (q) => new Date(String(q.created_at).replace(' ', 'T')).toDateString();
-  const todayQ      = quotes.filter((q) => toDay(q) === todayStr);
-  const yestQ       = quotes.filter((q) => toDay(q) === yestStr);
-  const todayRev    = todayQ.reduce((s, q) => s + (Number(q.totalpris_sek) || 0), 0);
-  const yestRev     = yestQ.reduce((s, q) => s + (Number(q.totalpris_sek) || 0), 0);
-  const revPct      = yestRev > 0 ? Math.round((todayRev - yestRev) / yestRev * 100) : null;
-  const quotesDelta = todayQ.length - yestQ.length;
-
-  const totalRevenue = quotes.reduce((sum, q) => sum + (Number(q.totalpris_sek) || 0), 0);
-  const dieselValue  = fuelPrice ? fmtPrice(fuelPrice.price_per_litre) + ' kr/L' : '—';
-  const lezCount     = quotes.filter((q) => q.lez_varning).length;
-  const lezPct       = quotes.length > 0 ? Math.round((quotes.length - lezCount) / quotes.length * 100) : 100;
-  const displayQ     = quotes.slice(0, 6);
-  const activeJobs   = quotes.filter((q) => q.status === 'aktiv' || q.status === 'planerad').length;
-
-  return (
-    <div style={{
-      flex: 1, overflowY: 'auto',
-      padding: '24px 28px',
-      background: 'transparent',
-      display: 'flex', flexDirection: 'column', gap: 20,
-    }}>
-
-      {/* ── Page header ─────────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-        <div>
-          <div style={{ fontFamily: INTER, fontSize: 18, fontWeight: 700, color: TEXT_PR, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-            {t.dashboard.operationsTitle}
-          </div>
-          <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT_MU, marginTop: 3 }}>
-            {new Date().toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: 'rgba(58,148,104,0.08)', border: '1px solid rgba(58,148,104,0.22)',
-            borderRadius: 7, padding: '6px 12px',
-          }}>
-            <span style={{
-              display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
-              background: D_GREEN,
-            }} />
-            <span style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.10em', color: D_GREEN }}>
-              {t.dashboard.systemLive}
-            </span>
-          </div>
-          <motion.button
-            onClick={onNewQuote}
-            whileTap={{ scale: 0.97 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-            style={{
-              background: TEXT_PR, color: SURF, border: 'none', borderRadius: 8,
-              padding: '9px 18px', fontSize: 12, fontWeight: 600, fontFamily: INTER,
-              letterSpacing: '0.03em', cursor: 'pointer',
-              transition: 'opacity 150ms',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.82'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
-          >
-            + {t.dashboard.analyseBtn}
-          </motion.button>
-        </div>
-      </div>
-
-      {/* ── KPI cards ────────────────────────────────────────────────────────── */}
-      <motion.div
-        className="kpi-grid"
-        style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}
-        initial="hidden"
-        animate="show"
-        variants={{ show: { transition: { staggerChildren: 0.04 } } }}
-      >
-        {[
-          {
-            accentColor: ACCENT, Icon: DollarSign,
-            label: t.dashboard.totalRevenue,
-            value: totalRevenue > 0 ? new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(totalRevenue) + ' kr' : '—',
-            rawValue: totalRevenue > 0 ? totalRevenue : null,
-            formatFn: totalRevenue > 0
-              ? (v) => new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(Math.round(v)) + ' kr'
-              : null,
-            change: revPct != null ? `${Math.abs(revPct)}% ${t.dashboard.vsYesterday}` : null,
-            changeUp: revPct != null && revPct >= 0,
-          },
-          {
-            accentColor: ACCENT, Icon: FileText,
-            label: t.dashboard.quotes,
-            value: String(quotes.length),
-            rawValue: quotes.length,
-            formatFn: (v) => String(Math.round(v)),
-            change: quotesDelta !== 0 ? `${Math.abs(quotesDelta)} ${t.dashboard.vsYesterday}` : null,
-            changeUp: quotesDelta > 0,
-          },
-          {
-            accentColor: lezCount === 0 ? D_GREEN : D_RED, Icon: AlertTriangle,
-            label: t.dashboard.lezCompliance,
-            value: `${lezPct}%`,
-            rawValue: lezPct,
-            formatFn: (v) => `${Math.round(v)}%`,
-            change: lezCount > 0 ? t.dashboard.lezWarnings(lezCount) : t.dashboard.lezApproved,
-            changeUp: lezCount === 0,
-          },
-          {
-            accentColor: D_AMBER, Icon: Fuel,
-            label: t.dashboard.dieselPrice,
-            value: dieselValue,
-            change: fuelPrice?.source !== 'fallback' ? 'LIVE' : null,
-            changeUp: true,
-          },
-        ].map((card, i) => (
-          <motion.div
-            key={i}
-            variants={{
-              hidden: { opacity: 0, y: 8 },
-              show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 220, damping: 22 } },
-            }}
-          >
-            <KpiCard {...card} />
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {/* ── Tomma mil / Backhaul panel ───────────────────────────────────────── */}
-      {backhaulStats && backhaulStats.job_count > 0 && (
-        <div style={{
-          background: SURF,
-          border: `1px solid rgba(181,101,16,0.22)`,
-          borderRadius: 12, padding: '18px 22px',
-          borderLeft: `4px solid ${D_AMBER}`,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Truck size={14} color={D_AMBER} strokeWidth={1.5} />
-              <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT_PR }}>
-                {t.tommaMillPanel.heading}
-              </span>
-              <span style={{
-                fontFamily: INTER, fontSize: 9, fontWeight: 700, letterSpacing: '0.08em',
-                color: D_AMBER, background: `${D_AMBER}18`, border: `1px solid ${D_AMBER}35`,
-                borderRadius: 4, padding: '1px 6px',
-              }}>
-                {t.tommaMillPanel.badge}
-              </span>
-            </div>
-            {backhaulStats.pair_count > 0 && (
-              <span style={{ fontFamily: INTER, fontSize: 11, color: D_GREEN, fontWeight: 600 }}>
-                {t.tommaMillPanel.pairCount(backhaulStats.pair_count)}
-              </span>
-            )}
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 14 }}>
-            <div style={{ borderRight: `1px solid ${BORDER}`, paddingRight: 16 }}>
-              <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: TEXT_MU, marginBottom: 4 }}>
-                {t.tommaMillPanel.badge}
-              </div>
-              <div style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: D_AMBER, letterSpacing: '-0.03em', fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>
-                {t.tommaMillPanel.deadheadKm(backhaulStats.deadhead_km)}
-              </div>
-              <div style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU, marginTop: 2 }}>
-                {t.tommaMillPanel.deadheadSek(backhaulStats.deadhead_sek)}
-              </div>
-            </div>
-
-            <div style={{ borderRight: `1px solid ${BORDER}`, paddingRight: 16 }}>
-              <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: TEXT_MU, marginBottom: 4 }}>
-                {t.tommaMillPanel.recoveredBy}
-              </div>
-              <div style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: D_GREEN, letterSpacing: '-0.03em', fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>
-                {t.tommaMillPanel.recoveredSek(backhaulStats.recovered_sek)}
-              </div>
-              <div style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU, marginTop: 2 }}>
-                {t.tommaMillPanel.recoveredKm(backhaulStats.recovered_km)}
-              </div>
-            </div>
-
-            <div>
-              <div style={{ fontFamily: INTER, fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: TEXT_MU, marginBottom: 4 }}>
-                TOTAL KM
-              </div>
-              <div style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: TEXT_PR, letterSpacing: '-0.03em', fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>
-                {backhaulStats.total_km.toLocaleString('sv-SE')} km
-              </div>
-              <div style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU, marginTop: 2 }}>
-                {backhaulStats.job_count} {backhaulStats.job_count === 1 ? 'job' : 'jobs'}
-              </div>
-            </div>
-          </div>
-
-          <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT_SEC, lineHeight: 1.5 }}>
-            {t.tommaMillPanel.summary(backhaulStats.deadhead_km, backhaulStats.deadhead_sek, backhaulStats.recovered_sek)}
-          </div>
-        </div>
-      )}
-
-      {/* ── Middle row: chart + live events ──────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '62fr 38fr', gap: 16, minHeight: 300 }}>
-
-        {/* Bar chart */}
-        <motion.div
-          whileHover={{ y: -2, boxShadow: '0 4px 20px rgba(0,0,0,0.09)' }}
-          transition={{ type: 'spring', stiffness: 300, damping: 22 }}
-          style={{ background: SURF, border: `1px solid ${BORDER}`, borderRadius: 12, padding: '20px 24px' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: TEXT_PR, fontFamily: INTER }}>
-              {t.dashboard.monthlyRevenue}
-            </span>
-            <span style={{
-              fontFamily: INTER, fontSize: 10, fontWeight: 600, letterSpacing: '0.05em',
-              color: D_AMBER, background: `${D_AMBER}18`, border: `1px solid ${D_AMBER}35`,
-              borderRadius: 5, padding: '2px 8px',
-            }}>
-              {t.dashboard.monthlyBadge}
-            </span>
-          </div>
-          <div style={{ fontSize: 11, color: TEXT_MU, fontFamily: INTER, marginBottom: 18 }}>
-            {chartSubtitle}
-          </div>
-          <ResponsiveContainer width="100%" height={195}>
-            <BarChart data={revenueData} barCategoryGap="35%" margin={{ top: 0, right: 4, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor={D_AMBER} stopOpacity={1} />
-                  <stop offset="100%" stopColor={D_AMBER} stopOpacity={0.45} />
-                </linearGradient>
-                <linearGradient id="barGradPeak" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor="#E8A030" stopOpacity={1} />
-                  <stop offset="100%" stopColor={D_AMBER}  stopOpacity={0.9} />
-                </linearGradient>
-              </defs>
-              <XAxis
-                dataKey="month" axisLine={false} tickLine={false}
-                tick={{ fill: TEXT_MU, fontSize: 11, fontFamily: INTER }}
-              />
-              <YAxis
-                axisLine={false} tickLine={false}
-                tick={{ fill: TEXT_MU, fontSize: 10, fontFamily: INTER }}
-                tickFormatter={(v) => `${Math.round(v / 1000)}k`}
-                width={30}
-              />
-              <Tooltip
-                cursor={{ fill: 'rgba(28,26,22,0.04)' }}
-                contentStyle={{
-                  background: SURF_ELV, border: `1px solid \$\{BORDER\}`,
-                  borderRadius: 8, fontSize: 11, fontFamily: INTER, color: TEXT_PR,
-                }}
-                labelStyle={{ color: TEXT_SEC }}
-                formatter={(v) => [
-                  new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(v) + ' kr',
-                  t.dashboard.revenueLabel,
-                ]}
-              />
-              <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                {revenueData.map((entry, idx) => {
-                  const max = Math.max(...revenueData.map((d) => d.value));
-                  return (
-                    <Cell
-                      key={idx}
-                      fill={entry.value === max && max > 0 ? 'url(#barGradPeak)' : 'url(#barGrad)'}
-                    />
-                  );
-                })}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </motion.div>
-
-        {/* Live events feed */}
-        <motion.div
-          whileHover={{ y: -2, boxShadow: '0 4px 20px rgba(0,0,0,0.09)' }}
-          transition={{ type: 'spring', stiffness: 300, damping: 22 }}
-          style={{ background: SURF, border: `1px solid ${BORDER}`, borderRadius: 12, padding: '20px 22px', display: 'flex', flexDirection: 'column' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexShrink: 0 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: TEXT_PR, fontFamily: INTER }}>
-              {t.dashboard.recentActivity}
-            </span>
-            <span style={{ fontSize: 10, color: TEXT_MU, fontFamily: INTER, letterSpacing: '0.06em' }}>
-              {t.dashboard.totalCount(quotes.length)}
-            </span>
-          </div>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 14, overflowY: 'auto' }}>
-            {activity.length === 0 ? (
-              <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT_MU, fontStyle: 'italic' }}>
-                {t.dashboard.noJobsYet}
-              </div>
-            ) : activity.map((item, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <div style={{
-                  width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-                  background: item.dot, marginTop: 5,
-                }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, color: TEXT_PR, fontFamily: INTER }}>{item.text}</div>
-                  <div style={{ fontSize: 11, color: TEXT_MU, fontFamily: INTER, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {item.sub}
-                  </div>
-                </div>
-                <span style={{ fontSize: 10, color: TEXT_MU, fontFamily: INTER, flexShrink: 0 }}>{item.time}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
-
-      {/* ── Recent Quotes table ──────────────────────────────────────────────── */}
-      <motion.div
-        whileHover={{ y: -2, boxShadow: '0 4px 20px rgba(0,0,0,0.09)' }}
-        transition={{ type: 'spring', stiffness: 300, damping: 22 }}
-        style={{ background: SURF, border: `1px solid ${BORDER}`, borderRadius: 12, padding: '18px 22px' }}
-      >
-        <div style={{ fontSize: 13, fontWeight: 600, color: TEXT_PR, fontFamily: INTER, marginBottom: 16 }}>
-          {t.dashboard.recentQuotes}
-        </div>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              {[t.dashboard.tableHeaders.no, t.dashboard.tableHeaders.date, t.dashboard.tableHeaders.cargo, t.dashboard.tableHeaders.amount, t.dashboard.tableHeaders.status].map((col) => (
-                <th key={col} style={{
-                  textAlign: 'left', fontSize: 10,
-                  color: TEXT_MU, fontFamily: INTER, fontWeight: 600,
-                  letterSpacing: '0.07em', textTransform: 'uppercase',
-                  padding: '0 16px 10px 0',
-                  borderBottom: `1px solid ${BORDER}`,
-                }}>
-                  {col}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {displayQ.length === 0 ? (
-              <tr>
-                <td colSpan={5}>
-                  <div style={{ padding: '32px 8px', textAlign: 'center', fontFamily: INTER, fontSize: 12, color: TEXT_MU, fontStyle: 'italic' }}>
-                    {t.dashboard.noJobsYet}
-                  </div>
-                </td>
-              </tr>
-            ) : displayQ.map((q) => {
-              const isOk   = q.status === 'PAID' || q.status === 'BETALD';
-              const isDecl = q.status === 'DECLINED' || q.status === 'AVBÖJD';
-              const dotC   = isOk ? D_GREEN : isDecl ? D_RED : D_AMBER;
-              const badge  = getStatusBadge(q.status, t);
-              return (
-                <tr key={q.id}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(28,26,22,0.035)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                >
-                  <td style={{ fontSize: 12, fontFamily: MONO, color: D_AMBER, fontWeight: 600, padding: '11px 16px 11px 0', borderBottom: `1px solid ${BORDER}`, verticalAlign: 'middle', fontFeatureSettings: '"tnum"' }}>{q.id}</td>
-                  <td style={{ fontSize: 12, fontFamily: MONO, color: TEXT_SEC, padding: '11px 16px 11px 0', borderBottom: `1px solid ${BORDER}`, verticalAlign: 'middle', fontFeatureSettings: '"tnum"' }}>{fmtDate(q.created_at)}</td>
-                  <td style={{ fontSize: 12, fontFamily: INTER, color: TEXT_SEC, padding: '11px 16px 11px 0', borderBottom: `1px solid ${BORDER}`, verticalAlign: 'middle', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.lasttyp || '—'}</td>
-                  <td style={{ fontSize: 12, fontFamily: MONO, color: TEXT_PR, fontWeight: 500, fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums', padding: '11px 16px 11px 0', borderBottom: `1px solid ${BORDER}`, verticalAlign: 'middle', whiteSpace: 'nowrap' }}>{fmtSEK(q.totalpris_sek)}</td>
-                  <td style={{ padding: '11px 0', borderBottom: `1px solid ${BORDER}`, verticalAlign: 'middle' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: dotC, flexShrink: 0 }} />
-                      <span style={{ fontFamily: INTER, fontSize: 11, color: TEXT_SEC }}>{badge.label}</span>
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </motion.div>
-
-      {/* ── Road Alerts ──────────────────────────────────────────────────────── */}
-      {roadAlerts !== undefined && (
-        <div style={{
-          background: SURF,
-          border: `1px solid ${roadAlerts.length > 0 ? 'rgba(184,60,60,0.30)' : BORDER}`,
-          borderRadius: 12, padding: '18px 22px',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <AlertTriangle size={14} color={roadAlerts.length > 0 ? D_RED : D_GREEN} />
-            <span style={{ fontSize: 13, fontWeight: 600, color: TEXT_PR, fontFamily: INTER }}>
-              {t.roadAlerts.sweden}
-            </span>
-            {roadAlerts.length === 0 && (
-              <span style={{ fontSize: 10, fontFamily: INTER, color: D_GREEN, background: 'rgba(58,148,104,0.12)', border: '1px solid rgba(58,148,104,0.25)', borderRadius: 5, padding: '2px 8px' }}>
-                {t.roadAlerts.normal}
-              </span>
-            )}
-            {roadAlerts.length > 0 && (
-              <span style={{ fontSize: 10, fontFamily: INTER, color: D_RED, background: 'rgba(184,60,60,0.12)', border: '1px solid rgba(184,60,60,0.25)', borderRadius: 5, padding: '2px 8px' }}>
-                {t.roadAlerts.label(roadAlerts.length)}
-              </span>
-            )}
-          </div>
-          {roadAlerts.length === 0 ? (
-            <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT_MU, fontStyle: 'italic' }}>
-              {t.roadAlerts.none}
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
-              {roadAlerts.map((a) => (
-                <div key={a.id} style={{
-                  border: '1px solid rgba(184,60,60,0.22)', borderRadius: 8, padding: '10px 14px',
-                  background: 'rgba(184,60,60,0.05)',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontFamily: INTER, fontSize: 12, fontWeight: 700, color: D_RED, flexShrink: 0 }}>{a.road}</span>
-                    <span style={{ fontFamily: INTER, fontSize: 11, color: TEXT_SEC, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.location}</span>
-                  </div>
-                  <div style={{ fontFamily: INTER, fontSize: 11, color: D_AMBER, fontWeight: 500 }}>{a.condition}</div>
-                  {a.warnings?.length > 0 && (
-                    <div style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU, marginTop: 2 }}>
-                      {a.warnings.join(' · ')}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Compliance Checklist ─────────────────────────────────────────────── */}
-      <div>
-
-        {/* Compliance Checklist */}
-        <div style={{ background: SURF, border: `1px solid ${BORDER}`, borderRadius: 12, padding: '18px 22px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <Shield size={13} color={D_BLUE} strokeWidth={1.5} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: TEXT_PR, fontFamily: INTER }}>
-              {t.dashboard.compliance.heading}
-            </span>
-            <span style={{ fontFamily: INTER, fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: D_BLUE, background: `${D_BLUE}18`, border: `1px solid ${D_BLUE}35`, borderRadius: 4, padding: '1px 6px', marginLeft: 'auto' }}>
-              {t.dashboard.compliance.badge}
-            </span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {[
-              {
-                ok: lezPct >= 90,
-                label: t.dashboard.compliance.lezLabel,
-                detail: lezPct >= 90
-                  ? t.dashboard.compliance.lezOkDetail(lezPct)
-                  : t.dashboard.compliance.lezFailDetail(lezCount),
-                icon: Leaf,
-              },
-              { ok: true, label: t.dashboard.compliance.drivingLabel,     detail: t.dashboard.compliance.drivingDetail,     icon: CalendarDays },
-              { ok: true, label: t.dashboard.compliance.congestionLabel,   detail: t.dashboard.compliance.congestionDetail,  icon: AlertTriangle },
-              { ok: true, label: t.dashboard.compliance.etsLabel,          detail: t.dashboard.compliance.etsDetail,         icon: Leaf },
-            ].map(({ ok, label, detail, icon: CheckIcon }) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <div style={{
-                  width: 20, height: 20, borderRadius: 5, flexShrink: 0,
-                  background: ok ? 'rgba(58,148,104,0.14)' : 'rgba(184,60,60,0.14)',
-                  border: `1px solid ${ok ? 'rgba(58,148,104,0.28)' : 'rgba(184,60,60,0.28)'}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <CheckIcon size={10} color={ok ? D_GREEN : D_RED} strokeWidth={2} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT_PR, fontWeight: 500 }}>{label}</div>
-                  <div style={{ fontFamily: INTER, fontSize: 10, color: TEXT_MU, marginTop: 1 }}>{detail}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-      </div>
-
-      <div style={{ height: 4 }} />
-    </div>
-  );
-}
-
-
 
 // ─── Placeholder pages ────────────────────────────────────────────────────────
 function PlaceholderPage({ label }) {
@@ -1521,17 +957,6 @@ function AppInner() {
           {activePage === 'fleet' && <FordonPage />}
           {activePage === 'ekonomi' && <EkonomiPage />}
 
-          {/* ── Hidden pages preserved in code, not shown in nav ──────────────
-          {activePage === 'dashboard' && (
-            <Dashboard quotes={quotes} fuelPrice={fuelPrice} roadAlerts={roadAlerts}
-              onNewQuote={() => setActivePage('quotes')} fleet={fleet} />
-          )}
-          {activePage === 'kortider'    && <div style={{ flex:1,overflow:'auto' }}><Kortider /></div>}
-          {activePage === 'upphandlingar' && <div style={{ flex:1,overflow:'auto' }}><Upphandlingar /></div>}
-          {activePage === 'natverk'     && <div style={{ flex:1,overflow:'auto' }}><Natverk /></div>}
-          {activePage === 'drivmedel'   && <div style={{ flex:1,overflow:'auto' }}><Drivmedel /></div>}
-          {activePage === 'underhall'   && <div style={{ flex:1,overflow:'auto',display:'flex',flexDirection:'column',minHeight:0 }}><Underhall /></div>}
-          ────────────────────────────────────────────────────────────────── */}
 
           {/* ── Offert / New Quote ────────────────────────────────────── */}
           {activePage === 'quotes' && (
@@ -1694,7 +1119,7 @@ function AppInner() {
                           ))}
                           {routeAdvisory.route_alerts.length > 3 && (
                             <div style={{ fontFamily: INTER, fontSize: '0.5625rem', color: MUTED, paddingLeft: 18 }}>
-                              +{routeAdvisory.route_alerts.length - 3} till…
+                              {t.newQuote.routeAdvisory.moreAlerts(routeAdvisory.route_alerts.length - 3)}
                             </div>
                           )}
                         </div>
@@ -3111,7 +2536,7 @@ function HomePage({ onNavigate }) {
                   ? { background: 'rgba(37,99,235,0.08)',  color: '#2563eb', border: '1px solid rgba(37,99,235,0.2)' }
                   : { background: 'rgba(107,114,128,0.08)', color: '#6b7280', border: '1px solid rgba(107,114,128,0.2)' }),
               }}>
-                {job.status}
+                {t.jobs.statuses[job.status] ?? job.status}
               </span>
             </div>
           ))}
@@ -3144,7 +2569,7 @@ function HomePage({ onNavigate }) {
                   ? { background: 'rgba(124,58,237,0.08)', color: '#7c3aed', border: '1px solid rgba(124,58,237,0.2)' }
                   : { background: 'rgba(181,101,16,0.08)', color: '#b56510', border: '1px solid rgba(181,101,16,0.2)' }),
               }}>
-                {q.status}
+                {hn.quoteStatuses?.[q.status] ?? q.status}
               </span>
             </div>
           ))}

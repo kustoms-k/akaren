@@ -4,7 +4,7 @@ import { useLanguage } from '../context/LanguageContext.jsx';
 import { LogoWhite } from '../assets/Logo.jsx';
 
 const INTER       = "'Geist', system-ui, sans-serif";
-const MONO        = "'Geist', system-ui, sans-serif";
+
 const BG_BASE     = '#f4f5f7';
 const SURF        = '#ffffff';
 const BORDER      = '#ececef';
@@ -165,7 +165,7 @@ function BankIDCard({ qrCode, hintCode, autoStartUrl, onCancel, simulated }) {
         <span style={{ fontFamily: INTER, fontWeight: 700, fontSize: 14, color: TEXT_PR }}>BankID</span>
         {simulated && (
           <span style={{
-            fontFamily: MONO, fontFeatureSettings: '"tnum"', fontSize: 9, color: BANKID_BLUE,
+            fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 9, color: BANKID_BLUE,
             background: 'rgba(25,62,143,0.10)', border: '1px solid rgba(25,62,143,0.25)',
             borderRadius: 4, padding: '2px 6px', letterSpacing: '0.06em',
           }}>SIM</span>
