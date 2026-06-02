@@ -19,11 +19,11 @@ const fmtSEK = (n) =>
   new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n) + ' kr';
 
 const fmtRelTime = (s, t) => {
-  if (!s) return t.customers.table.lastSeen === 'Last Active' ? 'Never' : 'Aldrig';
+  if (!s) return t.customers.never;
   try {
     const diff = Date.now() - new Date(s.replace(' ', 'T')).getTime();
     const min = Math.floor(diff / 60_000);
-    if (min < 2)   return t.customers.table.lastSeen === 'Last Active' ? 'Just now' : 'Just nu';
+    if (min < 2)   return t.customers.justNow;
     if (min < 60)  return `${min} min`;
     const hrs = Math.floor(min / 60);
     if (hrs < 24)  return `${hrs}h`;
@@ -239,7 +239,7 @@ function CustomerDetail({ customer, onClose, onEdit, onDelete }) {
           <div style={{ display: 'flex', gap: 16, marginTop: 14, flexWrap: 'wrap' }}>
             {[
               { label: cd.stats.quotes,   value: customer.quote_count },
-              { label: 'YTD',             value: fmtSEK(customer.ytd_spend) },
+              { label: cd.stats.ytd,      value: fmtSEK(customer.ytd_spend) },
               { label: cd.stats.lastSeen, value: fmtRelTime(customer.last_seen_at, t) },
             ].map(({ label, value }) => (
               <div key={label}>

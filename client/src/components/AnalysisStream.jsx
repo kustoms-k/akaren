@@ -31,11 +31,11 @@ function getFields(t) {
 
 const isMock = (v) => v === '…';
 
-function InfoButton({ active, onClick }) {
+function InfoButton({ active, onClick, t }) {
   return (
     <button
       onClick={onClick}
-      title="Why this truck"
+      title={t.newQuote.analysis.whyTruck}
       style={{
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         width: 16, height: 16, borderRadius: '50%',
@@ -245,7 +245,7 @@ export function AnalysisStream({
                     ) : null}
 
                     {hasWhy && (
-                      <InfoButton active={whyOpen} onClick={() => setWhyOpen((w) => !w)} />
+                      <InfoButton active={whyOpen} onClick={() => setWhyOpen((w) => !w)} t={t} />
                     )}
                   </span>
                 </div>

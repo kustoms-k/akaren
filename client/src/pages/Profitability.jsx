@@ -287,7 +287,7 @@ function JobsTable({ jobs, prevJobs, onFakturaClick, t }) {
     { label: t.profitability.tableHeaders.revenue, w: '14%', right: true },
     { label: t.profitability.tableHeaders.cost,    w: '14%', right: true },
     { label: t.profitability.tableHeaders.margin,  w: '12%', right: true },
-    { label: 'Trend',                              w: '11%', center: true },
+    { label: t.profitability.tableHeaders.trend,   w: '11%', center: true },
     { label: '',                                   w: '15%' },
   ];
 
@@ -697,7 +697,7 @@ export function Profitability() {
                 autoFocus
                 value={kundNamn}
                 onChange={(e) => setKundNamn(e.target.value)}
-                placeholder="Företagsnamn AB"
+                placeholder={t.jobs.invoiceModal.placeholderName}
                 style={inputStyle}
               />
             </label>
@@ -708,7 +708,7 @@ export function Profitability() {
                 value={kundAdress}
                 onChange={(e) => setKundAdress(e.target.value)}
                 rows={3}
-                placeholder={'Gatuadress\nPostnummer Ort'}
+                placeholder={t.jobs.invoiceModal.placeholderAddress}
                 style={{ ...inputStyle, resize: 'none' }}
               />
             </label>

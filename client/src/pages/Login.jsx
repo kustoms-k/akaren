@@ -18,19 +18,9 @@ const D_RED       = '#dc2626';
 const BANKID_BLUE = '#193E8F';
 const SHADOW_CARD = '0 1px 4px rgba(0,0,0,0.05), 0 8px 24px rgba(0,0,0,0.06)';
 
-// ── BankID hint code → Swedish message ───────────────────────────────────────
-const HINT_MSG = {
-  outstandingTransaction: 'Starta BankID-appen och skanna QR-koden',
-  noClient:               'Starta BankID-appen',
-  started:                'Söker efter BankID…',
-  userSign:               'Skriv in din säkerhetskod i BankID-appen',
-  expiredTransaction:     'Tidsgränsen nåddes. Försök igen.',
-  certificateErr:         'BankID-certifikatet är ogiltigt.',
-  userCancel:             'Avbruten av användare.',
-  cancelled:              'Inloggningen avbröts.',
-  startFailed:            'BankID-appen verkar inte vara installerad.',
-};
-function hintMsg(code) { return HINT_MSG[code] || 'Starta BankID-appen och skanna QR-koden'; }
+function hintMsg(hints, code) {
+  return hints[code] || hints.fallback;
+}
 
 // ── Input components ──────────────────────────────────────────────────────────
 function inputStyle(focused, error) {
@@ -144,8 +134,8 @@ function HeroPanel({ t }) {
 }
 
 // ── BankID QR card ────────────────────────────────────────────────────────────
-function BankIDCard({ qrCode, hintCode, autoStartUrl, onCancel, simulated }) {
-  const msg = hintMsg(hintCode);
+function BankIDCard({ qrCode, hintCode, autoStartUrl, onCancel, simulated, t }) {
+  const msg = hintMsg(t.login.bankId.hints, hintCode);
   const isUserSign = hintCode === 'userSign';
 
   return (
@@ -175,7 +165,7 @@ function BankIDCard({ qrCode, hintCode, autoStartUrl, onCancel, simulated }) {
       {/* QR code */}
       {qrCode && (
         <div style={{ background: '#fff', borderRadius: 12, padding: 10, boxShadow: '0 2px 12px rgba(25,62,143,0.15)' }}>
-          <img src={qrCode} alt="BankID QR-kod" style={{ width: 180, height: 180, display: 'block' }} />
+          <img src={qrCode} alt={t.login.bankId.qrAlt} style={{ width: 180, height: 180, display: 'block' }} />
         </div>
       )}
 
@@ -206,7 +196,7 @@ function BankIDCard({ qrCode, hintCode, autoStartUrl, onCancel, simulated }) {
           }}
         >
           <BankIDIcon size={15} color="#fff" />
-          Öppna BankID-appen
+          {t.login.bankId.openApp}
         </a>
       )}
 
@@ -214,7 +204,7 @@ function BankIDCard({ qrCode, hintCode, autoStartUrl, onCancel, simulated }) {
         onClick={onCancel}
         style={{ fontFamily: INTER, fontSize: 12, fontWeight: 500, color: TEXT_MU, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
       >
-        Avbryt
+        {t.login.bankId.cancel}
       </button>
 
       <style>{`
@@ -275,9 +265,9 @@ export function Login() {
         if (data.status === 'complete') {
           stopPoll(); setLoginMode('bankid-success'); setTimeout(() => login(data), 600);
         } else if (data.status === 'no_user') {
-          stopPoll(); setBankidError('Ingen behörighet — kontakta din administratör.'); setLoginMode('bankid-error');
+          stopPoll(); setBankidError(t.login.bankId.noAuth); setLoginMode('bankid-error');
         } else if (data.status === 'failed') {
-          stopPoll(); setBankidError(hintMsg(data.hintCode)); setLoginMode('bankid-error');
+          stopPoll(); setBankidError(hintMsg(t.login.bankId.hints, data.hintCode)); setLoginMode('bankid-error');
         }
       } catch { /* network blip */ }
     }, 2000);
@@ -293,12 +283,12 @@ export function Login() {
         body: JSON.stringify({}),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'BankID-fel');
+      if (!res.ok) throw new Error(data.error || t.login.bankId.error);
       setBankidOrderRef(data.orderRef); setBankidQR(data.qrCode);
       setBankidAutoUrl(data.autoStartUrl); setBankidHint(null);
       setBankidSimulated(data.simulated ?? false); setLoginMode('bankid-qr');
     } catch (err) {
-      setBankidError(err.message || 'BankID-tjänsten är inte tillgänglig.'); setLoginMode('bankid-error');
+      setBankidError(err.message || t.login.bankId.unavailable); setLoginMode('bankid-error');
     } finally { setBankidLoading(false); }
   }
 
@@ -463,12 +453,12 @@ export function Login() {
                       onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = bankidLoading ? 'none' : '0 4px 14px rgba(25,62,143,0.35)'; }}
                     >
                       <BankIDIcon size={20} color="#fff" />
-                      {bankidLoading ? 'Startar BankID…' : 'Logga in med BankID'}
+                      {bankidLoading ? t.login.bankId.starting : t.login.bankId.signIn}
                     </button>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{ flex: 1, height: 1, background: BORDER }}/>
-                      <span style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU, letterSpacing: '0.05em' }}>ELLER</span>
+                      <span style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU, letterSpacing: '0.05em' }}>{t.login.or}</span>
                       <div style={{ flex: 1, height: 1, background: BORDER }}/>
                     </div>
 
@@ -487,7 +477,7 @@ export function Login() {
                       onMouseEnter={(e) => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.background = '#eef0f3'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.background = BG_BASE; }}
                     >
-                      Bypass — direktåtkomst
+                      {t.login.bypass}
                     </button>
 
                     <button
@@ -498,7 +488,7 @@ export function Login() {
                         textDecoration: 'underline', padding: '4px 0', textDecorationColor: BORDER,
                       }}
                     >
-                      Logga in med e-post istället
+                      {t.login.bankId.emailInstead}
                     </button>
                   </>
                 )}
@@ -510,6 +500,7 @@ export function Login() {
                     autoStartUrl={bankidAutoUrl}
                     onCancel={cancelBankID}
                     simulated={bankidSimulated}
+                    t={t}
                   />
                 )}
 
@@ -521,7 +512,7 @@ export function Login() {
                   }}>
                     <div style={{ fontSize: 36 }}>✓</div>
                     <p style={{ fontFamily: INTER, fontSize: 14, fontWeight: 600, color: D_GREEN, margin: 0 }}>
-                      Inloggning lyckades
+                      {t.login.bankId.success}
                     </p>
                   </div>
                 )}
@@ -549,7 +540,7 @@ export function Login() {
                           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                         }}
                       >
-                        <BankIDIcon size={14} color="#fff" /> Försök igen
+                        <BankIDIcon size={14} color="#fff" /> {t.login.bankId.retry}
                       </button>
                       <button
                         onClick={() => { setBankidError(null); setLoginMode('email'); }}
@@ -559,7 +550,7 @@ export function Login() {
                           borderRadius: 9, padding: '10px', cursor: 'pointer',
                         }}
                       >
-                        Logga in med e-post
+                        {t.login.bankId.emailLogin}
                       </button>
                     </div>
                   </>
@@ -624,7 +615,7 @@ export function Login() {
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{ flex: 1, height: 1, background: BORDER }}/>
-                      <span style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU, letterSpacing: '0.05em' }}>ELLER</span>
+                      <span style={{ fontFamily: INTER, fontSize: 11, color: TEXT_MU, letterSpacing: '0.05em' }}>{t.login.or}</span>
                       <div style={{ flex: 1, height: 1, background: BORDER }}/>
                     </div>
                     <button
@@ -639,7 +630,7 @@ export function Login() {
                       onMouseEnter={(e) => { if (!loginLoading) { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.background = '#eef0f3'; } }}
                       onMouseLeave={(e) => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.background = BG_BASE; }}
                     >
-                      Bypass — direktåtkomst
+                      {t.login.bypass}
                     </button>
 
                     <button
@@ -651,7 +642,7 @@ export function Login() {
                       }}
                     >
                       <BankIDIcon size={13} color={TEXT_MU} />
-                      Logga in med BankID istället
+                      {t.login.bankId.bankIdInstead}
                     </button>
                   </form>
                 )}

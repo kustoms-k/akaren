@@ -83,7 +83,7 @@ function EuroBadge({ klass }) {
   );
 }
 
-function MaintenanceBadge({ vehicleId, alerts }) {
+function MaintenanceBadge({ vehicleId, alerts, t }) {
   if (!alerts) return null;
   const vAlerts = alerts.filter((a) => a.vehicle_id === vehicleId);
   if (!vAlerts.length) return null;
@@ -96,7 +96,7 @@ function MaintenanceBadge({ vehicleId, alerts }) {
         fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 5,
         cursor: 'default', whiteSpace: 'nowrap',
       }}>
-        {critical.length}× kritisk
+        {t.fleet.maintenanceCritical(critical.length)}
       </span>
     );
   }
@@ -106,7 +106,7 @@ function MaintenanceBadge({ vehicleId, alerts }) {
       fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 5,
       cursor: 'default', whiteSpace: 'nowrap',
     }}>
-      {vAlerts.length}× varning
+      {t.fleet.maintenanceWarning(vAlerts.length)}
     </span>
   );
 }
@@ -134,7 +134,7 @@ export function Fleet() {
     { key: 'euro_klass',      label: t.fleet.cols.euro,          width: '6%',  align: 'center' },
     { key: 'lez_godkänd',     label: t.fleet.cols.lez,           width: '6%',  align: 'center' },
     { key: 'tillstånd',       label: t.fleet.cols.permits,       width: '5%',  align: 'center' },
-    { key: '_maintenance',    label: 'Underhåll',                width: '8%',  align: 'center' },
+    { key: '_maintenance',    label: t.fleet.maintenance,        width: '8%',  align: 'center' },
   ];
 
   const cachedFleet = useLiveQuery(
@@ -295,7 +295,7 @@ export function Fleet() {
                           ) : <span style={{ color: FAINT, fontSize: 13 }}>—</span>}
                         </td>
                         <td style={{ fontFamily: OUTFIT, fontSize: 12, padding: '12px 16px', textAlign: 'center', verticalAlign: 'middle' }}>
-                          <MaintenanceBadge vehicleId={v.id} alerts={maintAlerts} />
+                          <MaintenanceBadge vehicleId={v.id} alerts={maintAlerts} t={t} />
                         </td>
                       </tr>
                     );

@@ -274,7 +274,7 @@ function InvoiceModal({ job, customers, onClose, onSuccess }) {
           {t.jobs.invoiceModal.heading}
         </div>
         <div style={{ fontFamily: INTER, fontSize: 15, fontWeight: 600, color: TEXT_PR, marginBottom: 4 }}>
-          {job.lasttyp || 'Transport'}
+          {job.lasttyp || t.jobs.invoiceModal.defaultCargo}
         </div>
         {(job.upphämtning || job.leverans) && (
           <div style={{ fontFamily: INTER, fontSize: 13, color: TEXT_SEC, marginBottom: 20 }}>
@@ -302,7 +302,7 @@ function InvoiceModal({ job, customers, onClose, onSuccess }) {
             required
             value={form.customer_name}
             onChange={(e) => setForm((f) => ({ ...f, customer_name: e.target.value }))}
-            placeholder="Företagsnamn AB"
+            placeholder={t.jobs.invoiceModal.placeholderName}
             style={inputStyle}
           />
         </div>
@@ -320,7 +320,7 @@ function InvoiceModal({ job, customers, onClose, onSuccess }) {
 
         <div style={{ marginBottom: 20 }}>
           <label style={labelStyle}>{t.jobs.invoiceModal.address}</label>
-          <textarea rows={3} value={form.customer_address} onChange={(e) => setForm((f) => ({ ...f, customer_address: e.target.value }))} placeholder={'Gatuadress\nPostnummer Ort'} style={{ ...inputStyle, resize: 'none' }} />
+          <textarea rows={3} value={form.customer_address} onChange={(e) => setForm((f) => ({ ...f, customer_address: e.target.value }))} placeholder={t.jobs.invoiceModal.placeholderAddress} style={{ ...inputStyle, resize: 'none' }} />
         </div>
 
         {err && <div style={{ fontFamily: INTER, fontSize: 12, color: DANGER, marginBottom: 14 }}>{err}</div>}
@@ -409,7 +409,7 @@ export function Jobs() {
       try { return job.line_items ? JSON.parse(job.line_items) : null; }
       catch { return null; }
     })() ?? [{
-      desc:   `Transport — ${job.lasttyp || 'Frakt'}`,
+      desc:   `${t.jobs.invoiceModal.defaultCargo} — ${job.lasttyp || t.jobs.invoiceModal.defaultCargo}`,
       antal:  job.avstand_km || 1,
       unit:   job.avstand_km ? 'km' : 'st',
       apris:  job.totalpris_sek || 0,
@@ -449,15 +449,15 @@ export function Jobs() {
       : '—';
     const due   = job.due_date ? new Date(job.due_date).toLocaleDateString('sv-SE') : '—';
     const email = job.customer_email || '';
-    const subject = encodeURIComponent(`Faktura ${fakturaNr} — ${company?.name || 'Åkaren'}`);
+    const subject = encodeURIComponent(t.jobs.invoiceModal.emailSubject(fakturaNr, company?.name || 'Åkaren'));
     const body    = encodeURIComponent(
-      `Hej,\n\nTack för ert uppdrag!\n\nBifogat finner ni faktura ${fakturaNr}.\n\n` +
-      `Belopp att betala: ${total} (inkl. 25% moms)\n` +
-      `Förfallodatum: ${due}\n` +
-      `OCR-nummer: ${fakturaNr}\n` +
-      `Bankgiro: ${company?.bankgiro || '—'}\n\n` +
-      `OBS: Bifoga den nedladdade PDF-filen till detta meddelande innan du skickar.\n\n` +
-      `Med vänliga hälsningar,\n${company?.name || ''}\n${company?.phone || ''}\n${company?.email || ''}`,
+      t.jobs.invoiceModal.emailBody(
+        fakturaNr, total, due,
+        company?.bankgiro || '—',
+        company?.name || '',
+        company?.phone || '',
+        company?.email || '',
+      ),
     );
     window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
   }

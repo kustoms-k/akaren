@@ -122,12 +122,12 @@ function DriverRow({ driver }) {
   );
 }
 
-const STATUS_META = {
-  active:   { label: 'Aktiv',        color: '#1a7a47', bg: 'rgba(46,204,113,0.08)', border: 'rgba(46,204,113,0.3)',  dot: '#2ecc71' },
-  trialing: { label: 'Provperiod',   color: '#92400e', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.3)', dot: '#f59e0b' },
-  past_due: { label: 'Förfallen',    color: '#991b1b', bg: 'rgba(239,68,68,0.08)',  border: 'rgba(239,68,68,0.3)',  dot: '#ef4444' },
-  canceled: { label: 'Avslutad',     color: '#6b7280', bg: '#f4f5f7',               border: '#ececef',              dot: '#9ca3af' },
-  none:     { label: 'Ej aktiv',     color: '#6b7280', bg: '#f4f5f7',               border: '#ececef',              dot: '#9ca3af' },
+const STATUS_META_STYLE = {
+  active:   { color: '#1a7a47', bg: 'rgba(46,204,113,0.08)', border: 'rgba(46,204,113,0.3)',  dot: '#2ecc71' },
+  trialing: { color: '#92400e', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.3)', dot: '#f59e0b' },
+  past_due: { color: '#991b1b', bg: 'rgba(239,68,68,0.08)',  border: 'rgba(239,68,68,0.3)',  dot: '#ef4444' },
+  canceled: { color: '#6b7280', bg: '#f4f5f7',               border: '#ececef',              dot: '#9ca3af' },
+  none:     { color: '#6b7280', bg: '#f4f5f7',               border: '#ececef',              dot: '#9ca3af' },
 };
 
 function BillingCard() {
@@ -178,7 +178,7 @@ function BillingCard() {
   }
 
   const status = sub?.status ?? 'none';
-  const meta   = STATUS_META[status] ?? STATUS_META.none;
+  const meta   = { ...(STATUS_META_STYLE[status] ?? STATUS_META_STYLE.none), label: t.settings.billing.subStatus[status] ?? status };
   const isActive = status === 'active' || status === 'trialing';
 
   const BG2    = '#f4f5f7';
@@ -200,7 +200,7 @@ function BillingCard() {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div>
           <div style={{ fontFamily: OUTFIT, fontSize: 15, fontWeight: 700, color: TEXT2, marginBottom: 4 }}>
-            Åkaren TMS
+            {t.subscriptionGate.brand}
           </div>
           <div style={{ fontFamily: OUTFIT, fontSize: 22, fontWeight: 700, color: AMBER }}>
             {t.settings.billing.price}
@@ -234,10 +234,10 @@ function BillingCard() {
         </div>
         <div style={{ background: BG2, border: `1px solid ${BORD}`, borderRadius: 8, padding: '10px 14px' }}>
           <div style={{ fontFamily: OUTFIT, fontSize: 11, color: MUTED2, marginBottom: 4, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Betalningsmetod
+            {t.settings.billing.paymentMethod}
           </div>
           <div style={{ fontFamily: OUTFIT, fontSize: 14, color: TEXT2, fontWeight: 600 }}>
-            {isActive ? 'Kort / kortbetalning' : '—'}
+            {isActive ? t.settings.billing.paymentActive : '—'}
           </div>
         </div>
       </div>
@@ -246,19 +246,23 @@ function BillingCard() {
       <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${BORD}`, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
         {!isActive && sub?.stripe_enabled && (
           <Button variant="primary" onClick={handleCheckout} disabled={acting}>
-            {acting ? '…' : 'Starta prenumeration'}
+            {acting ? '…' : t.settings.billing.startSub}
           </Button>
         )}
 
         {isActive && (
           <Button variant="secondary" onClick={handlePortal} disabled={acting}>
-            {acting ? '…' : 'Hantera prenumeration'}
+            {acting ? '…' : t.settings.billing.manageSub}
           </Button>
         )}
 
         {!sub?.stripe_enabled && (
           <p style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED2, margin: 0 }}>
-            Kontakta <a href="mailto:admin@akaren.se" style={{ color: AMBER }}>admin@akaren.se</a> för att hantera din prenumeration.
+            {t.settings.billing.contactAdmin.split('admin@akaren.se').map((part, i, arr) =>
+              i < arr.length - 1
+                ? <>{part}<a key={i} href={`mailto:${t.settings.billing.contactAdminEmail}`} style={{ color: AMBER }}>{t.settings.billing.contactAdminEmail}</a></>
+                : part
+            )}
           </p>
         )}
 
@@ -309,15 +313,15 @@ function FortnoxPanel({ toast, setToast }) {
       const r = await apiFetch('/api/fortnox/sync-customers', { method: 'POST' });
       if (!r.ok) throw new Error((await r.json()).error);
       const { synced } = await r.json();
-      setToast?.({ message: `${synced} kunder synkade / ${synced} customers synced`, variant: 'success' });
+      setToast?.({ message: t.settings.fortnox.syncSuccess(synced), variant: 'success' });
       fetchStatus();
     } catch (e) {
-      setToast?.({ message: `Synk misslyckades: ${e.message}`, variant: 'error' });
+      setToast?.({ message: t.settings.fortnox.syncError(e.message), variant: 'error' });
     } finally { setSyncing(false); }
   }
 
   async function handleDisconnect() {
-    if (!window.confirm('Koppla från Fortnox? / Disconnect from Fortnox?')) return;
+    if (!window.confirm(t.settings.fortnox.disconnectConfirm)) return;
     setDisconnecting(true);
     try {
       const r = await apiFetch('/api/fortnox/disconnect', { method: 'DELETE' });
@@ -325,7 +329,7 @@ function FortnoxPanel({ toast, setToast }) {
       setToast?.({ message: t.settings.fortnox.disconnected, variant: 'success' });
       fetchStatus();
     } catch (e) {
-      setToast?.({ message: `Frånkoppling misslyckades: ${e.message}`, variant: 'error' });
+      setToast?.({ message: t.settings.fortnox.disconnectError(e.message), variant: 'error' });
     } finally { setDisconnecting(false); }
   }
 
@@ -482,7 +486,7 @@ export function Settings({ onFortnoxResult }) {
             <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
               {t.settings.billing.heading}
             </span>
-            <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>2 990 kr/mån</span>
+            <span style={{ fontFamily: INTER, fontSize: 12, color: MUTED }}>{t.settings.billing.price}</span>
           </div>
           <BillingCard />
         </div>
@@ -554,8 +558,7 @@ export function Settings({ onFortnoxResult }) {
 
         <div style={{ padding: '10px 20px 12px', borderTop: `1px solid ${BORDER}` }}>
           <p style={{ fontFamily: INTER, fontSize: 12, color: MUTED, margin: 0, lineHeight: 1.6 }}>
-            Telefonnummer måste vara i E.164-format (t.ex. <code style={{ fontFamily: 'monospace', color: TEXT }}>+46701234001</code>).
-            Ändringar träder i kraft direkt på nästa uppdrag.
+            {t.settings.drivers.phoneHint}
           </p>
         </div>
       </div>
@@ -1037,7 +1040,7 @@ function ExportPanel({ section, sectionHead }) {
     setError(null);
     try {
       const r = await apiFetch('/api/data-privacy/export-all');
-      if (!r.ok) { const d = await r.json(); throw new Error(d.error ?? 'Exportfel'); }
+      if (!r.ok) { const d = await r.json(); throw new Error(d.error ?? t.dataPrivacy.export.failed); }
       const blob = await r.blob();
       const cd   = r.headers.get('Content-Disposition') ?? '';
       const match = cd.match(/filename="([^"]+)"/);
@@ -1272,13 +1275,13 @@ function UsersPanel({ section, sectionHead, setToast }) {
                   <td style={{ padding: '10px 14px', fontFamily: INTER, fontSize: 13, color: TEXT, fontWeight: 500 }}>
                     {u.name}
                     {u.id === me?.id && (
-                      <span style={{ fontSize: 10, color: MUTED, marginLeft: 6 }}>(dig)</span>
+                      <span style={{ fontSize: 10, color: MUTED, marginLeft: 6 }}>{t.settings.users.you}</span>
                     )}
                   </td>
                   <td style={{ padding: '10px 14px', fontFamily: INTER, fontSize: 12, color: MUTED }}>
                     {u.email}
                     {u.active === 0 && !u.password_hash && (
-                      <span style={{ marginLeft: 6, fontSize: 10, color: '#B46418' }}>• Inbjudan väntande</span>
+                      <span style={{ marginLeft: 6, fontSize: 10, color: '#B46418' }}>• {t.settings.users.invitePending}</span>
                     )}
                   </td>
                   <td style={{ padding: '10px 14px' }}>

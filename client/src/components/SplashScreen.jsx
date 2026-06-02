@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 const FONT = "'Geist', system-ui, sans-serif";
 const SESSION_KEY = 'akaren_splash_v3';
@@ -52,6 +53,7 @@ function SplashMark({ size = 64 }) {
 }
 
 export function SplashScreen({ onDone }) {
+  const { t } = useLanguage();
   const [phase, setPhase] = useState(() => {
     if (sessionStorage.getItem(SESSION_KEY)) return 'skip';
     sessionStorage.setItem(SESSION_KEY, '1');
@@ -118,7 +120,7 @@ export function SplashScreen({ onDone }) {
           letterSpacing: '0.2em', color: '#9ca3af', lineHeight: 1,
           textTransform: 'uppercase',
         }}>
-          Transportoptimering
+          {t.splashScreen.tagline}
         </span>
       </motion.div>
 

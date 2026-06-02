@@ -114,7 +114,7 @@ function CardModal({ card, fleet, onClose, onSave, t }) {
               </select>
             </div>
             <div>{lbl(t.drivmedel.card.holder)}
-              <input value={form.holder_name} onChange={set('holder_name')} placeholder="Förare / Fordon" style={inpStyle} />
+              <input value={form.holder_name} onChange={set('holder_name')} placeholder={t.drivmedel.card.holderPlaceholder} style={inpStyle} />
             </div>
           </div>
           {err && <p style={{ color: D_RED, fontSize: 12, fontFamily: INTER, marginBottom: 10 }}>{err}</p>}
