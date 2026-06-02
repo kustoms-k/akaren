@@ -2,18 +2,18 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-const AMBER   = '#c9921e';
-const BG      = '#edeae1';
+const AMBER   = '#2d3340';
+const BG      = '#f4f5f7';
 const WHITE   = '#ffffff';
-const BORDER  = '#cfc9bb';
-const TEXT    = '#151210';
-const MUTED   = '#6a6050';
-const FAINT   = '#9a9082';
-const SURF    = '#f4f0e7';
+const BORDER  = '#ececef';
+const TEXT    = '#1a1d24';
+const MUTED   = '#6b7280';
+const FAINT   = '#9ca3af';
+const SURF    = '#f4f5f7';
 const OUTFIT  = "'Geist', system-ui, sans-serif";
 const MONO    = "'Geist', system-ui, sans-serif";
-const WARNING = '#b8600a';
-const ERROR   = '#c45454';
+const WARNING = '#b56510';
+const ERROR   = '#dc2626';
 
 const STAGGER = 110;
 
@@ -40,7 +40,7 @@ function InfoButton({ active, onClick }) {
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         width: 16, height: 16, borderRadius: '50%',
         border: `1px solid ${active ? AMBER : BORDER}`,
-        background: active ? 'rgba(201,146,30,0.10)' : 'transparent',
+        background: active ? 'rgba(45,51,64,0.10)' : 'transparent',
         color: active ? AMBER : MUTED,
         fontFamily: OUTFIT, fontSize: '0.5rem', fontWeight: 700,
         cursor: 'pointer', flexShrink: 0,
@@ -276,7 +276,7 @@ export function AnalysisStream({
                       type="checkbox"
                       checked={isApproved}
                       onChange={(e) => onApprove?.(key, e.target.checked)}
-                      style={{ accentColor: AMBER, cursor: 'pointer', width: 12, height: 12, flexShrink: 0 }}
+                      style={{ accentColor: '#2d3340', cursor: 'pointer', width: 12, height: 12, flexShrink: 0 }}
                     />
                     <span style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED }}>
                       {isNone ? t.newQuote.flags.confirmFields : t.newQuote.flags.reviewAcknowledged}
@@ -300,8 +300,8 @@ export function AnalysisStream({
           flexShrink: 0, opacity: 0,
           animation: 'quote-card-up 0.22s ease-out forwards',
           animationDelay: '80ms',
-          background: '#17160e',
-          border: `1px solid #2e2c1a`,
+          background: '#1a1d24',
+          border: `1px solid #2d3340`,
           borderRadius: 10,
           padding: '16px 18px',
           display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16,
@@ -310,7 +310,7 @@ export function AnalysisStream({
             <div style={{
               fontFamily: OUTFIT, fontSize: 10, fontWeight: 700,
               textTransform: 'uppercase', letterSpacing: '0.12em',
-              color: 'rgba(201,146,30,0.6)',
+              color: 'rgba(156,163,175,0.8)',
               marginBottom: 6,
             }}>
               {t.newQuote.quotePrefix}
@@ -330,7 +330,7 @@ export function AnalysisStream({
             {(parsed.upphämtning || parsed.leverans) && (
               <div style={{
                 fontFamily: OUTFIT, fontSize: 12,
-                color: 'rgba(230,225,210,0.55)',
+                color: 'rgba(156,163,175,0.6)',
                 marginTop: 7,
               }}>
                 {[parsed.upphämtning, parsed.leverans].filter((v) => v && !isMock(v)).join(' – ')}
@@ -347,9 +347,9 @@ export function AnalysisStream({
               <span key={tag} style={{
                 fontFamily: OUTFIT, fontSize: 10, fontWeight: 600,
                 letterSpacing: '0.06em', textTransform: 'uppercase',
-                color: 'rgba(201,146,30,0.5)',
-                background: 'rgba(201,146,30,0.07)',
-                border: '1px solid rgba(201,146,30,0.15)',
+                color: 'rgba(156,163,175,0.7)',
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.12)',
                 borderRadius: 4,
                 padding: '3px 8px',
               }}>

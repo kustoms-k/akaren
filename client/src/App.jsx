@@ -1658,6 +1658,7 @@ function AppInner() {
                     <PricingIntelligencePanel
                       lasttyp={String(parsed.lasttyp)}
                       currentPrice={Number(parsed.totalpris_sek)}
+                      parsed={parsed}
                       onApplyPrice={(price) => setField('totalpris_sek', price)}
                     />
                   )}

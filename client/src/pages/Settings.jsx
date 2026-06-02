@@ -9,16 +9,15 @@ import { generateDpa }  from '../utils/generateDpa.js';
 import { generateTos }  from '../utils/generateTos.js';
 
 const OUTFIT  = "'Geist', system-ui, sans-serif";
-const INTER   = OUTFIT;  // alias — remove after full migration
-const AMBER   = '#c9921e';
-const BLUE    = AMBER;   // alias
-const BLUE_DK = '#a87818';
-const BG      = '#edeae1';
+const INTER   = OUTFIT;
+const ACCENT  = '#2d3340';
+const BLUE    = ACCENT;
+const BG      = '#f4f5f7';
 const WHITE   = '#ffffff';
-const BORDER  = '#cfc9bb';
-const TEXT    = '#151210';
-const MUTED   = '#6a6050';
-const SURF    = '#f4f0e7';
+const BORDER  = '#ececef';
+const TEXT    = '#1a1d24';
+const MUTED   = '#6b7280';
+const SURF    = '#f4f5f7';
 const MONO    = "'Geist', system-ui, sans-serif";
 
 function SmsStatusPill({ enabled }) {
@@ -114,7 +113,7 @@ function DriverRow({ driver }) {
             style={{
               fontFamily: INTER, fontSize: 12, fontWeight: 600,
               padding: '5px 14px', borderRadius: 6, border: 'none',
-              background: (!dirty || !name.trim() || !phone.trim()) ? SURF : BLUE,
+              background: (!dirty || !name.trim() || !phone.trim()) ? '#f4f5f7' : ACCENT,
               color: (!dirty || !name.trim() || !phone.trim()) ? MUTED : WHITE,
               cursor: (!dirty || saving) ? 'not-allowed' : 'pointer',
               transition: 'background 0.15s',
@@ -132,8 +131,8 @@ const STATUS_META = {
   active:   { label: 'Aktiv',        color: '#1a7a47', bg: 'rgba(46,204,113,0.08)', border: 'rgba(46,204,113,0.3)',  dot: '#2ecc71' },
   trialing: { label: 'Provperiod',   color: '#92400e', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.3)', dot: '#f59e0b' },
   past_due: { label: 'Förfallen',    color: '#991b1b', bg: 'rgba(239,68,68,0.08)',  border: 'rgba(239,68,68,0.3)',  dot: '#ef4444' },
-  canceled: { label: 'Avslutad',     color: '#6b6574', bg: '#f5f3ee',               border: '#e6e2da',              dot: '#a09aa8' },
-  none:     { label: 'Ej aktiv',     color: '#6b6574', bg: '#f5f3ee',               border: '#e6e2da',              dot: '#a09aa8' },
+  canceled: { label: 'Avslutad',     color: '#6b7280', bg: '#f4f5f7',               border: '#ececef',              dot: '#9ca3af' },
+  none:     { label: 'Ej aktiv',     color: '#6b7280', bg: '#f4f5f7',               border: '#ececef',              dot: '#9ca3af' },
 };
 
 function BillingCard() {
@@ -188,11 +187,11 @@ function BillingCard() {
   const isActive = status === 'active' || status === 'trialing';
 
   const OUTFIT = "'Geist', system-ui, sans-serif";
-  const AMBER  = '#c9a84c';
-  const BG2    = '#f5f3ee';
-  const TEXT2  = '#17161a';
-  const MUTED2 = '#6b6574';
-  const BORD   = '#e6e2da';
+  const AMBER  = '#2d3340';
+  const BG2    = '#f4f5f7';
+  const TEXT2  = '#1a1d24';
+  const MUTED2 = '#6b7280';
+  const BORD   = '#ececef';
 
   if (loading) {
     return (
@@ -490,8 +489,8 @@ export function Settings({ onFortnoxResult }) {
   const section = {
     background: WHITE,
     border: `1px solid ${BORDER}`,
-    borderRadius: 12,
-    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+    borderRadius: 14,
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)',
     overflow: 'hidden',
     marginBottom: 20,
   };
@@ -500,14 +499,14 @@ export function Settings({ onFortnoxResult }) {
     borderBottom: `1px solid ${BORDER}`,
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     gap: 16, flexWrap: 'wrap',
-    background: SURF,
+    background: '#fafbfc',
   };
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px 48px', background: BG }}>
       <h1 style={{
-        fontFamily: INTER, fontSize: 20, fontWeight: 700,
-        color: TEXT, margin: '0 0 24px',
+        fontFamily: INTER, fontSize: 18, fontWeight: 700,
+        color: TEXT, margin: '0 0 24px', letterSpacing: '-0.02em',
       }}>
         {t.settings.heading}
       </h1>
@@ -667,7 +666,7 @@ export function Settings({ onFortnoxResult }) {
                 <div style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT }}>
                   {title}
                 </div>
-                <div style={{ fontFamily: INTER, fontSize: 11, color: '#6366f1', fontWeight: 500, marginTop: 1 }}>
+                <div style={{ fontFamily: INTER, fontSize: 11, color: MUTED, fontWeight: 500, marginTop: 1 }}>
                   {subtitle}
                 </div>
                 <div style={{ fontFamily: INTER, fontSize: 12, color: MUTED, marginTop: 4, lineHeight: 1.5 }}>
@@ -680,9 +679,9 @@ export function Settings({ onFortnoxResult }) {
                   flexShrink: 0,
                   fontFamily: INTER, fontSize: 12, fontWeight: 600,
                   padding: '8px 16px', borderRadius: 7,
-                  background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-                  color: '#fff', border: 'none', cursor: 'pointer',
-                  boxShadow: '0 1px 4px rgba(99,102,241,0.22)',
+                  background: ACCENT,
+                  color: WHITE, border: 'none', cursor: 'pointer',
+                  boxShadow: '0 1px 4px rgba(45,51,64,0.18)',
                   whiteSpace: 'nowrap',
                 }}
               >
@@ -1066,7 +1065,7 @@ function AuditPanel({ section, sectionHead }) {
                     </tr>
                     {isExpanded && (
                       <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
-                        <td colSpan={6} style={{ padding: 0, background: '#faf9f6' }}>
+                        <td colSpan={6} style={{ padding: 0, background: '#fafbfc' }}>
                           <DiffView before={row.before_value} after={row.after_value} t={t} />
                         </td>
                       </tr>
