@@ -13,6 +13,7 @@ const OUTFIT  = "'Geist', system-ui, sans-serif";
 const INTER   = OUTFIT;
 const ACCENT  = '#2d3340';
 const BLUE    = ACCENT;
+const AMBER   = '#B56510';
 const BG      = '#f4f5f7';
 const WHITE   = '#ffffff';
 const BORDER  = '#ececef';

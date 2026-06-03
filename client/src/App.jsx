@@ -1907,7 +1907,7 @@ class ErrorBoundary extends Component {
       return (
         <div style={{
           color: '#e74c3c', padding: 32, fontFamily: "'Geist', system-ui, sans-serif",
-          background: BG, minHeight: '100vh', whiteSpace: 'pre-wrap',
+          background: BG_BASE, minHeight: '100vh', whiteSpace: 'pre-wrap',
         }}>
           <div style={{ fontSize: 14, marginBottom: 16, color: TEXT }}>Render error</div>
           <div style={{ fontSize: 12, marginBottom: 8 }}>{this.state.error.message}</div>
