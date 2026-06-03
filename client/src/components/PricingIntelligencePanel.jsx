@@ -17,7 +17,7 @@ const G_RED   = '#dc2626';
 const G_AMBER = '#b56510';
 
 const fmtSEK = (n, locale = 'sv-SE') =>
-  n == null ? '—' : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n) + ' kr';
+  n == null ? '—' : new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(n) + ' kr';
 
 function marginColor(pct) {
   if (pct == null) return MUTED;
@@ -26,6 +26,35 @@ function marginColor(pct) {
   if (pct < 10)   return G_AMBER;
   if (pct >= 20)  return G_GREEN;
   return TEXT;
+}
+
+function MarginGauge({ pct }) {
+  if (pct == null) return null;
+  const clamped = Math.max(-10, Math.min(pct, 60));
+  const fillPct = Math.max(0, ((clamped + 10) / 70) * 100);
+  const color   = pct < 0 ? G_RED : pct < 10 ? G_AMBER : pct < 20 ? '#d97706' : G_GREEN;
+  return (
+    <div style={{ margin: '10px 0 4px' }}>
+      <div style={{ height: 5, background: SURF, borderRadius: 3, overflow: 'hidden', position: 'relative' }}>
+        {/* zone markers */}
+        {[14, 28, 57].map((pos) => (
+          <div key={pos} style={{
+            position: 'absolute', left: `${pos}%`, top: 0, bottom: 0,
+            width: 1, background: BORDER,
+          }} />
+        ))}
+        <div style={{
+          width: `${fillPct}%`, height: '100%', borderRadius: 3,
+          background: color, transition: 'width 0.6s ease, background 0.3s',
+        }} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
+        {['0%', '5%', '15%', '30%+'].map((label) => (
+          <span key={label} style={{ fontFamily: INTER, fontSize: 9, color: FAINT }}>{label}</span>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function TierBar({ label, rate, count, highlight }) {
@@ -95,13 +124,11 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, parsed, onAppl
   const histAvg    = hasHistory ? cargoItem.avg_price : null;
   const histN      = hasHistory ? cargoItem.n : 0;
 
-  // What's the average margin they earn on similar jobs?
   const histMarginKr  = histAvg != null && hasCost ? Math.round(histAvg - costFloor) : null;
   const histMarginPct = histMarginKr != null && histAvg > 0
     ? Math.round((histMarginKr / histAvg) * 100)
     : null;
 
-  // How does this quote compare to their historical average?
   const pctVsHist   = histAvg != null ? (currentPrice - histAvg) / histAvg : null;
   const isBelowHist = pctVsHist != null && pctVsHist < -0.03;
 
@@ -145,7 +172,6 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, parsed, onAppl
 
   const notice = showNotice ? noticeText() : null;
 
-  // ── Bail if nothing to show ───────────────────────────────────────────────
   if (!hasCost && !hasHistory && (!insights || insights.length === 0)) return null;
 
   return (
@@ -204,7 +230,8 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, parsed, onAppl
       {/* ── Main panel ── */}
       <div style={{
         background: WHITE,
-        border: `1px solid ${BORDER}`,
+        border: `1px solid ${isBelowCost ? 'rgba(220,38,38,0.35)' : BORDER}`,
+        borderLeft: isBelowCost ? '3px solid rgba(220,38,38,0.7)' : `1px solid ${BORDER}`,
         borderRadius: 12,
         overflow: 'hidden',
       }}>
@@ -257,53 +284,74 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, parsed, onAppl
             </div>
           )}
 
-          {/* Price + margin readout */}
+          {/* Price + margin hero readout */}
           <div style={{
-            background: SURF, borderRadius: 8, padding: '10px 12px',
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            background: isBelowCost ? 'rgba(220,38,38,0.04)' : SURF,
+            borderRadius: 8, padding: '12px 12px 8px',
+            border: `1px solid ${isBelowCost ? 'rgba(220,38,38,0.15)' : 'transparent'}`,
             marginBottom: (hasHistory || tierData || (!hasHistory && insights !== null && !unlocked)) ? 14 : 0,
           }}>
-            <div>
-              <div style={{
-                fontFamily: INTER, fontSize: 10, fontWeight: 600,
-                letterSpacing: '0.07em', textTransform: 'uppercase',
-                color: FAINT, marginBottom: 4,
-              }}>
-                {pi.quotePrice}
-              </div>
-              <div style={{
-                fontFamily: INTER, fontSize: 19, fontWeight: 700,
-                color: TEXT, letterSpacing: '-0.02em',
-                fontFeatureSettings: '"tnum"',
-              }}>
-                {fmtSEK(currentPrice, locale)}
-              </div>
-            </div>
-            {marginKr != null && (
-              <div style={{ textAlign: 'right' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
                 <div style={{
                   fontFamily: INTER, fontSize: 10, fontWeight: 600,
                   letterSpacing: '0.07em', textTransform: 'uppercase',
                   color: FAINT, marginBottom: 4,
                 }}>
-                  {pi.margin}
+                  {pi.quotePrice}
                 </div>
                 <div style={{
-                  fontFamily: INTER, fontSize: 19, fontWeight: 700,
-                  color: marginColor(marginPct), letterSpacing: '-0.02em',
+                  fontFamily: INTER, fontSize: 20, fontWeight: 700,
+                  color: TEXT, letterSpacing: '-0.02em',
                   fontFeatureSettings: '"tnum"',
                 }}>
-                  {marginPct}%
-                </div>
-                <div style={{
-                  fontFamily: INTER, fontSize: 11, fontWeight: 500,
-                  color: marginColor(marginPct), opacity: 0.75,
-                  fontFeatureSettings: '"tnum"',
-                }}>
-                  {fmtSEK(marginKr, locale)}
+                  {fmtSEK(currentPrice, locale)}
                 </div>
               </div>
+              {marginKr != null && (
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{
+                    fontFamily: INTER, fontSize: 10, fontWeight: 600,
+                    letterSpacing: '0.07em', textTransform: 'uppercase',
+                    color: FAINT, marginBottom: 4,
+                  }}>
+                    {pi.margin}
+                  </div>
+                  {/* kr is now the hero number */}
+                  <div style={{
+                    fontFamily: INTER, fontSize: 20, fontWeight: 700,
+                    color: marginColor(marginPct), letterSpacing: '-0.02em',
+                    fontFeatureSettings: '"tnum"',
+                  }}>
+                    {isBelowCost ? '−' : '+'}{fmtSEK(Math.abs(marginKr), locale)}
+                  </div>
+                  <div style={{
+                    fontFamily: INTER, fontSize: 12, fontWeight: 600,
+                    color: marginColor(marginPct), opacity: 0.8,
+                    fontFeatureSettings: '"tnum"', marginTop: 1,
+                  }}>
+                    {marginPct}%
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Verdict line */}
+            {marginKr != null && (
+              <div style={{
+                marginTop: 8,
+                fontFamily: INTER, fontSize: 11, fontWeight: 600,
+                color: isBelowCost ? G_RED : marginPct >= 20 ? G_GREEN : G_AMBER,
+                letterSpacing: '0.02em',
+              }}>
+                {isBelowCost
+                  ? pi.belowCostShort(fmtSEK(Math.abs(marginKr), locale))
+                  : pi.aboveCost(fmtSEK(marginKr, locale))}
+              </div>
             )}
+
+            {/* Margin gauge */}
+            {marginPct != null && <MarginGauge pct={marginPct} />}
           </div>
 
           {/* Historical average */}
@@ -343,7 +391,7 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, parsed, onAppl
             </div>
           )}
 
-          {/* Unlock progress — no history yet */}
+          {/* Unlock progress */}
           {!hasHistory && insights !== null && !unlocked && (
             <div style={{ marginBottom: 4 }}>
               <div style={{

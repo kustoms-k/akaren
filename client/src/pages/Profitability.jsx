@@ -397,7 +397,7 @@ function JobsTable({ jobs, prevJobs, onFakturaClick, t }) {
   );
 }
 
-function CustomerBars({ ranking, prevRanking, t }) {
+function CustomerBars({ ranking, prevRanking, marginByKund, t }) {
   if (ranking.length === 0) {
     return (
       <Card padding={28} style={{ textAlign: 'center' }}>
@@ -411,15 +411,23 @@ function CustomerBars({ ranking, prevRanking, t }) {
   const prevByKund = Object.fromEntries((prevRanking ?? []).map((r) => [r.kund, r.profit]));
   const maxProfit = Math.max(...ranking.map((r) => Math.abs(r.profit)), 1);
 
+  function marginColor(pct) {
+    if (pct == null) return FAINT;
+    if (pct < 20) return '#e74c3c';
+    if (pct < 40) return '#d97706';
+    return '#16a34a';
+  }
+
   return (
     <Card overflow="hidden">
       {ranking.map((r, i) => {
         const pct    = Math.max((Math.abs(r.profit) / maxProfit) * 100, 2);
         const isLoss = r.profit < 0;
         const prev   = prevByKund[r.kund];
+        const avgMg  = marginByKund?.[r.kund];
         return (
           <div key={r.kund} style={{
-            padding: '14px 20px',
+            padding: '13px 20px',
             borderBottom: i < ranking.length - 1 ? `1px solid ${BG}` : 'none',
             position: 'relative', overflow: 'hidden',
           }}>
@@ -441,7 +449,17 @@ function CustomerBars({ ranking, prevRanking, t }) {
                   {r.kund}
                 </span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+                {avgMg != null && (
+                  <span style={{
+                    fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 12,
+                    fontWeight: 600, color: marginColor(avgMg),
+                    background: avgMg < 20 ? 'rgba(231,76,60,0.08)' : avgMg < 40 ? 'rgba(217,119,6,0.08)' : 'rgba(22,163,74,0.08)',
+                    padding: '2px 8px', borderRadius: 5,
+                  }}>
+                    {avgMg.toFixed(1)}%
+                  </span>
+                )}
                 <TrendArrow current={r.profit} prev={prev} showDiff={false} threshold={100} />
                 <span style={{ fontFamily: INTER, fontSize: 16, fontWeight: 700, color: isLoss ? '#e74c3c' : AMBER, fontFeatureSettings: '"tnum"' }}>
                   {isLoss ? '−' : ''}{fmtSEK(Math.abs(r.profit))}
@@ -451,6 +469,68 @@ function CustomerBars({ ranking, prevRanking, t }) {
           </div>
         );
       })}
+    </Card>
+  );
+}
+
+function CargoTypeSummary({ jobs, t }) {
+  const completed = jobs.filter((j) => COMPLETED.has(j.job_status) && j.lasttyp && j.lasttyp !== '—' && j.marginal_pct != null);
+  if (completed.length === 0) return null;
+
+  const byType = {};
+  for (const j of completed) {
+    if (!byType[j.lasttyp]) byType[j.lasttyp] = { jobs: 0, totalMargin: 0, totalRevenue: 0 };
+    byType[j.lasttyp].jobs++;
+    byType[j.lasttyp].totalMargin  += j.marginal_pct;
+    byType[j.lasttyp].totalRevenue += j.intakt ?? 0;
+  }
+  const types = Object.entries(byType)
+    .map(([type, d]) => ({ type, avg: d.totalMargin / d.jobs, jobs: d.jobs, revenue: d.totalRevenue }))
+    .sort((a, b) => b.avg - a.avg);
+
+  if (types.length < 2) return null;
+
+  const best  = types[0];
+  const worst = types[types.length - 1];
+
+  function MarginBadge({ pct }) {
+    const color = pct < 20 ? '#e74c3c' : pct < 40 ? '#d97706' : '#16a34a';
+    const bg    = pct < 20 ? 'rgba(231,76,60,0.08)' : pct < 40 ? 'rgba(217,119,6,0.08)' : 'rgba(22,163,74,0.08)';
+    return (
+      <span style={{
+        fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 13, fontWeight: 700,
+        color, background: bg, padding: '3px 10px', borderRadius: 6,
+      }}>
+        {pct.toFixed(1)}%
+      </span>
+    );
+  }
+
+  return (
+    <Card overflow="hidden">
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(types.length, 4)}, 1fr)` }}>
+        {types.slice(0, 4).map((item, i) => {
+          const isFirst = i === 0;
+          const isLast  = i === Math.min(types.length, 4) - 1 && types.length >= 2;
+          const isBest  = item.avg === best.avg;
+          const isWorst = item.avg === worst.avg && types.length >= 2;
+          return (
+            <div key={item.type} style={{
+              padding: '14px 16px',
+              borderRight: i < Math.min(types.length, 4) - 1 ? `1px solid ${BG}` : 'none',
+              borderTop: isBest ? '2px solid rgba(22,163,74,0.4)' : isWorst ? '2px solid rgba(231,76,60,0.35)' : `2px solid ${BG}`,
+            }}>
+              <div style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED, marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {item.type}
+              </div>
+              <MarginBadge pct={item.avg} />
+              <div style={{ fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 11, color: FAINT, marginTop: 5 }}>
+                {item.jobs} job{item.jobs !== 1 ? 's' : ''} · {fmtSEK(item.revenue)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </Card>
   );
 }
@@ -550,6 +630,11 @@ export function Profitability() {
     if (!with_margin.length) return null;
     return with_margin.reduce((s, j) => s + j.marginal_pct, 0) / with_margin.length;
   })();
+
+  const marginByKund = data ? avgByKey(
+    data.jobs.filter((j) => COMPLETED.has(j.job_status)),
+    (j) => j.kund,
+  ) : {};
 
   const allRecs = data
     ? generateRecommendations(data, stats, prevData, t).filter((r) => !dismissed.has(r.id))
@@ -655,6 +740,13 @@ export function Profitability() {
             />
           </div>
 
+          {data.jobs?.length > 0 && (
+            <div style={{ marginBottom: 32 }}>
+              <SectionLabel>{t.profitability.section.cargoTypes}</SectionLabel>
+              <CargoTypeSummary jobs={data.jobs} t={t} />
+            </div>
+          )}
+
           <div style={{ marginBottom: 32 }}>
             <SectionLabel>
               {t.profitability.section.topCustomers(Math.min(data.customerRanking.length, 5))}
@@ -662,6 +754,7 @@ export function Profitability() {
             <CustomerBars
               ranking={data.customerRanking}
               prevRanking={prevData?.customerRanking}
+              marginByKund={marginByKund}
               t={t}
             />
           </div>

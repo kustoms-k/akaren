@@ -314,6 +314,9 @@ export const EN = {
     maintenance:   'Maintenance',
     maintenanceCritical: (n) => `${n}× critical`,
     maintenanceWarning:  (n) => `${n}× warning`,
+    noMaintenanceIssues: 'No maintenance issues',
+    utilisationLabel:    'Utilisation',
+    utilisationOf:       (h) => `${h} h this month`,
     cols: {
       vehicle:       'Vehicle',
       name:          'Name',
@@ -370,6 +373,8 @@ export const EN = {
     invoiceCreated: (nr) => `Invoice ${nr} created`,
     invoiceFailed:  'Could not generate PDF',
     emailNote:      '* The email button opens your email client with a pre-filled message. Attach the downloaded PDF file manually.',
+    viewList:       'List',
+    viewCalendar:   'Calendar',
     statuses: {
       planerad:   'Planned',
       aktiv:      'Active',
@@ -426,7 +431,9 @@ export const EN = {
       kpi:             (month) => `KPI — ${month}`,
       completedJobs:   'Completed Jobs — ascending margin',
       topCustomers:    (n) => `Top ${n} Customers — gross profit this month`,
+      cargoTypes:      'Cargo type performance',
     },
+    avgMarginLabel:   'Avg margin',
     kpi: {
       acceptanceSublabel: (accepted, total) => `${accepted} of ${total} answered`,
       noAnswered:         'No answered quotes',
@@ -1199,6 +1206,8 @@ export const EN = {
     tierBelow:        'Below avg',
     tierAt:           'At avg',
     tierAbove:        'Above avg',
+    aboveCost:        (kr) => `${kr} above cost`,
+    belowCostShort:   (kr) => `${kr} BELOW COST`,
   },
 
   dpa: {
@@ -2190,6 +2199,9 @@ export const SV = {
     maintenance:   'Underhåll',
     maintenanceCritical: (n) => `${n}× kritisk`,
     maintenanceWarning:  (n) => `${n}× varning`,
+    noMaintenanceIssues: 'Inga underhållsproblem',
+    utilisationLabel:    'Utnyttjande',
+    utilisationOf:       (h) => `${h} h denna månad`,
     cols: {
       vehicle:       'Fordon',
       name:          'Namn',
@@ -2246,6 +2258,8 @@ export const SV = {
     invoiceCreated: (nr) => `Faktura ${nr} genererad`,
     invoiceFailed:  'Kunde inte generera PDF',
     emailNote:      '* E-postknappen öppnar din e-postklient med ett förberett meddelande. Bifoga den nedladdade PDF-filen manuellt.',
+    viewList:       'Lista',
+    viewCalendar:   'Kalender',
     statuses: {
       planerad:   'Planerad',
       aktiv:      'Aktiv',
@@ -2302,7 +2316,9 @@ export const SV = {
       kpi:             (month) => `KPI — ${month}`,
       completedJobs:   'Avslutade uppdrag — marginal stigande',
       topCustomers:    (n) => `Topp ${n} kunder — bruttovinst denna månad`,
+      cargoTypes:      'Lasttypsanalys',
     },
+    avgMarginLabel:   'Snittmarginal',
     kpi: {
       acceptanceSublabel: (accepted, total) => `${accepted} av ${total} besvarade`,
       noAnswered:         'Inga besvarade offerter',
@@ -3075,6 +3091,8 @@ export const SV = {
     tierBelow:        'Under snitt',
     tierAt:           'Vid snitt',
     tierAbove:        'Över snitt',
+    aboveCost:        (kr) => `${kr} över kostnad`,
+    belowCostShort:   (kr) => `${kr} UNDER KOSTNAD`,
   },
 
   dpa: {
