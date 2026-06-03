@@ -114,6 +114,7 @@ app.use(cors({
     cb(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: true,
+  exposedHeaders: ['Content-Disposition'],
 }));
 
 // ── Stripe webhook needs raw body — must be before express.json() ─────────────

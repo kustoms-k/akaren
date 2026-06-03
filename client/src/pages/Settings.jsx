@@ -1050,10 +1050,13 @@ function ExportPanel({ section, sectionHead }) {
       const cd   = r.headers.get('Content-Disposition') ?? '';
       const match = cd.match(/filename="([^"]+)"/);
       const name  = match ? match[1] : `akaren-export-${new Date().toISOString().slice(0,10)}.json`;
-      const url   = URL.createObjectURL(blob);
-      const a     = document.createElement('a');
-      a.href = url; a.download = name; a.click();
-      URL.revokeObjectURL(url);
+      const url = URL.createObjectURL(blob);
+      const a   = document.createElement('a');
+      a.href = url; a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch (err) {
       setError(err.message);
     } finally {
