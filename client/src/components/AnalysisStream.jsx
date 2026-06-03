@@ -63,7 +63,8 @@ export function AnalysisStream({
   routeLive = false,
   routeLoading = false,
 }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const locale = lang === 'sv' ? 'sv-SE' : 'en-GB';
   const [whyOpen, setWhyOpen] = useState(false);
 
   if (status === 'idle') {
@@ -326,7 +327,7 @@ export function AnalysisStream({
               lineHeight: 1,
               letterSpacing: '-0.01em',
             }}>
-              {new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(realPrice)}
+              {new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(realPrice)}
               <span style={{ fontSize: 16, marginLeft: 4, opacity: 0.7 }}>kr</span>
             </div>
             {(parsed.upphämtning || parsed.leverans) && (

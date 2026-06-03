@@ -536,7 +536,7 @@ export function Jobs() {
                 const fakturaNr    = job.invoice_faktura_nr || job.faktura_nr;
                 const isLast       = i === jobs.length - 1;
                 const isExpanded   = expandedJobId === job.id;
-                const jobNr        = `JOB-${new Date().getFullYear()}-${String(job.id).padStart(3, '0')}`;
+                const jobNr        = `${t.jobs.jobPrefix}-${new Date().getFullYear()}-${String(job.id).padStart(3, '0')}`;
 
                 return (
                   <Fragment key={job.id}>

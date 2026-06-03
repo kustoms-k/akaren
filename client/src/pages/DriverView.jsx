@@ -12,10 +12,10 @@ const STATUS_COLORS = {
   fakturerad:{ bg: 'rgba(28,25,23,0.07)',    color: '#6B6359', border: 'rgba(28,25,23,0.15)'   },
 };
 
-function fmtDate(str) {
+function fmtDate(str, locale) {
   if (!str) return '—';
   try {
-    return new Intl.DateTimeFormat('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' }).format(
+    return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(
       new Date(String(str).replace(' ', 'T'))
     );
   } catch { return str; }
@@ -25,14 +25,15 @@ function fmtKm(n) {
   return n != null ? `${Math.round(n)} km` : '—';
 }
 
-function fmtSEK(n) {
+function fmtSEK(n, locale) {
   return n != null
-    ? new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n) + ' kr'
+    ? new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(n) + ' kr'
     : '—';
 }
 
 export function DriverView({ user, onLogout }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const locale = lang === 'sv' ? 'sv-SE' : 'en-GB';
   const [jobs,    setJobs]    = useState([]);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState(null);
@@ -99,7 +100,7 @@ export function DriverView({ user, onLogout }) {
           {t.driverView.myJobs}
         </div>
         <div style={{ fontSize: 12, color: '#9A9088', marginBottom: 24 }}>
-          {new Date().toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}
+          {new Date().toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' })}
         </div>
 
         {loading && (
@@ -162,7 +163,7 @@ export function DriverView({ user, onLogout }) {
                 <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 12 }}>
                   {job.datum && (
                     <span style={{ fontSize: 11, color: '#9A9088' }}>
-                      📅 {fmtDate(job.datum)}
+                      📅 {fmtDate(job.datum, locale)}
                     </span>
                   )}
                   {job.avstand_km && (

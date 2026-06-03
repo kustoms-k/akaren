@@ -126,7 +126,7 @@ function HeroPanel({ t }) {
           ))}
         </div>
         <div style={{ marginTop: 48, fontFamily: INTER, fontSize: 10, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.05em' }}>
-          15 000 kr/månad · Obegränsat antal offerter
+          {t.login.heroFooter}
         </div>
       </div>
     </div>

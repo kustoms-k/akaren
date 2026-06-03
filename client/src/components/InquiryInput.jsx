@@ -43,7 +43,7 @@ export function InquiryInput({ onAnalyse, loading, apiError, isOnline = true }) 
           fontFamily: OUTFIT, fontSize: 10, fontWeight: 700,
           letterSpacing: '0.1em', textTransform: 'uppercase', color: MUTED,
         }}>
-          {t.inquiry.label ?? 'Transportförfrågan'}
+          {t.inquiry.label}
         </span>
         <span style={{
           fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 10,
@@ -51,7 +51,7 @@ export function InquiryInput({ onAnalyse, loading, apiError, isOnline = true }) 
           letterSpacing: '0.04em',
           transition: 'color 0.2s',
         }}>
-          {charCount.toLocaleString('sv-SE')}/{MAX_LEN.toLocaleString('sv-SE')}
+          {charCount.toLocaleString(lang === 'sv' ? 'sv-SE' : 'en-GB')}/{MAX_LEN.toLocaleString(lang === 'sv' ? 'sv-SE' : 'en-GB')}
         </span>
       </div>
 

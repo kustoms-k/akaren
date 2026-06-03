@@ -11,19 +11,19 @@ const OUTFIT  = "'Geist', system-ui, sans-serif";
 const SURF    = '#ffffff';
 
 
-const fmtSEK = (n) =>
-  n == null ? '—' : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n) + ' kr';
+const fmtSEK = (n, locale = 'sv-SE') =>
+  n == null ? '—' : new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(n) + ' kr';
 
-function fmtTs(str) {
+function fmtTs(str, locale = 'sv-SE') {
   if (!str) return '';
   try {
     const d   = new Date(str.replace(' ', 'T'));
     const now = new Date();
     if (d.toDateString() === now.toDateString()) {
-      return d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+      return d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
     }
-    return d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' })
-      + ' ' + d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleDateString(locale, { day: 'numeric', month: 'short' })
+      + ' ' + d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
   } catch { return ''; }
 }
 
@@ -145,7 +145,7 @@ function CounterOfferCard({ co, rawId, onResponded, t }) {
             {co_t.label}
           </span>
           <div style={{ fontFamily: OUTFIT, fontSize: 20, fontWeight: 700, color: TEXT, marginTop: 2 }}>
-            {fmtSEK(co.proposed_price_sek)}
+            {fmtSEK(co.proposed_price_sek, locale)}
           </div>
         </div>
         <span style={{
@@ -185,7 +185,7 @@ function CounterOfferCard({ co, rawId, onResponded, t }) {
           {mode === 'accept' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <p style={{ fontFamily: OUTFIT, fontSize: 13, color: TEXT, margin: 0 }}>
-                {co_t.acceptConfirm(fmtSEK(co.proposed_price_sek))}
+                {co_t.acceptConfirm(fmtSEK(co.proposed_price_sek, locale))}
               </p>
               <NoteInput value={note} onChange={setNote} placeholder={co_t.notePlaceholder} />
               <ActionRow
@@ -265,7 +265,8 @@ function CounterOfferCard({ co, rawId, onResponded, t }) {
 }
 
 export function MessagePanel({ rawId, quoteLabel, quoteId, onClose }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const locale = lang === 'sv' ? 'sv-SE' : 'en-GB';
   const mp = t.messagePanel;
   const [messages,      setMessages]      = useState([]);
   const [counterOffers, setCounterOffers] = useState([]);
@@ -410,7 +411,7 @@ export function MessagePanel({ rawId, quoteLabel, quoteId, onClose }) {
                   {m.message}
                 </div>
                 <span style={{ fontFamily: OUTFIT, fontSize: 11, color: MUTED }}>
-                  {isDispatcher ? mp.senderYou : mp.senderCustomer} · {fmtTs(m.created_at)}
+                  {isDispatcher ? mp.senderYou : mp.senderCustomer} · {fmtTs(m.created_at, locale)}
                 </span>
               </div>
             );

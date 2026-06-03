@@ -16,7 +16,7 @@ const G_GREEN = '#16a34a';
 const G_RED   = '#dc2626';
 const G_AMBER = '#b56510';
 
-const fmtSEK = (n) =>
+const fmtSEK = (n, locale = 'sv-SE') =>
   n == null ? '—' : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n) + ' kr';
 
 function marginColor(pct) {
@@ -60,7 +60,8 @@ function TierBar({ label, rate, count, highlight }) {
 }
 
 export function PricingIntelligencePanel({ lasttyp, currentPrice, parsed, onApplyPrice }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const locale = lang === 'sv' ? 'sv-SE' : 'en-GB';
   const pi    = t.pricingIntel;
   const insights = useLiveQuery(() => db.pricingInsights.toArray(), [], null);
 
@@ -128,7 +129,7 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, parsed, onAppl
 
   function noticeText() {
     if (isBelowCost) {
-      return pi.noticeBelowCost(fmtSEK(Math.abs(marginKr)));
+      return pi.noticeBelowCost(fmtSEK(Math.abs(marginKr), locale));
     }
     if (marginPct != null && marginPct < 15 && histMarginPct != null) {
       return pi.noticeLowMarginWithHist(marginPct, histMarginPct);
@@ -193,7 +194,7 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, parsed, onAppl
                   borderRadius: 6, padding: '5px 12px', cursor: 'pointer',
                 }}
               >
-                {pi.adjustToAvg(fmtSEK(Math.round(histAvg / 100) * 100))}
+                {pi.adjustToAvg(fmtSEK(Math.round(histAvg / 100) * 100, locale))}
               </button>
             )}
           </div>
@@ -233,10 +234,10 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, parsed, onAppl
           {hasCost && (
             <div style={{ marginBottom: 12 }}>
               {arbetstid != null && (
-                <CostRow label={pi.labour(timmar)} value={fmtSEK(arbetstid)} />
+                <CostRow label={pi.labour(timmar)} value={fmtSEK(arbetstid, locale)} />
               )}
               {bränsle != null && (
-                <CostRow label={pi.fuel} value={fmtSEK(bränsle)} />
+                <CostRow label={pi.fuel} value={fmtSEK(bränsle, locale)} />
               )}
               <div style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
@@ -250,7 +251,7 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, parsed, onAppl
                   fontFamily: INTER, fontSize: 13, fontWeight: 700, color: TEXT,
                   fontFeatureSettings: '"tnum"',
                 }}>
-                  {fmtSEK(costFloor)}
+                  {fmtSEK(costFloor, locale)}
                 </span>
               </div>
             </div>
@@ -275,7 +276,7 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, parsed, onAppl
                 color: TEXT, letterSpacing: '-0.02em',
                 fontFeatureSettings: '"tnum"',
               }}>
-                {fmtSEK(currentPrice)}
+                {fmtSEK(currentPrice, locale)}
               </div>
             </div>
             {marginKr != null && (
@@ -299,7 +300,7 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, parsed, onAppl
                   color: marginColor(marginPct), opacity: 0.75,
                   fontFeatureSettings: '"tnum"',
                 }}>
-                  {fmtSEK(marginKr)}
+                  {fmtSEK(marginKr, locale)}
                 </div>
               </div>
             )}
@@ -328,7 +329,7 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, parsed, onAppl
                     fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT,
                     fontFeatureSettings: '"tnum"',
                   }}>
-                    {fmtSEK(histAvg)}
+                    {fmtSEK(histAvg, locale)}
                   </span>
                 </div>
               </div>

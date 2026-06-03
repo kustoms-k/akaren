@@ -17,10 +17,12 @@ const EURO = {
   4: { label: 'E4', color: '#B91C1C', bg: 'rgba(239,68,68,0.08)' },
 };
 
-const fmtSEK = (n) =>
-  new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n ?? 0);
+const fmtSEK = (n, locale = 'sv-SE') =>
+  new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(n ?? 0);
 
 function VehicleRow({ v }) {
+  const { lang } = useLanguage();
+  const locale = lang === 'sv' ? 'sv-SE' : 'en-GB';
   const badge = EURO[v.euro_klass] ?? EURO[4];
 
   return (
@@ -55,7 +57,7 @@ function VehicleRow({ v }) {
         fontFamily: INTER, fontFeatureSettings: '"tnum"', fontSize: 12, color: MUTED,
         flexShrink: 0, textAlign: 'right', minWidth: 78,
       }}>
-        {fmtSEK(v.timkostnad_sek)} kr/tim
+        {fmtSEK(v.timkostnad_sek, locale)} kr/tim
       </span>
 
       {v.lez_godkänd && (
@@ -71,7 +73,8 @@ function VehicleRow({ v }) {
 }
 
 export function FleetPanel({ fleet }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const locale = lang === 'sv' ? 'sv-SE' : 'en-GB';
   if (fleet.length === 0) {
     return (
       <p style={{ fontFamily: OUTFIT, fontSize: 13, color: MUTED, margin: 0, flexShrink: 0 }}>

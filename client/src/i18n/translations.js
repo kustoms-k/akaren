@@ -268,6 +268,7 @@ export const EN = {
   },
 
   inquiry: {
+    label:       'Transport Inquiry',
     placeholder: 'E.g. "Move 5 tonnes of steel from Hammarby Sjöstad to Solna industrial area on June 20, crane required at unloading."',
     submit:      'Calculate Quote',
     offline:     'Internet connection required',
@@ -345,6 +346,7 @@ export const EN = {
     heading:        'Jobs',
     loading:        'Loading jobs…',
     noJobs:         'No jobs yet — create a quote to start',
+    jobPrefix:      'JOB',
     count:          (n) => `${n} job${n !== 1 ? 's' : ''}`,
     job:            'Job',
     quote:          'Quote',
@@ -1212,6 +1214,7 @@ export const EN = {
     brand:    'Åkaren',
     tagline:  'Transport management for Swedish trucking',
     heroTagline: 'Transport management for Swedish hauliers — from quote to invoice in one place.',
+    heroFooter:  '2 990 kr/month · All features included · No commitment',
     features: [
       'Complete quotes calculated in seconds',
       'Customer portals with private tracking links',
@@ -2139,6 +2142,7 @@ export const SV = {
   },
 
   inquiry: {
+    label:       'Transportförfrågan',
     placeholder: 'T.ex. "Flytta 5 ton stål från Hammarby Sjöstad till Solna industriområde den 20 juni, kräver kran vid lossning."',
     submit:      'Beräkna offert',
     offline:     'Internetanslutning krävs',
@@ -2216,6 +2220,7 @@ export const SV = {
     heading:        'Uppdrag',
     loading:        'Laddar uppdrag…',
     noJobs:         'Inga uppdrag ännu — skapa en offert för att börja',
+    jobPrefix:      'JOB',
     count:          (n) => `${n} uppdrag`,
     job:            'Uppdrag',
     quote:          'Offert',
@@ -2460,7 +2465,7 @@ export const SV = {
       subtitle: 'Daglig backup kl. 02:00 (Stockholm). 30 dagliga + 12 månatliga kopior bevaras. AES-256-GCM krypterade.',
       loading:  'Laddar…',
       none:     'Inga säkerhetskopior ännu. Den första skapas kl. 02:00 nästa natt.',
-      noneEnvNote: 'Configure S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY, S3_SECRET_KEY and BACKUP_ENCRYPTION_KEY in your .env to enable backups.',
+      noneEnvNote: 'Konfigurera S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY, S3_SECRET_KEY och BACKUP_ENCRYPTION_KEY i din .env för att aktivera säkerhetskopior.',
       restore:  'Återställ',
       restoreHeading: (date) => `Återställning — ${date}`,
       restoreDesc: 'Återställning ersätter den aktiva databasen med säkerhetskopian. Servern måste startas om. En bekräftelsekod genereras — ange den för att verkställa.',
@@ -3083,6 +3088,7 @@ export const SV = {
     brand:    'Åkaren',
     tagline:  'Transporthantering för svenska åkerier',
     heroTagline: 'Transporthantering för svenska åkerier — från offert till faktura på ett ställe.',
+    heroFooter:  '2 990 kr/mån · Alla funktioner ingår · Ingen bindningstid',
     features: [
       'Komplett offert beräknad på sekunder',
       'Kundportaler med privata spårningslänkar',
@@ -3229,7 +3235,7 @@ export const SV = {
   },
 
   dispatch: {
-    title:        'Dispatch Board',
+    title:        'Körschema',
     planning:     'Planering',
     thisWeek:     'Denna vecka',
     today:        'Idag',
@@ -3525,11 +3531,11 @@ export const SV = {
       total:      'Totalt',
       litres:     'Liter',
       lPerKm:     'l/km',
-      fleetAvg:   'Flottsnomsnitt:',
+      fleetAvg:   'Flottans snitt:',
       fleetBased: (n) => `Baserat på ${n} fordon med drivmedelsdata`,
       txCount:    'Transaktioner',
       reconciled: 'Kopplade till jobb',
-      kmRec:      'Km (reconciled)',
+      kmRec:      'Km (avstämd)',
       expected:   'Förväntad förbrukning',
       anomaly:    (pct) => `+${pct}% vs snitt`,
       anomalyNote:'Avvikelse:',

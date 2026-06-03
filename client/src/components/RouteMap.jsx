@@ -71,11 +71,11 @@ function disruptionIcon(Lf) {
   });
 }
 
-const fmtKr = (n) => n == null ? '—' : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n) + ' kr';
+const fmtKr = (n, locale = 'sv-SE') => n == null ? '—' : new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(n) + ' kr';
 
 // ── Cost breakdown panel ──────────────────────────────────────────────────────
 
-function CostPanel({ cost, violations, t }) {
+function CostPanel({ cost, violations, t, locale = 'sv-SE' }) {
   if (!cost) return null;
   const cm = t.map.cost;
   const hasLez      = violations?.length > 0;
@@ -85,12 +85,12 @@ function CostPanel({ cost, violations, t }) {
   const hasFine     = cost.lez_bot_risk_kr > 0;
 
   const rows = [
-    { label: cm.fuel,   value: fmtKr(cost.bransle_kr),             show: true },
-    { label: cm.congestion, value: fmtKr(cost.trangselskatt_kr),   show: hasCong },
-    { label: cm.bridge, value: fmtKr(cost.infrastrukturavgift_kr), show: hasBridge },
+    { label: cm.fuel,   value: fmtKr(cost.bransle_kr, locale),             show: true },
+    { label: cm.congestion, value: fmtKr(cost.trangselskatt_kr, locale),   show: hasCong },
+    { label: cm.bridge, value: fmtKr(cost.infrastrukturavgift_kr, locale), show: hasBridge },
     {
       label: cm.lezFine,
-      value: fmtKr(cost.lez_bot_risk_kr),
+      value: fmtKr(cost.lez_bot_risk_kr, locale),
       show: hasFine,
       accent: '#e74c3c',
       sub: cm.lezFineNote,
@@ -99,7 +99,7 @@ function CostPanel({ cost, violations, t }) {
       label: hasCong || hasBridge
         ? cm.detourExtraFull(cost.detour_km_extra, cost.detour_min_extra)
         : cm.detourExtra,
-      value: '+' + fmtKr(cost.detour_merkostnad_kr),
+      value: '+' + fmtKr(cost.detour_merkostnad_kr, locale),
       show: hasDetour,
       accent: '#d97706',
     },
@@ -159,7 +159,7 @@ function CostPanel({ cost, violations, t }) {
         <div style={{ borderTop: '1px solid #e6e2da', marginTop: 3, paddingTop: 5, display: 'flex', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 11, fontWeight: 700, color: '#1c1917' }}>{cm.total}</span>
           <span style={{ fontSize: 13, fontWeight: 700, color: '#1c1917', fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>
-            {fmtKr(cost.total_kr)}
+            {fmtKr(cost.total_kr, locale)}
           </span>
         </div>
 
@@ -174,7 +174,8 @@ function CostPanel({ cost, violations, t }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function RouteMap({ routeData, loading }) {
-  const { t }                           = useLanguage();
+  const { t, lang }                     = useLanguage();
+  const locale                          = lang === 'sv' ? 'sv-SE' : 'en-GB';
   const containerRef                    = useRef(null);
   const mapRef                          = useRef(null);
   const [showDirect, setShowDirect]     = useState(false);
@@ -284,13 +285,13 @@ export function RouteMap({ routeData, loading }) {
       if (routeData.pickup_coords) {
         const [lat, lon] = routeData.pickup_coords;
         Lf.marker([lat, lon], { icon: pickupIcon(Lf) })
-          .addTo(map).bindPopup(`<b>${t.map?.pickup ?? 'Upphämtning'}</b>`, { maxWidth: 200 });
+          .addTo(map).bindPopup(`<b>${t.map.pickup}</b>`, { maxWidth: 200 });
         bounds.push([lat, lon]);
       }
       if (routeData.delivery_coords) {
         const [lat, lon] = routeData.delivery_coords;
         Lf.marker([lat, lon], { icon: deliveryIcon(Lf) })
-          .addTo(map).bindPopup(`<b>${t.map?.delivery ?? 'Leverans'}</b>`, { maxWidth: 200 });
+          .addTo(map).bindPopup(`<b>${t.map.delivery}</b>`, { maxWidth: 200 });
         bounds.push([lat, lon]);
       }
 
@@ -302,7 +303,7 @@ export function RouteMap({ routeData, loading }) {
         Lf.marker([lat, lon], { icon: disruptionIcon(Lf) })
           .addTo(map)
           .bindPopup(
-            `<b>${d.description || d.location || t.map?.alertTitle || 'Störning'}</b>`
+            `<b>${d.description || d.location || t.map.alertTitle}</b>`
             + (d.location ? `<br><span style="color:#666">${d.location}</span>` : '')
             + (delay > 0   ? `<br><span style="color:#f59e0b">+${delay} min</span>` : ''),
             { maxWidth: 240 },
@@ -343,7 +344,7 @@ export function RouteMap({ routeData, loading }) {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <span style={{ fontFamily: "'Geist', system-ui, sans-serif", fontSize: 12, color: '#bbb' }}>
-            {t.map?.loading ?? 'Laddar karta…'}
+            {t.map.loading}
           </span>
         </div>
         <style>{`@keyframes routeMapShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
@@ -416,6 +417,7 @@ export function RouteMap({ routeData, loading }) {
         cost={routeData.cost_breakdown}
         violations={routeData.lez_violations}
         t={t}
+        locale={locale}
       />
 
       <style>{`@keyframes routeMapShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>

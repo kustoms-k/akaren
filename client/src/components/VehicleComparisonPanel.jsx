@@ -4,8 +4,8 @@ import { useLanguage } from '../context/LanguageContext.jsx';
 const INTER = "'Geist', system-ui, sans-serif";
 
 
-const fmtKr = (n) => n == null ? '—'
-  : new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 }).format(n) + ' kr';
+const fmtKr = (n, locale = 'sv-SE') => n == null ? '—'
+  : new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(n) + ' kr';
 
 function EuroBadge({ euroKlass, lez_compliant }) {
   const ok = lez_compliant;
@@ -23,7 +23,7 @@ function EuroBadge({ euroKlass, lez_compliant }) {
   );
 }
 
-function CostBar({ value, max, accent }) {
+function CostBar({ value, max, accent, locale = 'sv-SE' }) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
@@ -31,14 +31,15 @@ function CostBar({ value, max, accent }) {
         <div style={{ width: `${pct}%`, height: '100%', background: accent, borderRadius: 2 }} />
       </div>
       <span style={{ fontFamily: INTER, fontSize: 11, color: '#1c1917', minWidth: 60, textAlign: 'right', fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums' }}>
-        {fmtKr(value)}
+        {fmtKr(value, locale)}
       </span>
     </div>
   );
 }
 
 export function VehicleComparisonPanel({ routeData, onOverride }) {
-  const { t }                     = useLanguage();
+  const { t, lang }               = useLanguage();
+  const locale                    = lang === 'sv' ? 'sv-SE' : 'en-GB';
   const [expanded, setExpanded]   = useState(false);
 
   const { vehicle_comparison: comparison, optimal_vehicle: optimal, reasoning } = routeData ?? {};
@@ -74,7 +75,7 @@ export function VehicleComparisonPanel({ routeData, onOverride }) {
               </span>
               <EuroBadge euroKlass={optimal.euro_klass} lez_compliant={optimal.lez_compliant} />
               <span style={{ fontSize: 12, fontWeight: 600, color: '#22c55e', fontFamily: INTER, fontFeatureSettings: '"tnum"' }}>
-                {fmtKr(optimal.cost.total_kr)}
+                {fmtKr(optimal.cost.total_kr, locale)}
               </span>
             </div>
             {reasoning && (
@@ -147,31 +148,31 @@ export function VehicleComparisonPanel({ routeData, onOverride }) {
                       )}
                       {!isOpt && saving != null && saving > 0 && (
                         <span style={{ fontSize: 10, color: '#e74c3c', fontFamily: INTER, fontFeatureSettings: '"tnum"' }}>
-                          +{fmtKr(saving)}
+                          +{fmtKr(saving, locale)}
                         </span>
                       )}
                     </div>
 
-                    <CostBar value={v.cost.total_kr} max={maxCost} accent={isOpt ? '#22c55e' : '#c0bdb8'} />
+                    <CostBar value={v.cost.total_kr} max={maxCost} accent={isOpt ? '#22c55e' : '#c0bdb8'} locale={locale} />
 
                     {/* Detail row */}
                     <div style={{ display: 'flex', gap: 10, marginTop: 4, flexWrap: 'wrap' }}>
                       <span style={{ fontSize: 10, color: '#a09590' }}>
-                        {tm.fuel}: {fmtKr(v.cost.fuel_kr)}
+                        {tm.fuel}: {fmtKr(v.cost.fuel_kr, locale)}
                       </span>
                       {v.cost.congestion_kr > 0 && (
                         <span style={{ fontSize: 10, color: '#a09590' }}>
-                          {tm.congestion}: {fmtKr(v.cost.congestion_kr)}
+                          {tm.congestion}: {fmtKr(v.cost.congestion_kr, locale)}
                         </span>
                       )}
                       {v.cost.tolls_kr > 0 && (
                         <span style={{ fontSize: 10, color: '#a09590' }}>
-                          {tm.bridge}: {fmtKr(v.cost.tolls_kr)}
+                          {tm.bridge}: {fmtKr(v.cost.tolls_kr, locale)}
                         </span>
                       )}
                       {v.cost.detour_kr > 0 && (
                         <span style={{ fontSize: 10, color: '#e74c3c' }}>
-                          {tm.detour}: +{fmtKr(v.cost.detour_kr)} (+{Math.round(v.detour_km)} km)
+                          {tm.detour}: +{fmtKr(v.cost.detour_kr, locale)} (+{Math.round(v.detour_km)} km)
                         </span>
                       )}
                     </div>
