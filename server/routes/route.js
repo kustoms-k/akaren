@@ -386,27 +386,46 @@ router.post('/', async (req, res) => {
     ?? fleetJsonMap[primaryVehicle?.ext_id?.toUpperCase()]?.forbrukning_l_per_km
     ?? 0.35;
 
-  const primaryKm   = primaryRoute?.distance_km ?? 0;
-  const fuelKr      = Math.round(primaryKm * forbruk * dieselPrice);
-  const congKr      = cZonesOnRoute.reduce((s, z) => s + z.fee_sek, 0);
-  const tollsKr     = bridgeTolls.reduce((s, b) => s + b.toll_sek, 0);
-  const lezBotRisk  = isLezCompliant ? 0 : lezViolations.reduce((s, v) => s + v.fine_sek, 0);
-  const detourExtra = lezAvoidanceApplied
+  const primaryKm          = primaryRoute?.distance_km ?? 0;
+  const primaryDurationMin = primaryRoute?.duration_minutes ?? null;
+  const fuelKr             = Math.round(primaryKm * forbruk * dieselPrice);
+  const fuelLitres         = Math.round(primaryKm * forbruk * 10) / 10;
+  const distanceMil        = Math.round(primaryKm / 10 * 10) / 10;
+  const congKr             = cZonesOnRoute.reduce((s, z) => s + z.fee_sek, 0);
+  const tollsKr            = bridgeTolls.reduce((s, b) => s + b.toll_sek, 0);
+  const lezBotRisk         = isLezCompliant ? 0 : lezViolations.reduce((s, v) => s + v.fine_sek, 0);
+  const detourExtra        = lezAvoidanceApplied
     ? Math.max(0, (compliantKm ?? 0) - (directKm ?? 0)) : 0;
-  const detourKr    = Math.round(detourExtra * forbruk * dieselPrice);
+  const detourKr           = Math.round(detourExtra * forbruk * dieselPrice);
+  const detourMinExtra     = lezAvoidanceApplied
+    ? Math.max(0, (compliantRoute?.duration_minutes ?? 0) - (directRoute?.duration_minutes ?? 0)) : 0;
+
+  // Labour: actual drive time + 1h loading/unloading, at vehicle hourly rate
+  const labourHours = primaryDurationMin != null
+    ? Math.round(((primaryDurationMin / 60) + 1.0) * 10) / 10
+    : (primaryKm > 0 ? Math.round(((primaryKm / 60) + 1.5) * 10) / 10 : null);
+  const labourKr    = primaryVehicle && labourHours && primaryVehicle.timkostnad_sek
+    ? Math.round(labourHours * primaryVehicle.timkostnad_sek)
+    : 0;
 
   const costBreakdown = {
+    distance_km:            primaryKm,
+    distance_mil:           distanceMil,
+    duration_minutes:       primaryDurationMin,
     diesel_price_kr_l:      dieselPrice,
     forbrukning_l_per_km:   forbruk,
+    fuel_litres:            fuelLitres,
     bransle_kr:             fuelKr,
+    labour_hours:           labourHours,
+    labour_rate_kr_h:       primaryVehicle?.timkostnad_sek ?? null,
+    labour_kr:              labourKr,
     trangselskatt_kr:       congKr,
     infrastrukturavgift_kr: tollsKr,
     lez_bot_risk_kr:        lezBotRisk,
     detour_merkostnad_kr:   detourKr,
     detour_km_extra:        detourExtra,
-    detour_min_extra:       lezAvoidanceApplied
-      ? Math.max(0, (compliantRoute?.duration_minutes ?? 0) - (directRoute?.duration_minutes ?? 0)) : 0,
-    total_kr:               fuelKr + congKr + tollsKr + detourKr,
+    detour_min_extra:       detourMinExtra,
+    total_kr:               fuelKr + labourKr + congKr + tollsKr + detourKr,
     direct_total_kr:        Math.round((directKm ?? 0) * forbruk * dieselPrice) + congKr + tollsKr,
     congestion_zones:       cZonesOnRoute,
     bridge_tolls:           bridgeTolls,
@@ -494,6 +513,16 @@ router.post('/', async (req, res) => {
     compliant_route:       compliantRoute ? { polyline: compliantRoute.polyline, distance_km: compliantKm, duration_minutes: compliantRoute.duration_minutes } : null,
 
     cost_breakdown: costBreakdown,
+
+    route_comparison: lezAvoidanceApplied ? {
+      direct_km:              directKm,
+      direct_duration_min:    directRoute?.duration_minutes ?? null,
+      direct_fine_kr:         lezViolations.reduce((s, v) => s + (v.fine_sek ?? 0), 0),
+      compliant_km:           compliantKm,
+      compliant_duration_min: compliantRoute?.duration_minutes ?? null,
+      extra_km:               detourExtra,
+      extra_fuel_kr:          detourKr,
+    } : null,
 
     lez_zone_polygons:        lezZonePolygons,
     congestion_zone_polygons: congZonePolygons,
