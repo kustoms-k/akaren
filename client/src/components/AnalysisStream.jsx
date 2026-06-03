@@ -11,6 +11,8 @@ const MUTED   = '#6b7280';
 const FAINT   = '#9ca3af';
 const SURF    = '#ffffff';
 const OUTFIT  = "'Geist', system-ui, sans-serif";
+const INTER   = OUTFIT;
+const AMBER   = '#B56510';
 
 const WARNING = '#b56510';
 const ERROR   = '#dc2626';

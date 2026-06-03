@@ -7,6 +7,7 @@ const TEXT    = '#1a1d24';
 const MUTED   = '#6b7280';
 const FAINT   = '#9ca3af';
 const OUTFIT  = "'Geist', system-ui, sans-serif";
+const INTER   = OUTFIT;
 const SURF    = '#ffffff';
 
 
