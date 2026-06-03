@@ -33,8 +33,10 @@ export function useAnalysis() {
   const [routeLive,         setRouteLive]         = useState(false);
   const [extractionId,      setExtractionId]      = useState(null);
   const [extractionModel,   setExtractionModel]   = useState(null);
+  const [quoteDurationSec,  setQuoteDurationSec]  = useState(null);
 
   const analyse = useCallback(async (inquiry, lang = 'sv') => {
+    const _startAt = Date.now();
     setStatus('streaming');
     setRawText('');
     setError(null);
@@ -44,6 +46,7 @@ export function useAnalysis() {
     setRouteLive(false);
     setExtractionId(null);
     setExtractionModel(null);
+    setQuoteDurationSec(null);
     // Instant placeholders so field rows animate in immediately
     setParsed({
       lasttyp:              '…',
@@ -85,6 +88,7 @@ export function useAnalysis() {
       setOriginalParsed(flat);
       setConfidence(conf);
       setConfidenceOverall(calcOverall(conf));
+      setQuoteDurationSec(Math.round((Date.now() - _startAt) / 1000));
       setStatus('done');
     } catch (err) {
       const msg = err.message;
@@ -104,6 +108,7 @@ export function useAnalysis() {
     setRouteLive(false);
     setExtractionId(null);
     setExtractionModel(null);
+    setQuoteDurationSec(null);
   }, []);
 
   const applyRoute = useCallback((realKm) => {
@@ -142,7 +147,7 @@ export function useAnalysis() {
 
   return {
     status, rawText, parsed, confidence, confidenceOverall, originalParsed, error, routeLive,
-    extractionId, extractionModel,
+    extractionId, extractionModel, quoteDurationSec,
     analyse, reset, loadTemplate, setField, applyRoute,
   };
 }

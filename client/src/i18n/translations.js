@@ -41,6 +41,7 @@ export const EN = {
     viewAll:         'View all',
     noActiveJobs:    'No active jobs',
     noPendingQuotes: 'No pending quotes',
+    timeSavedStat:   (count, hours) => `This month: ${count} quote${count !== 1 ? 's' : ''} · est. ${hours} h saved`,
     revenueTitle:    'Revenue last 6 months — paid invoices (SEK ex. VAT)',
     paid:            'Paid',
     quoteStatuses: {
@@ -267,6 +268,15 @@ export const EN = {
     statusUpdated:  (s) => `Quote marked as ${s}`,
     emailSimulated: 'Email simulated (SMTP not configured)',
     emailSentTo:    (email) => `Quote sent to ${email}`,
+    quoteReady:     (secs) => `Quote ready in ${secs} s`,
+    emptyStateHint: 'Paste a customer inquiry — get a cost-based price in seconds, not minutes.',
+    accuracy: {
+      heading:    'Why this price',
+      diesel:     (price) => `Live diesel price: ${price} kr/L`,
+      congestion: (kr) => `Congestion charge calculated for transit time: ${kr} kr`,
+      lez:        'LEZ compliance verified for this vehicle',
+      toggle:     'Why this price',
+    },
   },
 
   inquiry: {
@@ -1949,6 +1959,7 @@ export const SV = {
     viewAll:         'Visa alla',
     noActiveJobs:    'Inga aktiva uppdrag',
     noPendingQuotes: 'Inga offerter att åtgärda',
+    timeSavedStat:   (count, hours) => `Denna månad: ${count} offert${count !== 1 ? 'er' : ''} · uppskattad tid sparad ${hours} h`,
     revenueTitle:    'Omsättning senaste 6 månader — betalda fakturor (SEK exkl. moms)',
     paid:            'Betalt',
     quoteStatuses: {
@@ -2175,6 +2186,15 @@ export const SV = {
     statusUpdated:  (s) => `Offert markerad som ${s}`,
     emailSimulated: 'E-post simulerad (SMTP ej konfigurerat)',
     emailSentTo:    (email) => `Offert skickad till ${email}`,
+    quoteReady:     (secs) => `Offert klar på ${secs} s`,
+    emptyStateHint: 'Klistra in en kundförfrågan — få ett kostnadsbaserat pris på sekunder, inte minuter.',
+    accuracy: {
+      heading:    'Varför detta pris',
+      diesel:     (price) => `Dagens dieselpris: ${price} kr/L (live)`,
+      congestion: (kr) => `Trängselskatt beräknad för transporttid: ${kr} kr`,
+      lez:        'Miljözon kontrollerad för fordonet',
+      toggle:     'Varför detta pris',
+    },
   },
 
   inquiry: {

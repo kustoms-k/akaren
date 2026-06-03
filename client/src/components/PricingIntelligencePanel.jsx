@@ -257,6 +257,44 @@ export function PricingIntelligencePanel({ lasttyp, currentPrice, parsed, onAppl
 
         <div style={{ padding: '14px' }}>
 
+          {/* ── Three-column cost / price / margin summary ── */}
+          {hasCost && currentPrice > 0 && marginKr != null && (
+            <div style={{
+              display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
+              gap: 1, marginBottom: 14,
+              background: BORDER, borderRadius: 8, overflow: 'hidden',
+            }}>
+              {[
+                { key: 'cost',  label: pi.totalCost,  value: fmtSEK(costFloor, locale),  accent: null },
+                { key: 'price', label: pi.quotePrice,  value: fmtSEK(currentPrice, locale), accent: null },
+                {
+                  key: 'margin', label: pi.margin,
+                  value: `${isBelowCost ? '−' : '+'}${fmtSEK(Math.abs(marginKr), locale)} (${marginPct}%)`,
+                  accent: marginColor(marginPct),
+                  bg: isBelowCost ? 'rgba(220,38,38,0.04)' : undefined,
+                },
+              ].map(({ key, label, value, accent, bg }) => (
+                <div key={key} style={{ background: bg ?? WHITE, padding: '9px 10px 8px' }}>
+                  <div style={{
+                    fontFamily: INTER, fontSize: 9, fontWeight: 700,
+                    textTransform: 'uppercase', letterSpacing: '0.07em',
+                    color: FAINT, marginBottom: 4,
+                  }}>
+                    {label}
+                  </div>
+                  <div style={{
+                    fontFamily: INTER, fontSize: 13, fontWeight: 700,
+                    color: accent ?? TEXT,
+                    fontFeatureSettings: '"tnum"', fontVariantNumeric: 'tabular-nums',
+                    lineHeight: 1.2,
+                  }}>
+                    {value}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Cost floor breakdown */}
           {hasCost && (
             <div style={{ marginBottom: 12 }}>

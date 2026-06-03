@@ -460,6 +460,67 @@ function ComplianceWarningModal({ details, overrideReason, onReasonChange, onCan
   );
 }
 
+// ─── AccuracyInputsCard — expandable "Why this price" panel ─────────────────
+function AccuracyInputsCard({ routeData, fuelPrice, t }) {
+  const [open, setOpen] = useState(false);
+  const acc = t.newQuote?.accuracy;
+  if (!acc) return null;
+
+  const cb = routeData?.cost_breakdown;
+  const dieselPrice = cb?.diesel_price_kr_l ?? fuelPrice?.price ?? null;
+  const congKr      = Math.round((cb?.trangselskatt_kr ?? 0) + (cb?.infrastrukturavgift_kr ?? 0));
+  const lezChecked  = routeData?.lez_compliance_ok !== undefined;
+
+  const rows = [
+    dieselPrice != null && acc.diesel(
+      typeof dieselPrice === 'number' ? dieselPrice.toFixed(2) : dieselPrice,
+    ),
+    congKr > 0  && acc.congestion(congKr),
+    lezChecked  && acc.lez,
+  ].filter(Boolean);
+
+  if (rows.length === 0) return null;
+
+  return (
+    <div style={{ flexShrink: 0 }}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          fontFamily: INTER, fontSize: 11, color: TEXT_SEC,
+          background: 'none', border: 'none', padding: '2px 0',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
+          letterSpacing: '0.01em',
+        }}
+      >
+        <svg
+          width="8" height="8" viewBox="0 0 8 8" fill="none"
+          style={{ transition: 'transform 0.2s', transform: open ? 'rotate(90deg)' : 'none', flexShrink: 0 }}
+        >
+          <path d="M2 1.5L6 4L2 6.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        {acc.toggle}
+      </button>
+      {open && (
+        <div style={{
+          marginTop: 6, padding: '10px 12px',
+          background: SURF_ELV, border: `1px solid ${BORDER}`,
+          borderRadius: 8, display: 'flex', flexDirection: 'column', gap: 5,
+        }}>
+          {rows.map((row, i) => (
+            <div key={i} style={{
+              fontFamily: INTER, fontSize: 12, color: TEXT_SEC,
+              display: 'flex', alignItems: 'flex-start', gap: 6, lineHeight: 1.5,
+            }}>
+              <span style={{ color: D_GREEN, flexShrink: 0, fontSize: 10, marginTop: 2 }}>✓</span>
+              {row}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── App (inner — only rendered when authenticated) ──────────────────────────
 function AppInner() {
   const { t, lang, setLang } = useLanguage();
@@ -467,7 +528,7 @@ function AppInner() {
 
   const {
     status, rawText, parsed, confidence, confidenceOverall, originalParsed, error, routeLive,
-    extractionId, extractionModel,
+    extractionId, extractionModel, quoteDurationSec,
     analyse, loadTemplate, setField, applyRoute,
   } = useAnalysis();
 
@@ -972,6 +1033,16 @@ function AppInner() {
             <div className="panel-col">
               <span className="col-heading">{t.newQuote.colInquiry}</span>
 
+              {/* Value framing — shown only when no analysis has run yet */}
+              {status === 'idle' && (
+                <p style={{
+                  fontFamily: INTER, fontSize: 12, color: TEXT_MU,
+                  lineHeight: 1.6, margin: '0 0 6px', flexShrink: 0,
+                }}>
+                  {t.newQuote.emptyStateHint}
+                </p>
+              )}
+
               {/* Template strip */}
               {templates.length > 0 && (
                 <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
@@ -1076,6 +1147,21 @@ function AppInner() {
                 <SubscriptionGate onClose={() => setActivePage('uppdrag')} />
               )}
 
+              {/* Quote-ready timing chip */}
+              {status === 'done' && quoteDurationSec != null && (
+                <div style={{
+                  flexShrink: 0,
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  fontFamily: INTER, fontSize: 11, color: D_GREEN,
+                  letterSpacing: '0.01em',
+                }}>
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                    <path d="M1.5 5.5L4.5 8.5L9.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  {t.newQuote.quoteReady(quoteDurationSec)}
+                </div>
+              )}
+
               {status === 'done' && parsed && (
                 <>
                   {/* Pricing Analysis — only when we have cargo type + a real price */}
@@ -1086,6 +1172,11 @@ function AppInner() {
                       parsed={parsed}
                       onApplyPrice={(price) => setField('totalpris_sek', price)}
                     />
+                  )}
+
+                  {/* Why this price — expandable accuracy inputs */}
+                  {(routeData || fuelPrice) && (
+                    <AccuracyInputsCard routeData={routeData} fuelPrice={fuelPrice} t={t} />
                   )}
 
                   {/* Route advisory — road conditions + recommendations */}
@@ -2456,6 +2547,11 @@ function HomePage({ onNavigate }) {
   const activeJobs    = jobs.filter(j => j.status === 'aktiv' || j.status === 'planerad').slice(0, 6);
   const pendingQuotes = quotes.filter(q => q.status === 'väntande' || q.status === 'motbud').slice(0, 6);
 
+  // Time-saved stat — quotes created this calendar month × 18 min manual baseline
+  const thisMonthStart   = new Date(now.getFullYear(), now.getMonth(), 1);
+  const thisMonthQuotes  = quotes.filter(q => q.created_at && new Date(q.created_at) >= thisMonthStart).length;
+  const timeSavedHours   = (thisMonthQuotes * 18 / 60).toFixed(1).replace(/\.0$/, '');
+
   const ROW = { padding: '13px 20px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', gap: 12 };
   const PANEL = { background: SURF, border: `1px solid ${BORDER}`, borderRadius: 16, boxShadow: SHADOW_SM, overflow: 'hidden' };
   const PANEL_HEAD = { padding: '14px 20px', borderBottom: `1px solid ${BORDER}`, background: SURF_ELV, display: 'flex', alignItems: 'center', justifyContent: 'space-between' };
@@ -2504,6 +2600,16 @@ function HomePage({ onNavigate }) {
           onClick={() => onNavigate('fleet')}
         />
       </div>
+
+      {/* Time-saved stat */}
+      {thisMonthQuotes > 0 && hn.timeSavedStat && (
+        <div style={{
+          fontFamily: INTER, fontSize: 12, color: TEXT_SEC,
+          marginTop: -18, marginBottom: 28, paddingLeft: 2,
+        }}>
+          {hn.timeSavedStat(thisMonthQuotes, timeSavedHours)}
+        </div>
+      )}
 
       {/* Two-column feed */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
