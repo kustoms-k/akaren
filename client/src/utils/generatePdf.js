@@ -1,47 +1,62 @@
 import { jsPDF } from 'jspdf';
 
-// ── Palette ────────────────────────────────────────────────────────────────────
-const SLATE  = [45,  51,  64];   // #2d3340 — single accent
-const BLACK  = [18,  22,  28];
-const BODY   = [45,  55,  68];
-const MID    = [95, 108, 124];
-const MUTED  = [148, 158, 172];
-const RULE   = [212, 216, 222];
-const TINT   = [247, 248, 249];
-const WHITE  = [255, 255, 255];
+// ── Layout (pt, A4 portrait) ──────────────────────────────────────────────────
+const PW       = 595;
+const PH       = 842;
+const ML       = 50;
+const MR       = 545;   // PW - ML
+const UW       = 495;   // MR - ML
+const GAP_SM   = 8;
+const GAP_MD   = 16;
+const GAP_LG   = 28;
+const ROW_H    = 22;
+const FOOTER_Y = PH - 90;  // 752 — always anchored here
 
-const PW = 210;
-const PH = 297;
-const M  = 20;
-const CW = PW - M * 2;   // 170 mm
+// ── Colours ───────────────────────────────────────────────────────────────────
+const C_TEXT = [26,  29,  36];
+const C_GREY = [107, 114, 128];
+const C_RULE = [209, 213, 219];
+const C_DARK = [45,  51,  64];
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
-const setf = (doc, fam, sty, sz) => { doc.setFont(fam, sty); doc.setFontSize(sz); };
-const col  = (doc, a) => doc.setTextColor(...a);
-const fill = (doc, a) => doc.setFillColor(...a);
-const strk = (doc, a) => doc.setDrawColor(...a);
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-function hline(doc, y, c = RULE, lw = 0.22) {
-  strk(doc, c); doc.setLineWidth(lw); doc.line(M, y, PW - M, y);
-}
-
-function accentLine(doc, y) {
-  strk(doc, SLATE); doc.setLineWidth(0.65); doc.line(M, y, PW - M, y);
-}
-
-const fmtSEK = (n) =>
-  new Intl.NumberFormat('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    .format(n ?? 0) + ' kr';
-
-const fmtDateSv = (d) => {
-  try {
-    return new Intl.DateTimeFormat('sv-SE', { day: 'numeric', month: 'long', year: 'numeric' }).format(d);
-  } catch { return '—'; }
-};
-
-// Strip combining diacritical marks — jsPDF standard fonts are Latin-1 only
+// NFC normalisation — precomposes å/ä/ö so jsPDF Latin-1 fonts render them
 function safe(s) {
-  return String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '');
+  return String(s ?? '').normalize('NFC');
+}
+
+function fmtNum(n, dec = 0) {
+  return new Intl.NumberFormat('sv-SE', {
+    minimumFractionDigits: dec,
+    maximumFractionDigits: dec,
+  }).format(Number(n) || 0);
+}
+
+function formatSEK(n) {
+  return fmtNum(Math.round(Number(n) || 0)) + ' kr';
+}
+
+function f(doc, style, size) {
+  doc.setFont('helvetica', style);
+  doc.setFontSize(size);
+}
+
+function tc(doc, color) {
+  doc.setTextColor(...color);
+}
+
+function hline(doc, y, color = C_RULE, lw = 0.5) {
+  doc.setDrawColor(...color);
+  doc.setLineWidth(lw);
+  doc.line(ML, y, MR, y);
+}
+
+function tL(doc, text, x, y) {
+  doc.text(safe(String(text ?? '')), x, y);
+}
+
+function tR(doc, text, x, y) {
+  doc.text(safe(String(text ?? '')), x, y, { align: 'right' });
 }
 
 function slugify(s) {
@@ -54,446 +69,301 @@ function slugify(s) {
 function cityOf(addr) {
   if (!addr) return 'kund';
   const parts = String(addr).split(',');
-  return slugify((parts.length > 1 ? parts[parts.length - 1] : parts[0]).trim())
-    .split('-').slice(0, 2).join('-') || 'kund';
+  return slugify(
+    (parts.length > 1 ? parts[parts.length - 1] : parts[0]).trim()
+  ).split('-').slice(0, 2).join('-') || 'kund';
 }
 
-// ── Route strip ────────────────────────────────────────────────────────────────
-function drawRouteStrip(doc, y, pickup, delivery, distKm) {
-  const h = 22, midY = y + h / 2;
-  fill(doc, TINT); strk(doc, RULE); doc.setLineWidth(0.2);
-  doc.roundedRect(M, y, CW, h, 2, 2, 'FD');
-
-  const pinL = M + 18, pinR = PW - M - 18, midX = (pinL + pinR) / 2;
-
-  strk(doc, SLATE); doc.setLineDashPattern([1.6, 1.2], 0);
-  doc.setLineWidth(0.4); doc.line(pinL + 3.5, midY, pinR - 3.5, midY);
-  doc.setLineDashPattern([], 0);
-
-  if (distKm && !isNaN(Number(distKm))) {
-    fill(doc, WHITE); strk(doc, RULE); doc.setLineWidth(0.2);
-    doc.roundedRect(midX - 9, midY - 3.5, 18, 6.5, 1, 1, 'FD');
-    setf(doc, 'helvetica', 'bold', 5.5); col(doc, SLATE);
-    doc.text(`${distKm} km`, midX, midY + 0.5, { align: 'center' });
-  }
-
-  for (const [px, label, tag] of [
-    [pinL, pickup   || 'Upphamtning', 'FRAN'],
-    [pinR, delivery || 'Leverans',    'TILL'],
-  ]) {
-    fill(doc, SLATE); strk(doc, SLATE); doc.setLineWidth(0.15);
-    doc.circle(px, midY, 2.8, 'F');
-    fill(doc, WHITE); doc.circle(px, midY, 1.1, 'F');
-    setf(doc, 'helvetica', 'bold', 4.5); col(doc, MUTED);
-    doc.text(tag, px, y + 4.5, { align: 'center' });
-    setf(doc, 'helvetica', 'normal', 5.5); col(doc, BODY);
-    const wrapped = doc.splitTextToSize(safe(label), 30);
-    doc.text(wrapped[0] ?? '', px, midY + 6, { align: 'center' });
-  }
-}
-
-// ── Main export ────────────────────────────────────────────────────────────────
+// ── Main export ───────────────────────────────────────────────────────────────
 export function generatePdf(data, quoteNumber, fleet = [], meta = {}) {
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
 
+  // ── Data extraction ─────────────────────────────────────────────────────────
   const today      = new Date();
   const validUntil = new Date(today);
   validUntil.setDate(validUntil.getDate() + 14);
+  const fmtDate = (d) => new Intl.DateTimeFormat('sv-SE').format(d);
 
-  const vehicleId  = data.fordon_rekommenderat;
-  const vehicle    = fleet.find((v) => v.id === vehicleId) ?? null;
-  const kundSlug   = data.kund_namn
-    ? slugify(String(data.kund_namn).trim().split(/\s+/)[0])
-    : cityOf(data.leverans || data.upphämtning || '');
+  const co         = meta.company ?? {};
+  const coName     = safe(co.name     ?? 'Transportföretag');
+  const coOrgNr    = String(co.org_nr ?? '');
+  const coAddress  = safe(co.address  ?? '');
+  const coPhone    = safe(co.phone    ?? '');
+  const coEmail    = safe(co.email    ?? '');
+  const coBankgiro = safe(co.bankgiro ?? '');
+  const coMomsNr   = coOrgNr ? 'SE' + coOrgNr.replace(/[^0-9]/g, '') + '01' : '';
+  const dispatcher = safe(meta.userName ?? '');
 
-  const bränsle      = Number(data.bränsle_kostnad)     || 0;
-  const arbKost      = Number(data.arbetstid_kostnad)    || 0;
-  const arbTim       = Number(data.arbetstid_timmar)     || 0;
-  const loadKost     = Number(data.loading_kostnad)      || 0;
-  const framkKost    = Number(data.framkorning_kostnad)  || 0;
-  const total_excl   = Number(data.totalpris_sek)        || 0;
-  const avstand      = Number(data.avstand_km)           || 0;
-  const moms_25      = Math.round(total_excl * 0.25);
-  const total_inkl   = total_excl + moms_25;
-  const transBase    = Math.max(0, total_excl - bränsle - arbKost - loadKost - framkKost);
-  const perKm        = avstand > 0 ? transBase / avstand : 0;
-  const perTim       = arbTim  > 0 ? arbKost   / arbTim  : 0;
-  const bränslePerKm = avstand > 0 ? bränsle   / avstand : 0;
+  const avstand   = Number(data.avstand_km)          || 0;
+  const branslekr = Number(data.bränsle_kostnad)     || 0;
+  const arbKost   = Number(data.arbetstid_kostnad)    || 0;
+  const arbTim    = Number(data.arbetstid_timmar)     || 0;
+  const loadKost  = Number(data.loading_kostnad)      || 0;
+  const framkKost = Number(data.framkorning_kostnad)  || 0;
+  const totalExcl = Number(data.totalpris_sek)        || 0;
+  const moms      = Math.round(totalExcl * 0.25);
+  const totalInkl = totalExcl + moms;
+  const transBase = Math.max(0, totalExcl - branslekr - arbKost - loadKost - framkKost);
+  const perKm     = avstand > 0 ? transBase / avstand : 0;
+  const perTim    = arbTim  > 0 ? arbKost   / arbTim  : 0;
 
-  const co          = meta.company  ?? {};
-  const coName      = co.name       ?? 'Transportforetag';
-  const coEmail     = co.email      ?? '';
-  const coPhone     = co.phone      ?? '';
-  const coAddress   = co.address    ?? '';
-  const coOrgNr     = co.org_nr     ?? '';
-  const coBankgiro  = co.bankgiro   ?? '';
-  const coMomsNr    = coOrgNr ? 'SE' + coOrgNr.replace(/[^0-9]/g, '') + '01' : '';
-  const dispatcher  = meta.userName ?? '';
+  const kundNamn  = safe(data.kund_namn    ?? '');
+  const kundEmail = safe(data.kund_email   ?? '');
+  const kundTel   = safe(data.kund_telefon ?? '');
 
-  let y = M;
+  const vehicleId = data.fordon_rekommenderat;
+  const vehicle   = fleet.find((v) => v.id === vehicleId) ?? null;
 
-  // ════════════════════════════════════════════════════════════════
-  // 1. LETTERHEAD
-  // ════════════════════════════════════════════════════════════════
+  const kundSlug = kundNamn
+    ? slugify(kundNamn.trim().split(/\s+/)[0])
+    : cityOf(safe(data.leverans || data.upphämtning || ''));
 
-  // Logo square
-  fill(doc, SLATE); strk(doc, SLATE); doc.setLineWidth(0);
-  doc.roundedRect(M, y, 13, 13, 1.5, 1.5, 'F');
-  setf(doc, 'helvetica', 'bold', 9.5); col(doc, WHITE);
-  doc.text(safe(coName).charAt(0).toUpperCase(), M + 6.5, y + 9.2, { align: 'center' });
-
-  // Company name — large serif
-  setf(doc, 'times', 'bold', 20); col(doc, BLACK);
-  doc.text(safe(coName).toUpperCase(), M + 17, y + 9.5);
-
-  // Contact block — right-aligned
-  const RX = PW - M;
-  [coAddress, coPhone, coEmail].filter(Boolean).forEach((line, i) => {
-    setf(doc, 'helvetica', 'normal', 6); col(doc, MID);
-    doc.text(safe(line), RX, y + 3 + i * 4.8, { align: 'right' });
-  });
-
-  y += 17;
-
-  // Org.nr · Momsreg.nr · F-skatt
-  const regLine = [
-    coOrgNr  ? `Org.nr ${coOrgNr}` : null,
-    coMomsNr ? `Momsreg.nr ${coMomsNr}` : null,
-    'Godkand for F-skatt',
-  ].filter(Boolean).join('  ·  ');
-  setf(doc, 'helvetica', 'normal', 5.5); col(doc, MUTED);
-  doc.text(regLine, M, y);
-  y += 4.5;
-  accentLine(doc, y);
-  y += 9;
-
-  // ════════════════════════════════════════════════════════════════
-  // 2. OFFERT TITLE + NUMBER BOX
-  // ════════════════════════════════════════════════════════════════
-
-  setf(doc, 'times', 'bold', 28); col(doc, BLACK);
-  doc.text('OFFERT', M, y + 9);
-
-  // Number box — right side
-  const nbW = 60, nbH = 18, nbX = PW - M - nbW;
-  fill(doc, TINT); strk(doc, RULE); doc.setLineWidth(0.25);
-  doc.roundedRect(nbX, y - 1, nbW, nbH, 2, 2, 'FD');
-  fill(doc, SLATE); doc.setLineWidth(0);
-  doc.roundedRect(nbX, y - 1, nbW, 3, 2, 2, 'F');
-  doc.rect(nbX, y + 1.5, nbW, 0.5, 'F');
-  setf(doc, 'helvetica', 'bold', 4.5); col(doc, MUTED);
-  doc.text('OFFERT NR', nbX + nbW / 2, y + 4.5, { align: 'center' });
-  setf(doc, 'helvetica', 'bold', 11); col(doc, SLATE);
-  doc.text(String(quoteNumber ?? 'UTKAST'), nbX + nbW / 2, y + 11, { align: 'center' });
-
-  y += 12;
-  setf(doc, 'helvetica', 'normal', 6); col(doc, MID);
-  doc.text(`Datum: ${fmtDateSv(today)}   Giltig t.o.m.: ${fmtDateSv(validUntil)}`, M, y + 2);
-  y += 8;
-  hline(doc, y);
-  y += 7;
-
-  // ════════════════════════════════════════════════════════════════
-  // 3. MOTTAGARE (left) + TRANSPORTUPPDRAG (right)
-  // ════════════════════════════════════════════════════════════════
-
-  const secTop = y;
-  const RHalf  = M + CW * 0.52;
-
-  // Left column — recipient
-  setf(doc, 'helvetica', 'bold', 5); col(doc, MUTED);
-  doc.text('MOTTAGARE', M, y);
-  y += 5;
-
-  if (data.kund_namn) {
-    setf(doc, 'times', 'bold', 10); col(doc, BLACK);
-    doc.text(safe(String(data.kund_namn)), M, y); y += 5.5;
-  }
-  if (data.kund_email) {
-    setf(doc, 'helvetica', 'normal', 7); col(doc, BODY);
-    doc.text(safe(String(data.kund_email)), M, y); y += 4.5;
-  }
-  if (data.kund_telefon) {
-    setf(doc, 'helvetica', 'normal', 7); col(doc, BODY);
-    doc.text(safe(String(data.kund_telefon)), M, y); y += 4.5;
-  }
-  if (!data.kund_namn && !data.kund_email && !data.kund_telefon) {
-    setf(doc, 'helvetica', 'italic', 7); col(doc, MUTED);
-    doc.text('Kontaktuppgifter ej angivna', M, y); y += 5;
-  }
-
-  // Right column — transport brief
-  let rY = secTop;
-  setf(doc, 'helvetica', 'bold', 5); col(doc, MUTED);
-  doc.text('TRANSPORTUPPDRAG', RHalf, rY);
-  rY += 5;
-
-  const lasttypVal = [data.lasttyp, data.vikt].filter(Boolean).join(' · ') || '—';
-  const vehicleLabel = vehicle
-    ? safe(`${vehicle.namn}${vehicle.reg ? ' · ' + vehicle.reg : ''}`)
-    : data.fordon_rekommenderat
-      ? safe(String(data.fordon_rekommenderat).split('·')[0].trim())
-      : '—';
-
-  const rightColW = PW - M - RHalf - 2;
-  for (const [lbl, val] of [
-    ['Lasttyp',     lasttypVal],
-    ['Upphamtning', data.upphämtning || '—'],
-    ['Leverans',    data.leverans    || '—'],
-    ['Datum',       data.datum       || '—'],
-    ['Avstand',     avstand ? `${avstand} km` : '—'],
-    ['Fordon',      vehicleLabel],
-  ]) {
-    setf(doc, 'helvetica', 'normal', 6); col(doc, MUTED);
-    doc.text(lbl, RHalf, rY);
-    setf(doc, 'helvetica', 'bold', 7); col(doc, BLACK);
-    const v0 = doc.splitTextToSize(safe(String(val)), rightColW)[0] ?? safe(String(val));
-    doc.text(v0, PW - M, rY, { align: 'right' });
-    rY += 5;
-  }
-
-  y = Math.max(y, rY) + 5;
-  hline(doc, y);
-  y += 8;
-
-  // ════════════════════════════════════════════════════════════════
-  // 4. LINE ITEMS TABLE
-  // ════════════════════════════════════════════════════════════════
-
-  const C = { desc: M, antal: M + 96, apris: M + 136, belopp: PW - M };
-
-  setf(doc, 'helvetica', 'bold', 5.5); col(doc, MUTED);
-  doc.text('BESKRIVNING', C.desc,   y);
-  doc.text('ANTAL',       C.antal,  y, { align: 'right' });
-  doc.text('APRIS',       C.apris,  y, { align: 'right' });
-  doc.text('BELOPP',      C.belopp, y, { align: 'right' });
-  y += 2.5;
-  strk(doc, SLATE); doc.setLineWidth(0.55); doc.line(M, y, PW - M, y);
-  y += 6;
-
+  // ── Line items (only include rows with a non-zero amount) ───────────────────
   const items = [
     transBase > 0 && {
-      desc:   data.lasttyp
-        ? `Transport — ${safe(String(data.lasttyp))}`
-        : 'Transport',
-      antal:  avstand > 0 ? `${avstand} km` : '1 st',
-      apris:  avstand > 0 && perKm > 0 ? `${fmtSEK(perKm)}/km` : '—',
+      desc:  data.lasttyp ? `Transport – ${safe(String(data.lasttyp))}` : 'Transport',
+      antal: avstand > 0 ? `${avstand} km` : '1 st',
+      apris: avstand > 0 && perKm > 0 ? `${fmtNum(perKm, 2)} kr/km` : '—',
       belopp: transBase,
     },
     framkKost > 0 && {
-      desc:   'Framkorning',
-      antal:  '1 st',
-      apris:  fmtSEK(framkKost),
-      belopp: framkKost,
+      desc: 'Framkörning', antal: '1 st',
+      apris: formatSEK(framkKost), belopp: framkKost,
     },
-    bränsle > 0 && {
-      desc:   'Drivmedelstillagg',
-      antal:  avstand > 0 ? `${avstand} km` : '1 st',
-      apris:  bränslePerKm > 0 ? `${fmtSEK(bränslePerKm)}/km` : fmtSEK(bränsle),
-      belopp: bränsle,
+    branslekr > 0 && {
+      desc:  'Bränsletillägg',
+      antal: avstand > 0 ? `${avstand} km` : '1 st',
+      apris: avstand > 0 ? `${fmtNum(branslekr / avstand, 2)} kr/km` : formatSEK(branslekr),
+      belopp: branslekr,
     },
     arbKost > 0 && {
-      desc:   arbTim > 0 ? `Arbetstidskostnad (${arbTim} tim)` : 'Arbetstidskostnad',
-      antal:  arbTim > 0 ? `${arbTim} tim` : '1 st',
-      apris:  perTim > 0 ? `${fmtSEK(perTim)}/tim` : '—',
+      desc:  arbTim > 0 ? `Arbetstid (${arbTim} tim)` : 'Arbetstid',
+      antal: arbTim > 0 ? `${arbTim} tim` : '1 st',
+      apris: perTim > 0 ? `${fmtNum(perTim, 2)} kr/tim` : '—',
       belopp: arbKost,
     },
     loadKost > 0 && {
-      desc:   'Lastning / Lossning',
-      antal:  '1 st',
-      apris:  fmtSEK(loadKost),
-      belopp: loadKost,
+      desc: 'Lastning / lossning', antal: '1 st',
+      apris: formatSEK(loadKost), belopp: loadKost,
     },
   ].filter(Boolean);
 
-  items.forEach((row, i) => {
-    const lines = doc.splitTextToSize(safe(row.desc), 88);
-    const rowH  = Math.max(lines.length * 5.2, 7.5);
-    if (i % 2 === 1) {
-      fill(doc, TINT); strk(doc, TINT); doc.setLineWidth(0);
-      doc.rect(M - 1, y - 4.5, CW + 2, rowH + 3, 'F');
-    }
-    setf(doc, 'helvetica', 'normal', 8.5); col(doc, BLACK);
-    doc.text(lines, C.desc, y);
-    setf(doc, 'helvetica', 'normal', 8); col(doc, BODY);
-    doc.text(String(row.antal),      C.antal,  y, { align: 'right' });
-    doc.text(String(row.apris),      C.apris,  y, { align: 'right' });
-    col(doc, BLACK);
-    doc.text(fmtSEK(row.belopp),    C.belopp, y, { align: 'right' });
-    y += rowH;
-    hline(doc, y, RULE, 0.18);
-    y += 3;
-  });
+  // ── Y cursor starts at top margin ───────────────────────────────────────────
+  let y = 50;
 
-  y += 5;
-  hline(doc, y, SLATE, 0.5);
-  y += 7;
+  // ════════════════════════════════════════════════════════════════════════════
+  // 1. HEADER BLOCK
+  // ════════════════════════════════════════════════════════════════════════════
 
-  // ════════════════════════════════════════════════════════════════
-  // 5. TOTALS
-  // ════════════════════════════════════════════════════════════════
+  // Left: company name (bold 18)
+  f(doc, 'bold', 18); tc(doc, C_TEXT);
+  tL(doc, coName, ML, y);
+  let hLY = y + 24;
 
-  const tLX = C.apris, tRX = C.belopp;
+  // Left: registration / momsreg (normal 9)
+  const regLine = [
+    coOrgNr  ? `Org.nr ${coOrgNr}`      : null,
+    coMomsNr ? `Momsreg.nr ${coMomsNr}` : null,
+    'Godkänd för F-skatt',
+  ].filter(Boolean).join('  ·  ');
+  f(doc, 'normal', 9); tc(doc, C_GREY);
+  tL(doc, regLine, ML, hLY);
+  hLY += 13;
 
-  setf(doc, 'helvetica', 'normal', 7.5); col(doc, MID);
-  doc.text('Summa exkl. moms', tLX, y, { align: 'right' });
-  setf(doc, 'helvetica', 'bold', 8); col(doc, BLACK);
-  doc.text(fmtSEK(total_excl), tRX, y, { align: 'right' });
-  y += 6;
-
-  setf(doc, 'helvetica', 'normal', 7.5); col(doc, MID);
-  doc.text('Moms 25 %', tLX, y, { align: 'right' });
-  setf(doc, 'helvetica', 'normal', 8); col(doc, BODY);
-  doc.text(fmtSEK(moms_25), tRX, y, { align: 'right' });
-  y += 6;
-
-  // ATT BETALA — dark filled box, unmissable
-  const tbW = 88, tbX = PW - M - tbW;
-  fill(doc, SLATE); strk(doc, SLATE); doc.setLineWidth(0);
-  doc.roundedRect(tbX, y, tbW, 16, 2, 2, 'F');
-  setf(doc, 'helvetica', 'bold', 5.5); col(doc, WHITE);
-  doc.text('ATT BETALA (inkl. moms)', tbX + 5, y + 5.5);
-  setf(doc, 'times', 'bold', 17); col(doc, WHITE);
-  doc.text(fmtSEK(total_inkl), PW - M - 4, y + 13, { align: 'right' });
-  y += 22;
-
-  // RUT / ROT note if applicable
-  if (data.rut_avdrag || data.rot_avdrag) {
-    setf(doc, 'helvetica', 'italic', 6.5); col(doc, MID);
-    doc.text(
-      data.rut_avdrag
-        ? 'RUT-avdrag kan galla — kunden ansoker direkt via Skatteverket.'
-        : 'ROT-avdrag kan galla — kunden ansoker direkt via Skatteverket.',
-      M, y,
-    );
-    y += 6;
+  // Right: address, phone, email stacked (normal 9)
+  const contactLines = [coAddress, coPhone, coEmail].filter(Boolean);
+  let hRY = y;
+  for (const line of contactLines) {
+    f(doc, 'normal', 9); tc(doc, C_GREY);
+    tR(doc, line, MR, hRY);
+    hRY += 13;
   }
 
-  // Free-text notes
-  if (data.noteringar && String(data.noteringar).trim()) {
-    const noteLines = doc.splitTextToSize(safe(String(data.noteringar)), CW);
-    setf(doc, 'helvetica', 'italic', 7); col(doc, MID);
-    doc.text(noteLines.slice(0, 3), M, y);
-    y += noteLines.slice(0, 3).length * 4.5 + 4;
+  y = Math.max(hLY, hRY) + GAP_SM;
+  hline(doc, y, C_RULE, 0.5);
+  y += GAP_LG;
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // 2. TITLE BLOCK
+  // ════════════════════════════════════════════════════════════════════════════
+
+  f(doc, 'bold', 22); tc(doc, C_TEXT);
+  tL(doc, 'OFFERT', ML, y);
+
+  f(doc, 'normal', 11); tc(doc, C_GREY);
+  tR(doc, safe(String(quoteNumber ?? 'UTKAST')), MR, y);
+
+  y += 28 + GAP_MD;  // 22pt font height + medium gap
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // 3. META BLOCK — two independent y-cursors, merged at bottom
+  // ════════════════════════════════════════════════════════════════════════════
+
+  let lY = y;
+  let rY = y;
+
+  // Left: KUND label then customer details
+  f(doc, 'bold', 9); tc(doc, C_GREY);
+  tL(doc, 'KUND', ML, lY);
+  lY += 14;
+
+  if (kundNamn) {
+    f(doc, 'bold', 10); tc(doc, C_TEXT);
+    tL(doc, kundNamn, ML, lY); lY += 15;
+  }
+  if (kundEmail) {
+    f(doc, 'normal', 9); tc(doc, C_GREY);
+    tL(doc, kundEmail, ML, lY); lY += 13;
+  }
+  if (kundTel) {
+    f(doc, 'normal', 9); tc(doc, C_GREY);
+    tL(doc, kundTel, ML, lY); lY += 13;
+  }
+  if (!kundNamn && !kundEmail && !kundTel) {
+    f(doc, 'normal', 9); tc(doc, C_GREY);
+    tL(doc, 'Kontaktuppgifter ej angivna', ML, lY); lY += 13;
   }
 
-  // LEZ warning
-  if (data.lez_varning) {
-    fill(doc, [255, 251, 244]); strk(doc, [220, 175, 55]); doc.setLineWidth(0.35);
-    doc.roundedRect(M, y, CW, 10, 1.5, 1.5, 'FD');
-    setf(doc, 'helvetica', 'bold', 6.5); col(doc, [135, 78, 8]);
-    doc.text(
-      'LEZ — Dest. inom Stockholms Miljozon. Fordonets utslappsklass bekraftas vid bokning.',
-      M + 4, y + 6.5,
-    );
-    y += 14;
+  // Right: Datum, Giltig t.o.m., Referens — label then value
+  for (const [label, value] of [
+    ['DATUM',         fmtDate(today)],
+    ['GILTIG T.O.M.', fmtDate(validUntil)],
+    ['REFERENS',      safe(String(quoteNumber ?? '—'))],
+  ]) {
+    f(doc, 'bold', 9); tc(doc, C_GREY);
+    tR(doc, label, MR, rY); rY += 14;
+    f(doc, 'normal', 10); tc(doc, C_TEXT);
+    tR(doc, value, MR, rY); rY += 15;
   }
 
-  // Permit warning
+  y = Math.max(lY, rY) + GAP_LG;
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // 4. LINE ITEMS TABLE
+  // ════════════════════════════════════════════════════════════════════════════
+
+  // Column right-edge x values (right-aligned numbers, left-aligned description)
+  const CL = { desc: ML, antal: 365, apris: 460, belopp: MR };
+
+  // Header row
+  f(doc, 'bold', 9); tc(doc, C_GREY);
+  tL(doc, 'BESKRIVNING', CL.desc,   y);
+  tR(doc, 'ANTAL',       CL.antal,  y);
+  tR(doc, 'À-PRIS',      CL.apris,  y);
+  tR(doc, 'BELOPP',      CL.belopp, y);
+  y += GAP_SM;
+  hline(doc, y, C_DARK, 1);
+  y += GAP_MD;
+
+  // Item rows — each exactly ROW_H tall
+  for (const row of items) {
+    f(doc, 'normal', 10); tc(doc, C_TEXT);
+    tL(doc, row.desc, CL.desc, y);
+
+    f(doc, 'normal', 10); tc(doc, C_GREY);
+    tR(doc, row.antal, CL.antal, y);
+    tR(doc, row.apris, CL.apris, y);
+
+    f(doc, 'normal', 10); tc(doc, C_TEXT);
+    tR(doc, formatSEK(row.belopp), CL.belopp, y);
+
+    y += ROW_H;
+  }
+
+  // Rule after last item
+  hline(doc, y, C_RULE, 0.5);
+  y += GAP_MD;
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // 5. TOTALS BLOCK — labels right-align at apris column, amounts at MR
+  // ════════════════════════════════════════════════════════════════════════════
+
+  f(doc, 'normal', 10); tc(doc, C_GREY);
+  tR(doc, 'Delsumma exkl. moms', CL.apris, y);
+  f(doc, 'normal', 10); tc(doc, C_TEXT);
+  tR(doc, formatSEK(totalExcl), CL.belopp, y);
+  y += GAP_MD;
+
+  f(doc, 'normal', 10); tc(doc, C_GREY);
+  tR(doc, 'Moms 25 %', CL.apris, y);
+  f(doc, 'normal', 10); tc(doc, C_TEXT);
+  tR(doc, formatSEK(moms), CL.belopp, y);
+  y += GAP_SM + 4;
+
+  hline(doc, y, C_DARK, 1);
+  y += GAP_MD;
+
+  f(doc, 'bold', 14); tc(doc, C_TEXT);
+  tR(doc, 'ATT BETALA', CL.apris, y);
+  tR(doc, formatSEK(totalInkl), CL.belopp, y);
+  y += GAP_LG;
+
+  // Optional notices (LEZ, permit, notes)
   const needsPermit = data['tillstånd_krävs'] ?? data.tillstand_kravs ?? false;
+
+  if (data.lez_varning) {
+    f(doc, 'normal', 9); tc(doc, C_GREY);
+    tL(doc, 'LEZ: Destination inom miljözon. Fordonets utsläppsklass bekräftas vid bokning.', ML, y);
+    y += GAP_MD;
+  }
   if (needsPermit) {
-    fill(doc, TINT); strk(doc, RULE); doc.setLineWidth(0.3);
-    doc.roundedRect(M, y, CW, 10, 1.5, 1.5, 'FD');
-    setf(doc, 'helvetica', 'normal', 6.5); col(doc, BODY);
-    doc.text(
-      'OBS: Dispenstillstand kan kravas for detta uppdrag (vikt / bredd / langd).',
-      M + 4, y + 6.5,
-    );
-    y += 14;
+    f(doc, 'normal', 9); tc(doc, C_GREY);
+    tL(doc, 'OBS: Dispenstillstånd kan krävas för detta uppdrag (vikt / bredd / längd).', ML, y);
+    y += GAP_MD;
+  }
+  if (data.noteringar && String(data.noteringar).trim()) {
+    const noteLines = doc.splitTextToSize(safe(String(data.noteringar).trim()), UW);
+    f(doc, 'normal', 9); tc(doc, C_GREY);
+    for (const line of noteLines.slice(0, 4)) {
+      tL(doc, line, ML, y);
+      y += 12;
+    }
+    y += GAP_SM;
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // 6. ROUTE STRIP
-  // ════════════════════════════════════════════════════════════════
+  // ════════════════════════════════════════════════════════════════════════════
+  // 6. FOOTER — anchored to FOOTER_Y, never floats with content
+  // ════════════════════════════════════════════════════════════════════════════
 
-  setf(doc, 'helvetica', 'bold', 5); col(doc, MUTED);
-  doc.text('RUTT', M, y);
-  y += 4;
-  drawRouteStrip(doc, y, data.upphämtning, data.leverans, data.avstand_km);
-  y += 26;
+  hline(doc, FOOTER_Y, C_RULE, 0.5);
 
-  // ════════════════════════════════════════════════════════════════
-  // 7. PAYMENT INFO + CONTACT PERSON (side by side)
-  // ════════════════════════════════════════════════════════════════
+  let fy = FOOTER_Y + 13;
 
-  const boxH  = 32;
-  const halfW = (CW - 6) / 2;
-
-  // Left — Betalningsinformation
-  fill(doc, TINT); strk(doc, RULE); doc.setLineWidth(0.2);
-  doc.roundedRect(M, y, halfW, boxH, 2, 2, 'FD');
-  setf(doc, 'helvetica', 'bold', 5); col(doc, MUTED);
-  doc.text('BETALNINGSINFORMATION', M + 4, y + 6);
-  let pY = y + 12;
-  for (const [lbl, val] of [
-    ['Betalningsvillkor', '30 dagar netto'],
-    coBankgiro ? ['Bankgiro',      coBankgiro]                 : null,
-    ['OCR / referens',   String(quoteNumber ?? '—')],
-  ].filter(Boolean)) {
-    setf(doc, 'helvetica', 'normal', 6); col(doc, MID);
-    doc.text(lbl, M + 4, pY);
-    setf(doc, 'helvetica', 'bold', 6.5); col(doc, BLACK);
-    doc.text(String(val), M + halfW - 4, pY, { align: 'right' });
-    pY += 5.5;
+  // Line 1: dispatcher + phone (left) | payment terms (right)
+  if (dispatcher || coPhone) {
+    f(doc, 'bold', 9); tc(doc, C_TEXT);
+    tL(doc, [dispatcher, coPhone].filter(Boolean).join('   '), ML, fy);
   }
+  const payTerms = [
+    'Betalningsvillkor: 30 dagar netto',
+    coBankgiro ? `Bankgiro: ${coBankgiro}` : null,
+  ].filter(Boolean).join('   ·   ');
+  f(doc, 'normal', 8); tc(doc, C_GREY);
+  tR(doc, payTerms, MR, fy);
+  fy += 13;
 
-  // Right — Er kontaktperson
-  const dBoxX = M + halfW + 6;
-  fill(doc, TINT); strk(doc, RULE); doc.setLineWidth(0.2);
-  doc.roundedRect(dBoxX, y, halfW, boxH, 2, 2, 'FD');
-  setf(doc, 'helvetica', 'bold', 5); col(doc, MUTED);
-  doc.text('ER KONTAKTPERSON', dBoxX + 4, y + 6);
-  let dY = y + 12;
-  if (dispatcher) {
-    setf(doc, 'times', 'bold', 10); col(doc, BLACK);
-    doc.text(safe(dispatcher), dBoxX + 4, dY); dY += 6.5;
+  // Line 2: thank-you (left) | OCR (right)
+  f(doc, 'normal', 8); tc(doc, C_GREY);
+  tL(doc, 'Tack för er beställning.', ML, fy);
+  if (quoteNumber) {
+    f(doc, 'normal', 8); tc(doc, C_GREY);
+    tR(doc, `OCR: ${safe(String(quoteNumber))}`, MR, fy);
   }
-  if (coPhone) {
-    setf(doc, 'helvetica', 'normal', 7.5); col(doc, BODY);
-    doc.text(safe(coPhone), dBoxX + 4, dY); dY += 5;
-  }
-  if (coEmail) {
-    setf(doc, 'helvetica', 'normal', 6.5); col(doc, MID);
-    doc.text(safe(coEmail), dBoxX + 4, dY);
-  }
+  fy += 13;
 
-  y += boxH + 8;
-
-  // ════════════════════════════════════════════════════════════════
-  // 8. FOOTER
-  // ════════════════════════════════════════════════════════════════
-
-  const FY = PH - 20;
-  accentLine(doc, FY);
-
-  // Warm closing
-  setf(doc, 'times', 'italic', 8); col(doc, BODY);
-  doc.text(
-    'Tack for er forfragan. Vi ser fram emot att fa utfora ert uppdrag.',
-    M, FY + 5.5,
-  );
-
-  // Legal note
-  setf(doc, 'helvetica', 'normal', 5.5); col(doc, MUTED);
-  doc.text(
-    'Vid betalning efter forfallodatum debiteras drojsmalsranta enligt rantelagen. Paminnelseavgift 60 kr.',
-    M, FY + 10.5,
-  );
-
-  // Company registration footer
-  const footLine = [
-    safe(coName),
+  // Line 3: company registration (left) | page number (right)
+  const footReg = [
+    coName,
     coOrgNr  ? `Org.nr ${coOrgNr}` : null,
     coMomsNr ? `Momsreg.nr ${coMomsNr}` : null,
-    'Godkand for F-skatt',
+    'Godkänd för F-skatt',
   ].filter(Boolean).join('  ·  ');
-  doc.text(footLine, M, FY + 15);
+  f(doc, 'normal', 7); tc(doc, C_GREY);
+  tL(doc, safe(footReg), ML, fy);
+  tR(doc, 'Sida 1 av 1', MR, fy);
 
-  setf(doc, 'helvetica', 'normal', 5.5); col(doc, MUTED);
-  doc.text('Sida 1 av 1', PW - M, FY + 10.5, { align: 'right' });
-
-  // ── Save ──────────────────────────────────────────────────────────────────────
-  const numPart  = String(quoteNumber ?? 'UTKAST').replace(/[^a-zA-Z0-9]/g, '-');
+  // ── Save ─────────────────────────────────────────────────────────────────────
+  const numPart  = String(quoteNumber ?? 'UTKAST').replace(/[^a-zA-Z0-9-]/g, '-');
   const filename = `Offert-${numPart}-${kundSlug}.pdf`;
 
   if (meta._returnBase64) {
