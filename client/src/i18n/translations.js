@@ -810,11 +810,11 @@ export const EN = {
       you:         'You',
     },
     statuses: {
-      pending:   { label: 'Pending',   },
-      godkänd:   { label: 'Accepted',  },
-      avböjd:    { label: 'Declined',  },
-      avslutad:  { label: 'Completed', },
-      fakturerad:{ label: 'Invoiced',  },
+      pending:   { label: 'Pending',   color: '#92400E', bg: '#FFFBEB', bdr: 'rgba(245,158,11,0.35)'  },
+      godkänd:   { label: 'Accepted',  color: '#14532D', bg: '#F0FDF4', bdr: 'rgba(34,197,94,0.3)'   },
+      avböjd:    { label: 'Declined',  color: '#991B1B', bg: '#FEF2F2', bdr: 'rgba(239,68,68,0.3)'   },
+      avslutad:  { label: 'Completed', color: '#14532D', bg: '#F0FDF4', bdr: 'rgba(34,197,94,0.3)'   },
+      fakturerad:{ label: 'Invoiced',  color: '#1e3a5f', bg: '#EFF6FF', bdr: 'rgba(59,130,246,0.3)'  },
     },
     co: {
       heading:          'Counter offer',

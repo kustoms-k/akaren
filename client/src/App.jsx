@@ -142,12 +142,11 @@ const NAV_ROLES = {
 
 function getNavItems(t, role) {
   const all = [
-    { id: 'home',     label: t.nav.home,     Icon: Home,         group: 'main' },
-    { id: 'quotes',   label: t.nav.quotes,   Icon: FilePlus,     group: 'main' },
-    { id: 'uppdrag',  label: t.nav.uppdrag,  Icon: Briefcase,    group: 'main' },
-    { id: 'fleet',    label: t.nav.fleet,    Icon: Truck,        group: 'main' },
-    { id: 'ekonomi',  label: t.nav.ekonomi,  Icon: DollarSign,   group: 'main' },
-    { id: 'settings', label: t.nav.settings, Icon: SettingsIcon, group: 'main' },
+    { id: 'home',    label: t.nav.home,    Icon: Home,       group: 'main' },
+    { id: 'quotes',  label: t.nav.quotes,  Icon: FilePlus,   group: 'main' },
+    { id: 'uppdrag', label: t.nav.uppdrag, Icon: Briefcase,  group: 'main' },
+    { id: 'fleet',   label: t.nav.fleet,   Icon: Truck,      group: 'main' },
+    { id: 'ekonomi', label: t.nav.ekonomi, Icon: DollarSign, group: 'main' },
   ];
   return all.filter((n) => !role || (NAV_ROLES[n.id] ?? []).includes(role));
 }
@@ -247,6 +246,23 @@ function Sidebar({ activePage, onNavigate, company, onLogout, userRole, mobileOp
                   {company?.name ?? 'Åkaren'}
                 </div>
               </div>
+              {/* Settings gear — separate from main 5-item nav */}
+              <button
+                onClick={() => { onNavigate('settings'); if (onMobileClose) onMobileClose(); }}
+                title={t.nav.settings}
+                style={{
+                  flexShrink: 0, width: 26, height: 26, borderRadius: 6,
+                  background: activePage === 'settings' ? ACCENT_SF : 'transparent',
+                  border: `1px solid ${activePage === 'settings' ? BORDER : 'transparent'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', color: activePage === 'settings' ? ACCENT : TEXT_MU,
+                  transition: 'color 150ms, background 150ms',
+                }}
+                onMouseEnter={(e) => { if (activePage !== 'settings') { e.currentTarget.style.color = TEXT_PR; } }}
+                onMouseLeave={(e) => { if (activePage !== 'settings') { e.currentTarget.style.color = TEXT_MU; } }}
+              >
+                <SettingsIcon size={12} strokeWidth={1.5} />
+              </button>
             </div>
             <button
               onClick={onLogout}

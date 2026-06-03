@@ -1,21 +1,16 @@
-import { Router }      from 'express';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import path             from 'node:path';
-import db               from '../db.js';
+import { Router } from 'express';
+import db          from '../db.js';
 
-const router    = Router();
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const fleet     = JSON.parse(readFileSync(path.join(__dirname, '../data/fleet.json'), 'utf8'));
+const router = Router();
 
-function lookupVehicle(fordonId) {
+function lookupVehicle(companyFleet, fordonId) {
   if (!fordonId) return null;
   const up = String(fordonId).trim().toUpperCase();
   const lo = String(fordonId).trim().toLowerCase();
   return (
-    fleet.find((v) => v.id.toUpperCase() === up) ??
-    fleet.find((v) => v.namn.toLowerCase() === lo) ??
-    fleet.find((v) => lo.includes(v.namn.toLowerCase()) || v.namn.toLowerCase().includes(lo)) ??
+    companyFleet.find((v) => (v.ext_id ?? '').toUpperCase() === up) ??
+    companyFleet.find((v) => (v.namn ?? '').toLowerCase() === lo) ??
+    companyFleet.find((v) => lo.includes((v.namn ?? '').toLowerCase()) || (v.namn ?? '').toLowerCase().includes(lo)) ??
     null
   );
 }
@@ -24,8 +19,11 @@ function hoursEst(avstand_km) { return (Number(avstand_km) || 0) / 70 + 1.5; }
 
 function costEst(vehicle, avstand_km) {
   if (!vehicle) return null;
-  const km = Number(avstand_km) || 0;
-  return vehicle.startavgift_sek + vehicle.priskm_sek * km + vehicle.timkostnad_sek * hoursEst(km);
+  const km    = Number(avstand_km) || 0;
+  const start = vehicle.startavgift_sek ?? 0;
+  const prkm  = vehicle.priskm_sek     ?? 0;
+  const time  = vehicle.timkostnad_sek ?? 0;
+  return start + prkm * km + time * hoursEst(km);
 }
 
 function marginPct(intakt, kostnad) {
@@ -57,10 +55,14 @@ router.get('/', (req, res) => {
   const month = req.query.month ?? new Date().toISOString().slice(0, 7);
 
   try {
+    const companyFleet = db.prepare(
+      'SELECT ext_id, namn, startavgift_sek, priskm_sek, timkostnad_sek FROM company_fleet WHERE company_id = ?'
+    ).all(req.companyId);
+
     const rows = stmtJobs.all(req.companyId, month);
 
     const jobs = rows.map((r) => {
-      const vehicle = lookupVehicle(r.fordon_id);
+      const vehicle = lookupVehicle(companyFleet, r.fordon_id);
       const kostnad = costEst(vehicle, r.avstand_km);
       const margin  = marginPct(r.totalpris_sek, kostnad);
       return {
@@ -100,17 +102,17 @@ router.get('/', (req, res) => {
     const hoursByVehicle = {};
     for (const r of rows) {
       if (!r.fordon_id) continue;
-      const v   = lookupVehicle(r.fordon_id);
-      const key = v ? v.id : r.fordon_id;
+      const v   = lookupVehicle(companyFleet, r.fordon_id);
+      const key = v ? (v.ext_id ?? r.fordon_id) : r.fordon_id;
       hoursByVehicle[key] = (hoursByVehicle[key] ?? 0) + hoursEst(r.avstand_km);
     }
     const AVAILABLE_HOURS = 160;
-    const truckUtilisation = fleet.map((v) => {
-      const assigned = Math.round((hoursByVehicle[v.id] ?? 0) * 10) / 10;
+    const truckUtilisation = companyFleet.map((v) => {
+      const assigned = Math.round((hoursByVehicle[v.ext_id] ?? 0) * 10) / 10;
       return {
-        id:             v.id,
+        id:             v.ext_id,
         namn:           v.namn,
-        typ:            v.typ,
+        typ:            v.typ ?? v.lasttyp,
         assignedHours:  assigned,
         availableHours: AVAILABLE_HOURS,
         pct:            Math.round((assigned / AVAILABLE_HOURS) * 1000) / 10,
