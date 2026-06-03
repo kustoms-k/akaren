@@ -433,7 +433,7 @@ router.get('/export-all', (req, res) => {
     const customers = db.prepare(`SELECT * FROM customers WHERE company_id = ?`).all(cid);
     const templates = db.prepare(`SELECT * FROM templates WHERE company_id = ?`).all(cid);
     const auditLog  = db.prepare(
-      `SELECT id, entity_type, entity_id, action, ip_address, created_at,
+      `SELECT al.id, al.entity_type, al.entity_id, al.action, al.ip_address, al.created_at,
               COALESCE(al.user_name, u.name) AS user_name
        FROM audit_log al LEFT JOIN users u ON u.id = al.user_id
        WHERE al.company_id = ? ORDER BY al.created_at DESC LIMIT 5000`
