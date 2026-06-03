@@ -11,22 +11,22 @@ const MUTED   = '#6a6050';
 const FAINT   = '#9a9082';
 const OUTFIT  = "'Geist', system-ui, sans-serif";
 
-const fmtSEK = (n) =>
+const fmtSEK = (n, locale = 'sv-SE') =>
   n == null ? '—' :
-  new Intl.NumberFormat('sv-SE', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n) + ' kr';
+  new Intl.NumberFormat(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n) + ' kr';
 
-const fmtDate = (s) => {
+const fmtDate = (s, locale = 'sv-SE') => {
   if (!s) return '—';
   try {
-    return new Intl.DateTimeFormat('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' })
+    return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' })
       .format(new Date(String(s).replace(' ', 'T')));
   } catch { return String(s).slice(0, 10); }
 };
 
-const fmtTime = (s) => {
+const fmtTime = (s, locale = 'sv-SE') => {
   if (!s) return '';
   try {
-    return new Intl.DateTimeFormat('sv-SE', { hour: '2-digit', minute: '2-digit' })
+    return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' })
       .format(new Date(String(s).replace(' ', 'T')));
   } catch { return ''; }
 };
@@ -69,7 +69,8 @@ function KpiCard({ label, value, sub, accent }) {
 }
 
 export function CustomerPortal({ token }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const locale = lang === 'sv' ? 'sv-SE' : 'en-GB';
   const tp = t.portal;
 
   const [data,           setData]           = useState(null);
@@ -227,13 +228,13 @@ export function CustomerPortal({ token }) {
           />
           <KpiCard
             label={tp.kpis.paidLabel}
-            value={fmtSEK(ytd_spend)}
+            value={fmtSEK(ytd_spend, locale)}
             sub={tp.kpis.paidSub}
             accent={BLUE}
           />
           <KpiCard
             label={tp.kpis.totalLabel}
-            value={fmtSEK(total_spend)}
+            value={fmtSEK(total_spend, locale)}
             sub={tp.kpis.totalSub}
           />
           {unreadCount > 0 && (
@@ -270,14 +271,14 @@ export function CustomerPortal({ token }) {
                       </div>
                     )}
                     {q.datum && (
-                      <div style={{ fontSize: 12, color: FAINT }}>{fmtDate(q.datum)}</div>
+                      <div style={{ fontSize: 12, color: FAINT }}>{fmtDate(q.datum, locale)}</div>
                     )}
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
                     <div style={{ fontSize: 22, fontWeight: 700, color: BLUE, lineHeight: 1, marginBottom: 4 }}>
-                      {fmtSEK(q.totalpris_sek)}
+                      {fmtSEK(q.totalpris_sek, locale)}
                     </div>
-                    <div style={{ fontSize: 11, color: MUTED }}>{fmtDate(q.created_at)}</div>
+                    <div style={{ fontSize: 11, color: MUTED }}>{fmtDate(q.created_at, locale)}</div>
                   </div>
                 </div>
                 {q.token && (
@@ -374,11 +375,11 @@ export function CustomerPortal({ token }) {
                           </td>
                           <td style={{ fontFamily: OUTFIT, fontSize: 12, color: MUTED,
                             padding: '14px 16px', whiteSpace: 'nowrap' }}>
-                            {fmtDate(q.created_at)}
+                            {fmtDate(q.created_at, locale)}
                           </td>
                           <td style={{ fontFamily: OUTFIT, fontSize: 13, fontWeight: 600,
                             color: TEXT, padding: '14px 16px', whiteSpace: 'nowrap' }}>
-                            {fmtSEK(q.invoice_total ?? q.totalpris_sek)}
+                            {fmtSEK(q.invoice_total ?? q.totalpris_sek, locale)}
                           </td>
                           <td style={{ padding: '14px 16px' }}>
                             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -465,7 +466,7 @@ export function CustomerPortal({ token }) {
                           {msg.body}
                         </div>
                         <div style={{ fontFamily: OUTFIT, fontSize: 10, color: FAINT, marginTop: 4 }}>
-                          {isOut ? msg.sender_name : tp.messageThread.you} · {fmtTime(msg.created_at)}
+                          {isOut ? msg.sender_name : tp.messageThread.you} · {fmtTime(msg.created_at, locale)}
                         </div>
                       </div>
                     );

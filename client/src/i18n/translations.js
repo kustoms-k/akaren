@@ -255,6 +255,8 @@ export const EN = {
       totalpris_sek:       'TOTAL PRICE',
     },
     noHistory:   'No jobs yet — create a quote to start',
+    msgTooltip:  (n) => `${n} message${n !== 1 ? 's' : ''}`,
+    coPendingHint: 'counter offer pending',
     addMall:     '+ template',
     quotePrefix: 'Quote',
     routeAdvisory: {
@@ -823,7 +825,7 @@ export const EN = {
     billing: {
       heading:       'Billing',
       plan:          'All Features',
-      price:         '2 990 kr / month',
+      price:         '15 000 kr / month',
       renewal:       'Renews',
       cancel:        'Cancel subscription',
       cancelSubject: 'Cancel subscription',
@@ -1214,7 +1216,7 @@ export const EN = {
     brand:    'Åkaren',
     tagline:  'Transport management for Swedish trucking',
     heroTagline: 'Transport management for Swedish hauliers — from quote to invoice in one place.',
-    heroFooter:  '2 990 kr/month · All features included · No commitment',
+    heroFooter:  '15 000 kr/month · All features included · No commitment',
     features: [
       'Complete quotes calculated in seconds',
       'Customer portals with private tracking links',
@@ -1238,7 +1240,7 @@ export const EN = {
     createBtn:'Create account & set up',
     creating: 'Creating account…',
     setupNote:'After registering you\'ll go through a short setup wizard.',
-    pricing:  'Åkaren · 2 990 kr/month · All features included',
+    pricing:  'Åkaren · 15 000 kr/month · All features included',
     or:       'OR',
     bypass:   'Bypass — direct access',
     bankId: {
@@ -1418,7 +1420,7 @@ export const EN = {
     brand:       'Åkaren TMS',
     heading:     'Activate your subscription',
     desc:        'Advanced features require an active subscription.',
-    price:       '2 990',
+    price:       '15 000',
     currency:    'kr / month',
     disclaimer:  'Excl. VAT · No commitment · Cancel anytime',
     included:    'Included',
@@ -2129,6 +2131,8 @@ export const SV = {
       totalpris_sek:       'TOTALPRIS',
     },
     noHistory:   'Inga uppdrag än — skapa en offert för att börja',
+    msgTooltip:  (n) => `${n} meddelande${n !== 1 ? 'n' : ''}`,
+    coPendingHint: 'motbud inväntar',
     addMall:     '+ mall',
     quotePrefix: 'Offert',
     routeAdvisory: {
@@ -2697,7 +2701,7 @@ export const SV = {
     billing: {
       heading:       'Fakturering',
       plan:          'Alla funktioner',
-      price:         '2 990 kr / månad',
+      price:         '15 000 kr / månad',
       renewal:       'Förnyas',
       cancel:        'Avsluta prenumeration',
       cancelSubject: 'Avsluta prenumeration',
@@ -3088,7 +3092,7 @@ export const SV = {
     brand:    'Åkaren',
     tagline:  'Transporthantering för svenska åkerier',
     heroTagline: 'Transporthantering för svenska åkerier — från offert till faktura på ett ställe.',
-    heroFooter:  '2 990 kr/mån · Alla funktioner ingår · Ingen bindningstid',
+    heroFooter:  '15 000 kr/mån · Alla funktioner ingår · Ingen bindningstid',
     features: [
       'Komplett offert beräknad på sekunder',
       'Kundportaler med privata spårningslänkar',
@@ -3112,7 +3116,7 @@ export const SV = {
     createBtn:'Skapa konto & konfigurera',
     creating: 'Skapar konto…',
     setupNote:'Efter registrering går du igenom en kort installationsguide.',
-    pricing:  'Åkaren · 2 990 kr/mån · Alla funktioner ingår',
+    pricing:  'Åkaren · 15 000 kr/mån · Alla funktioner ingår',
     or:       'ELLER',
     bypass:   'Bypass — direktåtkomst',
     bankId: {
@@ -3292,7 +3296,7 @@ export const SV = {
     brand:       'Åkaren TMS',
     heading:     'Aktivera din prenumeration',
     desc:        'Avancerade funktioner kräver en aktiv prenumeration.',
-    price:       '2 990',
+    price:       '15 000',
     currency:    'kr / mån',
     disclaimer:  'Exkl. moms · Ingen bindningstid · Avsluta när som helst',
     included:    'Inkluderat',

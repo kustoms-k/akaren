@@ -1481,7 +1481,7 @@ function AppInner() {
                         {(q.msg_count > 0 || q.co_pending > 0) && (
                           <button
                             onClick={() => setMsgQuote({ rawId: q.rawId, id: q.id, lasttyp: q.lasttyp })}
-                            title={`${q.msg_count} meddelande${q.msg_count !== 1 ? 'n' : ''}${q.co_pending > 0 ? ' · motbud inväntar' : ''}`}
+                            title={`${t.newQuote.msgTooltip(q.msg_count)}${q.co_pending > 0 ? ` · ${t.newQuote.coPendingHint}` : ''}`}
                             style={{
                               display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
                               background: 'none', border: 'none', padding: '2px 4px', cursor: 'pointer',

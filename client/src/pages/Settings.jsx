@@ -132,7 +132,8 @@ const STATUS_META_STYLE = {
 };
 
 function BillingCard() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const locale = lang === 'sv' ? 'sv-SE' : 'en-GB';
   const [sub,      setSub]      = useState(null);
   const [loading,  setLoading]  = useState(true);
   const [acting,   setActing]   = useState(false);
@@ -148,7 +149,7 @@ function BillingCard() {
 
   const fmtDate = (s) => {
     if (!s) return '—';
-    try { return new Intl.DateTimeFormat('sv-SE', { dateStyle: 'long' }).format(new Date(s)); }
+    try { return new Intl.DateTimeFormat(locale, { dateStyle: 'long' }).format(new Date(s)); }
     catch { return s; }
   };
 
@@ -278,7 +279,8 @@ function BillingCard() {
 }
 
 function FortnoxPanel({ toast, setToast }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const locale = lang === 'sv' ? 'sv-SE' : 'en-GB';
   const [status,        setStatus]        = useState(null);
   const [loading,       setLoading]       = useState(true);
   const [connecting,    setConnecting]    = useState(false);
@@ -336,7 +338,7 @@ function FortnoxPanel({ toast, setToast }) {
 
   const fmtDate = (s) => {
     if (!s) return '—';
-    try { return new Intl.DateTimeFormat('sv-SE', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(s)); }
+    try { return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(s)); }
     catch { return s; }
   };
 
@@ -419,7 +421,8 @@ function FortnoxPanel({ toast, setToast }) {
 
 export function Settings({ onFortnoxResult }) {
   const { user, company } = useAuth();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const locale = lang === 'sv' ? 'sv-SE' : 'en-GB';
   const [smsEnabled, setSmsEnabled] = useState(null);
   const [toast,      setToast]      = useState(null);
 
@@ -578,7 +581,7 @@ export function Settings({ onFortnoxResult }) {
             color: user?.tos_accepted_at ? '#1a7a47' : '#92400e',
           }}>
             {user?.tos_accepted_at
-              ? t.settings.legal.tosAccepted(new Date(user.tos_accepted_at).toLocaleDateString('sv-SE'))
+              ? t.settings.legal.tosAccepted(new Date(user.tos_accepted_at).toLocaleDateString(locale))
               : t.settings.legal.tosNotAccepted}
           </span>
         </div>
@@ -799,7 +802,8 @@ function DiffView({ before, after, t }) {
 
 // ─── AuditPanel ───────────────────────────────────────────────────────────────
 function AuditPanel({ section, sectionHead }) {
-  const { t }                   = useLanguage();
+  const { t, lang }             = useLanguage();
+  const locale                  = lang === 'sv' ? 'sv-SE' : 'en-GB';
   const [rows,      setRows]    = useState([]);
   const [total,     setTotal]   = useState(0);
   const [userList,  setUserList]= useState([]);
@@ -846,7 +850,7 @@ function AuditPanel({ section, sectionHead }) {
 
   function fmtDate(s) {
     if (!s) return '—';
-    try { return new Intl.DateTimeFormat('sv-SE', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(s.replace(' ', 'T'))); }
+    try { return new Intl.DateTimeFormat(locale, { dateStyle: 'short', timeStyle: 'short' }).format(new Date(s.replace(' ', 'T'))); }
     catch { return s; }
   }
 
