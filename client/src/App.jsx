@@ -157,14 +157,14 @@ function NavItem({ id, label, Icon, isActive, onClick }) {
     <motion.button
       data-nav-id={id}
       onClick={onClick}
-      whileHover={{ x: isActive ? 0 : 2 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+      whileHover={{ x: isActive ? 0 : 1.5 }}
+      whileTap={{ scale: 0.97 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
       style={{
         width: '100%',
         display: 'flex', alignItems: 'center', gap: 8,
         padding: '8px 12px',
-        background: isActive ? ACCENT_SF : 'transparent',
+        background: 'transparent',
         border: 'none',
         borderRadius: 10,
         color: isActive ? ACCENT : TEXT_SEC,
@@ -175,10 +175,26 @@ function NavItem({ id, label, Icon, isActive, onClick }) {
         lineHeight: 1.3,
         marginBottom: 2,
         outline: 'none',
+        position: 'relative',
       }}
     >
-      <Icon size={14} strokeWidth={isActive ? 2 : 1.5} style={{ flexShrink: 0 }} />
-      <span>{label}</span>
+      {isActive && (
+        <motion.div
+          layoutId="nav-pill"
+          transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+          style={{
+            position: 'absolute', inset: 0,
+            borderRadius: 10,
+            background: ACCENT_SF,
+          }}
+        />
+      )}
+      <Icon
+        size={14}
+        strokeWidth={isActive ? 2 : 1.5}
+        style={{ flexShrink: 0, position: 'relative', zIndex: 1 }}
+      />
+      <span style={{ position: 'relative', zIndex: 1 }}>{label}</span>
     </motion.button>
   );
 }
@@ -1017,10 +1033,10 @@ function AppInner() {
         <AnimatePresence mode="wait">
         <motion.div
           key={activePage}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15, ease: 'easeInOut' }}
+          initial={{ opacity: 0, y: 7 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
           style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
         >
           {/* ── Core pages ────────────────────────────────────────────────── */}
