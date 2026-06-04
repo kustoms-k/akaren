@@ -1,9 +1,6 @@
 ﻿import { useState, useCallback, useEffect, useRef, useMemo, Component } from 'react';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'motion/react';
 import {
-  BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell,
-} from 'recharts';
-import {
   Home,
   FilePlus, Briefcase, Truck,
   Settings as SettingsIcon, LogOut, Bell, Search, X, DollarSign, FileText,
@@ -2497,6 +2494,183 @@ function OperationsPage() { ... }
 function FleetEnvPage() { ... }
 */
 
+// ─── Revenue chart palette ────────────────────────────────────────────────────
+const C_INDIGO     = '#4f46e5';
+const C_INDIGO_LT  = '#818cf8';
+const C_INDIGO_SFT = '#e0e2ff';
+const C_INDIGO_HOV = '#a5b4fc';
+
+// ─── RevenueChart ─────────────────────────────────────────────────────────────
+function RevenueChart({ data, title }) {
+  const { lang } = useLanguage();
+  const [hovered, setHovered] = useState(null);
+  const maxVal  = Math.max(...data.map(d => d.value), 1);
+  const total6m = data.reduce((s, d) => s + d.value, 0);
+  const lastVal = data.at(-1)?.value ?? 0;
+  const prevVal = data.at(-2)?.value ?? 0;
+  const momPct  = prevVal > 0 ? Math.round((lastVal - prevVal) / prevVal * 100) : null;
+  const up      = momPct !== null && momPct >= 0;
+  const CHART_H = 168;
+
+  return (
+    <div style={{
+      background: SURF, border: `1px solid ${BORDER}`, borderRadius: 16,
+      boxShadow: SHADOW_SM, overflow: 'hidden',
+    }}>
+      {/* Header */}
+      <div style={{ padding: '22px 24px 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ fontFamily: INTER, fontSize: 11, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: TEXT_MU, marginBottom: 8 }}>
+            {title}
+          </div>
+          <motion.div
+            key={total6m}
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{ fontFamily: INTER, fontSize: 30, fontWeight: 700, letterSpacing: '-0.025em', color: TEXT_PR, fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}
+          >
+            {fmtSEK(total6m)}
+          </motion.div>
+          <div style={{ fontFamily: INTER, fontSize: 12, color: TEXT_MU, marginTop: 5 }}>
+            {lang === 'sv' ? 'senaste 6 månader' : 'last 6 months'}
+          </div>
+        </div>
+
+        {momPct !== null && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.85, y: 4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ delay: 0.45, type: 'spring', stiffness: 300, damping: 24 }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              background: up ? 'rgba(22,163,74,0.08)' : 'rgba(220,38,38,0.08)',
+              color: up ? D_GREEN : D_RED,
+              border: `1px solid ${up ? 'rgba(22,163,74,0.2)' : 'rgba(220,38,38,0.2)'}`,
+              borderRadius: 20, padding: '5px 13px',
+              fontFamily: INTER, fontSize: 13, fontWeight: 700,
+            }}
+          >
+            <svg width="9" height="9" viewBox="0 0 9 9" style={{ flexShrink: 0, transform: up ? 'none' : 'rotate(180deg)' }} aria-hidden>
+              <path d="M4.5 1L8.5 8H0.5L4.5 1Z" fill="currentColor" />
+            </svg>
+            {Math.abs(momPct)}%&nbsp;MoM
+          </motion.div>
+        )}
+      </div>
+
+      {/* Chart area */}
+      <div style={{ padding: '24px 24px 8px', position: 'relative' }}>
+        {/* Subtle grid lines */}
+        <div style={{ position: 'absolute', left: 24, right: 24, top: 24, height: CHART_H, pointerEvents: 'none' }}>
+          {[0.33, 0.66, 1].map(f => (
+            <div key={f} style={{
+              position: 'absolute', left: 0, right: 0,
+              top: `${(1 - f) * 100}%`, height: 1,
+              background: 'rgba(0,0,0,0.05)',
+            }} />
+          ))}
+        </div>
+
+        {/* Bars */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', height: CHART_H, gap: 8, position: 'relative', zIndex: 1 }}>
+          {data.map((d, i) => {
+            const barH   = Math.max(d.value / maxVal * CHART_H, 4);
+            const isCurr = i === data.length - 1;
+            const isHov  = hovered === i;
+
+            return (
+              <div
+                key={i}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%', position: 'relative' }}
+              >
+                {/* Tooltip */}
+                <AnimatePresence>
+                  {isHov && d.value > 0 && (
+                    <motion.div
+                      key="tip"
+                      initial={{ opacity: 0, y: 8, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 6, scale: 0.9 }}
+                      transition={{ duration: 0.14, ease: [0.22, 1, 0.36, 1] }}
+                      style={{
+                        position: 'absolute', bottom: '100%', left: '50%',
+                        transform: 'translateX(-50%)', marginBottom: 8,
+                        background: '#1a1d24', color: '#fff',
+                        borderRadius: 8, padding: '6px 11px',
+                        fontFamily: INTER, fontSize: 12, fontWeight: 700,
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+                        pointerEvents: 'none', zIndex: 20,
+                        whiteSpace: 'nowrap', letterSpacing: '-0.01em',
+                      }}
+                    >
+                      {fmtSEK(d.value)}
+                      <div style={{
+                        position: 'absolute', top: '100%', left: '50%', marginLeft: -4,
+                        borderLeft: '4px solid transparent', borderRight: '4px solid transparent',
+                        borderTop: '4px solid #1a1d24',
+                      }} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Current month — gradient hero bar */}
+                {isCurr ? (
+                  <motion.div
+                    onMouseEnter={() => setHovered(i)}
+                    onMouseLeave={() => setHovered(null)}
+                    initial={{ height: 0 }}
+                    animate={{ height: barH }}
+                    whileHover={{ scale: 1.04 }}
+                    transition={{
+                      height: { type: 'spring', stiffness: 220, damping: 24, delay: i * 0.065 },
+                      scale: { type: 'spring', stiffness: 420, damping: 28 },
+                    }}
+                    style={{
+                      width: '100%', transformOrigin: 'bottom center', cursor: 'default',
+                      borderRadius: '8px 8px 4px 4px',
+                      background: `linear-gradient(170deg, ${C_INDIGO} 0%, ${C_INDIGO_LT} 100%)`,
+                      boxShadow: `0 6px 28px rgba(79,70,229,0.30), inset 0 1px 0 rgba(255,255,255,0.15)`,
+                    }}
+                  />
+                ) : (
+                  /* Past months — spring-colored, animate to indigo on hover */
+                  <motion.div
+                    onMouseEnter={() => setHovered(i)}
+                    onMouseLeave={() => setHovered(null)}
+                    initial={{ height: 0 }}
+                    animate={{ height: barH, backgroundColor: C_INDIGO_SFT }}
+                    whileHover={{ backgroundColor: C_INDIGO_HOV, scale: 1.04 }}
+                    transition={{
+                      height: { type: 'spring', stiffness: 220, damping: 24, delay: i * 0.065 },
+                      backgroundColor: { duration: 0.18 },
+                      scale: { type: 'spring', stiffness: 420, damping: 28 },
+                    }}
+                    style={{ width: '100%', transformOrigin: 'bottom center', cursor: 'default', borderRadius: '6px 6px 3px 3px' }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* X-axis labels */}
+        <div style={{ display: 'flex', gap: 8, marginTop: 12, paddingBottom: 6 }}>
+          {data.map((d, i) => (
+            <div key={i} style={{
+              flex: 1, textAlign: 'center',
+              fontFamily: INTER, fontSize: 11,
+              color: i === data.length - 1 ? C_INDIGO : TEXT_MU,
+              fontWeight: i === data.length - 1 ? 700 : 400,
+            }}>
+              {d.label}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── HomePage ─────────────────────────────────────────────────────────────────
 function HomeKpi({ label, value, sub, accent, onClick }) {
   return (
@@ -2715,30 +2889,7 @@ function HomePage({ onNavigate }) {
       </div>
 
       {/* Revenue chart */}
-      <div style={PANEL}>
-        <div style={{ padding: '14px 20px', borderBottom: `1px solid ${BORDER}`, background: SURF_ELV }}>
-          <span style={{ fontFamily: INTER, fontSize: 13, fontWeight: 600, color: TEXT_PR }}>{hn.revenueTitle}</span>
-        </div>
-        <div style={{ padding: '24px 20px 16px' }}>
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={revenueData} barSize={32} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-              <XAxis dataKey="label" axisLine={false} tickLine={false}
-                tick={{ fontFamily: INTER, fontSize: 12, fill: TEXT_SEC }} />
-              <YAxis hide />
-              <Tooltip
-                formatter={(v) => [fmtSEK(v), hn.paid]}
-                contentStyle={{ fontFamily: INTER, fontSize: 12, border: `1px solid ${BORDER}`, borderRadius: 8, boxShadow: SHADOW_SM }}
-                cursor={{ fill: 'rgba(0,0,0,0.03)' }}
-              />
-              <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                {revenueData.map((_, i) => (
-                  <Cell key={i} fill={i === revenueData.length - 1 ? ACCENT : '#c8cdd8'} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      <RevenueChart data={revenueData} title={hn.revenueTitle} />
 
     </div>
   );
