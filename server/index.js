@@ -223,7 +223,7 @@ app.get('*', (req, res) => {
   res.sendFile(join(__dirname, '../client/dist/index.html'));
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+const httpServer = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
   if (!isDemoSeeded()) {
     console.log('[demo] Empty database — auto-seeding 2026 Stockholm demo data...');
@@ -234,7 +234,15 @@ app.listen(PORT, '0.0.0.0', () => {
       console.error('[demo] Auto-seed error:', e.message);
     }
   }
-})
+});
+
+httpServer.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`[server] Port ${PORT} is already in use. Kill the existing server first: kill $(lsof -ti:${PORT})`);
+    process.exit(1);
+  }
+  throw err;
+});
 
 setTimeout(runPricingInsightsJob, 5_000);
 setInterval(runPricingInsightsJob, 24 * 60 * 60 * 1_000);

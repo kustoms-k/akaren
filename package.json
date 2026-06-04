@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "node server/index.js",
+    "start": "node --env-file=server/.env server/index.js",
     "build": "cd server && npm install && cd ../client && npm install && npm run build",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "server": "node server/index.js",
+    "server": "node --env-file=server/.env server/index.js",
     "client": "cd client && npm run dev"
   },
   "engines": {
