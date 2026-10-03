@@ -98,6 +98,17 @@ describe('dispatch', () => {
     expect(auditText).not.toContain(token);
   });
 
+  it('issues a QR link without texting the driver', async () => {
+    const { app, office, jobId, euro6, sara, sent } = ctx;
+    const a = (await office('post', `/api/jobs/${jobId}/assignments`).send({ vehicle_id: euro6.id, driver_id: sara.id, datum: TODAY })).body.assignment;
+    const res = await office('post', `/api/assignments/${a.id}/link`);
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ driver_name: 'Sara Engström', link: expect.stringMatching(/^http:\/\/192\.168\.1\.50:5173\/f\/[A-Za-z0-9_-]{22}$/) });
+    expect(sent).toHaveLength(0);
+    const session = await request(app).post('/api/driver/session').send({ token: res.body.link.split('/f/')[1] });
+    expect(session.status).toBe(200);
+  });
+
   it('blocks a duplicate assignment for the same truck, driver and day', async () => {
     const { office, jobId, euro6, mikael } = ctx;
     const body = { vehicle_id: euro6.id, driver_id: mikael.id, datum: TODAY };

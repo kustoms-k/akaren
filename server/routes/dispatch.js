@@ -119,6 +119,11 @@ export function dispatchRouter({ db, audit, dispatch, limiters }) {
     res.json(await dispatch.sendAssignmentSms({ companyId: req.companyId, assignmentId: id, actor: officeActor(req) }));
   }));
 
+  // Link for a QR code in the office, without texting the driver.
+  router.post('/assignments/:id/link', (req, res) => {
+    res.json(dispatch.issueAssignmentLink({ companyId: req.companyId, assignmentId: idParam(req.params.id), actor: officeActor(req) }));
+  });
+
   router.post('/assignments/:id/cancel', (req, res) => {
     const a = stmtGet.get(idParam(req.params.id), req.companyId);
     if (!a) throw notFound('Tilldelningen finns inte.');

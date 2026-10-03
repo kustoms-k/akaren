@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertTriangle, Send, UserPlus, X } from 'lucide-react';
+import { AlertTriangle, QrCode, Send, UserPlus } from 'lucide-react';
 import { Button } from '../components/Button.jsx';
 import { Dialog } from '../components/Dialog.jsx';
 import { AuthImage } from '../components/AuthImage.jsx';
@@ -26,7 +26,7 @@ export function AssignmentsPanel({ job, onChanged }) {
   const [form, setForm] = useState({ datum: defaultDate, vehicle_id: '', driver_id: '', send_sms: true });
   const [busy, setBusy] = useState(false);
   const [zoneWarning, setZoneWarning] = useState(null); // message
-  const [shared, setShared] = useState(null); // { url, note }
+  const [shared, setShared] = useState(null); // { url, note, name } shown in a dialog
   const [error, setError] = useState(null);
 
   async function assign(acknowledge = false) {
@@ -43,9 +43,11 @@ export function AssignmentsPanel({ job, onChanged }) {
       setZoneWarning(null);
       setForm((f) => ({ ...f, vehicle_id: '', driver_id: '' }));
       res.warnings.forEach((w) => toast(w, 'warning'));
-      if (res.sms) {
-        toast(res.sms.status === 'misslyckat' ? 'SMS:et kunde inte skickas' : `${res.assignment.driver_name} är tilldelad`, res.sms.status === 'misslyckat' ? 'error' : 'success');
-        setShared({ url: res.sms.link, note: smsNote(res.sms.status, res.assignment.driver_name) });
+      if (res.sms?.status === 'skickat') {
+        toast(`${res.assignment.driver_name} är tilldelad och har fått SMS`);
+      } else if (res.sms) {
+        // Simulated or failed SMS: show the link and QR code right away.
+        setShared({ url: res.sms.link, note: smsNote(res.sms.status, res.assignment.driver_name), name: res.assignment.driver_name });
       } else {
         toast(`${res.assignment.driver_name} är tilldelad`);
       }
@@ -62,8 +64,18 @@ export function AssignmentsPanel({ job, onChanged }) {
   async function resend(a) {
     try {
       const res = await api(`/api/assignments/${a.id}/send-sms`, { method: 'POST' });
-      setShared({ url: res.link, note: smsNote(res.status, a.driver_name) });
+      if (res.status === 'skickat') toast(`Nytt SMS skickat till ${a.driver_name}`);
+      else setShared({ url: res.link, note: smsNote(res.status, a.driver_name), name: a.driver_name });
       assignments.reload();
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  }
+
+  async function showQr(a) {
+    try {
+      const res = await api(`/api/assignments/${a.id}/link`, { method: 'POST' });
+      setShared({ url: res.link, note: `Låt ${a.driver_name} skanna koden med mobilkameran. Inget SMS skickas.`, name: a.driver_name });
     } catch (err) {
       toast(err.message, 'error');
     }
@@ -129,12 +141,6 @@ export function AssignmentsPanel({ job, onChanged }) {
             )}
           </div>
           <ErrorNotice error={error} />
-          {shared && (
-            <div className="notice notice-blue" style={{ display: 'block', position: 'relative' }}>
-              <button type="button" aria-label="Stäng" onClick={() => setShared(null)} style={{ position: 'absolute', right: 8, top: 8, background: 'none', border: 'none', cursor: 'pointer' }}><X size={14} /></button>
-              <LinkShare url={shared.url} note={shared.note} />
-            </div>
-          )}
         </div>
       )}
 
@@ -158,7 +164,8 @@ export function AssignmentsPanel({ job, onChanged }) {
                   <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                     {!a.cancelled_at && active && (
                       <>
-                        <Button size="sm" variant="ghost" onClick={() => resend(a)}>{a.sms_status === 'ej_skickat' ? 'Skicka SMS' : 'Ny länk'}</Button>{' '}
+                        <Button size="sm" variant="ghost" onClick={() => showQr(a)}><QrCode size={13} /> QR-kod</Button>{' '}
+                        <Button size="sm" variant="ghost" onClick={() => resend(a)}>{a.sms_status === 'ej_skickat' ? 'Skicka SMS' : 'Skicka igen'}</Button>{' '}
                         {a.lass_count === 0 && <Button size="sm" variant="ghost" onClick={() => cancel(a)}>Avboka</Button>}
                       </>
                     )}
@@ -169,6 +176,15 @@ export function AssignmentsPanel({ job, onChanged }) {
           </table>
         </div>
       )}
+
+      <Dialog
+        open={Boolean(shared)}
+        onClose={() => setShared(null)}
+        title={shared ? `Förarlänk för ${shared.name}` : ''}
+        footer={<Button onClick={() => setShared(null)}>Klar</Button>}
+      >
+        {shared && <LinkShare url={shared.url} note={shared.note} />}
+      </Dialog>
 
       <Dialog
         open={Boolean(zoneWarning)}
@@ -191,7 +207,7 @@ export function AssignmentsPanel({ job, onChanged }) {
 }
 
 function smsNote(status, name) {
-  if (status === 'simulerat') return `SMS simulerat (46elks är inte konfigurerat). Skicka länken till ${name} på annat sätt, eller skanna QR-koden med telefonen.`;
+  if (status === 'simulerat') return `SMS:et simulerades (46elks är inte konfigurerat). Låt ${name} skanna QR-koden med mobilkameran, eller skicka länken på annat sätt.`;
   if (status === 'misslyckat') return `SMS:et till ${name} kunde inte skickas. Dela länken på annat sätt.`;
   return `SMS skickat till ${name}.`;
 }

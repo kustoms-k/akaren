@@ -102,7 +102,8 @@ export function Button({
       {...rest}
     >
       {loading && <Spinner size={sz.fontSize} />}
-      {children}
+      {/* Wrapped so page translation (which replaces text nodes) can't break React updates. */}
+      <span style={{ display: 'contents' }}>{children}</span>
     </motion.button>
   );
 }

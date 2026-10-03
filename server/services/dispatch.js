@@ -62,11 +62,25 @@ export function createDispatchService({ db, config, sms, audit, now = () => new 
     return stmtRevokeAll.run(now().toISOString(), driverId, companyId).changes;
   }
 
-  /** Send (or re-send) the SMS for an assignment with a fresh magic link. */
-  async function sendAssignmentSms({ companyId, assignmentId, actor }) {
+  function loadActiveAssignment(companyId, assignmentId) {
     const a = stmtAssignment.get(assignmentId, companyId);
     if (!a) throw notFound('Tilldelningen finns inte.');
     if (a.cancelled_at) throw conflict('cancelled', 'Tilldelningen är avbokad.');
+    return a;
+  }
+
+  /** A fresh link for the assignment's driver without sending an SMS (shown as a QR code in the office). */
+  function issueAssignmentLink({ companyId, assignmentId, actor }) {
+    const a = loadActiveAssignment(companyId, assignmentId);
+    if (!a.driver_active) throw new HttpError(400, 'driver_inactive', 'Föraren är inaktiv.');
+    const link = issueLink(companyId, a.driver_id);
+    audit({ ...actor, entity: 'assignment', entityId: a.id, action: 'issue_link', after: { link_id: link.linkId } });
+    return { link: link.url, expires_at: link.expiresAt, driver_name: a.driver_name };
+  }
+
+  /** Send (or re-send) the SMS for an assignment with a fresh magic link. */
+  async function sendAssignmentSms({ companyId, assignmentId, actor }) {
+    const a = loadActiveAssignment(companyId, assignmentId);
     if (!a.driver_active || !a.driver_phone) throw new HttpError(400, 'no_phone', 'Föraren saknar mobilnummer.');
 
     const link = issueLink(companyId, a.driver_id);
@@ -81,5 +95,5 @@ export function createDispatchService({ db, config, sms, audit, now = () => new 
     return { status: result.status, link: link.url, expires_at: link.expiresAt, text };
   }
 
-  return { issueLink, redeemLink, revokeDriverLinks, sendAssignmentSms };
+  return { issueLink, issueAssignmentLink, redeemLink, revokeDriverLinks, sendAssignmentSms };
 }
