@@ -136,6 +136,21 @@ npm run build       # client production build
 - Rate-limit login, the AI endpoints and the SMS endpoints.
 - Return Swedish user-facing error messages; never send `err.message` to the client.
 
+**Driver page (`/f/:token`, `client/src/driver/`).**
+- It's a separate, lazy-loaded bundle for phones and must work with gloves, in bad light and with bad coverage: ≥56 px targets, 17 px+ text, no hover-only UI.
+- It's served over plain HTTP on the LAN, so no secure-context APIs: use the `uuid()` helper rather than `crypto.randomUUID`, `<input type=file capture>` rather than `getUserMedia`, and no service worker.
+- GETs go through `cachedGet` (offline fallback).
+- Lass submits carry a `client_uuid` and go to the IndexedDB outbox on network failure; the server's `client_uuid` uniqueness makes retries idempotent.
+- The magic-link token is random and only its SHA-256 is stored. Every driver request re-checks link expiry, revocation and that the driver is active.
+- SMS text must stay GSM-7 safe (`gsmSafe`) and within two segments.
+
+**Photos.**
+- Every upload is re-encoded by `services/photos.js`: auto-rotated, ≤2000 px, JPEG, and all EXIF stripped, including GPS.
+- Files are stored under random 128-bit ids in `DATA_DIR/photos`.
+- They're served only through `/api/photos/:id` (office) or `/api/driver/photos/:id` (the uploading driver); the client uses `<AuthImage>`.
+
+**UI gotcha.** Dialogs render in a portal on `<body>`. Never leave a `transform` on a page container: it becomes the containing block for `position: fixed` children.
+
 **Personal data.**
 - Driver phone numbers and photos are personal data.
 - Photos get random 128-bit ids, are re-encoded with EXIF/GPS stripped, and are served only to the office or to the owning driver link.

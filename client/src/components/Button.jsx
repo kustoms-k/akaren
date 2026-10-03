@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 
-const INTER  = "'Geist', system-ui, sans-serif";
+const INTER = 'var(--font-sans)';
 const ACCENT = '#2d3340';
 const SURF   = '#ffffff';
 const BORDER = '#ececef';

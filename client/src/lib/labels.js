@@ -66,6 +66,25 @@ export function formatQuantity(n, unit) {
   return `${new Intl.NumberFormat('sv-SE').format(n)} ${MANGD_ENHETER[unit] ?? ''}`.trim();
 }
 
+export const REVIEW_STATUS = {
+  ok: { label: 'OK', badge: 'badge-green' },
+  behover_granskas: { label: 'Granskas', badge: 'badge-amber' },
+  granskad: { label: 'Granskad', badge: 'badge-blue' },
+};
+
+export const SMS_STATUS = {
+  ej_skickat: { label: 'Ej skickat', badge: 'badge-muted' },
+  skickat: { label: 'SMS skickat', badge: 'badge-green' },
+  simulerat: { label: 'SMS simulerat', badge: 'badge-blue' },
+  misslyckat: { label: 'SMS misslyckades', badge: 'badge-red' },
+};
+
+const tonFmt = new Intl.NumberFormat('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+/** 18420 (kg) -> '18,42 t' */
+export function formatTon(kg) {
+  return kg == null ? '' : `${tonFmt.format(kg / 1000)} t`;
+}
+
 export const FORTNOX_STATUS = {
   disconnected: 'Inte ansluten',
   connected: 'Ansluten',

@@ -1,9 +1,12 @@
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 
 /**
  * Modal dialog. Closes on Escape and backdrop click; focus moves into the dialog
  * on open and back to the previously focused element on close.
+ * Rendered in a portal on <body>: a transformed ancestor (e.g. a page transition) would
+ * otherwise become the containing block for position: fixed and push the dialog off-screen.
  */
 export function Dialog({ open, onClose, title, description, children, footer }) {
   const panel = useRef(null);
@@ -15,15 +18,15 @@ export function Dialog({ open, onClose, title, description, children, footer }) 
     document.addEventListener('keydown', onKey);
     requestAnimationFrame(() => {
       const first = panel.current?.querySelector('input, select, textarea, button');
-      (first ?? panel.current)?.focus();
+      (first ?? panel.current)?.focus({ preventScroll: true });
     });
     return () => {
       document.removeEventListener('keydown', onKey);
-      previous?.focus?.();
+      previous?.focus?.({ preventScroll: true });
     };
   }, [open, onClose]);
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -55,6 +58,7 @@ export function Dialog({ open, onClose, title, description, children, footer }) 
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

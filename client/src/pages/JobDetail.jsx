@@ -9,6 +9,7 @@ import { useToast } from '../lib/toast.js';
 import {
   JOB_STATUS, UPPDRAGSTYPER, ZONE_CLASSES, formatAddress, formatDate, formatPhone, formatQuantity, formatTimestamp,
 } from '../lib/labels.js';
+import { AssignmentsPanel, LassPanel } from './JobDispatch.jsx';
 
 const FIELD_LABELS = {
   uppdragstyp: 'Uppdragstyp', datum: 'Datum', datum_till: 'Slutdatum', tid: 'Tid', material: 'Material',
@@ -34,6 +35,19 @@ export function JobDetail({ params }) {
   if (loading && !job) return <TableSkeleton rows={8} />;
   if (error) return <ErrorNotice error={error} onRetry={reload} />;
   if (!job) return null;
+
+  async function setStatus(status) {
+    setBusy(true);
+    try {
+      await api(`/api/jobs/${job.id}/status`, { method: 'POST', body: { status } });
+      toast(status === 'klar' ? 'Uppdraget är klart' : 'Uppdraget är återöppnat');
+      reload();
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function cancel() {
     if (!window.confirm('Avbryta uppdraget?')) return;
@@ -61,8 +75,14 @@ export function JobDetail({ params }) {
       <PageHeader
         title={`${UPPDRAGSTYPER[job.uppdragstyp]} · ${job.project_name}`}
         description={<>{job.customer_name} · <span className={`badge ${status.badge}`}>{status.label}</span></>}
-        actions={(job.status === 'bekraftad' || job.status === 'pagar') && job.lass_count === 0 && (
-          <Button variant="ghost" onClick={cancel} loading={busy}>Avbryt uppdrag</Button>
+        actions={(
+          <>
+            {(job.status === 'bekraftad' || job.status === 'pagar') && job.lass_count === 0 && (
+              <Button variant="ghost" onClick={cancel} loading={busy}>Avbryt uppdrag</Button>
+            )}
+            {job.status === 'pagar' && <Button variant="secondary" onClick={() => setStatus('klar')} loading={busy}>Markera som klart</Button>}
+            {job.status === 'klar' && <Button variant="ghost" onClick={() => setStatus('pagar')} loading={busy}>Återöppna</Button>}
+          </>
         )}
       />
 
@@ -86,7 +106,7 @@ export function JobDetail({ params }) {
             <Row label="Lass rapporterade">{String(job.lass_count)}</Row>
           </div>
           <div className="t-muted" style={{ fontSize: 12, padding: '10px 18px', borderTop: '1px solid var(--border)' }}>
-            Skapat {formatTimestamp(job.created_at)}{job.created_by_name ? ` av ${job.created_by_name}` : ''}. Tilldelning av fordon och förare kommer i nästa steg.
+            Skapat {formatTimestamp(job.created_at)}{job.created_by_name ? ` av ${job.created_by_name}` : ''}.
           </div>
         </section>
 
@@ -107,6 +127,11 @@ export function JobDetail({ params }) {
             )}
           </section>
         )}
+      </div>
+
+      <div style={{ display: 'grid', gap: 16, marginTop: 16 }}>
+        <AssignmentsPanel job={job} onChanged={reload} />
+        <LassPanel job={job} />
       </div>
     </>
   );

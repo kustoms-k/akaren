@@ -58,6 +58,12 @@ export function errorMiddleware(logger = console) {
     if (err?.type === 'entity.parse.failed') {
       return res.status(400).json({ error: { code: 'invalid_json', message: 'Ogiltig JSON.' } });
     }
+    if (err?.name === 'MulterError') {
+      const tooBig = err.code === 'LIMIT_FILE_SIZE';
+      return res.status(tooBig ? 413 : 400).json({
+        error: { code: tooBig ? 'too_large' : 'invalid_upload', message: tooBig ? 'Bilden är för stor (max 15 MB).' : 'Uppladdningen misslyckades.' },
+      });
+    }
     if (err?.message?.startsWith('CORS:')) {
       return res.status(403).json({ error: { code: 'cors', message: 'Åtkomst nekad.' } });
     }

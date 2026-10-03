@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { idParam, notFound, conflict } from '../lib/http.js';
+import { z } from 'zod';
+import { idParam, notFound, conflict, validate } from '../lib/http.js';
 import { officeActor } from '../lib/audit.js';
 import { isValidDate } from '../lib/dates.js';
 
@@ -38,6 +39,9 @@ export function jobsRouter({ db, audit }) {
     WHERE j.id = ? AND j.company_id = ?
   `);
   const stmtLassCount = db.prepare('SELECT COUNT(*) FROM lass WHERE job_id = ?');
+  const stmtSetStatus = db.prepare(`
+    UPDATE jobs SET status = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ? AND company_id = ?
+  `);
   const stmtCancel = db.prepare(`
     UPDATE jobs SET status = 'avbruten', updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
     WHERE id = ? AND company_id = ? AND status IN ('bekraftad', 'pagar')
@@ -60,6 +64,18 @@ export function jobsRouter({ db, audit }) {
     let overrides = null;
     try { overrides = overrides_json ? JSON.parse(overrides_json) : null; } catch { /* ignore */ }
     res.json({ ...rest, overrides, lass_count: stmtLassCount.pluck().get(job.id) });
+  });
+
+  // Office marks a job done (or reopens it).
+  router.post('/:id/status', (req, res) => {
+    const id = idParam(req.params.id);
+    const job = stmtGet.get(id, req.companyId);
+    if (!job) throw notFound('Uppdraget finns inte.');
+    const { status } = validate(z.object({ status: z.enum(['pagar', 'klar'], { error: 'Ogiltig status.' }) }).strict(), req.body);
+    if (job.status === 'avbruten') throw conflict('cancelled', 'Uppdraget är avbrutet.');
+    stmtSetStatus.run(status, id, req.companyId);
+    audit({ ...officeActor(req), entity: 'job', entityId: id, action: 'status', before: { status: job.status }, after: { status } });
+    res.json({ ok: true, status });
   });
 
   router.post('/:id/cancel', (req, res) => {

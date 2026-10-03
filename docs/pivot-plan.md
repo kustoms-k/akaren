@@ -1,6 +1,6 @@
 # Åkaren pivot plan (Phase 1 audit)
 
-Status: **approved 2026-10-03 with all recommendations (D1–D16)**. Phases 2–3 are done; Phase 4 is next.
+Status: **approved 2026-10-03 with all recommendations (D1–D16)**. Phases 2–4 are done; Phase 5 is next.
 Audit date: 2026-10-03, against `main` @ `fb5d389` (tagged `pre-pivot-archive`).
 
 ## Progress log
@@ -18,6 +18,35 @@ Audit date: 2026-10-03, against `main` @ `fb5d389` (tagged `pre-pivot-archive`).
 - **No server-side refusal fallback:** SDK 0.96 has no `fallbacks` parameter. A `refusal` stop reason surfaces as a Swedish error with a manual-entry hint.
 - **Migration `002_ai_cost_and_intake_review.sql`** adds the cost columns and `order_intakes.final_json` / `overrides_json`.
 - **Not yet tested against the real API.** Needs `ANTHROPIC_API_KEY`; the first real orders should be spot-checked for prompt quality.
+
+**Phase 4 (done).** Dispatch and the driver page. 129 server tests pass. Verified in headless Chrome: office assignment with the miljözon override, link + QR, the driver page on a phone viewport, photo → vågsedel reading → send, an offline lass queued then synced, and the office lass list.
+- **Office:** assign a vehicle + driver per day on the job page. A static miljözon check returns 409 until the office acknowledges, and the override is stored. Send or re-send the SMS with a magic link, cancel assignments, mark jobs done, see lass with photo thumbnails.
+- **Magic links:**
+  - The token is random (22 base64url characters); only its SHA-256 is stored.
+  - It's valid until the end of the day after the driver's last assignment, at least 12 h and at most `DRIVER_LINK_MAX_DAYS`.
+  - It's exchanged for a driver JWT; every request re-checks revocation, expiry and that the driver is active.
+- **SMS:** the text is GSM-7 safe (no en dash, Polish ł handled) and kept under 306 characters.
+- **Photos (`services/photos.js`):**
+  - Uploads are re-encoded with sharp: rotated, ≤2000 px, EXIF/GPS stripped.
+  - Files get random ids. A retried upload of the same image is de-duplicated, so there's no second AI charge.
+- **Vågsedel AI (`lib/vagsedelExtraction.js`):**
+  - Per-field confidence; validators check netto against brutto−tara, plausible weight, date, and regnr against the assigned truck.
+  - The assignment context is used only for validation and is never shown to the model, to avoid biasing what it reads.
+- **Lass (`services/lass.js`, `lib/lassReview.js`):**
+  - Append-only versions. Retries are idempotent via `client_uuid`.
+  - Review reasons are stored per version (migration 003): no photo, uncertain or missing billing fields, duplicate ticket number, other truck, hazardous waste.
+  - Values the driver corrected count as checked by a person.
+  - The driver can correct a lass until the office has reviewed it.
+- **Hours:** the driver reports hours per assignment on kran, maskintransport, container and övrigt jobs, stored append-only in `time_entries`.
+- **Driver page:**
+  - Separate lazy bundle (~100 kB gzipped incl. React), hash routes, large touch targets.
+  - Camera capture through a file input, so it works over plain HTTP on the LAN; the image is downscaled before upload.
+  - Offline support: cached GETs plus an IndexedDB outbox with automatic sync.
+- **Seed:** each driver lass gets a rendered, fictional vågsedel photo (blurred for the low-confidence rows). `--reset` also clears the photo folder.
+- **Fixes found during verification:**
+  - Dialogs were trapped inside a transformed page container (any dialog on a long page opened mid-page). Now portaled.
+  - The Geist font link was a 404 since before the pivot. It's now self-hosted via `@fontsource-variable/geist`, so no third-party font request.
+  - A stale lazy chunk now shows a "ladda om" screen instead of a blank page.
 
 ---
 

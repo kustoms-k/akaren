@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { readdirSync } from 'node:fs';
 import { openDb, migrate } from '../db/index.js';
 import { testDb, addCompanyWithUser } from './helpers.js';
 
@@ -18,7 +19,10 @@ function seedLass(db) {
 describe('migrations', () => {
   it('apply cleanly and are idempotent', () => {
     const db = openDb(':memory:');
-    expect(migrate(db)).toEqual(['001_init', '002_ai_cost_and_intake_review']);
+    const files = readdirSync(new URL('../db/migrations', import.meta.url)).filter((f) => f.endsWith('.sql')).sort();
+    const ran = migrate(db);
+    expect(ran).toEqual(files.map((f) => f.replace('.sql', '')));
+    expect(ran[0]).toBe('001_init');
     expect(migrate(db)).toEqual([]);
     const tables = db.prepare(`SELECT name FROM sqlite_master WHERE type = 'table'`).pluck().all();
     for (const t of ['companies', 'users', 'customers', 'projects', 'vehicles', 'drivers', 'jobs', 'job_assignments',

@@ -1,4 +1,4 @@
-const FONT = "'Geist', system-ui, sans-serif";
+const FONT = 'var(--font-sans)';
 
 // ── Mark geometry ─────────────────────────────────────────────────────────────
 // Origin (open ring) at top-left → L-path → destination (filled dot) at bottom-right.

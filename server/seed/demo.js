@@ -1,4 +1,6 @@
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'node:crypto';
+import { reviewStatusFor } from '../lib/lassReview.js';
 import { addDays, isoWeek, isoWeekRange, isoWeekday, stockholmLocalToUtc } from '../lib/dates.js';
 
 // Demo data for "Teståkeriet AB". Every company name, org nr, regnr and person is fictional.
@@ -12,11 +14,11 @@ const COMPANY = {
 };
 
 const VEHICLES = [
-  { key: 'tka412', regnr: 'TKA412', typ: 'tippbil',     miljozonsklass: 1 },
-  { key: 'tka418', regnr: 'TKA418', typ: 'tippbil',     miljozonsklass: 1 },
-  { key: 'mxr27c', regnr: 'MXR27C', typ: 'tippbil',     miljozonsklass: 0 },  // older Euro V: miljözon warning
-  { key: 'krn905', regnr: 'KRN905', typ: 'kranbil',     miljozonsklass: 1 },
-  { key: 'lvx330', regnr: 'LVX330', typ: 'lastvaxlare', miljozonsklass: 1 },
+  { key: 'tka412', regnr: 'TKA412', typ: 'tippbil',     miljozonsklass: 1, tara: 14240 },
+  { key: 'tka418', regnr: 'TKA418', typ: 'tippbil',     miljozonsklass: 1, tara: 14380 },
+  { key: 'mxr27c', regnr: 'MXR27C', typ: 'tippbil',     miljozonsklass: 0, tara: 11960 },  // older Euro V: miljözon warning
+  { key: 'krn905', regnr: 'KRN905', typ: 'kranbil',     miljozonsklass: 1, tara: 18900 },
+  { key: 'lvx330', regnr: 'LVX330', typ: 'lastvaxlare', miljozonsklass: 1, tara: 13100 },
 ];
 
 const DRIVERS = [
@@ -127,8 +129,10 @@ export function demoWorkdays(today) {
 /**
  * Seed a fresh database. Throws if any company already exists.
  * Returns a summary with row counts and the office login.
+ * withPhotos: create a photo row per driver lass and return `photos` [{ id, slip, blur }]
+ * for the caller to render (rendering is async; see renderDemoPhotos in run.js).
  */
-export function seedDemo(db, { today, password }) {
+export function seedDemo(db, { today, password, withPhotos = false }) {
   if (db.prepare('SELECT COUNT(*) FROM companies').pluck().get() > 0) {
     throw new Error('Database already contains data');
   }
@@ -139,6 +143,7 @@ export function seedDemo(db, { today, password }) {
 
   const ids = { vehicles: {}, drivers: {}, priceLists: {}, customers: {}, projects: {} };
   const counts = { lass: 0, versions: 0, timeEntries: 0, assignments: 0 };
+  const photos = [];
   const { days, previousWeek, currentWeek } = demoWorkdays(today);
 
   const ins = {
@@ -163,11 +168,15 @@ export function seedDemo(db, { today, password }) {
         @miljozon_ack_user_id, 'simulerat', @created_at, @created_by_user_id, @created_at)`),
     lass: db.prepare('INSERT INTO lass (company_id, job_id, assignment_id, created_at) VALUES (?, ?, ?, ?)'),
     version: db.prepare(`INSERT INTO lass_versions (lass_id, version, customer_id, project_id, vehicle_regnr, driver_id, datum, tid,
-        fran_text, till_namn, till_orgnr, till_adress, material, avfallskod, farligt_avfall, netto_kg, vagsedel_nr,
-        field_confidence_json, review_status, note, change_reason, created_by_kind, created_by_user_id, created_by_driver_id, created_at)
+        fran_text, till_namn, till_orgnr, till_adress, material, avfallskod, farligt_avfall, netto_kg, vagsedel_nr, photo_id,
+        field_confidence_json, review_status, review_reasons_json, note, change_reason, created_by_kind, created_by_user_id,
+        created_by_driver_id, created_at)
       VALUES (@lass_id, @version, @customer_id, @project_id, @vehicle_regnr, @driver_id, @datum, @tid,
-        @fran_text, @till_namn, @till_orgnr, @till_adress, @material, @avfallskod, @farligt_avfall, @netto_kg, @vagsedel_nr,
-        @field_confidence_json, @review_status, @note, @change_reason, @created_by_kind, @created_by_user_id, @created_by_driver_id, @created_at)`),
+        @fran_text, @till_namn, @till_orgnr, @till_adress, @material, @avfallskod, @farligt_avfall, @netto_kg, @vagsedel_nr, @photo_id,
+        @field_confidence_json, @review_status, @review_reasons_json, @note, @change_reason, @created_by_kind, @created_by_user_id,
+        @created_by_driver_id, @created_at)`),
+    photo: db.prepare(`INSERT INTO photos (id, company_id, sha256, bytes, uploaded_by_driver_id, created_at)
+      VALUES (?, ?, 'pending', 0, ?, ?)`),
     time: db.prepare(`INSERT INTO time_entries (company_id, assignment_id, datum, timmar, created_by_kind, created_by_driver_id, created_at)
       VALUES (?, ?, ?, ?, 'driver', ?, ?)`),
   };
@@ -256,18 +265,37 @@ export function seedDemo(db, { today, password }) {
     };
 
     const addLass = ({ jobId, assignmentId, customer, project, vehicle, driver, datum, tid, fran, fac, material,
-      avfallskod = null, farligt = false, netto, confidence = HIGH, review = 'ok', note = null }) => {
+      avfallskod = null, farligt = false, netto, slipNetto = netto, confidence = HIGH, review = 'ok', note = null }) => {
       const f = FACILITIES[fac];
       const created = at(datum, tid);
+      const v = VEHICLES.find((x) => x.key === vehicle);
       const lassId = Number(ins.lass.run(companyId, jobId, assignmentId, created).lastInsertRowid);
+      const nr = slipNr(fac);
+      let photoId = null;
+      if (withPhotos) {
+        photoId = randomBytes(16).toString('hex');
+        ins.photo.run(photoId, companyId, ids.drivers[driver], created);
+        const tara = v.tara + int(-60, 60) * 2;
+        photos.push({
+          id: photoId,
+          blur: confidence.netto_kg === 'lag' || confidence.vagsedel_nr === 'lag',
+          slip: {
+            facility: f, nr, datum, tid, regnr: v.regnr, kund: COMPANY.name,
+            marking: PROJECTS.find((p) => p.key === project).customer_ref, material, avfallskod, farligt,
+            netto: slipNetto, tara, brutto: slipNetto + tara,
+          },
+        });
+      }
       const base = {
         lass_id: lassId, customer_id: ids.customers[customer], project_id: ids.projects[project],
-        vehicle_regnr: VEHICLES.find((v) => v.key === vehicle).regnr, driver_id: ids.drivers[driver], datum, tid,
+        vehicle_regnr: v.regnr, driver_id: ids.drivers[driver], datum, tid,
         fran_text: fran, till_namn: f.namn, till_orgnr: f.orgnr, till_adress: f.adress, material, avfallskod,
-        farligt_avfall: farligt ? 1 : 0, netto_kg: netto, vagsedel_nr: slipNr(fac),
+        farligt_avfall: farligt ? 1 : 0, netto_kg: netto, vagsedel_nr: nr, photo_id: photoId,
       };
+      const reasons = review === 'ok' ? [] : reviewStatusFor({ confidence, hasPhoto: true, farligtAvfall: farligt }).reasons;
       ins.version.run({
-        ...base, version: 1, field_confidence_json: JSON.stringify(confidence), review_status: review, note,
+        ...base, version: 1, field_confidence_json: JSON.stringify(confidence), review_status: review,
+        review_reasons_json: JSON.stringify(reasons), note,
         change_reason: null, created_by_kind: 'driver', created_by_user_id: null, created_by_driver_id: ids.drivers[driver],
         created_at: created,
       });
@@ -280,6 +308,7 @@ export function seedDemo(db, { today, password }) {
       const created = new Date(Date.parse(prev.created) + minutesLater * 60_000).toISOString();
       ins.version.run({
         ...prev.base, ...patch, version: 2, field_confidence_json: JSON.stringify(HIGH), review_status: review,
+        review_reasons_json: '[]',
         note: null, change_reason: reason, created_by_kind: 'office', created_by_user_id: userId,
         created_by_driver_id: null, created_at: created,
       });
@@ -322,7 +351,7 @@ export function seedDemo(db, { today, password }) {
             driver: 'mikael', datum, tid, fran: 'Rörstrandsgatan 40, Stockholm', fac: 'ekbacka',
             material: 'Schaktmassor', avfallskod: '170504',
             // A dropped digit that the driver didn't notice: 18 400 read as 1 840.
-            netto: misread ? round20(netto / 10) : netto,
+            netto: misread ? round20(netto / 10) : netto, slipNetto: netto,
             confidence: low || reviewedLater ? { ...HIGH, netto_kg: 'lag' } : HIGH,
             review: low || reviewedLater ? 'behover_granskas' : 'ok',
             note: low ? 'Suddig siffra på vågsedeln' : null,
@@ -399,5 +428,6 @@ export function seedDemo(db, { today, password }) {
     customers: CUSTOMERS.length,
     projects: PROJECTS.length,
     ...counts,
+    photos,
   };
 }

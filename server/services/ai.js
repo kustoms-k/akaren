@@ -5,6 +5,9 @@ import { stockholmDate, stockholmMonthStartUtc } from '../lib/dates.js';
 import {
   ORDER_PROMPT_VERSION, OrderExtractionSchema, buildOrderSystemPrompt, buildOrderUserMessage, postProcessOrder,
 } from '../lib/orderExtraction.js';
+import {
+  VAGSEDEL_PROMPT_VERSION, VagsedelSchema, buildVagsedelSystemPrompt, buildVagsedelUserText, postProcessVagsedel,
+} from '../lib/vagsedelExtraction.js';
 
 export class AiNotConfiguredError extends Error {
   constructor() { super('ANTHROPIC_API_KEY is not set'); this.code = 'ai_not_configured'; }
@@ -77,13 +80,15 @@ export function createAiService({ db, config, client, now = () => new Date(), lo
     }).lastInsertRowid);
   }
 
-  /** Extract a structured order from pasted text. Returns { extractionId, fields, warnings, model }. */
-  async function extractOrder({ companyId, companyName, text }) {
+  /**
+   * One structured-output call: budget check, request, usage/cost logging, failure handling.
+   * `postProcess(parsed)` returns { fields, warnings }. Returns { extractionId, fields, warnings, model }.
+   */
+  async function run({ companyId, kind, promptVersion, inputText = null, inputPhotoId = null, schema, system, content, postProcess }) {
     if (!sdk) throw new AiNotConfiguredError();
     assertBudget(companyId);
 
-    const today = stockholmDate(now());
-    const base = { company_id: companyId, kind: 'order', model: ai.model, prompt_version: ORDER_PROMPT_VERSION, input_text: text };
+    const base = { company_id: companyId, kind, model: ai.model, prompt_version: promptVersion, input_text: inputText, input_photo_id: inputPhotoId };
     const started = Date.now();
 
     let response;
@@ -91,12 +96,12 @@ export function createAiService({ db, config, client, now = () => new Date(), lo
       response = await sdk.messages.parse({
         model: ai.model,
         max_tokens: 16000,
-        ...requestOptions(ai.model, zodOutputFormat(OrderExtractionSchema)),
-        system: buildOrderSystemPrompt(),
-        messages: [{ role: 'user', content: buildOrderUserMessage(text, { today, companyName }) }],
+        ...requestOptions(ai.model, zodOutputFormat(schema)),
+        system,
+        messages: [{ role: 'user', content }],
       });
     } catch (err) {
-      logger.error('[ai] order extraction request failed:', err?.status ?? '', err?.message);
+      logger.error(`[ai] ${kind} extraction request failed:`, err?.status ?? '', err?.message);
       log({ ...base, latency_ms: Date.now() - started, error: `${err?.status ?? 'network'}: ${err?.message ?? err}`.slice(0, 500) });
       throw new AiExtractionError('api_error', err);
     }
@@ -123,7 +128,7 @@ export function createAiService({ db, config, client, now = () => new Date(), lo
       throw new AiExtractionError(failure);
     }
 
-    const { fields, warnings } = postProcessOrder(response.parsed_output, { today });
+    const { fields, warnings } = postProcess(response.parsed_output);
     const extractionId = log({
       ...base,
       ...metrics,
@@ -134,5 +139,32 @@ export function createAiService({ db, config, client, now = () => new Date(), lo
     return { extractionId, fields, warnings, model: metrics.model };
   }
 
-  return { configured: Boolean(sdk), usage, extractOrder };
+  /** Extract a structured order from pasted text. */
+  function extractOrder({ companyId, companyName, text }) {
+    const today = stockholmDate(now());
+    return run({
+      companyId, kind: 'order', promptVersion: ORDER_PROMPT_VERSION, inputText: text,
+      schema: OrderExtractionSchema,
+      system: buildOrderSystemPrompt(),
+      content: buildOrderUserMessage(text, { today, companyName }),
+      postProcess: (parsed) => postProcessOrder(parsed, { today }),
+    });
+  }
+
+  /** Read a photographed vågsedel (JPEG bytes). Context is used only for validation, not shown to the model. */
+  function extractVagsedel({ companyId, photoId, jpeg, assignmentDate, assignedRegnr }) {
+    const today = stockholmDate(now());
+    return run({
+      companyId, kind: 'vagsedel', promptVersion: VAGSEDEL_PROMPT_VERSION, inputPhotoId: photoId,
+      schema: VagsedelSchema,
+      system: buildVagsedelSystemPrompt(),
+      content: [
+        { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: jpeg.toString('base64') } },
+        { type: 'text', text: buildVagsedelUserText({ today }) },
+      ],
+      postProcess: (parsed) => postProcessVagsedel(parsed, { today, assignmentDate, assignedRegnr }),
+    });
+  }
+
+  return { configured: Boolean(sdk), usage, extractOrder, extractVagsedel };
 }

@@ -30,8 +30,12 @@ export const onUnauthorized = (fn) => {
   return () => unauthorizedListeners.delete(fn);
 };
 
-export async function api(path, { method = 'GET', body, signal } = {}) {
-  const token = getToken();
+/**
+ * JSON request. `token` overrides the office token (the driver page passes its own);
+ * only office-token 401s trigger the office logout.
+ */
+export async function api(path, { method = 'GET', body, signal, token: explicitToken, form } = {}) {
+  const token = explicitToken ?? getToken();
   let res;
   try {
     res = await fetch(path, {
@@ -39,10 +43,10 @@ export async function api(path, { method = 'GET', body, signal } = {}) {
       signal,
       headers: {
         Accept: 'application/json',
-        ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        ...(body !== undefined && !form ? { 'Content-Type': 'application/json' } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: form ?? (body !== undefined ? JSON.stringify(body) : undefined),
     });
   } catch (err) {
     if (err.name === 'AbortError') throw err;
@@ -53,7 +57,7 @@ export async function api(path, { method = 'GET', body, signal } = {}) {
   let data;
   try { data = text ? JSON.parse(text) : null; } catch { data = null; }
 
-  if (res.status === 401 && token) unauthorizedListeners.forEach((fn) => fn());
+  if (res.status === 401 && token && !explicitToken) unauthorizedListeners.forEach((fn) => fn());
   if (!res.ok) throw new ApiError(res.status, data);
   return data;
 }
