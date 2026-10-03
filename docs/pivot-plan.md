@@ -1,6 +1,6 @@
 # Åkaren pivot plan (Phase 1 audit)
 
-Status: **approved 2026-10-03 with all recommendations (D1–D16)**. Phase 2 is done; Phase 3 is next.
+Status: **approved 2026-10-03 with all recommendations (D1–D16)**. Phases 2–3 are done; Phase 4 is next.
 Audit date: 2026-10-03, against `main` @ `fb5d389` (tagged `pre-pivot-archive`).
 
 ## Progress log
@@ -11,6 +11,13 @@ Audit date: 2026-10-03, against `main` @ `fb5d389` (tagged `pre-pivot-archive`).
 - `client/src/utils/generatePdf.js` (the old offert PDF) is deleted rather than kept. Phase 5 can lift its jsPDF layout helpers from the archive tag. `jspdf` and `dexie` stay as dependencies for Phases 5 and 4.
 - The seeded lass have no photos. Phase 4 adds synthetic vågsedel images to the seed once `sharp` is in.
 - Vite reads `server/.env` itself; there is one env file for the whole app.
+
+**Phase 3 (done).** AI order intake: `services/ai.js` (structured outputs, cost logging, monthly budget), `lib/orderExtraction.js` (schema, prompt, validators that only downgrade confidence), `lib/match.js` (org nr, project ref in text, email domain, address and fuzzy name), intake API with a server-enforced review gate and a duplicate guard, read-only jobs API, and the Ny beställning / Granska / Uppdrag pages. 100 tests pass. Verified in headless Chrome through the real SDK against a local mock of the Messages API. Additions and deviations:
+- **Spend cap** (`AI_MONTHLY_BUDGET_USD`, default 30): this answers the D10 cost question. Usage is shown under Inställningar.
+- **Manual entry** (`POST /api/intake/manual`) uses the same review/confirm flow, so intake works without an API key.
+- **No server-side refusal fallback:** SDK 0.96 has no `fallbacks` parameter. A `refusal` stop reason surfaces as a Swedish error with a manual-entry hint.
+- **Migration `002_ai_cost_and_intake_review.sql`** adds the cost columns and `order_intakes.final_json` / `overrides_json`.
+- **Not yet tested against the real API.** Needs `ANTHROPIC_API_KEY`; the first real orders should be spot-checked for prompt quality.
 
 ---
 

@@ -21,7 +21,7 @@ const patchSchema = z.object({
   default_vat_mode: z.enum(['normal', 'omvand_bygg'], { error: 'Ogiltigt momsläge.' }).optional(),
 }).strict();
 
-export function settingsRouter({ db, audit, config, fortnox, sms }) {
+export function settingsRouter({ db, audit, config, fortnox, sms, ai }) {
   const router = Router();
   const stmtGet = db.prepare(`SELECT ${SAFE_COLUMNS} FROM companies WHERE id = ?`);
 
@@ -32,7 +32,7 @@ export function settingsRouter({ db, audit, config, fortnox, sms }) {
   // What is configured on this server; never returns secrets.
   router.get('/integrations', (req, res) => {
     res.json({
-      ai: { configured: Boolean(config.anthropic.apiKey), model: config.anthropic.model },
+      ai: ai.usage(req.companyId),
       sms: { enabled: sms.enabled, sender: config.elks.sender },
       fortnox: fortnox.getStatus(req.companyId),
       public_base_url: config.publicBaseUrl,

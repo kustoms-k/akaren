@@ -110,6 +110,16 @@ npm run build       # client production build
 **Lass records are append-only.** A correction writes a new row in `lass_versions` with `change_reason`; nothing is ever updated in place, and a DB trigger enforces this. Only the retention job may delete, and it logs to `audit_log`.
 
 **Human in the loop.** AI output never becomes a job or a confirmed lass without a person confirming it. Low-confidence or missing fields are highlighted and must be touched. Validators may only *downgrade* model-reported confidence. Rows still needing review block the fakturaunderlag export.
+- For order intake, the server enforces this: `POST /api/intake/:id/confirm` rejects any `lag` AI value that is unchanged and not in `acknowledged`.
+- What the user changed or accepted is stored on `order_intakes.overrides_json`.
+
+**AI calls** go through `services/ai.js` only.
+- Use structured outputs (`messages.parse` + `zodOutputFormat`), adaptive thinking and `effort: 'low'`.
+- Every call is logged in `ai_extractions` with tokens and estimated cost (`lib/aiCost.js`).
+- `AI_MONTHLY_BUDGET_USD` is checked before each call.
+- `refusal`, `max_tokens` and parse failures raise errors. Never substitute mock or guessed data.
+- Prompts treat pasted text as untrusted data inside `<order>` tags.
+- Bump `ORDER_PROMPT_VERSION` when the prompt or schema changes.
 
 **Matching.** Customers and projects are fuzzy-matched (org nr, name, address) and *suggested*. Never auto-create duplicates.
 

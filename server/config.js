@@ -28,6 +28,8 @@ const schema = z.object({
   ANTHROPIC_API_KEY:  optionalString,
   ANTHROPIC_MODEL:    z.preprocess(emptyToUndefined, z.string().default('claude-opus-5')),
   ANTHROPIC_BASE_URL: optionalUrl,
+  // Hard monthly cap on estimated AI spend per company (USD). 0 disables AI calls.
+  AI_MONTHLY_BUDGET_USD: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(10000).default(30)),
 
   ELKS_USERNAME: optionalString,
   ELKS_PASSWORD: optionalString,
@@ -97,6 +99,7 @@ export function loadConfig(env = process.env) {
       apiKey:  e.ANTHROPIC_API_KEY ?? null,
       model:   e.ANTHROPIC_MODEL,
       baseUrl: e.ANTHROPIC_BASE_URL ?? null,
+      monthlyBudgetUsd: e.AI_MONTHLY_BUDGET_USD,
     },
     elks: {
       username: e.ELKS_USERNAME ?? null,

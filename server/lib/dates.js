@@ -77,6 +77,23 @@ export function isoWeekRange(key) {
   return { from, to: addDays(from, 6) };
 }
 
+/** Stockholm local date + 'HH:MM' → UTC ISO timestamp (handles CET/CEST). */
+export function stockholmLocalToUtc(date, time = '00:00') {
+  const [y, mo, d] = date.split('-').map(Number);
+  const [h, mi] = time.split(':').map(Number);
+  for (const offsetHours of [1, 2]) {
+    const instant = new Date(Date.UTC(y, mo - 1, d, h - offsetHours, mi));
+    if (stockholmDate(instant) === date && stockholmTime(instant) === time) return instant.toISOString();
+  }
+  // Non-existent local time (spring-forward gap): fall back to CET.
+  return new Date(Date.UTC(y, mo - 1, d, h - 1, mi)).toISOString();
+}
+
+/** UTC ISO timestamp of 00:00 on the first day of the current Stockholm month. */
+export function stockholmMonthStartUtc(instant = new Date()) {
+  return stockholmLocalToUtc(`${stockholmDate(instant).slice(0, 7)}-01`, '00:00');
+}
+
 /** ISO week key for the current Stockholm date. */
 export function currentIsoWeek(instant = new Date()) {
   return isoWeek(stockholmDate(instant)).key;

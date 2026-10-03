@@ -10,9 +10,17 @@ import { CustomerDetail } from './pages/CustomerDetail.jsx';
 import { Fleet } from './pages/Fleet.jsx';
 import { Settings } from './pages/Settings.jsx';
 import { NotFound } from './pages/NotFound.jsx';
+import { OrderInbox } from './pages/OrderInbox.jsx';
+import { OrderReview } from './pages/OrderReview.jsx';
+import { Jobs } from './pages/Jobs.jsx';
+import { JobDetail } from './pages/JobDetail.jsx';
 
 const ROUTES = [
   ['/', Overview],
+  ['/bestallning', OrderInbox],
+  ['/bestallning/:id', OrderReview],
+  ['/uppdrag', Jobs],
+  ['/uppdrag/:id', JobDetail],
   ['/kunder', Customers],
   ['/kunder/:id', CustomerDetail],
   ['/flotta', Fleet],

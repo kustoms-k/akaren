@@ -19,6 +19,8 @@ const fields = {
   active: bool01.optional(),
 };
 const createSchema = z.object(fields).strict();
+/** Project fields without customer_id, for creating a project as part of another flow. */
+export const projectNewSchema = createSchema.omit({ customer_id: true });
 const patchSchema = z.object({ ...fields, customer_id: idRef.optional(), name: fields.name.optional() }).strict();
 
 export function projectsRouter({ db, audit }) {

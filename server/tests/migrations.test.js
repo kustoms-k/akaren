@@ -18,7 +18,7 @@ function seedLass(db) {
 describe('migrations', () => {
   it('apply cleanly and are idempotent', () => {
     const db = openDb(':memory:');
-    expect(migrate(db)).toEqual(['001_init']);
+    expect(migrate(db)).toEqual(['001_init', '002_ai_cost_and_intake_review']);
     expect(migrate(db)).toEqual([]);
     const tables = db.prepare(`SELECT name FROM sqlite_master WHERE type = 'table'`).pluck().all();
     for (const t of ['companies', 'users', 'customers', 'projects', 'vehicles', 'drivers', 'jobs', 'job_assignments',

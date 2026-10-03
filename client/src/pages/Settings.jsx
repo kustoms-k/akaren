@@ -135,6 +135,33 @@ function FortnoxPanel() {
   );
 }
 
+function AiPanel() {
+  const { data } = useApi('/api/settings/integrations');
+  const ai = data?.ai;
+  if (!ai) return null;
+  const pct = ai.budget_usd > 0 ? Math.min(100, Math.round((ai.month_cost_usd / ai.budget_usd) * 100)) : 100;
+  return (
+    <section className="panel" style={{ marginBottom: 16 }}>
+      <div className="panel-head">
+        <h2 className="t-heading">AI-tolkning</h2>
+        <span className={`badge ${ai.configured ? 'badge-green' : 'badge-amber'}`}>{ai.configured ? ai.model : 'Ingen API-nyckel'}</span>
+      </div>
+      <div className="panel-body" style={{ display: 'grid', gap: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+          <span>Denna månad: <strong className="num">{ai.month_cost_usd} USD</strong> av {ai.budget_usd} USD ({ai.calls} anrop)</span>
+          <span className="t-muted num">{pct} %</span>
+        </div>
+        <div style={{ height: 6, background: 'var(--surface-elevated)', borderRadius: 99, overflow: 'hidden' }}>
+          <div style={{ width: `${pct}%`, height: '100%', background: pct >= 90 ? 'var(--danger)' : 'var(--accent)', borderRadius: 99 }} />
+        </div>
+        <p className="t-muted" style={{ fontSize: 12 }}>
+          Uppskattad kostnad enligt listpris. När budgeten är slut stoppas AI-tolkningen till nästa månad. Ändra med AI_MONTHLY_BUDGET_USD i server/.env.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 export function Settings() {
   const toast = useToast();
   const { query } = useLocation();
@@ -156,6 +183,7 @@ export function Settings() {
       <ErrorNotice error={error} onRetry={reload} />
       <div style={{ maxWidth: 760 }}>
         <FortnoxPanel />
+        <AiPanel />
         {company ? (
           <CompanyForm company={company} onSaved={(c) => { setData(c); setCompanyName(c.name); toast('Inställningarna är sparade'); }} />
         ) : !error && <TableSkeleton rows={6} />}

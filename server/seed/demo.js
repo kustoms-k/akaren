@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { addDays, isoWeek, isoWeekRange, isoWeekday, stockholmTime } from '../lib/dates.js';
+import { addDays, isoWeek, isoWeekRange, isoWeekday, stockholmLocalToUtc } from '../lib/dates.js';
 
 // Demo data for "Teståkeriet AB". Every company name, org nr, regnr and person is fictional.
 // Driver phone numbers are in 070-174 06 05–99, a range PTS reserves for fiction.
@@ -110,17 +110,6 @@ function mulberry32(seed) {
   };
 }
 
-/** Stockholm local date + time → UTC ISO timestamp. */
-function stockholmToUtcIso(date, time) {
-  const [y, mo, d] = date.split('-').map(Number);
-  const [h, mi] = time.split(':').map(Number);
-  for (const offsetHours of [1, 2]) {
-    const instant = new Date(Date.UTC(y, mo - 1, d, h - offsetHours, mi));
-    if (stockholmTime(instant) === time) return instant.toISOString();
-  }
-  return new Date(Date.UTC(y, mo - 1, d, h - 1, mi)).toISOString();
-}
-
 /** Weekdays (Mon–Fri) of the previous and the current ISO week, up to and including `today`. */
 export function demoWorkdays(today) {
   const current = isoWeekRange(isoWeek(today).key).from;
@@ -188,7 +177,7 @@ export function seedDemo(db, { today, password }) {
   db.transaction(() => {
     const companyId = Number(ins.company.run(COMPANY).lastInsertRowid);
     const userId = Number(ins.user.run(companyId, 'Kontoret', DEMO_EMAIL, bcrypt.hashSync(password, 10)).lastInsertRowid);
-    const at = (date, time) => stockholmToUtcIso(date, time);
+    const at = (date, time) => stockholmLocalToUtc(date, time);
 
     for (const v of VEHICLES) ids.vehicles[v.key] = Number(ins.vehicle.run(companyId, v.regnr, v.typ, v.miljozonsklass).lastInsertRowid);
     for (const d of DRIVERS) ids.drivers[d.key] = Number(ins.driver.run(companyId, d.name, d.phone).lastInsertRowid);

@@ -9,26 +9,30 @@ import { createAudit } from './lib/audit.js';
 import { errorMiddleware, HttpError } from './lib/http.js';
 import { createFortnoxService } from './services/fortnox.js';
 import { createSmsService } from './services/sms.js';
+import { createAiService } from './services/ai.js';
 import { authRouter } from './routes/auth.js';
 import { settingsRouter } from './routes/settings.js';
 import { customersRouter } from './routes/customers.js';
 import { projectsRouter } from './routes/projects.js';
 import { vehiclesRouter, driversRouter } from './routes/fleet.js';
 import { fortnoxRouter, fortnoxCallbackRouter } from './routes/fortnox.js';
+import { intakeRouter } from './routes/intake.js';
+import { jobsRouter } from './routes/jobs.js';
 
 const PRIVATE_LAN = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/;
 
 /**
  * Build the Express app. External services are injectable so tests can mock them:
- * createApp({ config, db, services: { fortnox, sms } }).
+ * createApp({ config, db, services: { fortnox, sms, ai } }).
  */
 export function createApp({ config, db, services = {}, logger = console }) {
   const fortnox = services.fortnox ?? createFortnoxService({ db, config });
   const sms = services.sms ?? createSmsService({ config, logger });
+  const ai = services.ai ?? createAiService({ db, config, logger });
   const audit = createAudit(db, logger);
   const auth = createAuth({ db, config });
   const limiters = createLimiters();
-  const deps = { db, config, audit, auth, limiters, fortnox, sms, logger };
+  const deps = { db, config, audit, auth, limiters, fortnox, sms, ai, logger };
 
   const app = express();
   app.disable('x-powered-by');
@@ -62,6 +66,8 @@ export function createApp({ config, db, services = {}, logger = console }) {
   office.use('/vehicles', vehiclesRouter(deps));
   office.use('/drivers', driversRouter(deps));
   office.use('/fortnox', fortnoxRouter(deps));
+  office.use('/intake', intakeRouter(deps));
+  office.use('/jobs', jobsRouter(deps));
   app.use('/api', office);
 
   app.use('/api', (req, res, next) => next(new HttpError(404, 'not_found', 'Hittades inte.')));

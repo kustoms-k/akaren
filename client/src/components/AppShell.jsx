@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Building2, LayoutDashboard, LogOut, Menu, Settings, Truck } from 'lucide-react';
+import { Briefcase, Building2, Inbox, LayoutDashboard, LogOut, Menu, Settings, Truck } from 'lucide-react';
 import { LogoMark } from '../assets/Logo.jsx';
 import { useLocation } from '../lib/router.js';
 import { Link } from './Link.jsx';
 import { useAuth } from '../lib/auth.js';
 
-// Later phases add: Ny beställning, Uppdrag, Granska lass, Massredovisning, Fakturaunderlag.
+// Later phases add: Granska lass, Massredovisning, Fakturaunderlag.
 const NAV = [
   { to: '/', label: 'Översikt', Icon: LayoutDashboard, match: (p) => p === '/' },
+  { to: '/bestallning', label: 'Ny beställning', Icon: Inbox, match: (p) => p.startsWith('/bestallning') },
+  { to: '/uppdrag', label: 'Uppdrag', Icon: Briefcase, match: (p) => p.startsWith('/uppdrag') },
   { to: '/kunder', label: 'Kunder & projekt', Icon: Building2, match: (p) => p.startsWith('/kunder') },
   { to: '/flotta', label: 'Fordon & förare', Icon: Truck, match: (p) => p.startsWith('/flotta') },
   { to: '/installningar', label: 'Inställningar', Icon: Settings, match: (p) => p.startsWith('/installningar') },

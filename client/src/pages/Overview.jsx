@@ -1,4 +1,4 @@
-import { Building2, FolderKanban, Truck, Users } from 'lucide-react';
+import { Briefcase, Building2, Inbox, Truck } from 'lucide-react';
 import { PageHeader, ErrorNotice } from '../components/PageHeader.jsx';
 import { Link } from '../components/Link.jsx';
 import { useApi } from '../lib/useApi.js';
@@ -27,13 +27,14 @@ function StatusRow({ label, ok, text }) {
 
 export function Overview() {
   const { user } = useAuth();
+  const drafts = useApi('/api/intake?status=utkast');
+  const jobs = useApi('/api/jobs');
   const customers = useApi('/api/customers');
-  const projects = useApi('/api/projects');
   const vehicles = useApi('/api/vehicles');
-  const drivers = useApi('/api/drivers');
   const integrations = useApi('/api/settings/integrations');
   const i = integrations.data;
-  const error = customers.error ?? projects.error ?? vehicles.error ?? drivers.error;
+  const error = drafts.error ?? jobs.error ?? customers.error ?? vehicles.error;
+  const activeJobs = jobs.data?.filter((j) => j.status === 'bekraftad' || j.status === 'pagar').length;
 
   return (
     <>
@@ -41,10 +42,10 @@ export function Overview() {
       <ErrorNotice error={error} />
 
       <div className="stat-grid" style={{ marginBottom: 20 }}>
+        <Stat label="Utkast att granska" value={drafts.data?.length} Icon={Inbox} to="/bestallning" />
+        <Stat label="Aktiva uppdrag" value={activeJobs} Icon={Briefcase} to="/uppdrag" />
         <Stat label="Kunder" value={customers.data?.length} Icon={Building2} to="/kunder" />
-        <Stat label="Aktiva projekt" value={projects.data?.length} Icon={FolderKanban} to="/kunder" />
-        <Stat label="Fordon" value={vehicles.data?.length} Icon={Truck} to="/flotta" />
-        <Stat label="Förare" value={drivers.data?.length} Icon={Users} to="/flotta" />
+        <Stat label="Fordon i trafik" value={vehicles.data?.length} Icon={Truck} to="/flotta" />
       </div>
 
       <section className="panel" style={{ maxWidth: 560 }}>
@@ -52,7 +53,7 @@ export function Overview() {
         <div className="panel-body" style={{ paddingTop: 6 }}>
           {i ? (
             <>
-              <StatusRow label="AI (beställningar och vågsedlar)" ok={i.ai.configured} text={i.ai.configured ? i.ai.model : 'Ingen API-nyckel'} />
+              <StatusRow label="AI (beställningar och vågsedlar)" ok={i.ai.configured} text={i.ai.configured ? `${i.ai.month_cost_usd} av ${i.ai.budget_usd} USD denna månad` : 'Ingen API-nyckel'} />
               <StatusRow label="SMS till förare (46elks)" ok={i.sms.enabled} text={i.sms.enabled ? `Skickas som ${i.sms.sender}` : 'Simuleras'} />
               <StatusRow label="Fortnox" ok={i.fortnox.status === 'connected'} text={i.fortnox.configured ? FORTNOX_STATUS[i.fortnox.status] : 'Ej konfigurerat'} />
               <p className="t-muted" style={{ fontSize: 12, marginTop: 12 }}>

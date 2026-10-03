@@ -228,6 +228,73 @@ select.input { appearance: none; padding-right: 30px;
 .search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
 .search .input { padding-left: 32px; }
 
+textarea.input { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+/* ── Order review ────────────────────────────────────────────────────────── */
+.review {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.15fr);
+  gap: 16px;
+  align-items: start;
+}
+.review-source {
+  position: sticky; top: 16px;
+  max-height: calc(100vh - 32px);
+  display: flex; flex-direction: column;
+}
+.review-source pre {
+  flex: 1; overflow: auto;
+  margin: 0; padding: 16px 18px;
+  font: 13px/1.6 var(--font-sans);
+  white-space: pre-wrap; word-break: break-word;
+  color: var(--text-primary);
+}
+@media (max-width: 1000px) {
+  .review { grid-template-columns: 1fr; }
+  .review-source { position: static; max-height: 320px; }
+}
+
+.section-title { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+
+/* Field whose AI value needs attention */
+.field.conf-lag .input { border-color: #f59e0b; background: #fffdf5; }
+.field.conf-required .input { border-color: var(--danger); }
+.field-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ack {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; color: #92400e; cursor: pointer;
+}
+.ack input { accent-color: #b45309; }
+.ai-was { font-size: 12px; color: var(--text-muted); }
+
+.choice-list { display: grid; gap: 8px; }
+.choice {
+  display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start;
+  padding: 12px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+}
+.choice input[type="radio"] { margin-top: 3px; accent-color: var(--accent); }
+.choice[data-checked="true"] { border-color: var(--accent); background: #fafbfc; box-shadow: 0 0 0 3px rgba(45,51,64,0.06); }
+.choice-title { font-weight: 600; }
+.choice-meta { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.reasons { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.choice-body { margin-top: 12px; }
+
+.action-bar {
+  position: sticky; bottom: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+}
+
 /* ── Dialog ──────────────────────────────────────────────────────────────── */
 .dialog-backdrop {
   position: fixed; inset: 0; z-index: 500;

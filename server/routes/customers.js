@@ -17,7 +17,8 @@ const fields = {
   vat_mode: z.enum(['normal', 'omvand_bygg'], { error: 'Ogiltigt momsläge.' }).nullable().optional(),
   active: bool01.optional(),
 };
-const createSchema = z.object(fields).strict();
+export const customerCreateSchema = z.object(fields).strict();
+const createSchema = customerCreateSchema;
 const patchSchema = z.object({ ...fields, name: fields.name.optional() }).strict();
 
 export function customersRouter({ db, audit }) {
