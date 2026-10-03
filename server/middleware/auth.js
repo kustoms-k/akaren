@@ -1,47 +1,43 @@
 import jwt from 'jsonwebtoken';
+import { HttpError } from '../lib/http.js';
 
-const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret-change-in-production';
+// Two roles only: 'office' (this JWT) and 'driver' (magic link, added with the driver page).
+const OFFICE_TOKEN_TTL = '12h';
 
-export function requireAuth(req, res, next) {
-  const header = req.headers.authorization;
-  if (!header?.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Authorization required' });
+const unauthorized = () => new HttpError(401, 'unauthorized', 'Du behöver logga in igen.');
+
+export function createAuth({ db, config }) {
+  const stmtUser = db.prepare(
+    'SELECT id, company_id, name, email, active FROM users WHERE id = ?',
+  );
+
+  function signOfficeToken(user) {
+    return jwt.sign(
+      { sub: String(user.id), cid: user.company_id, role: 'office' },
+      config.jwtSecret,
+      { expiresIn: OFFICE_TOKEN_TTL },
+    );
   }
-  try {
-    const payload  = jwt.verify(header.slice(7), JWT_SECRET);
-    req.user       = payload;
-    req.companyId  = payload.companyId;
-    next();
-  } catch {
-    res.status(401).json({ error: 'Invalid or expired token' });
-  }
-}
 
-// requireRole(...roles) — 403 if JWT role not in the allowed list
-export function requireRole(...roles) {
-  return (req, res, next) => {
-    if (!req.user) return res.status(401).json({ error: 'Authorization required' });
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Access denied' });
+  function requireOffice(req, res, next) {
+    const header = req.headers.authorization ?? '';
+    if (!header.startsWith('Bearer ')) return next(unauthorized());
+    let payload;
+    try {
+      payload = jwt.verify(header.slice(7), config.jwtSecret);
+    } catch {
+      return next(unauthorized());
     }
+    if (payload.role !== 'office') return next(unauthorized());
+
+    // Checked on every request so deactivating a user takes effect immediately.
+    const user = stmtUser.get(Number(payload.sub));
+    if (!user || !user.active || user.company_id !== payload.cid) return next(unauthorized());
+
+    req.user = user;
+    req.companyId = user.company_id;
     next();
-  };
-}
-
-// requireOwner — backward compat; agare is the new name for owner
-export function requireOwner(req, res, next) {
-  if (req.user?.role !== 'agare' && req.user?.role !== 'owner') {
-    return res.status(403).json({ error: 'Owner access required' });
   }
-  next();
+
+  return { signOfficeToken, requireOffice };
 }
-
-// Convenience role name constants
-export const AGARE        = 'agare';
-export const TRAFIKLEDARE = 'trafikledare';
-export const EKONOMI      = 'ekonomi';
-export const FORARE       = 'forare';
-export const REVISOR      = 'revisor';
-
-// All non-driver roles (office staff)
-export const OFFICE_ROLES = [AGARE, TRAFIKLEDARE, EKONOMI, REVISOR];

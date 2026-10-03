@@ -1,0 +1,60 @@
+import { useEffect, useRef } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+
+/**
+ * Modal dialog. Closes on Escape and backdrop click; focus moves into the dialog
+ * on open and back to the previously focused element on close.
+ */
+export function Dialog({ open, onClose, title, description, children, footer }) {
+  const panel = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const previous = document.activeElement;
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    requestAnimationFrame(() => {
+      const first = panel.current?.querySelector('input, select, textarea, button');
+      (first ?? panel.current)?.focus();
+    });
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      previous?.focus?.();
+    };
+  }, [open, onClose]);
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="dialog-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.16 }}
+          onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        >
+          <motion.div
+            ref={panel}
+            className="dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label={title}
+            tabIndex={-1}
+            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.98 }}
+            transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+          >
+            <div className="dialog-head">
+              <h2 className="t-heading">{title}</h2>
+              {description && <p className="t-muted" style={{ marginTop: 4, fontSize: 13 }}>{description}</p>}
+            </div>
+            <div className="dialog-body">{children}</div>
+            {footer && <div className="dialog-foot">{footer}</div>}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}

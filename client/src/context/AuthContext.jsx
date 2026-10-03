@@ -1,99 +1,38 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
-
-const AuthContext = createContext(null);
-
-function load(key) {
-  try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
-}
+import { useCallback, useEffect, useState } from 'react';
+import { api, getToken, setToken, onUnauthorized } from '../lib/api.js';
+import { AuthContext } from '../lib/auth.js';
 
 export function AuthProvider({ children }) {
-  const [token,   setToken]   = useState(() => localStorage.getItem('auth_token'));
-  const [user,    setUser]    = useState(() => load('auth_user'));
-  const [company, setCompany] = useState(() => load('auth_company'));
-
-  // Auto-login with default credentials — dev convenience only, never runs in production
-  useEffect(() => {
-    if (token) return;
-    if (!import.meta.env.DEV) return;
-    fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'admin@kemoffs.se', password: 'admin123' }),
-    })
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => {
-        if (!data?.token) return;
-        localStorage.setItem('auth_token',   data.token);
-        localStorage.setItem('auth_user',    JSON.stringify(data.user));
-        localStorage.setItem('auth_company', JSON.stringify(data.company));
-        setToken(data.token);
-        setUser(data.user);
-        setCompany(data.company);
-      })
-      .catch(() => {});
-  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Refresh company (and user role) from server when token exists but company is missing.
-  // Handles stale localStorage after a server restart or hard reload.
-  useEffect(() => {
-    if (!token || company) return;
-    fetch('/api/company', { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => {
-        if (!data?.id) return;
-        localStorage.setItem('auth_company', JSON.stringify(data));
-        setCompany(data);
-      })
-      .catch(() => {});
-  }, [token, company]);
-
-  const login = useCallback((data) => {
-    localStorage.setItem('auth_token',   data.token);
-    localStorage.setItem('auth_user',    JSON.stringify(data.user));
-    localStorage.setItem('auth_company', JSON.stringify(data.company));
-    setToken(data.token);
-    setUser(data.user);
-    setCompany(data.company);
-  }, []);
+  const [state, setState] = useState(() => ({ status: getToken() ? 'checking' : 'anonymous', user: null, company: null }));
 
   const logout = useCallback(() => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
-    localStorage.removeItem('auth_company');
     setToken(null);
-    setUser(null);
-    setCompany(null);
+    setState({ status: 'anonymous', user: null, company: null });
   }, []);
 
-  const updateCompany = useCallback((data) => {
-    localStorage.setItem('auth_company', JSON.stringify(data));
-    setCompany(data);
+  useEffect(() => onUnauthorized(logout), [logout]);
+
+  // Validate a stored token on load.
+  useEffect(() => {
+    if (state.status !== 'checking') return;
+    api('/api/auth/me')
+      .then(({ user, company }) => setState({ status: 'authenticated', user, company }))
+      .catch(() => logout());
+  }, [state.status, logout]);
+
+  const login = useCallback(async (email, password) => {
+    const data = await api('/api/auth/login', { method: 'POST', body: { email, password } });
+    setToken(data.token);
+    setState({ status: 'authenticated', user: data.user, company: data.company });
   }, []);
 
-  const updateUser = useCallback((patch) => {
-    setUser((prev) => {
-      const next = { ...prev, ...patch };
-      localStorage.setItem('auth_user', JSON.stringify(next));
-      return next;
-    });
+  const setCompanyName = useCallback((name) => {
+    setState((s) => ({ ...s, company: s.company ? { ...s.company, name } : s.company }));
   }, []);
 
   return (
-    <AuthContext.Provider value={{
-      token,
-      user,
-      company,
-      isAuthenticated: Boolean(token),
-      login,
-      logout,
-      updateCompany,
-      updateUser,
-    }}>
+    <AuthContext.Provider value={{ ...state, login, logout, setCompanyName }}>
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  return useContext(AuthContext);
 }

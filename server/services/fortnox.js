@@ -1,301 +1,246 @@
 import { randomBytes } from 'node:crypto';
-import db              from '../db.js';
-import { encrypt, decrypt } from './encrypt.js';
+import { createCrypto } from './encrypt.js';
+import { normalizeOrgNr, normalizePhone } from '../lib/normalize.js';
 
-const FX_AUTH_BASE = 'https://apps.fortnox.se/oauth-v1';
-const FX_API_BASE  = 'https://api.fortnox.se/3';
-const SCOPES       = 'customer invoice companyinformation';
-const TOKEN_BUFFER = 300; // refresh 5 min before expiry
+const SCOPES = 'customer invoice companyinformation';
+const REFRESH_MARGIN_MS = 5 * 60 * 1000;
+const STATE_TTL_MS = 10 * 60 * 1000;
 
-// ── In-memory OAuth state store (nonce → { companyId, expiresAt }) ────────────
-const pendingStates = new Map();
-
-export function createOAuthState(companyId) {
-  const nonce = randomBytes(20).toString('hex');
-  pendingStates.set(nonce, { companyId, expiresAt: Date.now() + 10 * 60 * 1000 });
-  // Prune stale entries
-  for (const [k, v] of pendingStates) {
-    if (v.expiresAt < Date.now()) pendingStates.delete(k);
+export class FortnoxNotConfiguredError extends Error {
+  constructor() { super('Fortnox is not configured'); this.code = 'fortnox_not_configured'; }
+}
+export class FortnoxReconnectError extends Error {
+  constructor(detail) { super(`Fortnox needs to be reconnected: ${detail}`); this.code = 'fortnox_reconnect_required'; }
+}
+export class FortnoxApiError extends Error {
+  constructor(status, method, path, body) {
+    super(`Fortnox API ${status} ${method} ${path}`);
+    this.code = 'fortnox_api_error';
+    this.status = status;
+    this.body = body;
   }
-  return nonce;
 }
 
-export function consumeOAuthState(nonce) {
-  const entry = pendingStates.get(nonce);
-  if (!entry) return null;
-  pendingStates.delete(nonce);
-  if (entry.expiresAt < Date.now()) return null;
-  return entry.companyId;
-}
+/**
+ * Fortnox OAuth + API client.
+ * Refresh tokens rotate on every use (the old one dies immediately) and expire after
+ * 45 days unused, so refreshes are serialised per company and an invalid_grant marks
+ * the company as 'reconnect_required' instead of failing silently.
+ */
+export function createFortnoxService({ db, config, fetch = globalThis.fetch, now = () => Date.now() }) {
+  const fx = config.fortnox;
+  const { encrypt, decrypt } = createCrypto(config.encryptionKey);
+  const pendingStates = new Map();   // nonce -> { companyId, expiresAt }
+  const refreshLocks = new Map();    // companyId -> Promise<string>
 
-// ── Auth URL ──────────────────────────────────────────────────────────────────
-export function buildAuthUrl(companyId) {
-  const clientId    = process.env.FORTNOX_CLIENT_ID;
-  const redirectUri = process.env.FORTNOX_REDIRECT_URI;
-  if (!clientId || !redirectUri) throw new Error('FORTNOX_CLIENT_ID and FORTNOX_REDIRECT_URI must be set');
-  const state = createOAuthState(companyId);
-  const params = new URLSearchParams({
-    response_type: 'code',
-    client_id:     clientId,
-    redirect_uri:  redirectUri,
-    scope:         SCOPES,
-    state,
-    access_type:   'offline',
-  });
-  return `${FX_AUTH_BASE}/auth?${params}`;
-}
-
-// ── Token HTTP call ───────────────────────────────────────────────────────────
-async function postToken(params) {
-  const clientId     = process.env.FORTNOX_CLIENT_ID;
-  const clientSecret = process.env.FORTNOX_CLIENT_SECRET;
-  const basic        = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-  const res = await fetch(`${FX_AUTH_BASE}/token`, {
-    method:  'POST',
-    headers: {
-      Authorization:  `Basic ${basic}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams(params).toString(),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Fortnox token ${res.status}: ${text}`);
-  }
-  return res.json();
-}
-
-// ── Prepared statements ───────────────────────────────────────────────────────
-const stmtSaveTokens = db.prepare(`
-  UPDATE companies
-  SET fortnox_token            = ?,
-      fortnox_refresh_token    = ?,
-      fortnox_token_expires_at = ?,
-      fortnox_connected_at     = COALESCE(fortnox_connected_at, CURRENT_TIMESTAMP)
-  WHERE id = ?
-`);
-
-const stmtGetRow = db.prepare(`
-  SELECT fortnox_token, fortnox_refresh_token, fortnox_token_expires_at,
-         fortnox_connected_at, fortnox_last_sync
-  FROM companies WHERE id = ?
-`);
-
-const stmtClearTokens = db.prepare(`
-  UPDATE companies
-  SET fortnox_token = NULL, fortnox_refresh_token = NULL,
-      fortnox_token_expires_at = NULL, fortnox_connected_at = NULL, fortnox_last_sync = NULL
-  WHERE id = ?
-`);
-
-const stmtSetLastSync = db.prepare(
-  `UPDATE companies SET fortnox_last_sync = CURRENT_TIMESTAMP WHERE id = ?`
-);
-
-// ── Token storage helpers ─────────────────────────────────────────────────────
-function saveTokens(companyId, tokenRes) {
-  const expiresAt = new Date(Date.now() + (tokenRes.expires_in ?? 3600) * 1000).toISOString();
-  stmtSaveTokens.run(
-    encrypt(tokenRes.access_token),
-    tokenRes.refresh_token ? encrypt(tokenRes.refresh_token) : null,
-    expiresAt,
-    companyId,
+  const stmtRow = db.prepare(`
+    SELECT fortnox_status, fortnox_access_token_enc, fortnox_refresh_token_enc,
+           fortnox_token_expires_at, fortnox_connected_at, fortnox_last_sync_at
+    FROM companies WHERE id = ?
+  `);
+  const stmtSaveTokens = db.prepare(`
+    UPDATE companies
+    SET fortnox_status = 'connected',
+        fortnox_access_token_enc = ?, fortnox_refresh_token_enc = ?, fortnox_token_expires_at = ?,
+        fortnox_connected_at = COALESCE(fortnox_connected_at, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    WHERE id = ?
+  `);
+  const stmtSetStatus = db.prepare('UPDATE companies SET fortnox_status = ? WHERE id = ?');
+  const stmtClear = db.prepare(`
+    UPDATE companies
+    SET fortnox_status = 'disconnected', fortnox_access_token_enc = NULL, fortnox_refresh_token_enc = NULL,
+        fortnox_token_expires_at = NULL, fortnox_connected_at = NULL, fortnox_last_sync_at = NULL
+    WHERE id = ?
+  `);
+  const stmtTouchSync = db.prepare(
+    `UPDATE companies SET fortnox_last_sync_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?`,
   );
-}
 
-export function clearTokens(companyId) {
-  stmtClearTokens.run(companyId);
-}
-
-export function getConnectionStatus(companyId) {
-  const row = stmtGetRow.get(companyId);
-  if (!row?.fortnox_token) return { connected: false };
-  return {
-    connected:        true,
-    connected_at:     row.fortnox_connected_at,
-    last_sync:        row.fortnox_last_sync,
-    token_expires_at: row.fortnox_token_expires_at,
-  };
-}
-
-// ── Auto-refresh and get valid token ─────────────────────────────────────────
-async function getValidToken(companyId) {
-  const row = stmtGetRow.get(companyId);
-  if (!row?.fortnox_token) throw new Error('Fortnox not connected for this company');
-
-  const expiresAt   = row.fortnox_token_expires_at ? new Date(row.fortnox_token_expires_at) : null;
-  const needsRefresh = !expiresAt || (expiresAt.getTime() - Date.now()) < TOKEN_BUFFER * 1000;
-
-  if (needsRefresh && row.fortnox_refresh_token) {
-    const refreshToken = decrypt(row.fortnox_refresh_token);
-    const tokenRes     = await postToken({ grant_type: 'refresh_token', refresh_token: refreshToken });
-    saveTokens(companyId, tokenRes);
-    return tokenRes.access_token;
+  function assertConfigured() {
+    if (!fx.configured) throw new FortnoxNotConfiguredError();
   }
 
-  return decrypt(row.fortnox_token);
-}
+  function buildAuthUrl(companyId) {
+    assertConfigured();
+    for (const [k, v] of pendingStates) if (v.expiresAt < now()) pendingStates.delete(k);
+    const state = randomBytes(20).toString('hex');
+    pendingStates.set(state, { companyId, expiresAt: now() + STATE_TTL_MS });
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: fx.clientId,
+      redirect_uri: fx.redirectUri,
+      scope: SCOPES,
+      state,
+      access_type: 'offline',
+    });
+    return `${fx.authBase}/auth?${params}`;
+  }
 
-// ── Authenticated Fortnox API call ────────────────────────────────────────────
-export async function fortnoxFetch(companyId, method, path, body) {
-  const token = await getValidToken(companyId);
-  const res   = await fetch(`${FX_API_BASE}${path}`, {
-    method,
-    headers: {
-      Authorization:  `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      Accept:         'application/json',
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  if (!res.ok) {
+  function consumeState(state) {
+    const entry = pendingStates.get(state);
+    pendingStates.delete(state);
+    if (!entry || entry.expiresAt < now()) return null;
+    return entry.companyId;
+  }
+
+  async function postToken(params) {
+    const basic = Buffer.from(`${fx.clientId}:${fx.clientSecret}`).toString('base64');
+    const res = await fetch(`${fx.authBase}/token`, {
+      method: 'POST',
+      headers: { Authorization: `Basic ${basic}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(params).toString(),
+    });
     const text = await res.text();
-    throw new Error(`Fortnox API ${res.status} ${method} ${path}: ${text}`);
+    let body;
+    try { body = JSON.parse(text); } catch { body = { raw: text }; }
+    return { ok: res.ok, status: res.status, body };
   }
-  return res.json();
-}
 
-// ── Customer sync ─────────────────────────────────────────────────────────────
-const stmtUpsertCustomer = db.prepare(`
-  INSERT INTO customers (company_id, fortnox_customer_nr, name, address, zip_code, city, phone, email, org_nr)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  ON CONFLICT(company_id, fortnox_customer_nr) DO UPDATE SET
-    name      = excluded.name,
-    address   = excluded.address,
-    zip_code  = excluded.zip_code,
-    city      = excluded.city,
-    phone     = excluded.phone,
-    email     = excluded.email,
-    org_nr    = excluded.org_nr,
-    synced_at = CURRENT_TIMESTAMP
-`);
+  function saveTokens(companyId, tokens) {
+    const expiresAt = new Date(now() + (tokens.expires_in ?? 3600) * 1000).toISOString();
+    stmtSaveTokens.run(
+      encrypt(tokens.access_token),
+      tokens.refresh_token ? encrypt(tokens.refresh_token) : null,
+      expiresAt,
+      companyId,
+    );
+  }
 
-export async function syncCustomers(companyId) {
-  let page    = 1;
-  let fetched = 0;
-  let total   = Infinity;
+  async function connect(companyId, code) {
+    assertConfigured();
+    const r = await postToken({ grant_type: 'authorization_code', code, redirect_uri: fx.redirectUri });
+    if (!r.ok) throw new FortnoxApiError(r.status, 'POST', '/token', r.body);
+    saveTokens(companyId, r.body);
+  }
 
-  while (fetched < total && page <= 50) {
-    const data      = await fortnoxFetch(companyId, 'GET', `/customers?limit=100&page=${page}`);
-    const customers = data.Customers ?? [];
+  function getStatus(companyId) {
+    const row = stmtRow.get(companyId);
+    return {
+      configured: fx.configured,
+      status: row?.fortnox_status ?? 'disconnected',
+      connected_at: row?.fortnox_connected_at ?? null,
+      last_sync_at: row?.fortnox_last_sync_at ?? null,
+    };
+  }
 
-    for (const c of customers) {
-      stmtUpsertCustomer.run(
-        companyId,
-        c.CustomerNumber,
-        c.Name              ?? null,
-        c.Address1          ?? null,
-        c.ZipCode           ?? null,
-        c.City              ?? null,
-        c.Phone1 ?? c.Phone ?? null,
-        c.Email             ?? null,
-        c.OrganisationNumber ?? null,
-      );
+  function disconnect(companyId) {
+    stmtClear.run(companyId);
+  }
+
+  async function refresh(companyId) {
+    const row = stmtRow.get(companyId);
+    const refreshToken = decrypt(row?.fortnox_refresh_token_enc);
+    if (!refreshToken) {
+      stmtSetStatus.run('reconnect_required', companyId);
+      throw new FortnoxReconnectError('no refresh token');
+    }
+    const r = await postToken({ grant_type: 'refresh_token', refresh_token: refreshToken });
+    if (!r.ok) {
+      // 400/401 from the token endpoint means the refresh token is expired, used or revoked.
+      if (r.status === 400 || r.status === 401) {
+        stmtSetStatus.run('reconnect_required', companyId);
+        throw new FortnoxReconnectError(r.body?.error ?? `status ${r.status}`);
+      }
+      throw new FortnoxApiError(r.status, 'POST', '/token', r.body);
+    }
+    saveTokens(companyId, r.body);
+    return r.body.access_token;
+  }
+
+  async function getAccessToken(companyId) {
+    const row = stmtRow.get(companyId);
+    if (!row || row.fortnox_status === 'disconnected') throw new FortnoxReconnectError('not connected');
+    if (row.fortnox_status === 'reconnect_required') throw new FortnoxReconnectError('reconnect required');
+
+    const expiresAt = row.fortnox_token_expires_at ? Date.parse(row.fortnox_token_expires_at) : 0;
+    if (expiresAt - now() > REFRESH_MARGIN_MS) {
+      const token = decrypt(row.fortnox_access_token_enc);
+      if (token) return token;
     }
 
-    fetched += customers.length;
-    total    = data.MetaInformation?.['@TotalResources'] ?? fetched;
-    if (customers.length < 100) break;
-    page++;
-  }
-
-  stmtSetLastSync.run(companyId);
-  return { synced: fetched };
-}
-
-// ── Push invoice to Fortnox ───────────────────────────────────────────────────
-export async function createFortnoxInvoice(companyId, { job, quote, customerNr }) {
-  const today = new Date();
-  const due   = new Date(today);
-  due.setDate(due.getDate() + 30);
-
-  const description = [
-    quote.lasttyp,
-    quote.upphämtning && quote.leverans
-      ? `${quote.upphämtning} → ${quote.leverans}`
-      : (quote.upphämtning ?? quote.leverans),
-    quote.avstand_km ? `${quote.avstand_km} km` : null,
-    quote.datum ? `Datum: ${quote.datum}` : null,
-  ].filter(Boolean).join(', ');
-
-  // Price is stored incl. 25% VAT; Fortnox expects ex-VAT with VAT% separate
-  const priceExVat = Math.round(((quote.totalpris_sek ?? 0) / 1.25) * 100) / 100;
-
-  const payload = {
-    Invoice: {
-      CustomerNumber:  customerNr ?? '1',
-      InvoiceDate:     today.toISOString().slice(0, 10),
-      DueDate:         due.toISOString().slice(0, 10),
-      TermsOfPayment:  '30',
-      VATIncluded:     false,
-      Remarks:         quote.noteringar ?? '',
-      InvoiceRows: [
-        {
-          Description: description || 'Transport',
-          Price:       priceExVat,
-          Quantity:    1,
-          VAT:         25,
-          Unit:        'st',
-        },
-      ],
-    },
-  };
-
-  const result = await fortnoxFetch(companyId, 'POST', '/invoices', payload);
-  return result.Invoice?.DocumentNumber ?? null;
-}
-
-// ── Sync invoice payment statuses from Fortnox ───────────────────────────────
-const stmtLocalUnpaid = db.prepare(`
-  SELECT id, fortnox_invoice_nr
-  FROM invoices
-  WHERE company_id = ? AND fortnox_invoice_nr IS NOT NULL AND status != 'betald'
-`);
-const stmtUpdateInvStatus = db.prepare(
-  `UPDATE invoices SET status = ? WHERE id = ? AND company_id = ?`
-);
-
-export async function syncInvoiceStatuses(companyId) {
-  const localInvoices = stmtLocalUnpaid.all(companyId);
-  if (localInvoices.length === 0) return { updated: 0 };
-
-  // Fetch recent Fortnox invoices (up to 500)
-  let allFx = [];
-  for (let page = 1; page <= 5; page++) {
-    const data = await fortnoxFetch(companyId, 'GET', `/invoices?limit=100&offset=${(page - 1) * 100 + 1}`);
-    const rows = data.Invoices ?? [];
-    allFx = allFx.concat(rows);
-    if (rows.length < 100) break;
-  }
-
-  const balanceByNr = new Map(allFx.map((i) => [String(i.DocumentNumber), Number(i.Balance ?? 0)]));
-
-  let updated = 0;
-  for (const inv of localInvoices) {
-    const balance = balanceByNr.get(String(inv.fortnox_invoice_nr));
-    if (balance === 0) {
-      stmtUpdateInvStatus.run('betald', inv.id, companyId);
-      updated++;
+    // Serialise refreshes: a second concurrent refresh would invalidate the first token.
+    if (!refreshLocks.has(companyId)) {
+      refreshLocks.set(companyId, refresh(companyId).finally(() => refreshLocks.delete(companyId)));
     }
+    return refreshLocks.get(companyId);
   }
 
-  stmtSetLastSync.run(companyId);
-  return { updated };
-}
-
-// ── First-connect helper ──────────────────────────────────────────────────────
-export async function connectFortnox(companyId, code) {
-  const tokenRes = await postToken({
-    grant_type:   'authorization_code',
-    code,
-    redirect_uri: process.env.FORTNOX_REDIRECT_URI,
-  });
-  saveTokens(companyId, tokenRes);
-
-  // Best-effort initial customer sync; non-fatal
-  try {
-    await syncCustomers(companyId);
-  } catch (err) {
-    console.error('[fortnox] Initial customer sync failed:', err.message);
+  async function request(companyId, method, path, body) {
+    assertConfigured();
+    const token = await getAccessToken(companyId);
+    const res = await fetch(`${fx.apiBase}${path}`, {
+      method,
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const text = await res.text();
+    let data;
+    try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
+    if (res.status === 401) {
+      stmtSetStatus.run('reconnect_required', companyId);
+      throw new FortnoxReconnectError('access token rejected');
+    }
+    if (!res.ok) throw new FortnoxApiError(res.status, method, path, data);
+    return data;
   }
+
+  /**
+   * Pull Fortnox customers into the local customer register.
+   * Match order: fortnox_customer_nr, then org nr (links an existing local customer), else insert.
+   */
+  async function syncCustomers(companyId) {
+    const byFortnoxNr = db.prepare('SELECT id FROM customers WHERE company_id = ? AND fortnox_customer_nr = ?');
+    const byOrgNr = db.prepare('SELECT id, fortnox_customer_nr FROM customers WHERE company_id = ? AND org_nr = ?');
+    const update = db.prepare(`
+      UPDATE customers SET fortnox_customer_nr = @nr, name = @name, address = COALESCE(@address, address),
+        postnr = COALESCE(@postnr, postnr), ort = COALESCE(@ort, ort), email = COALESCE(@email, email),
+        phone = COALESCE(@phone, phone), updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+      WHERE id = @id
+    `);
+    const insert = db.prepare(`
+      INSERT INTO customers (company_id, fortnox_customer_nr, name, org_nr, address, postnr, ort, email, phone)
+      VALUES (@companyId, @nr, @name, @orgNr, @address, @postnr, @ort, @email, @phone)
+    `);
+
+    const counts = { created: 0, linked: 0, updated: 0 };
+    for (let page = 1; page <= 50; page++) {
+      const data = await request(companyId, 'GET', `/customers?limit=100&page=${page}`);
+      const list = data.Customers ?? [];
+      db.transaction(() => {
+        for (const c of list) {
+          const rec = {
+            companyId,
+            nr: String(c.CustomerNumber),
+            name: c.Name || `Kund ${c.CustomerNumber}`,
+            orgNr: normalizeOrgNr(c.OrganisationNumber),
+            address: c.Address1 || null,
+            postnr: c.ZipCode || null,
+            ort: c.City || null,
+            email: c.Email || null,
+            phone: normalizePhone(c.Phone1 ?? c.Phone) ?? null,
+          };
+          const existing = byFortnoxNr.get(companyId, rec.nr);
+          if (existing) {
+            update.run({ ...rec, id: existing.id });
+            counts.updated++;
+            continue;
+          }
+          const byOrg = rec.orgNr ? byOrgNr.get(companyId, rec.orgNr) : null;
+          if (byOrg && !byOrg.fortnox_customer_nr) {
+            update.run({ ...rec, id: byOrg.id });
+            counts.linked++;
+          } else if (!byOrg) {
+            insert.run(rec);
+            counts.created++;
+          }
+        }
+      })();
+      const totalPages = Number(data.MetaInformation?.['@TotalPages'] ?? page);
+      if (list.length < 100 || page >= totalPages) break;
+    }
+    stmtTouchSync.run(companyId);
+    return counts;
+  }
+
+  return { buildAuthUrl, consumeState, connect, getStatus, disconnect, request, syncCustomers };
 }

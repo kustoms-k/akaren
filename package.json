@@ -1,13 +1,18 @@
 {
   "name": "akaren",
   "version": "1.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
+    "setup": "npm install && npm --prefix server install && npm --prefix client install",
+    "dev": "concurrently -k -n server,client -c blue,magenta \"npm:server\" \"npm:client\"",
+    "server": "node --env-file=server/.env --watch server/index.js",
+    "client": "npm --prefix client run dev",
     "start": "node --env-file=server/.env server/index.js",
-    "build": "cd server && npm install && cd ../client && npm install && npm run build",
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "server": "node --env-file=server/.env server/index.js",
-    "client": "cd client && npm run dev"
+    "build": "npm --prefix client run build",
+    "seed": "node --env-file=server/.env server/seed/run.js",
+    "test": "npm --prefix server test",
+    "lint": "npm --prefix client run lint"
   },
   "engines": {
     "node": ">=20.19.0"

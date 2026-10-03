@@ -1,116 +1,119 @@
-import { Router }         from 'express';
-import { getActiveFleet } from '../lib/fleet.js';
-import db                 from '../db.js';
+import { Router } from 'express';
+import { z } from 'zod';
+import { validate, idParam, notFound, conflict } from '../lib/http.js';
+import { officeActor } from '../lib/audit.js';
+import { updateScoped, isUniqueViolation } from '../lib/sql.js';
+import { requiredText, regnr, requiredPhone, bool01, zoneClass } from '../lib/schemas.js';
 
-const router = Router();
+export const VEHICLE_TYPES = ['tippbil', 'kranbil', 'lastvaxlare', 'trailer', 'ovrigt'];
 
-const stmtFleetJobs = db.prepare(`
-  SELECT q.fordon_id, q.totalpris_sek, q.avstand_km
-  FROM jobs j
-  JOIN quotes q ON q.id = j.quote_id
-  WHERE strftime('%Y-%m', j.created_at) = ?
-    AND q.fordon_id IS NOT NULL
-    AND j.company_id = ?
-`);
+const vehicleFields = {
+  regnr,
+  typ: z.enum(VEHICLE_TYPES, { error: 'Välj fordonstyp.' }),
+  miljozonsklass: zoneClass.optional(),
+  active: bool01.optional(),
+};
+const vehicleCreate = z.object(vehicleFields).strict();
+const vehiclePatch = z.object({
+  regnr: vehicleFields.regnr.optional(),
+  typ: vehicleFields.typ.optional(),
+  miljozonsklass: vehicleFields.miljozonsklass,
+  active: vehicleFields.active,
+}).strict();
 
-const stmtInsertTruck = db.prepare(`
-  INSERT INTO company_fleet
-    (company_id, ext_id, reg, namn, lasttyp, typ, max_last_kg, volym_m3,
-     lez_godkand, euro_klass, timkostnad_sek, tillstand, priskm_sek, startavgift_sek, beskrivning)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`);
+const driverFields = {
+  name: requiredText(120),
+  phone: requiredPhone,
+  active: bool01.optional(),
+};
+const driverCreate = z.object(driverFields).strict();
+const driverPatch = z.object({
+  name: driverFields.name.optional(),
+  phone: driverFields.phone.optional(),
+  active: driverFields.active,
+}).strict();
 
-const stmtDeleteTruck = db.prepare(
-  'DELETE FROM company_fleet WHERE id = ? AND company_id = ?'
-);
+/** Vehicles: regnr, typ, miljözonsklass, active. Nothing more by design. */
+export function vehiclesRouter({ db, audit }) {
+  const router = Router();
+  const stmtList = db.prepare('SELECT * FROM vehicles WHERE company_id = ? AND (? = 1 OR active = 1) ORDER BY active DESC, regnr');
+  const stmtGet = db.prepare('SELECT * FROM vehicles WHERE id = ? AND company_id = ?');
+  const stmtInsert = db.prepare(`
+    INSERT INTO vehicles (company_id, regnr, typ, miljozonsklass, active)
+    VALUES (@company_id, @regnr, @typ, @miljozonsklass, @active)
+  `);
+  const dup = (r) => conflict('duplicate_regnr', `Fordonet ${r} finns redan.`);
 
-function hoursEst(avstand_km) {
-  return (Number(avstand_km) || 0) / 70 + 1.5;
+  router.get('/', (req, res) => {
+    res.json(stmtList.all(req.companyId, req.query.all === '1' ? 1 : 0));
+  });
+
+  router.post('/', (req, res) => {
+    const data = validate(vehicleCreate, req.body);
+    try {
+      const { lastInsertRowid } = stmtInsert.run({ company_id: req.companyId, miljozonsklass: 0, active: 1, ...data });
+      const created = stmtGet.get(lastInsertRowid, req.companyId);
+      audit({ ...officeActor(req), entity: 'vehicle', entityId: created.id, action: 'create', after: created });
+      res.status(201).json(created);
+    } catch (err) {
+      if (isUniqueViolation(err)) throw dup(data.regnr);
+      throw err;
+    }
+  });
+
+  router.patch('/:id', (req, res) => {
+    const id = idParam(req.params.id);
+    const before = stmtGet.get(id, req.companyId);
+    if (!before) throw notFound('Fordonet finns inte.');
+    const data = validate(vehiclePatch, req.body);
+    try {
+      updateScoped(db, 'vehicles', id, req.companyId, data);
+    } catch (err) {
+      if (isUniqueViolation(err)) throw dup(data.regnr);
+      throw err;
+    }
+    const after = stmtGet.get(id, req.companyId);
+    audit({ ...officeActor(req), entity: 'vehicle', entityId: id, action: 'update', before, after });
+    res.json(after);
+  });
+
+  return router;
 }
 
-// ── GET /stats?month=YYYY-MM ──────────────────────────────────────────────────
-router.get('/stats', (req, res) => {
-  const month = req.query.month ?? new Date().toISOString().slice(0, 7);
-  try {
-    const fleet   = getActiveFleet(req.companyId);
-    const rows    = stmtFleetJobs.all(month, req.companyId);
-    const revenue = {}, cost = {}, hours = {};
+/** Drivers: name and phone only. Erasure (GDPR) is a separate endpoint. */
+export function driversRouter({ db, audit }) {
+  const router = Router();
+  const stmtList = db.prepare(`
+    SELECT * FROM drivers
+    WHERE company_id = ? AND anonymized_at IS NULL AND (? = 1 OR active = 1)
+    ORDER BY active DESC, name COLLATE NOCASE
+  `);
+  const stmtGet = db.prepare('SELECT * FROM drivers WHERE id = ? AND company_id = ? AND anonymized_at IS NULL');
+  const stmtInsert = db.prepare(`
+    INSERT INTO drivers (company_id, name, phone, active) VALUES (@company_id, @name, @phone, @active)
+  `);
 
-    for (const r of rows) {
-      const v   = fleet.find((f) => f.id.toUpperCase() === String(r.fordon_id).toUpperCase());
-      const key = v ? v.id : r.fordon_id;
-      const km  = Number(r.avstand_km) || 0;
-      const h   = hoursEst(km);
-      const c   = v ? v.startavgift_sek + v.priskm_sek * km + v.timkostnad_sek * h : 0;
+  router.get('/', (req, res) => {
+    res.json(stmtList.all(req.companyId, req.query.all === '1' ? 1 : 0));
+  });
 
-      revenue[key] = (revenue[key] ?? 0) + (Number(r.totalpris_sek) || 0);
-      cost[key]    = (cost[key]    ?? 0) + c;
-      hours[key]   = (hours[key]   ?? 0) + h;
-    }
+  router.post('/', (req, res) => {
+    const data = validate(driverCreate, req.body);
+    const { lastInsertRowid } = stmtInsert.run({ company_id: req.companyId, active: 1, ...data });
+    const created = stmtGet.get(lastInsertRowid, req.companyId);
+    audit({ ...officeActor(req), entity: 'driver', entityId: created.id, action: 'create' });
+    res.status(201).json(created);
+  });
 
-    res.json(fleet.map((v) => {
-      const h   = hours[v.id];
-      const rev = revenue[v.id] ?? 0;
-      const cst = cost[v.id]    ?? 0;
-      return {
-        ...v,
-        monthly_revenue: Math.round(rev),
-        monthly_hours:   h != null ? Math.round(h * 10) / 10 : 0,
-        profit_per_hour: h ? Math.round((rev - cst) / h) : null,
-      };
-    }));
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  router.patch('/:id', (req, res) => {
+    const id = idParam(req.params.id);
+    if (!stmtGet.get(id, req.companyId)) throw notFound('Föraren finns inte.');
+    const data = validate(driverPatch, req.body);
+    updateScoped(db, 'drivers', id, req.companyId, data);
+    // Driver details are personal data: log which fields changed, not the values.
+    audit({ ...officeActor(req), entity: 'driver', entityId: id, action: 'update', after: { fields: Object.keys(data) } });
+    res.json(stmtGet.get(id, req.companyId));
+  });
 
-// ── GET / — full fleet list ───────────────────────────────────────────────────
-router.get('/', (req, res) => {
-  res.json(getActiveFleet(req.companyId));
-});
-
-// ── GET /:id — single vehicle ─────────────────────────────────────────────────
-router.get('/:id', (req, res) => {
-  const vehicle = getActiveFleet(req.companyId).find((v) => v.id === req.params.id);
-  if (!vehicle) return res.status(404).json({ error: 'Fordon ej hittat' });
-  res.json(vehicle);
-});
-
-// ── POST / — add truck to company_fleet ───────────────────────────────────────
-router.post('/', (req, res) => {
-  const {
-    ext_id, reg, namn, lasttyp, typ,
-    max_last_kg, volym_m3, lez_godkand, euro_klass,
-    timkostnad_sek, tillstand, priskm_sek, startavgift_sek, beskrivning,
-  } = req.body;
-  if (!namn?.trim() || !typ?.trim()) {
-    return res.status(400).json({ error: 'namn and typ required' });
-  }
-  const result = stmtInsertTruck.run(
-    req.companyId,
-    ext_id  || null,
-    reg     || null,
-    namn.trim(),
-    lasttyp || null,
-    typ.trim(),
-    max_last_kg     ?? null,
-    volym_m3        ?? null,
-    lez_godkand     ? 1 : 0,
-    euro_klass      ?? null,
-    timkostnad_sek  ?? 750,
-    tillstand       ? JSON.stringify(tillstand) : null,
-    priskm_sek      ?? 18,
-    startavgift_sek ?? 500,
-    beskrivning     || null,
-  );
-  res.status(201).json({ id: result.lastInsertRowid });
-});
-
-// ── DELETE /:id — remove truck from company_fleet ────────────────────────────
-router.delete('/:id', (req, res) => {
-  const result = stmtDeleteTruck.run(Number(req.params.id), req.companyId);
-  if (result.changes === 0) return res.status(404).json({ error: 'Not found' });
-  res.json({ ok: true });
-});
-
-export default router;
+  return router;
+}

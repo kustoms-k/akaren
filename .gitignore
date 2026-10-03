@@ -1,10 +1,21 @@
-node_modules
-client/node_modules
-server/node_modules
-client/dist
+# Dependencies & builds
+node_modules/
+client/dist/
+
+# Secrets (keep the examples)
 .env
-*.sqlite
-database.sqlite
+.env.*
+!.env.example
+
+# Runtime data: database, photos, backups (personal data; never commit)
+server/data/
+server/backups/
+*.db
 *.db-shm
 *.db-wal
+*.sqlite
+
+# Tooling
 .codegraph/
+.claude/worktrees/
+.DS_Store
