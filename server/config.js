@@ -30,6 +30,8 @@ const schema = z.object({
   ANTHROPIC_BASE_URL: optionalUrl,
   // Hard monthly cap on estimated AI spend per company (USD). 0 disables AI calls.
   AI_MONTHLY_BUDGET_USD: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(10000).default(30)),
+  // Local demos only: canned order extractions for the built-in sample orders when no API key is set.
+  DEMO_MODE: z.preprocess(emptyToUndefined, z.enum(['0', '1']).default('0')),
 
   ELKS_USERNAME: optionalString,
   ELKS_PASSWORD: optionalString,
@@ -37,6 +39,13 @@ const schema = z.object({
     .regex(/^[A-Za-z][A-Za-z0-9]{1,10}$/, 'ELKS_SENDER must be 2–11 ASCII letters/digits and start with a letter')
     .default('Akaren')),
   ELKS_API_BASE: z.preprocess(emptyToUndefined, z.url().default('https://api.46elks.com/a1')),
+
+  // SMTP for order confirmation emails. Without SMTP_HOST and MAIL_FROM, sending is simulated and logged.
+  SMTP_HOST:     optionalString,
+  SMTP_PORT:     z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(65535).default(587)),
+  SMTP_USER:     optionalString,
+  SMTP_PASSWORD: optionalString,
+  MAIL_FROM:     z.preprocess(emptyToUndefined, z.email('MAIL_FROM must be an email address').optional()),
 
   FORTNOX_CLIENT_ID:     optionalString,
   FORTNOX_CLIENT_SECRET: optionalString,
@@ -66,6 +75,9 @@ export function loadConfig(env = process.env) {
     throw new Error(`Invalid configuration:\n${lines.join('\n')}`);
   }
   const e = parsed.data;
+  if (e.DEMO_MODE === '1' && e.NODE_ENV === 'production') {
+    throw new Error('Invalid configuration:\n  - DEMO_MODE: must not be enabled in production');
+  }
   const dataDir = resolveDir(e.DATA_DIR);
 
   const corsOrigins = new Set([
@@ -100,6 +112,7 @@ export function loadConfig(env = process.env) {
       model:   e.ANTHROPIC_MODEL,
       baseUrl: e.ANTHROPIC_BASE_URL ?? null,
       monthlyBudgetUsd: e.AI_MONTHLY_BUDGET_USD,
+      demoMode: e.DEMO_MODE === '1',
     },
     elks: {
       username: e.ELKS_USERNAME ?? null,
@@ -107,6 +120,16 @@ export function loadConfig(env = process.env) {
       sender:   e.ELKS_SENDER,
       apiBase:  e.ELKS_API_BASE.replace(/\/$/, ''),
       enabled:  Boolean(e.ELKS_USERNAME && e.ELKS_PASSWORD),
+    },
+    mail: {
+      host:     e.SMTP_HOST ?? null,
+      port:     e.SMTP_PORT,
+      // Port 465 is implicit TLS; anything else (587, 25) upgrades with STARTTLS.
+      secure:   e.SMTP_PORT === 465,
+      user:     e.SMTP_USER ?? null,
+      password: e.SMTP_PASSWORD ?? null,
+      from:     e.MAIL_FROM ?? null,
+      enabled:  Boolean(e.SMTP_HOST && e.MAIL_FROM),
     },
     fortnox: {
       clientId:     e.FORTNOX_CLIENT_ID ?? null,

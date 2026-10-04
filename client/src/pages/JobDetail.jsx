@@ -10,11 +10,12 @@ import {
   JOB_STATUS, UPPDRAGSTYPER, ZONE_CLASSES, formatAddress, formatDate, formatPhone, formatQuantity, formatTimestamp,
 } from '../lib/labels.js';
 import { AssignmentsPanel, LassPanel } from './JobDispatch.jsx';
+import { OrderConfirmationPanel } from './OrderConfirmation.jsx';
 
 const FIELD_LABELS = {
   uppdragstyp: 'Uppdragstyp', datum: 'Datum', datum_till: 'Slutdatum', tid: 'Tid', material: 'Material',
   uppskattad_mangd: 'Mängd', mangd_enhet: 'Enhet', antal_lass: 'Antal lass', fran: 'Från', till: 'Till',
-  instruktioner: 'Instruktioner', kontaktperson: 'Kontaktperson', telefon: 'Telefon',
+  instruktioner: 'Instruktioner', kontaktperson: 'Kontaktperson', telefon: 'Telefon', epost: 'E-post',
 };
 
 function Row({ label, children }) {
@@ -101,7 +102,7 @@ export function JobDetail({ params }) {
             <Row label="Arbetsplats">{formatAddress({ address: job.project_address, postnr: job.project_postnr, ort: job.project_ort })}</Row>
             <Row label="Miljözon">{job.miljozon > 0 && <span className="badge badge-blue">{ZONE_CLASSES[job.miljozon]}</span>}</Row>
             <Row label="Er referens">{job.customer_ref}</Row>
-            <Row label="Kontakt">{[job.kontaktperson, formatPhone(job.telefon)].filter(Boolean).join(', ')}</Row>
+            <Row label="Kontakt">{[job.kontaktperson, formatPhone(job.telefon), job.epost].filter(Boolean).join(', ')}</Row>
             <Row label="Instruktioner">{job.instruktioner}</Row>
             <Row label="Lass rapporterade">{String(job.lass_count)}</Row>
           </div>
@@ -130,6 +131,7 @@ export function JobDetail({ params }) {
       </div>
 
       <div style={{ display: 'grid', gap: 16, marginTop: 16 }}>
+        <OrderConfirmationPanel key={job.status} job={job} />
         <AssignmentsPanel job={job} onChanged={reload} />
         <LassPanel job={job} />
       </div>

@@ -5,7 +5,7 @@ import { officeActor } from '../lib/audit.js';
 import { requiredText, optionalText, orgNr, phone, email, postnr } from '../lib/schemas.js';
 
 const SAFE_COLUMNS = `id, name, org_nr, address, postnr, ort, phone, email, bankgiro,
-  retention_months, default_vat_mode, fortnox_status, created_at`;
+  retention_months, default_vat_mode, order_terms, fortnox_status, created_at`;
 
 const patchSchema = z.object({
   name: requiredText(200).optional(),
@@ -19,9 +19,10 @@ const patchSchema = z.object({
   retention_months: z.coerce.number().int()
     .min(12, 'Minst 12 månader.').max(120, 'Högst 120 månader.').optional(),
   default_vat_mode: z.enum(['normal', 'omvand_bygg'], { error: 'Ogiltigt momsläge.' }).optional(),
+  order_terms: optionalText(2000),
 }).strict();
 
-export function settingsRouter({ db, audit, config, fortnox, sms, ai }) {
+export function settingsRouter({ db, audit, config, fortnox, sms, mail, ai }) {
   const router = Router();
   const stmtGet = db.prepare(`SELECT ${SAFE_COLUMNS} FROM companies WHERE id = ?`);
 
@@ -34,6 +35,7 @@ export function settingsRouter({ db, audit, config, fortnox, sms, ai }) {
     res.json({
       ai: ai.usage(req.companyId),
       sms: { enabled: sms.enabled, sender: config.elks.sender },
+      mail: { enabled: mail.enabled, from: mail.from },
       fortnox: fortnox.getStatus(req.companyId),
       public_base_url: config.publicBaseUrl,
     });

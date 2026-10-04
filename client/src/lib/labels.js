@@ -79,6 +79,19 @@ export const SMS_STATUS = {
   misslyckat: { label: 'SMS misslyckades', badge: 'badge-red' },
 };
 
+export const MAIL_STATUS = {
+  skickat: { label: 'Skickad', badge: 'badge-green' },
+  simulerat: { label: 'Simulerad', badge: 'badge-blue' },
+  misslyckat: { label: 'Misslyckades', badge: 'badge-red' },
+};
+
+/** [text, kind] for a toast after sending an order confirmation. */
+export function confirmationToast(sent) {
+  if (sent.status === 'skickat') return [`Orderbekräftelsen är skickad till ${sent.to_email}.`];
+  if (sent.status === 'simulerat') return ['Orderbekräftelsen är sparad men inte skickad (SMTP är inte inställt).'];
+  return [`Orderbekräftelsen kunde inte skickas. ${sent.error_message ?? ''}`.trim(), 'error'];
+}
+
 const tonFmt = new Intl.NumberFormat('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 /** 18420 (kg) -> '18,42 t' */
 export function formatTon(kg) {
@@ -94,7 +107,9 @@ export const FORTNOX_STATUS = {
 export function formatPhone(e164) {
   if (!e164) return '';
   const m = /^\+46(7\d)(\d{3})(\d{2})(\d{2})$/.exec(e164);
-  return m ? `0${m[1]}-${m[2]} ${m[3]} ${m[4]}` : e164;
+  if (m) return `0${m[1]}-${m[2]} ${m[3]} ${m[4]}`;
+  const sthlm = /^\+468(\d{3})(\d{3})(\d{2})$/.exec(e164); // Stockholm landline, 08-xxx xxx xx
+  return sthlm ? `08-${sthlm[1]} ${sthlm[2]} ${sthlm[3]}` : e164;
 }
 
 /** Comparable form of a phone number: digits only, Swedish leading 0 as 46. */
@@ -114,4 +129,9 @@ export function formatAddress({ address, postnr, ort }) {
 const dateFmt = new Intl.DateTimeFormat('sv-SE', { dateStyle: 'medium', timeZone: 'Europe/Stockholm' });
 export function formatTimestamp(iso) {
   return iso ? dateFmt.format(new Date(iso)) : '';
+}
+
+const dateTimeFmt = new Intl.DateTimeFormat('sv-SE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Stockholm' });
+export function formatDateTime(iso) {
+  return iso ? dateTimeFmt.format(new Date(iso)) : '';
 }

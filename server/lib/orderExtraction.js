@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { addDays, isoWeekday, isValidDate } from './dates.js';
 import { normalizeOrgNr, normalizePhone } from './normalize.js';
 
-export const ORDER_PROMPT_VERSION = 'order-v1';
+export const ORDER_PROMPT_VERSION = 'order-v2';
 
 export const UPPDRAGSTYPER = ['schakt', 'grus_leverans', 'kran', 'container', 'maskintransport', 'ovrigt'];
 export const MANGD_ENHETER = ['ton', 'm3', 'lass'];
@@ -21,6 +21,7 @@ export const OrderExtractionSchema = z.object({
   kund_orgnr: field(z.string(), 'Customer organisationsnummer if written, e.g. 556677-8899.'),
   kontaktperson: field(z.string(), 'Name of the customer contact for this order.'),
   telefon: field(z.string(), 'Phone number of the contact, exactly as written.'),
+  epost: field(z.string(), 'Email address of the contact who placed the order, exactly as written.'),
   projekt: field(z.string(), 'Customer project or worksite name, e.g. "Kv. Rörstrand" or "Täby Park etapp 3".'),
   adress: field(z.string(), 'Worksite street address (street and number).'),
   postnr: field(z.string(), 'Worksite postal code, five digits.'),
@@ -59,6 +60,7 @@ Rules:
 - uppskattad_mangd with mangd_enhet: the total quantity if stated (ton, m3 or lass). antal_lass: number of loads if stated.
 - fran / till: pickup and delivery places (quarry, tip/mottagningsanläggning, worksite). For schakt the worksite is usually fran; for grus_leverans it is usually till.
 - telefon: exactly as written. kund_orgnr: exactly as written.
+- epost: the email address of the person placing the order, from the From: line or the signature, exactly as written. Never the haulage company's own address and never an address the order only mentions in passing.
 - instruktioner: practical information for the driver (access, gate codes, timing windows, contact on arrival, safety), short and in Swedish. Leave out prices and pleasantries.`;
 }
 
@@ -113,6 +115,12 @@ export function postProcessOrder(raw, { today }) {
     const phone = normalizePhone(fields.telefon.value);
     if (phone) fields.telefon.value = phone;
     else downgrade('telefon', 'lag', 'Telefonnumret går inte att tolka.');
+  }
+
+  if (fields.epost.value != null) {
+    const parsed = z.email().max(320).safeParse(fields.epost.value.toLowerCase());
+    if (parsed.success) fields.epost.value = parsed.data;
+    else downgrade('epost', 'lag', 'E-postadressen ser felaktig ut.');
   }
 
   if (fields.postnr.value != null) {

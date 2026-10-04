@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from '../components/Button.jsx';
-import { TextField, SelectField } from '../components/Field.jsx';
+import { Field, TextField, SelectField } from '../components/Field.jsx';
 import { PageHeader, ErrorNotice, TableSkeleton } from '../components/PageHeader.jsx';
 import { useToast } from '../lib/toast.js';
 import { useAuth } from '../lib/auth.js';
@@ -10,7 +10,9 @@ import { useForm } from '../lib/useForm.js';
 import { navigate, useLocation } from '../lib/router.js';
 import { FORTNOX_STATUS, VAT_MODES, formatPhone, formatTimestamp } from '../lib/labels.js';
 
-const COMPANY_FIELDS = ['name', 'org_nr', 'address', 'postnr', 'ort', 'phone', 'email', 'bankgiro', 'default_vat_mode', 'retention_months'];
+const COMPANY_FIELDS = ['name', 'org_nr', 'address', 'postnr', 'ort', 'phone', 'email', 'bankgiro', 'default_vat_mode', 'retention_months', 'order_terms'];
+
+const TERMS_EXAMPLE = 'Uppdraget utförs enligt Alltrans 2007. Avbokning senast kl 15.00 vardagen före, annars debiteras framkörning. Väntetid över 15 minuter debiteras per påbörjad kvart.';
 
 function CompanyForm({ company, onSaved }) {
   const form = useForm({});
@@ -44,8 +46,25 @@ function CompanyForm({ company, onSaved }) {
           <TextField className="span-2" label="Adress" {...form.field('address')} />
           <TextField label="Postnummer" inputMode="numeric" {...form.field('postnr')} />
           <TextField label="Ort" {...form.field('ort')} />
-          <TextField label="E-post" type="email" {...form.field('email')} />
-          <TextField label="Telefon" type="tel" {...form.field('phone')} />
+          <TextField label="E-post" type="email" hint="Svar på orderbekräftelser kommer hit." {...form.field('email')} />
+          <TextField label="Telefon" type="tel" hint="Visas i orderbekräftelsen." {...form.field('phone')} />
+        </div>
+      </section>
+
+      <section className="panel" style={{ marginBottom: 16 }}>
+        <div className="panel-head"><h2 className="t-heading">Orderbekräftelse</h2></div>
+        <div className="panel-body form-grid">
+          <Field
+            className="span-2"
+            label="Villkor i orderbekräftelsen"
+            hint="Visas sist i varje orderbekräftelse. Hänvisa till de villkor ni använder (t.ex. Alltrans 2007) och skriv vad som gäller för avbokning och väntetid."
+            error={form.errors.order_terms}
+          >
+            {(id) => (
+              <textarea id={id} className="input" rows={4} maxLength={2000} placeholder={TERMS_EXAMPLE}
+                value={form.values.order_terms ?? ''} onChange={(e) => form.field('order_terms').onChange(e.target.value)} />
+            )}
+          </Field>
         </div>
       </section>
 
@@ -135,6 +154,27 @@ function FortnoxPanel() {
   );
 }
 
+function MailPanel() {
+  const { data } = useApi('/api/settings/integrations');
+  const mail = data?.mail;
+  if (!mail) return null;
+  return (
+    <section className="panel" style={{ marginBottom: 16 }}>
+      <div className="panel-head">
+        <h2 className="t-heading">E-post</h2>
+        <span className={`badge ${mail.enabled ? 'badge-green' : 'badge-blue'}`}>{mail.enabled ? 'Aktiv' : 'Simuleras'}</span>
+      </div>
+      <div className="panel-body">
+        <p className="t-muted" style={{ fontSize: 13 }}>
+          {mail.enabled
+            ? <>Orderbekräftelser skickas från <strong>{mail.from}</strong> med ert företagsnamn som avsändare.</>
+            : <>Orderbekräftelser sparas men skickas inte. Lägg in <code>SMTP_HOST</code>, <code>SMTP_USER</code>, <code>SMTP_PASSWORD</code> och <code>MAIL_FROM</code> i <code>server/.env</code> för att skicka på riktigt.</>}
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function AiPanel() {
   const { data } = useApi('/api/settings/integrations');
   const ai = data?.ai;
@@ -144,7 +184,7 @@ function AiPanel() {
     <section className="panel" style={{ marginBottom: 16 }}>
       <div className="panel-head">
         <h2 className="t-heading">AI-tolkning</h2>
-        <span className={`badge ${ai.configured ? 'badge-green' : 'badge-amber'}`}>{ai.configured ? ai.model : 'Ingen API-nyckel'}</span>
+        <span className={`badge ${ai.configured ? 'badge-green' : 'badge-amber'}`}>{ai.demo ? 'Demoläge' : ai.configured ? ai.model : 'Ingen API-nyckel'}</span>
       </div>
       <div className="panel-body" style={{ display: 'grid', gap: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
@@ -184,6 +224,7 @@ export function Settings() {
       <div style={{ maxWidth: 760 }}>
         <FortnoxPanel />
         <AiPanel />
+        <MailPanel />
         {company ? (
           <CompanyForm company={company} onSaved={(c) => { setData(c); setCompanyName(c.name); toast('Inställningarna är sparade'); }} />
         ) : !error && <TableSkeleton rows={6} />}

@@ -7,11 +7,13 @@ import { api } from '../lib/api.js';
 import { useApi } from '../lib/useApi.js';
 import { navigate } from '../lib/router.js';
 import { useToast } from '../lib/toast.js';
-import { CONFIDENCE, MANGD_ENHETER, UPPDRAGSTYPER, ZONE_CLASSES, formatPhone, formatTimestamp, phoneKey } from '../lib/labels.js';
+import {
+  CONFIDENCE, MANGD_ENHETER, UPPDRAGSTYPER, ZONE_CLASSES, confirmationToast, formatPhone, formatTimestamp, phoneKey,
+} from '../lib/labels.js';
 
 // Job fields; keys match the AI extraction so the server can compare.
 const JOB_KEYS = ['uppdragstyp', 'datum', 'datum_till', 'tid', 'material', 'uppskattad_mangd', 'mangd_enhet',
-  'antal_lass', 'fran', 'till', 'instruktioner', 'kontaktperson', 'telefon'];
+  'antal_lass', 'fran', 'till', 'instruktioner', 'kontaktperson', 'telefon', 'epost'];
 
 const toInput = (v) => (v == null ? '' : String(v));
 const same = (a, b, key) => (key === 'telefon'
@@ -96,12 +98,19 @@ function ReviewForm({ intake }) {
   const toast = useToast();
   const ex = intake.fields;
   const allCustomers = useApi('/api/customers');
+  const integrations = useApi('/api/settings/integrations');
 
   // ── Job fields ──
   const [values, setValues] = useState(() => Object.fromEntries(JOB_KEYS.map((k) => [k, k === 'telefon' ? formatPhone(ex[k]?.value) : toInput(ex[k]?.value)])));
   const [acks, setAcks] = useState(() => new Set());
   const set = (k) => (v) => setValues((s) => ({ ...s, [k]: v }));
   const ack = (k) => (on) => setAcks((s) => { const n = new Set(s); if (on) n.add(k); else n.delete(k); return n; });
+
+  // ── Order confirmation email, sent right after the job is created ──
+  const [sendConfirmation, setSendConfirmation] = useState(() => Boolean(ex.epost?.value));
+  const [confirmationMessage, setConfirmationMessage] = useState('');
+  const hasEmail = values.epost.trim() !== '';
+  const willSend = sendConfirmation && hasEmail;
 
   // ── Submit state ──
   const [busy, setBusy] = useState(false);
@@ -185,7 +194,20 @@ function ReviewForm({ intake }) {
     };
     try {
       const res = await api(`/api/intake/${intake.id}/confirm`, { method: 'POST', body });
-      toast('Uppdraget är skapat');
+      // The job exists now; a failed email must not undo it. The job page shows the result and can resend.
+      if (willSend) {
+        try {
+          const sent = await api(`/api/jobs/${res.job_id}/order-confirmation`, {
+            method: 'POST', body: { to: values.epost.trim(), message: confirmationMessage.trim() || null },
+          });
+          const [text, kind] = confirmationToast(sent);
+          toast(`Uppdraget är skapat. ${text}`, kind);
+        } catch (err) {
+          toast(`Uppdraget är skapat, men orderbekräftelsen kunde inte skickas. ${err.message}`, 'error');
+        }
+      } else {
+        toast('Uppdraget är skapat');
+      }
       navigate(`/uppdrag/${res.job_id}`);
     } catch (err) {
       setBusy(false);
@@ -241,7 +263,7 @@ function ReviewForm({ intake }) {
         <aside className="panel review-source">
           <div className="panel-head">
             <h2 className="t-heading">Originaltext</h2>
-            {intake.source === 'ai' && <span className="badge badge-muted"><Sparkles size={11} /> {intake.model}</span>}
+            {intake.source === 'ai' && <span className="badge badge-muted"><Sparkles size={11} /> {intake.model === 'demo' ? 'Demoläge' : intake.model}</span>}
           </div>
           <pre>{intake.raw_text || 'Ingen text (manuell beställning).'}</pre>
           <div className="t-muted" style={{ fontSize: 12, padding: '10px 18px', borderTop: '1px solid var(--border)' }}>
@@ -379,11 +401,41 @@ function ReviewForm({ intake }) {
                 {cf('till', 'Till')}
                 {cf('kontaktperson', 'Kontaktperson')}
                 {cf('telefon', 'Telefon', { render: (id) => <Input id={id} type="tel" value={values.telefon} onChange={set('telefon')} /> })}
+                {cf('epost', 'E-post', { render: (id) => <Input id={id} type="email" autoComplete="off" value={values.epost} onChange={set('epost')} /> })}
                 {cf('instruktioner', 'Instruktioner till föraren', {
                   className: 'span-2',
                   render: (id) => <textarea id={id} className="input" rows={3} value={values.instruktioner} onChange={(e) => set('instruktioner')(e.target.value)} />,
                 })}
               </div>
+            </div>
+          </section>
+
+          {/* Order confirmation */}
+          <section className="panel">
+            <div className="panel-body" style={{ display: 'grid', gap: 10 }}>
+              <div className="section-title">
+                <h2 className="t-heading">Orderbekräftelse till kunden</h2>
+                {integrations.data && !integrations.data.mail?.enabled && (
+                  <span className="badge badge-blue" title="SMTP är inte inställt i server/.env">Simuleras</span>
+                )}
+              </div>
+              <label className="checkbox" style={{ opacity: hasEmail ? 1 : 0.55, cursor: hasEmail ? 'pointer' : 'default' }}>
+                <input type="checkbox" checked={willSend} disabled={!hasEmail} onChange={(e) => setSendConfirmation(e.target.checked)} />
+                <span>
+                  Mejla orderbekräftelse {hasEmail ? <>till <strong>{values.epost.trim()}</strong></> : 'till kunden'} när uppdraget skapas
+                </span>
+              </label>
+              {!hasEmail && (
+                <p className="t-muted" style={{ fontSize: 13 }}>Fyll i kundens e-post ovan för att skicka direkt. Du kan också skicka den senare från uppdraget.</p>
+              )}
+              {willSend && (
+                <textarea className="input" rows={2} maxLength={1000} value={confirmationMessage}
+                  onChange={(e) => setConfirmationMessage(e.target.value)} aria-label="Personligt meddelande till kunden"
+                  placeholder="Personligt meddelande (valfritt), t.ex. Vi kommer med två bilar." />
+              )}
+              <p className="t-muted" style={{ fontSize: 12 }}>
+                Mejlet innehåller uppgifterna ovan och ber kunden svara om något inte stämmer. Svar går till er e-post.
+              </p>
             </div>
           </section>
         </div>
@@ -425,7 +477,7 @@ function ReviewForm({ intake }) {
           {blockers.length ? `Kvar att göra: ${blockers.join(', ')}.` : 'Allt är kontrollerat.'}
         </span>
         <Button size="lg" onClick={confirm} loading={busy} disabled={blockers.length > 0}>
-          <Check size={16} /> Skapa uppdrag
+          <Check size={16} /> {willSend ? 'Skapa uppdrag och mejla' : 'Skapa uppdrag'}
         </Button>
       </div>
     </>

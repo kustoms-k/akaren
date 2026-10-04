@@ -388,6 +388,7 @@ button.drv-card { cursor: pointer; font: inherit; }
   border-radius: 14px;
   box-shadow: var(--shadow-lg);
 }
+.dialog-wide { width: min(760px, 100%); }
 .dialog-head { padding: 18px 20px 0; }
 .dialog-body { padding: 18px 20px; }
 .dialog-foot {

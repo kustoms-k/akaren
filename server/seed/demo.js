@@ -4,13 +4,15 @@ import { reviewStatusFor } from '../lib/lassReview.js';
 import { addDays, isoWeek, isoWeekRange, isoWeekday, stockholmLocalToUtc } from '../lib/dates.js';
 
 // Demo data for "Teståkeriet AB". Every company name, org nr, regnr and person is fictional.
-// Driver phone numbers are in 070-174 06 05–99, a range PTS reserves for fiction.
+// Driver phone numbers are in 070-174 06 05–99 and the office number in 08-465 004 00–99, ranges PTS reserves for fiction.
 
 export const DEMO_EMAIL = 'kontor@testakeriet.se';
 
 const COMPANY = {
   name: 'Teståkeriet AB', org_nr: '559000-0013', address: 'Lagervägen 7', postnr: '13650', ort: 'Haninge',
-  email: 'kontor@testakeriet.se', retention_months: 36, default_vat_mode: 'normal',
+  phone: '+46846500400', email: 'kontor@testakeriet.se', retention_months: 36, default_vat_mode: 'normal',
+  order_terms: 'Uppdraget utförs enligt Alltrans 2007 och våra prislistor. Avbokning senast kl 15.00 vardagen före, '
+    + 'annars debiteras framkörning. Väntetid över 15 minuter per lass debiteras per påbörjad kvart.',
 };
 
 const VEHICLES = [
@@ -147,8 +149,8 @@ export function seedDemo(db, { today, password, withPhotos = false }) {
   const { days, previousWeek, currentWeek } = demoWorkdays(today);
 
   const ins = {
-    company: db.prepare(`INSERT INTO companies (name, org_nr, address, postnr, ort, email, retention_months, default_vat_mode)
-      VALUES (@name, @org_nr, @address, @postnr, @ort, @email, @retention_months, @default_vat_mode)`),
+    company: db.prepare(`INSERT INTO companies (name, org_nr, address, postnr, ort, phone, email, retention_months, default_vat_mode, order_terms)
+      VALUES (@name, @org_nr, @address, @postnr, @ort, @phone, @email, @retention_months, @default_vat_mode, @order_terms)`),
     user: db.prepare('INSERT INTO users (company_id, name, email, password_hash) VALUES (?, ?, ?, ?)'),
     vehicle: db.prepare('INSERT INTO vehicles (company_id, regnr, typ, miljozonsklass) VALUES (?, ?, ?, ?)'),
     driver: db.prepare('INSERT INTO drivers (company_id, name, phone) VALUES (?, ?, ?)'),

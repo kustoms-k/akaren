@@ -8,7 +8,7 @@ import { AnimatePresence, motion } from 'motion/react';
  * Rendered in a portal on <body>: a transformed ancestor (e.g. a page transition) would
  * otherwise become the containing block for position: fixed and push the dialog off-screen.
  */
-export function Dialog({ open, onClose, title, description, children, footer }) {
+export function Dialog({ open, onClose, title, description, children, footer, wide = false }) {
   const panel = useRef(null);
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export function Dialog({ open, onClose, title, description, children, footer }) 
         >
           <motion.div
             ref={panel}
-            className="dialog"
+            className={wide ? 'dialog dialog-wide' : 'dialog'}
             role="dialog"
             aria-modal="true"
             aria-label={title}

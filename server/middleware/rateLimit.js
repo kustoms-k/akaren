@@ -21,6 +21,7 @@ export function createLimiters() {
     login: make(15, 10),
     ai:    make(15, 30, actorKey),
     sms:   make(15, 20, actorKey),
+    mail:  make(15, 30, actorKey),
     api:   make(15, 600, actorKey),
   };
 }

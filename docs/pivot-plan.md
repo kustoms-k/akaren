@@ -48,6 +48,14 @@ Audit date: 2026-10-03, against `main` @ `fb5d389` (tagged `pre-pivot-archive`).
   - The Geist font link was a 404 since before the pivot. It's now self-hosted via `@fontsource-variable/geist`, so no third-party font request.
   - A stale lazy chunk now shows a "ladda om" screen instead of a blank page.
 
+**Addition (2026-10-04, owner decision): order confirmation email and demo mode.** 156 server tests pass. Verified in headless Chrome: demo order → review with the pre-ticked email option → job → confirmation stored, job-page history, compose dialog with live preview, and the email at 390 px.
+- **Orderbekräftelse:** when the office creates a job it can email the customer a formal confirmation (`lib/orderConfirmation.js`, `services/mail.js`, migration 004). The AI now also reads the orderer's email (`epost`, `ORDER_PROMPT_VERSION` `order-v2`), which is reviewed like any other field and stored on `jobs.epost`.
+  - Content: job number, customer reference, type, dates, time, material, quantity, from/till, worksite, contact, instructions, beställare, a request to report errors before the start date, the company's terms (`companies.order_terms`), and the signature. Förorenade/FA material adds a request for waste code and receiver (transportör records per NFS 2020:5).
+  - Rationale: Sveriges Åkeriföretag advises stating terms (e.g. Alltrans 2007) already in the order confirmation; asking the customer to object promptly matters under Avtalslagen 6 § 2 st.
+  - Every attempt is stored in `order_confirmations` with the exact subject, text and HTML, and audited. Replies go to the company email (Reply-To); optional bcc to the office. A failed send never undoes the job; the job page shows the error and can resend.
+  - Transport: plain SMTP via `nodemailer` (re-added for this; MIT-0, no dependencies). Works with Google Workspace (app password), Microsoft 365 (SMTP AUTH basic auth is disabled by default from end of 2026), or an EU relay such as Brevo/Mailjet with SPF + DKIM on the company domain. Without `SMTP_HOST`/`MAIL_FROM` the email is simulated: logged and stored, not sent.
+- **Demo mode (`DEMO_MODE=1`):** without an Anthropic key the order inbox offers six sample orders with pre-written extractions (`lib/orderDemo.js`). Only those exact texts are accepted; anything else is rejected. Refused when `NODE_ENV=production`; ignored when `ANTHROPIC_API_KEY` is set. A deliberate, scoped exception to "never fake data", for showing the product to prospects.
+
 ---
 
 ## 1. Current state

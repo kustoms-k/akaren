@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PenLine, Sparkles } from 'lucide-react';
+import { FileText, Mail, MessageSquare, PenLine, Sparkles } from 'lucide-react';
 import { Button } from '../components/Button.jsx';
 import { PageHeader, ErrorNotice, TableSkeleton } from '../components/PageHeader.jsx';
 import { api } from '../lib/api.js';
@@ -11,6 +11,8 @@ const PLACEHOLDER = `Klistra in mejlet, sms:et eller texten från PDF:en här.
 
 Ex: "Hej! Kan ni köra bort schaktmassor från Kv. Rörstrand, Rörstrandsgatan 40, på tisdag från kl 7? Ca 12 lass. Mvh Petra, Norrbacka Mark"`;
 
+const SAMPLE_ICONS = { mejl: Mail, sms: MessageSquare, pdf: FileText };
+
 export function OrderInbox() {
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(null);
@@ -18,6 +20,8 @@ export function OrderInbox() {
   const drafts = useApi('/api/intake?status=utkast');
   const integrations = useApi('/api/settings/integrations');
   const aiReady = integrations.data?.ai?.configured;
+  const demo = integrations.data?.ai?.demo;
+  const samples = useApi(demo ? '/api/intake/demo-samples' : null);
 
   async function start(kind) {
     setBusy(kind);
@@ -38,10 +42,25 @@ export function OrderInbox() {
       <PageHeader
         title="Ny beställning"
         description="Klistra in beställningen så läser AI:n ut uppgifterna. Du granskar allt innan det blir ett uppdrag."
+        actions={demo && <span className="badge badge-blue" title="AI-svaren är förinspelade för exempelbeställningarna">Demoläge</span>}
       />
 
       <section className="panel" style={{ marginBottom: 20 }}>
         <div className="panel-body" style={{ display: 'grid', gap: 12 }}>
+          {samples.data?.length > 0 && (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span className="t-muted" style={{ fontSize: 13, marginRight: 2 }}>Exempel:</span>
+              {samples.data.map((s) => {
+                const Icon = SAMPLE_ICONS[s.kind] ?? Mail;
+                return (
+                  <Button key={s.id} size="sm" variant={text === s.text ? 'primary' : 'secondary'}
+                    onClick={() => { setText(s.text); setError(null); }} disabled={busy !== null}>
+                    <Icon size={13} /> {s.label}
+                  </Button>
+                );
+              })}
+            </div>
+          )}
           <textarea
             className="input"
             rows={10}

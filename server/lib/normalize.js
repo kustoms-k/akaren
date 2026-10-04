@@ -44,5 +44,7 @@ export function normalizePhone(input) {
 export function formatPhoneSv(e164) {
   if (!e164) return '';
   const m = /^\+46(7\d)(\d{3})(\d{2})(\d{2})$/.exec(e164);
-  return m ? `0${m[1]}-${m[2]} ${m[3]} ${m[4]}` : e164;
+  if (m) return `0${m[1]}-${m[2]} ${m[3]} ${m[4]}`;
+  const sthlm = /^\+468(\d{3})(\d{3})(\d{2})$/.exec(e164); // Stockholm landline, 08-xxx xxx xx
+  return sthlm ? `08-${sthlm[1]} ${sthlm[2]} ${sthlm[3]}` : e164;
 }

@@ -9,6 +9,7 @@ import { createAudit } from './lib/audit.js';
 import { errorMiddleware, HttpError } from './lib/http.js';
 import { createFortnoxService } from './services/fortnox.js';
 import { createSmsService } from './services/sms.js';
+import { createMailService } from './services/mail.js';
 import { createAiService } from './services/ai.js';
 import { createPhotoStore } from './services/photos.js';
 import { createDispatchService } from './services/dispatch.js';
@@ -29,11 +30,12 @@ const PRIVATE_LAN = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.
 
 /**
  * Build the Express app. External services are injectable so tests can mock them:
- * createApp({ config, db, services: { fortnox, sms, ai, photos } }).
+ * createApp({ config, db, services: { fortnox, sms, mail, ai, photos } }).
  */
 export function createApp({ config, db, services = {}, logger = console }) {
   const fortnox = services.fortnox ?? createFortnoxService({ db, config });
   const sms = services.sms ?? createSmsService({ config, logger });
+  const mail = services.mail ?? createMailService({ config, logger });
   const ai = services.ai ?? createAiService({ db, config, logger });
   const photos = services.photos ?? createPhotoStore({ db, config });
   const lass = createLassService({ db });
@@ -41,7 +43,7 @@ export function createApp({ config, db, services = {}, logger = console }) {
   const dispatch = createDispatchService({ db, config, sms, audit });
   const auth = createAuth({ db, config });
   const limiters = createLimiters();
-  const deps = { db, config, audit, auth, limiters, fortnox, sms, ai, photos, lass, dispatch, logger };
+  const deps = { db, config, audit, auth, limiters, fortnox, sms, mail, ai, photos, lass, dispatch, logger };
 
   const app = express();
   app.disable('x-powered-by');

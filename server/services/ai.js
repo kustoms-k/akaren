@@ -8,6 +8,7 @@ import {
 import {
   VAGSEDEL_PROMPT_VERSION, VagsedelSchema, buildVagsedelSystemPrompt, buildVagsedelUserText, postProcessVagsedel,
 } from '../lib/vagsedelExtraction.js';
+import { DEMO_MODEL, DEMO_PROMPT_VERSION, demoOrderSamples, findDemoOrder } from '../lib/orderDemo.js';
 
 export class AiNotConfiguredError extends Error {
   constructor() { super('ANTHROPIC_API_KEY is not set'); this.code = 'ai_not_configured'; }
@@ -19,6 +20,9 @@ export class AiBudgetExceededError extends Error {
     this.spentUsd = spentUsd;
     this.budgetUsd = budgetUsd;
   }
+}
+export class AiDemoNoMatchError extends Error {
+  constructor() { super('DEMO_MODE only reads the built-in sample orders'); this.code = 'ai_demo_no_match'; }
 }
 /** reason: 'api_error' | 'refusal' | 'truncated' | 'invalid_output' */
 export class AiExtractionError extends Error {
@@ -41,12 +45,15 @@ function requestOptions(model, format) {
  * Claude-backed extraction. Every call is logged to ai_extractions with token usage and
  * estimated cost; a per-company monthly budget is enforced before each call.
  * Failures are raised, never replaced with made-up data.
+ * DEMO_MODE without a key: order extraction returns canned output for the built-in sample texts only
+ * (lib/orderDemo.js), after `demoDelayMs` so the UI behaves as with a real call.
  */
-export function createAiService({ db, config, client, now = () => new Date(), logger = console }) {
+export function createAiService({ db, config, client, now = () => new Date(), logger = console, demoDelayMs = 1800 }) {
   const ai = config.anthropic;
   const sdk = client ?? (ai.apiKey
     ? new Anthropic({ apiKey: ai.apiKey, ...(ai.baseUrl ? { baseURL: ai.baseUrl } : {}), maxRetries: 2, timeout: 120_000 })
     : null);
+  const demo = !sdk && ai.demoMode;
 
   const stmtInsert = db.prepare(`
     INSERT INTO ai_extractions (company_id, kind, model, prompt_version, input_text, input_photo_id, fields_json,
@@ -63,7 +70,10 @@ export function createAiService({ db, config, client, now = () => new Date(), lo
 
   function usage(companyId) {
     const { micro, calls } = stmtMonth.get(companyId, stockholmMonthStartUtc(now()));
-    return { month_cost_usd: microToUsd(micro), budget_usd: ai.monthlyBudgetUsd, calls, model: ai.model, configured: Boolean(sdk) };
+    return {
+      month_cost_usd: microToUsd(micro), budget_usd: ai.monthlyBudgetUsd, calls,
+      model: demo ? DEMO_MODEL : ai.model, configured: Boolean(sdk) || demo, demo,
+    };
   }
 
   function assertBudget(companyId) {
@@ -139,9 +149,27 @@ export function createAiService({ db, config, client, now = () => new Date(), lo
     return { extractionId, fields, warnings, model: metrics.model };
   }
 
+  /** DEMO_MODE: the canned extraction for a sample text, post-processed and logged like a real call. */
+  async function demoOrder({ companyId, text, today }) {
+    const hit = findDemoOrder(text, today);
+    if (!hit) throw new AiDemoNoMatchError();
+    const started = Date.now();
+    if (demoDelayMs > 0) await new Promise((r) => setTimeout(r, demoDelayMs));
+    const { fields, warnings } = postProcessOrder(hit.output, { today });
+    const extractionId = log({
+      company_id: companyId, kind: 'order', model: DEMO_MODEL, prompt_version: DEMO_PROMPT_VERSION, input_text: text,
+      fields_json: JSON.stringify({ fields, warnings }),
+      confidence_json: JSON.stringify(Object.fromEntries(Object.entries(fields).map(([k, f]) => [k, f.confidence]))),
+      raw_response: JSON.stringify(hit.output),
+      latency_ms: Date.now() - started,
+    });
+    return { extractionId, fields, warnings, model: DEMO_MODEL };
+  }
+
   /** Extract a structured order from pasted text. */
   function extractOrder({ companyId, companyName, text }) {
     const today = stockholmDate(now());
+    if (demo) return demoOrder({ companyId, text, today });
     return run({
       companyId, kind: 'order', promptVersion: ORDER_PROMPT_VERSION, inputText: text,
       schema: OrderExtractionSchema,
@@ -166,5 +194,10 @@ export function createAiService({ db, config, client, now = () => new Date(), lo
     });
   }
 
-  return { configured: Boolean(sdk), usage, extractOrder, extractVagsedel };
+  /** Sample orders for the inbox; empty unless DEMO_MODE is active. */
+  function demoSamples() {
+    return demo ? demoOrderSamples(stockholmDate(now())) : [];
+  }
+
+  return { configured: Boolean(sdk), demo, usage, extractOrder, extractVagsedel, demoSamples };
 }

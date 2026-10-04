@@ -2,12 +2,12 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { HttpError, asyncHandler, validate, idParam, notFound, conflict, badRequest } from '../lib/http.js';
 import { officeActor } from '../lib/audit.js';
-import { optionalText, phone, date, idRef } from '../lib/schemas.js';
+import { optionalText, phone, email, date, idRef } from '../lib/schemas.js';
 import { suggestMatches, confidentPick, similarNames } from '../lib/match.js';
 import {
   ORDER_FIELDS, UPPDRAGSTYPER, MANGD_ENHETER, REQUIRED_JOB_FIELDS, emptyOrderFields,
 } from '../lib/orderExtraction.js';
-import { AiNotConfiguredError, AiBudgetExceededError, AiExtractionError } from '../services/ai.js';
+import { AiNotConfiguredError, AiBudgetExceededError, AiExtractionError, AiDemoNoMatchError } from '../services/ai.js';
 import { customerCreateSchema } from './customers.js';
 import { projectNewSchema } from './projects.js';
 
@@ -31,12 +31,13 @@ const jobFieldsSchema = z.object({
   instruktioner: optionalText(1000),
   kontaktperson: optionalText(120),
   telefon: phone,
+  epost: email,
 }).strict().refine((f) => !f.datum_till || f.datum_till >= f.datum, {
   path: ['datum_till'], message: 'Slutdatum måste vara samma dag eller senare.',
 });
 
 const JOB_KEYS = ['uppdragstyp', 'datum', 'datum_till', 'tid', 'material', 'uppskattad_mangd', 'mangd_enhet',
-  'antal_lass', 'fran', 'till', 'instruktioner', 'kontaktperson', 'telefon'];
+  'antal_lass', 'fran', 'till', 'instruktioner', 'kontaktperson', 'telefon', 'epost'];
 
 const confirmSchema = z.object({
   fields: jobFieldsSchema,
@@ -57,6 +58,9 @@ const sameValue = (a, b) => String(a ?? '').trim() === String(b ?? '').trim();
 function aiHttpError(err) {
   if (err instanceof AiNotConfiguredError) {
     return new HttpError(503, 'ai_not_configured', 'AI-tolkning är inte aktiverad (ANTHROPIC_API_KEY saknas i server/.env). Fyll i beställningen manuellt så länge.');
+  }
+  if (err instanceof AiDemoNoMatchError) {
+    return new HttpError(422, 'ai_demo_no_match', 'Demoläge: AI-tolkningen fungerar bara på exempelbeställningarna. Välj ett exempel ovanför textrutan, eller fyll i manuellt.');
   }
   if (err instanceof AiBudgetExceededError) {
     return new HttpError(429, 'ai_budget_exceeded', `Månadens AI-budget är slut (${err.spentUsd} av ${err.budgetUsd} USD). Höj AI_MONTHLY_BUDGET_USD eller fyll i manuellt.`);
@@ -119,10 +123,10 @@ export function intakeRouter({ db, audit, ai, limiters }) {
   const stmtInsertJob = db.prepare(`
     INSERT INTO jobs (company_id, customer_id, project_id, order_intake_id, uppdragstyp, material, uppskattad_mangd,
       mangd_enhet, antal_lass, datum_fran, datum_till, tid, fran_text, till_text, instruktioner, kontaktperson, telefon,
-      created_by_user_id)
+      epost, created_by_user_id)
     VALUES (@company_id, @customer_id, @project_id, @order_intake_id, @uppdragstyp, @material, @uppskattad_mangd,
       @mangd_enhet, @antal_lass, @datum_fran, @datum_till, @tid, @fran_text, @till_text, @instruktioner, @kontaktperson,
-      @telefon, @created_by_user_id)
+      @telefon, @epost, @created_by_user_id)
   `);
   const stmtConfirm = db.prepare(`
     UPDATE order_intakes
@@ -201,6 +205,10 @@ export function intakeRouter({ db, audit, ai, limiters }) {
     audit({ ...officeActor(req), entity: 'order_intake', entityId: id, action: 'extract', after: { extraction_id: result.extractionId } });
     res.status(201).json(view(stmtGet.get(id, req.companyId)));
   }));
+
+  router.get('/demo-samples', (req, res) => {
+    res.json(ai.demoSamples?.() ?? []);
+  });
 
   router.post('/manual', (req, res) => {
     const { text } = validate(z.object({ text: optionalText(MAX_TEXT) }).strict(), req.body);
@@ -297,7 +305,7 @@ export function intakeRouter({ db, audit, ai, limiters }) {
         mangd_enhet: f.mangd_enhet ?? null, antal_lass: f.antal_lass ?? null, datum_fran: f.datum,
         datum_till: f.datum_till ?? null, tid: f.tid ?? null, fran_text: f.fran ?? null, till_text: f.till ?? null,
         instruktioner: f.instruktioner ?? null, kontaktperson: f.kontaktperson ?? null, telefon: f.telefon ?? null,
-        created_by_user_id: req.user.id,
+        epost: f.epost ?? null, created_by_user_id: req.user.id,
       }).lastInsertRowid);
 
       // Record what the human changed or accepted relative to the AI.

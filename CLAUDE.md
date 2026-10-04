@@ -34,6 +34,7 @@ These were removed on purpose. Don't reintroduce them, even partially, without a
   - Anthropic: `@anthropic-ai/sdk`, structured outputs, model from `ANTHROPIC_MODEL`.
   - 46elks: SMS.
   - Fortnox: OAuth, draft invoices only.
+  - SMTP (`nodemailer`): order confirmation emails to customers only.
 
 ## Layout
 
@@ -44,7 +45,7 @@ server/
   config.js           zod-validated env (single source of config)
   db/                 openDb, migrate, migrations/NNN_*.sql
   routes/             one router factory per area: (deps) => Router
-  services/           external APIs: fortnox.js, sms.js (46elks), encrypt.js
+  services/           external APIs: fortnox.js, sms.js (46elks), mail.js (SMTP), ai.js, encrypt.js
   lib/                dates (ISO weeks, Stockholm time), normalize, schemas (zod + sv messages), http, audit, sql
   jobs/backup.js      nightly VACUUM INTO + optional BACKUP_DIR mirror
   seed/               demo.js (seedDemo) + run.js (CLI)
@@ -71,7 +72,8 @@ npm run dev                           # server :3002 + Vite :5173
 
 - Both processes bind `HOST=0.0.0.0`, so a phone on the same Wi-Fi can open driver links. Set `PUBLIC_BASE_URL` to `http://<laptop-LAN-IP>:5173`.
 - Every URL comes from env: `APP_URL`, `PUBLIC_BASE_URL`, `FORTNOX_REDIRECT_URI`, `VITE_API_TARGET`, and the `*_API_BASE` vars. Never hardcode `localhost` outside `.env.example`.
-- Without `ELKS_*` credentials, SMS is simulated and logged to the console. Without `ANTHROPIC_API_KEY`, the extraction endpoints return a clear error. **Never fall back to fake data.**
+- Without `ELKS_*` credentials, SMS is simulated and logged to the console. Without `SMTP_HOST`/`MAIL_FROM`, order confirmation emails are simulated the same way (logged and stored, not sent). Without `ANTHROPIC_API_KEY`, the extraction endpoints return a clear error. **Never fall back to fake data.**
+- The one exception is `DEMO_MODE=1` (owner decision, for showing prospects): canned extractions for the built-in sample orders in `lib/orderDemo.js`, exact text match only, refused in production, ignored when an API key is set. Don't extend it to other text or to vågsedel extraction.
 
 ## Testing
 
@@ -127,6 +129,11 @@ npm run build       # client production build
 - Create unbooked invoices only. Never call `bookkeep` or any send endpoint.
 - Store the document number on the batch and claim each lass with a unique index so nothing is invoiced twice.
 - Refresh tokens rotate on every use: refresh behind a lock, and on `invalid_grant` set `fortnox_status='reconnect_required'` and show a reconnect prompt.
+
+**Order confirmation email.** Sent only when the office ticks it on the review page or clicks send on the job page; never automatically.
+- Built by `lib/orderConfirmation.js` (pure: subject, text, HTML with inline styles, every value escaped) and sent by `services/mail.js` (never throws).
+- Every attempt is stored in `order_confirmations` with the exact content and audited. Reply-To is the company email.
+- A failed send never rolls back the job. Show the Swedish message from `MAIL_ERRORS`, never the SMTP error text.
 
 **46elks.** The sender ID is ≤11 characters, ASCII letters and digits only (`ELKS_SENDER`, default `Akaren`, no "Å").
 
