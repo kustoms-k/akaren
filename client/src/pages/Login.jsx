@@ -6,8 +6,9 @@ import { useAuth } from '../lib/auth.js';
 
 export function Login() {
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  // Dev only: prefill from client/.env.local so local testing is one click.
+  const [email, setEmail] = useState(import.meta.env.DEV ? import.meta.env.VITE_DEV_EMAIL ?? '' : '');
+  const [password, setPassword] = useState(import.meta.env.DEV ? import.meta.env.VITE_DEV_PASSWORD ?? '' : '');
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
 
