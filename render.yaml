@@ -1,0 +1,23 @@
+# Free public demo on Render (render.com): fake data only, one-click login, reseeded on every start and at 03:30.
+# Render dashboard → New → Blueprint → pick this repo → Apply. See deploy/README.md, "Free options".
+# The free plan sleeps after 15 minutes without visitors; the first visit after that takes about a minute.
+# Only the demo goes here: its disk is wiped on every restart, so real customers belong on the server setup (deploy/).
+services:
+  - type: web
+    name: lasskoll-demo
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerCommand: node scripts/hosted-demo.js
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: development
+      - key: DEMO_MODE
+        value: "1"
+      - key: DEMO_AUTO_RESET
+        value: "1"
+      - key: TRUST_PROXY
+        value: "1"

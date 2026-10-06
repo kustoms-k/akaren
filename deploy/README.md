@@ -23,6 +23,18 @@ Everything the app stores (the database, vågsedel photos and nightly backups) l
 - No account, domain or card.
 - The address changes every time you start it, and it only works while the computer is awake and the script is running. Good for a meeting or a day of sending links, not for customers.
 
+**Always online, free, in 5 minutes (the demo only):** Render.
+1. Go to render.com and choose **Get started → GitHub**. Sign in with the GitHub account that owns the repo. The free plan needs no card.
+2. In the dashboard, click **New → Blueprint**, give Render access to the `akaren` repository, and pick it.
+3. Render reads `render.yaml` and shows one service, `lasskoll-demo`, on the free plan in Frankfurt. Click **Apply**. The first build takes about 5–10 minutes.
+4. When it shows **Live**, the address is at the top, e.g. `https://lasskoll-demo.onrender.com`. Open it and click **Logga in**.
+
+Things to know:
+- On the free plan the demo sleeps after 15 minutes without visitors, and the first visit after that takes about a minute.
+- Every wake-up starts from fresh demo data. Open the link a few minutes before a meeting.
+- Every push to `main` redeploys it automatically.
+- Don't put real customers here: the free plan has no lasting disk.
+
 **Permanent, free:** Oracle Cloud's Always Free tier plus a free address from sslip.io.
 1. Create an Oracle Cloud account (it asks for a card to verify you, but Always Free resources aren't charged). Choose **Sweden Central (Stockholm)** as home region.
 2. Create a VM: **Ubuntu 24.04**, shape **VM.Standard.A1.Flex** (Ampere, Always Free eligible), 2 OCPU / 12 GB RAM, with your SSH key. If it says "out of capacity", try again later or pick another availability domain.

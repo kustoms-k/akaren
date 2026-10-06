@@ -27,7 +27,7 @@ These were removed on purpose. Don't reintroduce them, even partially, without a
 - Pricing intelligence or price suggestions
 - Tender matching (TED/upphandlingar). That belongs to a separate product.
 - Multi-role RBAC. There are exactly two roles: `office` (JWT login) and `driver` (no account; a signed, expiring magic link scoped to one driver).
-- Railway or any other platform-specific deployment config. Hosting is one EU server with Docker Compose (`deploy/`, owner decision 2026-10-06); keep it that way.
+- Railway or any other platform-specific deployment config. Hosting is one EU server with Docker Compose (`deploy/`, owner decision 2026-10-06). The one exception is `render.yaml`, for the free public **demo** only (owner request): it starts `server/scripts/hosted-demo.js`, which refuses to run without DEMO_MODE=1 and strips every integration key.
 - Also removed (decision D1): the offert/quote flow and public quote page, the customer portal, Stripe, BankID, CO2, Nätverk, Drivmedel, Underhåll, profitability dashboards, weather/road alerts/fuel price, the onboarding tour, the English UI (i18n), offline sync of the office app, and S3 backups.
 
 ## Stack
