@@ -3,9 +3,12 @@ import { LogoMark } from '../assets/Logo.jsx';
 import { Button } from '../components/Button.jsx';
 import { TextField } from '../components/Field.jsx';
 import { useAuth } from '../lib/auth.js';
+import { useApi } from '../lib/useApi.js';
 
 export function Login() {
   const { login } = useAuth();
+  // Demo mode (server DEMO_MODE=1): empty fields log straight in.
+  const demo = useApi('/api/auth/demo').data?.enabled === true;
   // Dev only: prefill from client/.env.local so local testing is one click.
   const [email, setEmail] = useState(import.meta.env.DEV ? import.meta.env.VITE_DEV_EMAIL ?? '' : '');
   const [password, setPassword] = useState(import.meta.env.DEV ? import.meta.env.VITE_DEV_PASSWORD ?? '' : '');
@@ -35,8 +38,9 @@ export function Login() {
           Beställningar, lass och fakturaunderlag på ett ställe.
         </p>
         <div style={{ display: 'grid', gap: 14 }}>
-          <TextField label="E-post" type="email" autoComplete="username" required value={email} onChange={setEmail} autoFocus />
-          <TextField label="Lösenord" type="password" autoComplete="current-password" required value={password} onChange={setPassword} />
+          {demo && <div className="notice notice-blue">Demoläge: klicka på Logga in, du behöver inte fylla i något.</div>}
+          <TextField label="E-post" type="email" autoComplete="username" required={!demo} value={email} onChange={setEmail} autoFocus />
+          <TextField label="Lösenord" type="password" autoComplete="current-password" required={!demo} value={password} onChange={setPassword} />
           {error && <div className="notice notice-red" role="alert">{error}</div>}
           <Button type="submit" size="lg" loading={busy} style={{ width: '100%', marginTop: 4 }}>
             Logga in

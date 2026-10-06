@@ -242,5 +242,40 @@ export function createFortnoxService({ db, config, fetch = globalThis.fetch, now
     return counts;
   }
 
-  return { buildAuthUrl, consumeState, connect, getStatus, disconnect, request, syncCustomers };
+  /** Create an unbooked (draft) invoice. Returns the Fortnox Invoice object. Never books or sends it. */
+  async function createInvoice(companyId, payload) {
+    const data = await request(companyId, 'POST', '/invoices', payload);
+    return data.Invoice ?? null;
+  }
+
+  /**
+   * A draft we may already have created, found by its ExternalInvoiceReference1. Used when a create call
+   * failed without a clear answer (timeout, 5xx), so a retry never makes a second invoice.
+   * The filter parameter is to be verified against a Fortnox sandbox (pivot plan §7).
+   */
+  async function findInvoiceByExternalRef(companyId, externalRef) {
+    const data = await request(companyId, 'GET', `/invoices?externalinvoicereference1=${encodeURIComponent(externalRef)}`);
+    return (data.Invoices ?? []).find((i) => i.ExternalInvoiceReference1 === externalRef) ?? null;
+  }
+
+  /** Create a customer in Fortnox from a local one; returns the new CustomerNumber. */
+  async function createCustomer(companyId, c) {
+    const data = await request(companyId, 'POST', '/customers', {
+      Customer: {
+        Name: c.name,
+        ...(c.org_nr ? { OrganisationNumber: c.org_nr } : {}),
+        ...(c.address ? { Address1: c.address } : {}),
+        ...(c.postnr ? { ZipCode: c.postnr } : {}),
+        ...(c.ort ? { City: c.ort } : {}),
+        ...(c.email ? { Email: c.email, EmailInvoice: c.email } : {}),
+        ...(c.vat_mode === 'omvand_bygg' ? { VATType: 'SEREVERSEDVAT' } : {}),
+      },
+    });
+    return data.Customer?.CustomerNumber ? String(data.Customer.CustomerNumber) : null;
+  }
+
+  return {
+    buildAuthUrl, consumeState, connect, getStatus, disconnect, request, syncCustomers,
+    createInvoice, findInvoiceByExternalRef, createCustomer,
+  };
 }

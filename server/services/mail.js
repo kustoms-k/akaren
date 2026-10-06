@@ -28,7 +28,7 @@ export function createMailService({ config, transport, logger = console }) {
     })
     : null);
 
-  async function send({ fromName, to, cc, bcc, replyTo, subject, text, html }) {
+  async function send({ fromName, to, cc, bcc, replyTo, subject, text, html, messageId, inReplyTo, references }) {
     if (!tx) {
       logger.log(`\n[E-POST SIMULERAT → ${to}${cc ? `, kopia ${cc}` : ''}${bcc ? `, dold kopia ${bcc}` : ''}]\nÄmne: ${subject}\n\n${text}\n`);
       return { status: 'simulerat' };
@@ -36,6 +36,10 @@ export function createMailService({ config, transport, logger = console }) {
     try {
       const info = await tx.sendMail({
         from: { name: fromName, address: m.from },
+        // Inbox replies thread with the customer's email; the order mailbox gets the answers.
+        ...(messageId ? { messageId } : {}),
+        ...(inReplyTo ? { inReplyTo } : {}),
+        ...(references?.length ? { references } : {}),
         to,
         ...(cc ? { cc } : {}),
         ...(bcc ? { bcc } : {}),

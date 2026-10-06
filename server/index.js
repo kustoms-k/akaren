@@ -2,6 +2,7 @@ import { loadConfig } from './config.js';
 import { openDb, migrate } from './db/index.js';
 import { createApp } from './app.js';
 import { scheduleBackups } from './jobs/backup.js';
+import { scheduleRetention } from './jobs/retention.js';
 
 let config;
 try {
@@ -26,12 +27,16 @@ const server = app.listen(config.port, config.host, () => {
 
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
-    console.error(`[server] Port ${config.port} is already in use. Stop the other process: kill $(lsof -ti:${config.port})`);
+    const hint = process.platform === 'win32'
+      ? `find it with \`netstat -ano | findstr :${config.port}\`, then \`taskkill /PID <pid> /F\``
+      : `kill $(lsof -ti:${config.port})`;
+    console.error(`[server] Port ${config.port} is already in use. Stop the other process: ${hint}`);
     process.exit(1);
   }
   throw err;
 });
 
+scheduleRetention({ db, config });
 scheduleBackups({ db, config });
 
 const shutdown = () => {

@@ -61,3 +61,34 @@ export async function api(path, { method = 'GET', body, signal, token: explicitT
   if (!res.ok) throw new ApiError(res.status, data);
   return data;
 }
+
+/** Let the browser save a blob. The anchor must be in the DOM for Firefox; revoke after the click is handled. */
+export function saveBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/** Download a file from an authenticated endpoint, using the server's file name when it sends one. */
+export async function downloadFile(path, fallbackName) {
+  const token = getToken();
+  let res;
+  try {
+    res = await fetch(path, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  } catch {
+    throw new ApiError(0, { error: { code: 'network', message: 'Ingen kontakt med servern. Kontrollera anslutningen.' } });
+  }
+  if (!res.ok) {
+    let data = null;
+    try { data = await res.json(); } catch { /* not JSON */ }
+    if (res.status === 401 && token) unauthorizedListeners.forEach((fn) => fn());
+    throw new ApiError(res.status, data);
+  }
+  const name = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? fallbackName;
+  saveBlob(await res.blob(), name);
+}

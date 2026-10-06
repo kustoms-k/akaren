@@ -41,5 +41,5 @@ export function useForm(initial) {
     }
   }
 
-  return { values, setValues, field, errors, formError, busy, submit, reset };
+  return { values, setValues, field, errors, setErrors, formError, busy, submit, reset };
 }

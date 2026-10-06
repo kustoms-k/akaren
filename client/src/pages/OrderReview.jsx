@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeft, Check, Sparkles, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, Mail, Sparkles, Trash2 } from 'lucide-react';
 import { Button } from '../components/Button.jsx';
 import { Link } from '../components/Link.jsx';
 import { PageHeader, ErrorNotice, TableSkeleton } from '../components/PageHeader.jsx';
@@ -107,7 +107,10 @@ function ReviewForm({ intake }) {
   const ack = (k) => (on) => setAcks((s) => { const n = new Set(s); if (on) n.add(k); else n.delete(k); return n; });
 
   // ── Order confirmation email, sent right after the job is created ──
-  const [sendConfirmation, setSendConfirmation] = useState(() => Boolean(ex.epost?.value));
+  // From the inbox, the confirmation goes back as a reply in the email's thread instead.
+  const fromEmail = intake.email;
+  const back = fromEmail ? `/inkorg/${fromEmail.thread_id}` : '/bestallning';
+  const [sendConfirmation, setSendConfirmation] = useState(() => !fromEmail && Boolean(ex.epost?.value));
   const [confirmationMessage, setConfirmationMessage] = useState('');
   const hasEmail = values.epost.trim() !== '';
   const willSend = sendConfirmation && hasEmail;
@@ -194,6 +197,11 @@ function ReviewForm({ intake }) {
     };
     try {
       const res = await api(`/api/intake/${intake.id}/confirm`, { method: 'POST', body });
+      if (fromEmail) {
+        toast('Uppdraget är skapat. Skicka orderbekräftelsen som svar till kunden.');
+        navigate(`/inkorg/${fromEmail.thread_id}?svara=bekrafta`);
+        return;
+      }
       // The job exists now; a failed email must not undo it. The job page shows the result and can resend.
       if (willSend) {
         try {
@@ -227,7 +235,7 @@ function ReviewForm({ intake }) {
     try {
       await api(`/api/intake/${intake.id}/discard`, { method: 'POST' });
       toast('Beställningen är kasserad');
-      navigate('/bestallning');
+      navigate(back);
     } catch (err) {
       toast(err.message, 'error');
     }
@@ -248,8 +256,8 @@ function ReviewForm({ intake }) {
 
   return (
     <>
-      <Link to="/bestallning" className="t-muted" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 12, textDecoration: 'none', fontSize: 13 }}>
-        <ArrowLeft size={14} /> Beställningar
+      <Link to={back} className="t-muted" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 12, textDecoration: 'none', fontSize: 13 }}>
+        <ArrowLeft size={14} /> {fromEmail ? 'Tillbaka till mejlet' : 'Beställningar'}
       </Link>
       <PageHeader
         title="Granska beställning"
@@ -262,12 +270,14 @@ function ReviewForm({ intake }) {
       <div className="review">
         <aside className="panel review-source">
           <div className="panel-head">
-            <h2 className="t-heading">Originaltext</h2>
+            <h2 className="t-heading" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>{fromEmail ? <><Mail size={14} /> Mejlet</> : 'Originaltext'}</h2>
             {intake.source === 'ai' && <span className="badge badge-muted"><Sparkles size={11} /> {intake.model === 'demo' ? 'Demoläge' : intake.model}</span>}
           </div>
           <pre>{intake.raw_text || 'Ingen text (manuell beställning).'}</pre>
           <div className="t-muted" style={{ fontSize: 12, padding: '10px 18px', borderTop: '1px solid var(--border)' }}>
-            Inläst {formatTimestamp(intake.created_at)}{intake.created_by_name ? ` av ${intake.created_by_name}` : ''}
+            {fromEmail
+              ? <>Från inkorgen: {fromEmail.from_name ?? fromEmail.from_email}, {formatTimestamp(fromEmail.received_at)}</>
+              : <>Inläst {formatTimestamp(intake.created_at)}{intake.created_by_name ? ` av ${intake.created_by_name}` : ''}</>}
           </div>
         </aside>
 
@@ -413,6 +423,14 @@ function ReviewForm({ intake }) {
           {/* Order confirmation */}
           <section className="panel">
             <div className="panel-body" style={{ display: 'grid', gap: 10 }}>
+              {fromEmail ? (
+                <>
+                  <div className="section-title" style={{ marginBottom: 0 }}><h2 className="t-heading">Orderbekräftelse till kunden</h2></div>
+                  <p className="t-muted" style={{ fontSize: 13 }}>
+                    När uppdraget är skapat kommer du tillbaka till mejlet och kan skicka orderbekräftelsen som svar i samma tråd, till {fromEmail.from_email}.
+                  </p>
+                </>
+              ) : (<>
               <div className="section-title">
                 <h2 className="t-heading">Orderbekräftelse till kunden</h2>
                 {integrations.data && !integrations.data.mail?.enabled && (
@@ -436,6 +454,7 @@ function ReviewForm({ intake }) {
               <p className="t-muted" style={{ fontSize: 12 }}>
                 Mejlet innehåller uppgifterna ovan och ber kunden svara om något inte stämmer. Svar går till er e-post.
               </p>
+              </>)}
             </div>
           </section>
         </div>

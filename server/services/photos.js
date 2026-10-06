@@ -7,6 +7,9 @@ import { HttpError } from '../lib/http.js';
 const MAX_EDGE = 2000;
 const ID_RE = /^[0-9a-f]{32}$/;
 
+/** Where a photo lives under a photos directory: <dir>/ab/<id>.jpg. Also used by the backup and retention jobs. */
+export const photoPath = (dir, id) => join(dir, id.slice(0, 2), `${id}.jpg`);
+
 /**
  * Photo store on the local disk (DATA_DIR/photos/ab/<id>.jpg).
  * Every upload is re-encoded: auto-rotated, at most 2000 px, JPEG, with all metadata
@@ -27,7 +30,7 @@ export function createPhotoStore({ db, config }) {
       AND COALESCE(uploaded_by_user_id, -1) = COALESCE(@user_id, -1)
   `);
 
-  const pathFor = (id) => join(dir, id.slice(0, 2), `${id}.jpg`);
+  const pathFor = (id) => photoPath(dir, id);
 
   async function normalize(buffer) {
     try {

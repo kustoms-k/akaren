@@ -25,6 +25,11 @@ import { jobsRouter } from './routes/jobs.js';
 import { dispatchRouter } from './routes/dispatch.js';
 import { driverRouter } from './routes/driver.js';
 import { photosRouter } from './routes/photos.js';
+import { lassRouter } from './routes/lass.js';
+import { massredovisningRouter } from './routes/massredovisning.js';
+import { inboxRouter } from './routes/inbox.js';
+import { fakturaunderlagRouter } from './routes/fakturaunderlag.js';
+import { priceListsRouter } from './routes/priceLists.js';
 
 const PRIVATE_LAN = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/;
 
@@ -80,9 +85,14 @@ export function createApp({ config, db, services = {}, logger = console }) {
   office.use('/vehicles', vehiclesRouter(deps));
   office.use('/drivers', driversRouter(deps));
   office.use('/fortnox', fortnoxRouter(deps));
+  office.use('/inbox', inboxRouter(deps));
+  office.use('/fakturaunderlag', fakturaunderlagRouter(deps));
+  office.use('/price-lists', priceListsRouter(deps));
   office.use('/intake', intakeRouter(deps));
   office.use('/jobs', jobsRouter(deps));
   office.use('/photos', photosRouter(deps));
+  office.use('/lass', lassRouter(deps));
+  office.use('/massredovisning', massredovisningRouter(deps));
   office.use('/', dispatchRouter(deps));
   app.use('/api', office);
 

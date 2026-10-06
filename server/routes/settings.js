@@ -31,8 +31,11 @@ export function settingsRouter({ db, audit, config, fortnox, sms, mail, ai }) {
   });
 
   // What is configured on this server; never returns secrets.
+  const stmtMailbox = db.prepare('SELECT provider, address, status, last_sync_at FROM mail_accounts WHERE company_id = ?');
+
   router.get('/integrations', (req, res) => {
     res.json({
+      inbox: stmtMailbox.get(req.companyId) ?? null,
       ai: ai.usage(req.companyId),
       sms: { enabled: sms.enabled, sender: config.elks.sender },
       mail: { enabled: mail.enabled, from: mail.from },

@@ -8,6 +8,8 @@ export const BILLING_FIELDS = {
   material: 'Material',
 };
 
+export const REGNR_MISMATCH_REASON = 'Annat regnr på vågsedeln';
+
 // Confidence values that need no review. 'forare'/'kontor' = typed or corrected by a person.
 const TRUSTED = new Set(['hog', 'medel', 'forare', 'kontor']);
 
@@ -24,7 +26,7 @@ export function reviewStatusFor({ confidence = {}, hasPhoto, duplicate = false, 
     else if (!TRUSTED.has(c)) reasons.push(`${label} osäker`);
   }
   if (duplicate) reasons.push('Vågsedelnumret är redan rapporterat');
-  if (regnrMismatch) reasons.push('Annat regnr på vågsedeln');
+  if (regnrMismatch) reasons.push(REGNR_MISMATCH_REASON);
   if (farligtAvfall) reasons.push('Farligt avfall');
   return { status: reasons.length ? 'behover_granskas' : 'ok', reasons };
 }

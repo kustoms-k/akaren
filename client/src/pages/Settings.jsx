@@ -8,7 +8,8 @@ import { api } from '../lib/api.js';
 import { useApi } from '../lib/useApi.js';
 import { useForm } from '../lib/useForm.js';
 import { navigate, useLocation } from '../lib/router.js';
-import { FORTNOX_STATUS, VAT_MODES, formatPhone, formatTimestamp } from '../lib/labels.js';
+import { FORTNOX_STATUS, VAT_MODES, formatAgo, formatPhone, formatTimestamp } from '../lib/labels.js';
+import { Link } from '../components/Link.jsx';
 
 const COMPANY_FIELDS = ['name', 'org_nr', 'address', 'postnr', 'ort', 'phone', 'email', 'bankgiro', 'default_vat_mode', 'retention_months', 'order_terms'];
 
@@ -80,7 +81,7 @@ function CompanyForm({ company, onSaved }) {
           <TextField
             label="Spara foton och förardata (månader)"
             type="number" min={12} max={120} inputMode="numeric"
-            hint="Därefter raderas foton och förarnas personuppgifter. Fakturerade lass sparas i 7 år enligt bokföringslagen."
+            hint="Varje natt raderas vågsedelfoton som är äldre än så, och förare som slutat anonymiseras. Själva lassen sparas som spårbarhet och bokföringsunderlag."
             {...form.field('retention_months')}
           />
           {form.formError && <div className="notice notice-red span-2">{form.formError}</div>}
@@ -149,6 +150,29 @@ function FortnoxPanel() {
             </div>
           </>
         )}
+      </div>
+    </section>
+  );
+}
+
+const PROVIDERS = { demo: 'Demoinkorg', microsoft: 'Microsoft 365', google: 'Google', imap: 'IMAP' };
+
+function InboxPanel() {
+  const { data } = useApi('/api/settings/integrations');
+  if (!data) return null;
+  const box = data.inbox;
+  return (
+    <section className="panel" style={{ marginBottom: 16 }}>
+      <div className="panel-head">
+        <h2 className="t-heading">Inkorg för beställningar</h2>
+        <span className={`badge ${box ? (box.provider === 'demo' ? 'badge-blue' : 'badge-green') : 'badge-muted'}`}>{box ? PROVIDERS[box.provider] : 'Inte kopplad'}</span>
+      </div>
+      <div className="panel-body">
+        <p className="t-muted" style={{ fontSize: 13 }}>
+          {box
+            ? <>Åkaren läser <strong>{box.address}</strong>, sorterar ut beställningarna och läser av dem. Senast hämtad {formatAgo(box.last_sync_at)}. <Link to="/inkorg">Öppna inkorgen</Link>.</>
+            : <>Koppla en adress som tar emot beställningar, så hamnar de i <Link to="/inkorg">inkorgen</Link> sorterade och avlästa. Koppling till Microsoft 365, Google och IMAP kommer snart.</>}
+        </p>
       </div>
     </section>
   );
@@ -223,6 +247,7 @@ export function Settings() {
       <ErrorNotice error={error} onRetry={reload} />
       <div style={{ maxWidth: 760 }}>
         <FortnoxPanel />
+        <InboxPanel />
         <AiPanel />
         <MailPanel />
         {company ? (

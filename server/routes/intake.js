@@ -134,6 +134,12 @@ export function intakeRouter({ db, audit, ai, limiters }) {
         final_json = ?, overrides_json = ?
     WHERE id = ? AND company_id = ? AND status = 'utkast'
   `);
+  // The inbox email an intake was started from, if any.
+  const stmtSourceEmail = db.prepare(`
+    SELECT id, thread_id, from_name, from_email, subject, received_at FROM inbound_emails
+    WHERE order_intake_id = ? AND company_id = ? LIMIT 1
+  `);
+  const stmtEmailJob = db.prepare('UPDATE inbound_emails SET job_id = ? WHERE order_intake_id = ? AND company_id = ?');
   const stmtDiscard = db.prepare(`UPDATE order_intakes SET status = 'kasserad' WHERE id = ? AND company_id = ? AND status = 'utkast'`);
 
   const parseExtraction = (json) => {
@@ -166,6 +172,7 @@ export function intakeRouter({ db, audit, ai, limiters }) {
       required: REQUIRED_JOB_FIELDS,
       suggestions,
       preselect: { customer_id: customerPick?.id ?? null, project_id: projectPick?.id ?? null },
+      email: stmtSourceEmail.get(intake.id, intake.company_id) ?? null,
     };
   }
 
@@ -316,6 +323,7 @@ export function intakeRouter({ db, audit, ai, limiters }) {
       }
       stmtConfirm.run(jobId, req.user.id, JSON.stringify(input), JSON.stringify({ changed: overrides, acknowledged: input.acknowledged }),
         intake.id, req.companyId);
+      stmtEmailJob.run(jobId, intake.id, req.companyId);
       audit({ ...officeActor(req), entity: 'job', entityId: jobId, action: 'create', after: { order_intake_id: intake.id, ...f } });
       return { job_id: jobId, customer_id: customerId, project_id: projectId };
     })();

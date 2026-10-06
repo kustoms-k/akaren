@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Mail } from 'lucide-react';
 import { Button } from '../components/Button.jsx';
 import { Link } from '../components/Link.jsx';
 import { PageHeader, ErrorNotice, TableSkeleton } from '../components/PageHeader.jsx';
@@ -108,6 +108,9 @@ export function JobDetail({ params }) {
           </div>
           <div className="t-muted" style={{ fontSize: 12, padding: '10px 18px', borderTop: '1px solid var(--border)' }}>
             Skapat {formatTimestamp(job.created_at)}{job.created_by_name ? ` av ${job.created_by_name}` : ''}.
+            {job.source_email && (
+              <> Från mejlet <Link to={`/inkorg/${job.source_email.thread_id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Mail size={12} /> {job.source_email.subject}</Link>.</>
+            )}
           </div>
         </section>
 

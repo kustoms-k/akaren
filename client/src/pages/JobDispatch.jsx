@@ -7,6 +7,7 @@ import { LinkShare } from '../components/LinkShare.jsx';
 import { TableSkeleton, ErrorNotice } from '../components/PageHeader.jsx';
 import { api } from '../lib/api.js';
 import { useApi } from '../lib/useApi.js';
+import { navigate } from '../lib/router.js';
 import { useToast } from '../lib/toast.js';
 import {
   REVIEW_STATUS, SMS_STATUS, VEHICLE_TYPES, VEHICLE_ZONE_CLASSES, ZONE_CLASSES, formatDate, formatTon,
@@ -212,7 +213,7 @@ function smsNote(status, name) {
   return `SMS skickat till ${name}.`;
 }
 
-/** Lass reported on this job (read-only here; review comes with the Granska view). */
+/** Lass reported on this job. A row opens the lass on the Granska lass page. */
 export function LassPanel({ job }) {
   const { data, error, loading, reload } = useApi(`/api/jobs/${job.id}/lass`);
   const [photo, setPhoto] = useState(null);
@@ -233,10 +234,12 @@ export function LassPanel({ job }) {
             <thead><tr><th /><th>Datum</th><th>Vågsedel</th><th>Netto</th><th>Material</th><th>Förare</th><th>Status</th></tr></thead>
             <tbody>
               {data?.map((l) => (
-                <tr key={l.id}>
+                <tr key={l.id} className="clickable" tabIndex={0}
+                  onClick={() => navigate(`/lass/${l.id}`)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && e.target === e.currentTarget) navigate(`/lass/${l.id}`); }}>
                   <td style={{ width: 52 }}>
                     {l.photo_id ? (
-                      <button type="button" onClick={() => setPhoto(l)} style={{ border: 'none', padding: 0, background: 'none', cursor: 'zoom-in' }} aria-label="Visa vågsedel">
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setPhoto(l); }} style={{ border: 'none', padding: 0, background: 'none', cursor: 'zoom-in' }} aria-label="Visa vågsedel">
                         <AuthImage src={`/api/photos/${l.photo_id}`} alt="Vågsedel" style={{ width: 40, height: 40, borderRadius: 6 }} />
                       </button>
                     ) : <span className="t-muted" style={{ fontSize: 11 }}>Inget foto</span>}

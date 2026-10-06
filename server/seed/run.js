@@ -46,6 +46,7 @@ try {
   console.log(`[seed] Teståkeriet AB seeded into ${config.dbFile}`);
   console.log(`[seed] ${s.vehicles} fordon, ${s.drivers} förare, ${s.customers} kunder, ${s.projects} projekt`);
   console.log(`[seed] ${s.lass} lass (${s.versions} versioner, ${s.photos.length} vågsedelfoton), ${s.timeEntries} tidrapporter, veckor ${s.previousWeek} + ${s.currentWeek}`);
+  if (s.inbox) console.log(`[seed] Inkorg order@testakeriet.se: ${s.inbox.emails} mejl, ${s.inbox.replies} svar, ${s.inbox.pool} väntar på "Hämta ny post"`);
   console.log(`[seed] Logga in: ${s.email} / ${password}${process.env.SEED_PASSWORD ? ' (från SEED_PASSWORD)' : ''}`);
 } catch (err) {
   if (err.message === 'Database already contains data') {

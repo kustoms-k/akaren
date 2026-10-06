@@ -1,6 +1,6 @@
 # Åkaren pivot plan (Phase 1 audit)
 
-Status: **approved 2026-10-03 with all recommendations (D1–D16)**. Phases 2–4 are done; Phase 5 is next.
+Status: **approved 2026-10-03 with all recommendations (D1–D16)**. Phases 2–6 are done (Phase 6 awaits a Fortnox sandbox check); Phase 7 is next.
 Audit date: 2026-10-03, against `main` @ `fb5d389` (tagged `pre-pivot-archive`).
 
 ## Progress log
@@ -55,6 +55,54 @@ Audit date: 2026-10-03, against `main` @ `fb5d389` (tagged `pre-pivot-archive`).
   - Every attempt is stored in `order_confirmations` with the exact subject, text and HTML, and audited. Replies go to the company email (Reply-To); optional bcc to the office. A failed send never undoes the job; the job page shows the error and can resend.
   - Transport: plain SMTP via `nodemailer` (re-added for this; MIT-0, no dependencies). Works with Google Workspace (app password), Microsoft 365 (SMTP AUTH basic auth is disabled by default from end of 2026), or an EU relay such as Brevo/Mailjet with SPF + DKIM on the company domain. Without `SMTP_HOST`/`MAIL_FROM` the email is simulated: logged and stored, not sent.
 - **Demo mode (`DEMO_MODE=1`):** without an Anthropic key the order inbox offers six sample orders with pre-written extractions (`lib/orderDemo.js`). Only those exact texts are accepted; anything else is rejected. Refused when `NODE_ENV=production`; ignored when `ANTHROPIC_API_KEY` is set. A deliberate, scoped exception to "never fake data", for showing the product to prospects.
+
+**Phase 5 (done, 2026-10-05).** Lass review, hazardous-waste reporting and Massredovisning. 204 server tests pass. Verified in headless Edge on the seeded data: queue → lass with photo → correct the weight → approve (lands on the next lass) → version history; hazard tab → mark as reported; Massredovisning for a project with CSV and PDF download; the lass page at 390 px.
+- **Office lass API (`routes/lass.js`, §4.5):**
+  - `GET /api/lass` takes filters for job, project, customer, dates, review status, `farligt=1` and `q` (ticket number or regnr). The review queue is oldest first.
+  - `GET /api/lass/:id` returns the current version, all versions with who wrote them, the job context, the AI reading and warnings, an invoiced flag, the hazard deadline and the next lass to review.
+  - `POST /api/lass` is manual office entry. Without a photo it goes to review.
+  - `POST /api/lass/:id/versions` is a correction; a reason is required and something must change. A reviewed lass stays reviewed.
+  - `POST /api/lass/:id/review` approves, optionally with corrections; a changed value needs a reason.
+  - `GET /api/lass/summary` and `GET /api/lass/farligt-avfall`.
+- **Hazardous waste:**
+  - `lib/workdays.js` computes Easter-based Swedish holidays plus midsommarafton, julafton and nyårsafton (lag 1930:173). The deadline is two working days after the transport.
+  - Migration `005_hazard_reports.sql` records the report with a date and an optional reference. An undo sets `withdrawn_at`.
+  - Översikt shows a banner with the nearest deadline.
+- **Massredovisning (`/massor`):** JSON and CSV from the server (`lib/massredovisning.js`): BOM, `;`, decimal comma, formula-injection guard. The PDF is built with jsPDF in the client, as a lazy chunk.
+- **Fixes found along the way:**
+  - A correction used to drop the "Annat regnr på vågsedeln" review reason; it now carries over.
+  - Approving now marks uncertain AI values as checked by the office, so a later correction doesn't send the lass back to review.
+- **Pulled forward from Phase 7:**
+  - `jobs/retention.js` runs nightly at 01:30. It deletes photos older than `retention_months` and anonymises inactive drivers with no activity in the period. Lass rows are kept.
+  - `anonymizeDriver` is ready for the erase endpoint.
+  - The backup mirror now copies photos to `BACKUP_DIR` and removes the ones retention deleted (D14).
+- **Windows:** the port-in-use hint and the `.env.example` LAN-IP hint cover Windows.
+
+**Phase 6 (done in code, 2026-10-06; Fortnox sandbox check pending).** Fakturaunderlag and Fortnox drafts. 241 server tests pass, and the flow was verified in headless Edge: blocked current week → last week ready → Fortnox preview → lås underlag → PDF/CSV → makulera → prislistor, plus 390 px.
+- **Libraries:** `lib/weeks.js`, `lib/pricing.js`, `lib/fakturaunderlag.js` (pure builder) and `lib/fortnoxPayload.js`, all unit tested. Migration `007_invoicing.sql` (indexes only).
+- **Billing basis per job:** the job's price unit (§3 business rules). Lass under hourly or fixed-price jobs are not billed separately.
+- **API:**
+  - `GET /api/fakturaunderlag?week`, `GET …/preview` (the exact Fortnox JSON, works without a connection) and `GET …/export.csv`
+  - `POST …/lock` and `POST …/fortnox`
+  - `POST …/batches/:id/void`
+  - `POST …/customers/:id/fortnox` (creates the customer in Fortnox, with VATType SEREVERSEDVAT for omvänd byggmoms)
+  - the price-list API (`/api/price-lists`, moved here from Phase 2)
+- **Fortnox service:** `createInvoice`, `findInvoiceByExternalRef` and `createCustomer`. The refresh lock and `reconnect_required` were already in place.
+- **Not verified (no sandbox credentials yet), §7 items:**
+  - the 50-character Description (we clip it)
+  - `DeliveredQuantity`
+  - Unit codes `t`/`st`/`tim`
+  - the `externalinvoicereference1` list filter
+  - reverse charge (rows have VAT 0, plus a remark and the customer's VATType)
+
+**Order inbox, demo version (2026-10-06, owner request, between Phases 5 and 6).** `/inkorg` shows the email that arrives at the company's order address, sorted so that only order mail needs attention. AI reads each order, and the office replies from pre-written templates. 226 server tests pass, and the flow was verified in headless Edge at 1440 and 390 px.
+- **Data:** migration `006_inbox.sql` adds `mail_accounts`, `inbound_emails` (Message-ID unique, threaded, category with source), `inbound_attachments` (extracted text, no file bytes) and `email_replies`.
+- **Flow:** email → AI card with the reading and its confidence, matched customer/project, missing details, a hazardous-waste warning, and changes against an existing job → "Granska och skapa uppdrag" opens the normal order review → back to the thread with the order confirmation ready to send as a reply.
+- **Templates:** bekräfta order, föreslå annat datum, be om mer info (questions preselected from what the AI couldn't find, depending on the job type), tacka nej, bekräfta ändring/avbokning, and a free reply.
+- **Demo mailbox** (`lib/inboxDemo.js`): 20 emails, 4 replies and 3 held back for "Hämta ny post".
+  - The emails include a hazardous order with a lab report, a vague order, a PDF work order from a new customer, a date change, a cancellation, a question, a full proposal-and-acceptance thread and 9 filtered emails.
+  - The two seeded jobs have their email history.
+- **Not built:** real fetching (Graph/IMAP), AI triage of real mail, editable templates. Mailbox connection shows "Kommer snart".
 
 ---
 
@@ -662,7 +710,7 @@ Railway is out. The app runs on the developer laptop from VS Code. "EU region" t
 | D12 | Fortnox grouping | One draft invoice per **customer + project** per week. "Er referens" = `customer_ref`; one row per lass. |
 | D13 | Which zone is the job in, with no routing? | `projects.miljozon` set by the office, suggested from a static Stockholm postnummer table. |
 | D14 | Backups | Nightly local `VACUUM INTO` plus a photos copy to a configurable folder (e.g. an external disk or iCloud Drive folder). Drop S3. |
-| D15 | Email/SMS forwarding intake | Paste-only for now (R8). |
+| D15 | Email/SMS forwarding intake | Paste-only for now (R8). **Update 2026-10-06:** the order inbox (`/inkorg`) is built against a demo mailbox; real fetching over Microsoft Graph/IMAP (polling, so it works locally) comes later. |
 | D16 | Sending personal data to Anthropic (US) | Proceed, with Anthropic listed as a sub-processor and data minimised. |
 
 ---
@@ -714,5 +762,5 @@ Each phase ends with a commit and a short summary of changes and manual setup st
 
 **Phase 7: tests, cleanup, docs, run checklist**
 1. API E2E happy path: paste order → confirm → assign + SMS (mock) → driver reports lass (mock vision) → office reviews → fakturaunderlag → Fortnox draft (mock).
-2. Retention job and driver erasure tests. Remove dead code. Lint.
+2. Driver export/erase endpoints and their tests (the retention job is done in Phase 5). Remove dead code. Lint.
 3. Update `README.md` and `CLAUDE.md`. Add a **local run checklist** (LAN IP, fixed DHCP, firewall, FileVault, backups, env) and a short **future hosting checklist** (EU region, persistent volume, HTTPS, tunnel option). This replaces the Railway checklist.

@@ -9,7 +9,7 @@ const GENERIC = new Set([
   'bygg', 'mark', 'anlaggning', 'entreprenad', 'entreprenader', 'fastighet', 'fastigheter', 'fastighetsutveckling',
   'schakt', 'transport', 'transporter', 'akeri', 'stockholm', 'sverige', 'och', 'i', 'service', 'gruppen', 'group',
 ]);
-const FREE_MAIL = new Set(['gmail.com', 'hotmail.com', 'outlook.com', 'live.se', 'telia.com', 'icloud.com', 'yahoo.com', 'hotmail.se', 'outlook.se']);
+export const FREE_MAIL = new Set(['gmail.com', 'hotmail.com', 'outlook.com', 'live.se', 'telia.com', 'icloud.com', 'yahoo.com', 'hotmail.se', 'outlook.se']);
 
 const fold = (s) => s.toLowerCase()
   .replace(/[åä]/g, 'a').replace(/ö/g, 'o').replace(/[éè]/g, 'e').replace(/ü/g, 'u');

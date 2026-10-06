@@ -21,7 +21,10 @@ export function AuthProvider({ children }) {
   }, [state.status, logout]);
 
   const login = useCallback(async (email, password) => {
-    const data = await api('/api/auth/login', { method: 'POST', body: { email, password } });
+    // Empty email and password is the one-click demo login (server: DEMO_MODE only).
+    const data = email || password
+      ? await api('/api/auth/login', { method: 'POST', body: { email, password } })
+      : await api('/api/auth/demo-login', { method: 'POST' });
     setToken(data.token);
     setState({ status: 'authenticated', user: data.user, company: data.company });
   }, []);

@@ -1,7 +1,8 @@
 import bcrypt from 'bcryptjs';
 import { randomBytes } from 'node:crypto';
 import { reviewStatusFor } from '../lib/lassReview.js';
-import { addDays, isoWeek, isoWeekRange, isoWeekday, stockholmLocalToUtc } from '../lib/dates.js';
+import { addDays, isoWeek, isoWeekRange, isoWeekday, stockholmDate, stockholmLocalToUtc } from '../lib/dates.js';
+import { seedInbox } from './inbox.js';
 
 // Demo data for "Teståkeriet AB". Every company name, org nr, regnr and person is fictional.
 // Driver phone numbers are in 070-174 06 05–99 and the office number in 08-465 004 00–99, ranges PTS reserves for fiction.
@@ -133,8 +134,10 @@ export function demoWorkdays(today) {
  * Returns a summary with row counts and the office login.
  * withPhotos: create a photo row per driver lass and return `photos` [{ id, slip, blur }]
  * for the caller to render (rendering is async; see renderDemoPhotos in run.js).
+ * withInbox: also seed the demo order mailbox (seed/inbox.js) as of `now` (default: now if `today` is today,
+ * otherwise noon on `today`).
  */
-export function seedDemo(db, { today, password, withPhotos = false }) {
+export function seedDemo(db, { today, password, withPhotos = false, withInbox = true, now = null }) {
   if (db.prepare('SELECT COUNT(*) FROM companies').pluck().get() > 0) {
     throw new Error('Database already contains data');
   }
@@ -147,6 +150,7 @@ export function seedDemo(db, { today, password, withPhotos = false }) {
   const counts = { lass: 0, versions: 0, timeEntries: 0, assignments: 0 };
   const photos = [];
   const { days, previousWeek, currentWeek } = demoWorkdays(today);
+  let inbox = null;
 
   const ins = {
     company: db.prepare(`INSERT INTO companies (name, org_nr, address, postnr, ort, phone, email, retention_months, default_vat_mode, order_terms)
@@ -418,6 +422,11 @@ export function seedDemo(db, { today, password, withPhotos = false }) {
         });
       }
     }
+
+    if (withInbox) {
+      const at = now ?? (stockholmDate() === today ? new Date() : new Date(stockholmLocalToUtc(today, '12:00')));
+      inbox = seedInbox(db, { companyId, userId, now: at });
+    }
   })();
 
   return {
@@ -430,6 +439,7 @@ export function seedDemo(db, { today, password, withPhotos = false }) {
     customers: CUSTOMERS.length,
     projects: PROJECTS.length,
     ...counts,
+    inbox,
     photos,
   };
 }

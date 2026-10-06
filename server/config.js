@@ -30,7 +30,8 @@ const schema = z.object({
   ANTHROPIC_BASE_URL: optionalUrl,
   // Hard monthly cap on estimated AI spend per company (USD). 0 disables AI calls.
   AI_MONTHLY_BUDGET_USD: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(10000).default(30)),
-  // Local demos only: canned order extractions for the built-in sample orders when no API key is set.
+  // Local demos only: canned order extractions for the built-in sample orders when no API key is set,
+  // and a login button that needs no email or password.
   DEMO_MODE: z.preprocess(emptyToUndefined, z.enum(['0', '1']).default('0')),
 
   ELKS_USERNAME: optionalString,
@@ -90,6 +91,7 @@ export function loadConfig(env = process.env) {
     env:     e.NODE_ENV,
     isProd:  e.NODE_ENV === 'production',
     isTest:  e.NODE_ENV === 'test',
+    demoMode: e.DEMO_MODE === '1',
     host:    e.HOST,
     port:    e.PORT,
     dataDir,

@@ -46,6 +46,16 @@ export function addDays(str, days) {
   return fromUtcDay(new Date(toUtcDay(str).getTime() + days * DAY_MS));
 }
 
+/** Add whole months to a 'YYYY-MM-DD' date; the day is clamped to the target month ('2026-03-31' - 1 → '2026-02-28'). */
+export function addMonths(str, months) {
+  const d = toUtcDay(str);
+  const total = d.getUTCFullYear() * 12 + d.getUTCMonth() + months;
+  const year = Math.floor(total / 12);
+  const month = total - year * 12;
+  const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  return fromUtcDay(new Date(Date.UTC(year, month, Math.min(d.getUTCDate(), lastDay))));
+}
+
 /** ISO weekday, 1 = Monday … 7 = Sunday. */
 export function isoWeekday(str) {
   return toUtcDay(str).getUTCDay() || 7;

@@ -72,6 +72,50 @@ export const REVIEW_STATUS = {
   granskad: { label: 'Granskad', badge: 'badge-blue' },
 };
 
+// Per-field confidence on a lass: the AI's reading, or who typed the value.
+export const LASS_CONFIDENCE = {
+  medel: { label: 'Tolkat', badge: 'badge-blue', hint: 'AI:n har tolkat värdet på vågsedeln.' },
+  lag: { label: 'Osäkert', badge: 'badge-amber', hint: 'AI:n kunde inte läsa värdet säkert. Kontrollera mot fotot.' },
+  saknas: { label: 'Saknas', badge: 'badge-muted', hint: 'Värdet saknas.' },
+  forare: { label: 'Föraren', badge: 'badge-muted', hint: 'Skrivet eller ändrat av föraren.' },
+  kontor: { label: 'Kontoret', badge: 'badge-muted', hint: 'Skrivet eller kontrollerat av kontoret.' },
+};
+
+// Hazardous waste: reporting to Naturvårdsverket's avfallsregister within two working days.
+export const HAZARD_STATE = {
+  forsenad: { label: 'Försenad', badge: 'badge-red' },
+  idag: { label: 'Sista dag idag', badge: 'badge-amber' },
+  kommande: { label: 'Ska rapporteras', badge: 'badge-amber' },
+  rapporterad: { label: 'Rapporterad', badge: 'badge-green' },
+};
+
+// Lass fields as the office sees them.
+export const LASS_FIELD_LABELS = {
+  vagsedel_nr: 'Vågsedelnummer', datum: 'Datum', tid: 'Tid', material: 'Material', netto_kg: 'Nettovikt',
+  avfallskod: 'Avfallskod', farligt_avfall: 'Farligt avfall', fran_text: 'Från', till_namn: 'Till (mottagare)',
+  till_orgnr: 'Mottagarens org.nr', till_adress: 'Mottagarens adress', note: 'Anteckning',
+};
+
+/** Display value of a lass field. */
+export function formatLassValue(key, value) {
+  if (value == null || value === '') return '–';
+  if (key === 'netto_kg') return formatTon(value);
+  if (key === 'farligt_avfall') return value ? 'Ja' : 'Nej';
+  if (key === 'datum') return formatDate(value);
+  return String(value);
+}
+
+/** '18,42' or '18.42' (ton) → 18420 kg; '' → null; anything else → NaN. */
+export function tonToKg(ton) {
+  const s = String(ton ?? '').replace(/\s/g, '').replace(',', '.');
+  if (s === '') return null;
+  const n = Number(s);
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 1000) : NaN;
+}
+
+/** 18420 → '18,42' for an input field. */
+export const kgToTonInput = (kg) => (kg == null ? '' : String(kg / 1000).replace('.', ','));
+
 export const SMS_STATUS = {
   ej_skickat: { label: 'Ej skickat', badge: 'badge-muted' },
   skickat: { label: 'SMS skickat', badge: 'badge-green' },
@@ -134,4 +178,103 @@ export function formatTimestamp(iso) {
 const dateTimeFmt = new Intl.DateTimeFormat('sv-SE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Stockholm' });
 export function formatDateTime(iso) {
   return iso ? dateTimeFmt.format(new Date(iso)) : '';
+}
+
+// ── Order inbox ──
+
+export const INBOX_CATEGORY = {
+  bestallning: { label: 'Beställning', badge: 'badge-blue' },
+  andring: { label: 'Ändring', badge: 'badge-amber' },
+  avbokning: { label: 'Avbokning', badge: 'badge-red' },
+  fraga: { label: 'Fråga', badge: 'badge-muted' },
+  svar: { label: 'Svar', badge: 'badge-green' },
+  ovrigt: { label: 'Övrigt', badge: 'badge-muted' },
+};
+
+export const INBOX_STATUS = {
+  ny: { label: 'Att hantera', badge: 'badge-blue' },
+  besvarad: { label: 'Besvarad', badge: 'badge-green' },
+  klar: { label: 'Klar', badge: 'badge-muted' },
+  sorterad: { label: 'Sorterad bort', badge: 'badge-muted' },
+};
+
+export const CATEGORY_SOURCE = {
+  ai: 'Sorterat av AI',
+  regel: 'Sorterat av regel, utan AI',
+  kontoret: 'Sorterat av kontoret',
+};
+
+export const REPLY_TEMPLATE = {
+  bekrafta: 'Bekräfta order',
+  nytt_datum: 'Föreslå annat datum',
+  mer_info: 'Be om mer info',
+  tacka_nej: 'Tacka nej',
+  bekrafta_andring: 'Bekräfta ändringen',
+  bekrafta_avbokning: 'Bekräfta avbokningen',
+  fritt: 'Eget svar',
+};
+
+export const DECLINE_REASON = {
+  fullbokat: 'Fullbokat',
+  fordon: 'Saknar rätt fordon',
+  omrade: 'Utanför vårt område',
+  annat: 'Annat',
+};
+
+const timeOnly = new Intl.DateTimeFormat('sv-SE', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Stockholm' });
+const dayMonth = new Intl.DateTimeFormat('sv-SE', { day: 'numeric', month: 'short', timeZone: 'Europe/Stockholm' });
+const ymd = new Intl.DateTimeFormat('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Europe/Stockholm' });
+
+/** Mail-client style time: '08:31' today, 'i går' / 'i går 17:42', else '5 okt'. */
+export function formatMailTime(iso, { withTime = false } = {}) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const today = ymd.format(new Date());
+  const yesterday = ymd.format(new Date(Date.now() - 86_400_000));
+  const day = ymd.format(d);
+  if (day === today) return timeOnly.format(d);
+  if (day === yesterday) return withTime ? `i går ${timeOnly.format(d)}` : 'i går';
+  return withTime ? `${dayMonth.format(d)} ${timeOnly.format(d)}` : dayMonth.format(d);
+}
+
+/** 'för 2 min sedan', 'för 3 h sedan', or a date. */
+export function formatAgo(iso) {
+  if (!iso) return '';
+  const min = Math.round((Date.now() - new Date(iso).getTime()) / 60_000);
+  if (min < 1) return 'nyss';
+  if (min < 60) return `för ${min} min sedan`;
+  if (min < 24 * 60) return `för ${Math.round(min / 60)} h sedan`;
+  return formatMailTime(iso, { withTime: true });
+}
+
+export function formatBytes(n) {
+  if (!n) return '';
+  return n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} kB` : `${(n / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
+}
+
+// ── Fakturaunderlag ──
+
+export const UNDERLAG_STATUS = {
+  klar: { label: 'Klart att fakturera', badge: 'badge-green' },
+  delvis: { label: 'Nya rader att fakturera', badge: 'badge-blue' },
+  blockerad: { label: 'Blockerat', badge: 'badge-amber' },
+  fakturerad: { label: 'Fakturerat', badge: 'badge-muted' },
+};
+
+export const PRICE_UNITS = { ton: 'per ton', lass: 'per lass', timme: 'per timme', fast: 'fast pris' };
+export const QTY_UNITS = { ton: 't', lass: 'lass', timme: 'h', fast: 'st' };
+
+const krFmt = new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const krRound = new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 });
+/** 237072 (öre) → '2 370,72 kr'; { round: true } → '2 371 kr'. */
+export function formatKr(ore, { round = false } = {}) {
+  if (ore == null) return '';
+  return (round ? krRound : krFmt).format(ore / 100);
+}
+
+/** A quantity for its unit: '17,96 t', '8,5 h', '1 lass'. */
+export function formatQty(q, unit) {
+  if (q == null) return '';
+  const n = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: unit === 'ton' ? 3 : 2 }).format(q);
+  return `${n} ${QTY_UNITS[unit] ?? ''}`.trim();
 }

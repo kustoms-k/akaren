@@ -14,13 +14,26 @@ import { OrderInbox } from './pages/OrderInbox.jsx';
 import { OrderReview } from './pages/OrderReview.jsx';
 import { Jobs } from './pages/Jobs.jsx';
 import { JobDetail } from './pages/JobDetail.jsx';
+import { LassQueue } from './pages/LassQueue.jsx';
+import { LassDetail } from './pages/LassDetail.jsx';
+import { Massredovisning } from './pages/Massredovisning.jsx';
+import { Inbox } from './pages/Inbox.jsx';
+import { Fakturaunderlag } from './pages/Fakturaunderlag.jsx';
+import { PriceLists } from './pages/PriceLists.jsx';
 
 const ROUTES = [
   ['/', Overview],
+  ['/inkorg', Inbox],
+  ['/inkorg/:id', Inbox],
   ['/bestallning', OrderInbox],
   ['/bestallning/:id', OrderReview],
   ['/uppdrag', Jobs],
   ['/uppdrag/:id', JobDetail],
+  ['/lass', LassQueue],
+  ['/lass/:id', LassDetail],
+  ['/massor', Massredovisning],
+  ['/faktura', Fakturaunderlag],
+  ['/prislistor', PriceLists],
   ['/kunder', Customers],
   ['/kunder/:id', CustomerDetail],
   ['/flotta', Fleet],

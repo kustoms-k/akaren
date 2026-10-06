@@ -1,5 +1,5 @@
 import { conflict, notFound } from '../lib/http.js';
-import { LASS_FIELDS, reviewStatusFor } from '../lib/lassReview.js';
+import { LASS_FIELDS, REGNR_MISMATCH_REASON, reviewStatusFor } from '../lib/lassReview.js';
 
 /**
  * Lass records: an immutable identity row plus append-only versions.
@@ -94,10 +94,12 @@ export function createLassService({ db }) {
   /**
    * Append a corrected version. `patch` holds changed lass fields; confidence for changed fields
    * becomes `personKind`. reviewStatus forces a status (e.g. 'granskad' when the office approves).
+   * markChecked: a person checked every value (office review), so uncertain AI values become `personKind` too.
+   * The other-truck flag is carried over from the previous version; the ticket photo doesn't change.
    */
   function addVersion({
-    lassId, companyId, patch = {}, note, changeReason, personKind, reviewStatus = null,
-    createdByKind, createdByUserId = null, createdByDriverId = null, regnrMismatch = false,
+    lassId, companyId, patch = {}, note, changeReason, personKind, reviewStatus = null, markChecked = false,
+    createdByKind, createdByUserId = null, createdByDriverId = null,
   }) {
     const prev = current(lassId, companyId);
     if (!prev) throw notFound('Lasset finns inte.');
@@ -112,11 +114,16 @@ export function createLassService({ db }) {
       const after = values[k] == null ? '' : String(values[k]);
       if (before !== after) confidence[k] = after === '' ? 'saknas' : personKind;
     }
+    if (markChecked) {
+      for (const k of LASS_FIELDS) {
+        if (values[k] != null && values[k] !== '' && ['lag', 'saknas', undefined].includes(confidence[k])) confidence[k] = personKind;
+      }
+    }
     const review = reviewStatus
       ? { status: reviewStatus, reasons: [] }
       : reviewStatusFor({
         confidence, hasPhoto: Boolean(prev.photo_id), duplicate: isDuplicate(companyId, values.vagsedel_nr, lassId),
-        farligtAvfall: Boolean(values.farligt_avfall), regnrMismatch,
+        farligtAvfall: Boolean(values.farligt_avfall), regnrMismatch: prev.review_reasons.includes(REGNR_MISMATCH_REASON),
       });
 
     stmtInsertVersion.run(versionRow({

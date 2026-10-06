@@ -49,6 +49,10 @@ export function jobsRouter({ db, audit, mail, limiters }) {
     WHERE j.id = ? AND j.company_id = ?
   `);
   const stmtLassCount = db.prepare('SELECT COUNT(*) FROM lass WHERE job_id = ?');
+  const stmtSourceEmail = db.prepare(`
+    SELECT thread_id, subject, from_name, from_email, received_at FROM inbound_emails
+    WHERE job_id = ? AND company_id = ? AND category != 'ovrigt' ORDER BY received_at LIMIT 1
+  `);
   const stmtSetStatus = db.prepare(`
     UPDATE jobs SET status = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ? AND company_id = ?
   `);
@@ -100,7 +104,10 @@ export function jobsRouter({ db, audit, mail, limiters }) {
     const { overrides_json, ...rest } = job;
     let overrides = null;
     try { overrides = overrides_json ? JSON.parse(overrides_json) : null; } catch { /* ignore */ }
-    res.json({ ...rest, overrides, lass_count: stmtLassCount.pluck().get(job.id) });
+    res.json({
+      ...rest, overrides, lass_count: stmtLassCount.pluck().get(job.id),
+      source_email: stmtSourceEmail.get(job.id, req.companyId) ?? null,
+    });
   });
 
   // ── Order confirmation email ──

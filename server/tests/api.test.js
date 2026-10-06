@@ -25,6 +25,27 @@ describe('auth', () => {
     db.prepare('UPDATE users SET active = 0 WHERE id = ?').run(user.userId);
     expect((await as('get', '/api/customers')).status).toBe(401);
   });
+
+  it('has no passwordless login outside demo mode', async () => {
+    const { app } = await testApp();
+    expect((await request(app).get('/api/auth/demo')).body).toEqual({ enabled: false });
+    const res = await request(app).post('/api/auth/demo-login');
+    expect(res.status).toBe(401);
+    expect(res.body.token).toBeUndefined();
+  });
+
+  it('logs in without a password in demo mode, as the first active user', async () => {
+    const { app, db, user } = await testApp({ configOverrides: { DEMO_MODE: '1' } });
+    expect((await request(app).get('/api/auth/demo')).body).toEqual({ enabled: true });
+
+    const res = await request(app).post('/api/auth/demo-login');
+    expect(res.status).toBe(200);
+    expect(res.body.user.email).toBe(user.email);
+    expect((await request(app).get('/api/customers').set('Authorization', `Bearer ${res.body.token}`)).status).toBe(200);
+
+    db.prepare('UPDATE users SET active = 0').run();
+    expect((await request(app).post('/api/auth/demo-login')).status).toBe(409);
+  });
 });
 
 describe('customers and projects', () => {

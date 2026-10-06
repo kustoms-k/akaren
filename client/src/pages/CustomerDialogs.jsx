@@ -3,15 +3,23 @@ import { Button } from '../components/Button.jsx';
 import { Dialog } from '../components/Dialog.jsx';
 import { TextField, SelectField, Checkbox } from '../components/Field.jsx';
 import { api } from '../lib/api.js';
+import { useApi } from '../lib/useApi.js';
 import { useForm } from '../lib/useForm.js';
 import { ZONE_CLASSES, VAT_MODES, formatPhone } from '../lib/labels.js';
 
-const EMPTY_CUSTOMER = { name: '', org_nr: '', address: '', postnr: '', ort: '', email: '', phone: '', vat_mode: '', active: true };
+const EMPTY_CUSTOMER = { name: '', org_nr: '', address: '', postnr: '', ort: '', email: '', phone: '', vat_mode: '', price_list_id: '', active: true };
+
+/** Price list picker options: '' = inherit (the label says from where). */
+function usePriceListOptions(open, inherit) {
+  const { data } = useApi(open ? '/api/price-lists' : null);
+  return [['', inherit], ...(data ?? []).filter((l) => !l.is_default).map((l) => [String(l.id), l.name])];
+}
 
 /** Create (customer = null) or edit a customer. */
 export function CustomerDialog({ open, customer, onClose, onSaved }) {
   const form = useForm(EMPTY_CUSTOMER);
   const { reset } = form;
+  const priceLists = usePriceListOptions(open, 'Standardprislistan');
 
   useEffect(() => {
     if (!open) return;
@@ -20,6 +28,7 @@ export function CustomerDialog({ open, customer, onClose, onSaved }) {
       ...Object.fromEntries(Object.keys(EMPTY_CUSTOMER).map((k) => [k, customer[k] ?? EMPTY_CUSTOMER[k]])),
       phone: formatPhone(customer.phone),
       vat_mode: customer.vat_mode ?? '',
+      price_list_id: customer.price_list_id ? String(customer.price_list_id) : '',
       active: Boolean(customer.active),
     } : EMPTY_CUSTOMER);
   }, [open, customer, reset]);
@@ -29,7 +38,7 @@ export function CustomerDialog({ open, customer, onClose, onSaved }) {
     try {
       const saved = await form.submit((v) => api(customer ? `/api/customers/${customer.id}` : '/api/customers', {
         method: customer ? 'PATCH' : 'POST',
-        body: { ...v, vat_mode: v.vat_mode || null },
+        body: { ...v, vat_mode: v.vat_mode || null, price_list_id: v.price_list_id ? Number(v.price_list_id) : null },
       }));
       onSaved(saved);
     } catch { /* errors are shown in the form */ }
@@ -57,6 +66,7 @@ export function CustomerDialog({ open, customer, onClose, onSaved }) {
           hint="Omvänd byggmoms gäller vissa byggtjänster. Stäm av med er redovisningskonsult."
           {...form.field('vat_mode')}
         />
+        <SelectField className="span-2" label="Prislista" options={priceLists} hint="Projekt kan ha en egen prislista som går före kundens." {...form.field('price_list_id')} />
         <TextField className="span-2" label="Adress" {...form.field('address')} />
         <TextField label="Postnummer" inputMode="numeric" {...form.field('postnr')} />
         <TextField label="Ort" {...form.field('ort')} />
@@ -71,13 +81,14 @@ export function CustomerDialog({ open, customer, onClose, onSaved }) {
 }
 
 const EMPTY_PROJECT = {
-  name: '', customer_ref: '', address: '', postnr: '', ort: '', miljozon: '0', kontaktperson: '', telefon: '', active: true,
+  name: '', customer_ref: '', address: '', postnr: '', ort: '', miljozon: '0', kontaktperson: '', telefon: '', price_list_id: '', active: true,
 };
 
 /** Create or edit a project for a customer. */
 export function ProjectDialog({ open, customerId, project, onClose, onSaved }) {
   const form = useForm(EMPTY_PROJECT);
   const { reset } = form;
+  const priceLists = usePriceListOptions(open, 'Kundens prislista');
 
   useEffect(() => {
     if (!open) return;
@@ -85,6 +96,7 @@ export function ProjectDialog({ open, customerId, project, onClose, onSaved }) {
       ...Object.fromEntries(Object.keys(EMPTY_PROJECT).map((k) => [k, project[k] ?? EMPTY_PROJECT[k]])),
       miljozon: String(project.miljozon),
       telefon: formatPhone(project.telefon),
+      price_list_id: project.price_list_id ? String(project.price_list_id) : '',
       active: Boolean(project.active),
     } : EMPTY_PROJECT);
   }, [open, project, reset]);
@@ -94,7 +106,7 @@ export function ProjectDialog({ open, customerId, project, onClose, onSaved }) {
     try {
       const saved = await form.submit((v) => api(project ? `/api/projects/${project.id}` : '/api/projects', {
         method: project ? 'PATCH' : 'POST',
-        body: { ...v, miljozon: Number(v.miljozon), ...(project ? {} : { customer_id: customerId }) },
+        body: { ...v, miljozon: Number(v.miljozon), price_list_id: v.price_list_id ? Number(v.price_list_id) : null, ...(project ? {} : { customer_id: customerId }) },
       }));
       onSaved(saved);
     } catch { /* errors are shown in the form */ }
@@ -126,6 +138,7 @@ export function ProjectDialog({ open, customerId, project, onClose, onSaved }) {
         <TextField label="Ort" {...form.field('ort')} />
         <TextField label="Kontaktperson" {...form.field('kontaktperson')} />
         <TextField label="Telefon" type="tel" {...form.field('telefon')} />
+        <SelectField className="span-2" label="Prislista" options={priceLists} hint="Ett avtalspris för just det här projektet." {...form.field('price_list_id')} />
         {project && <Checkbox label="Aktivt projekt" checked={form.values.active} onChange={form.field('active').onChange} />}
         {form.formError && <div className="notice notice-red span-2">{form.formError}</div>}
         <button type="submit" hidden />
