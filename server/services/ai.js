@@ -37,9 +37,14 @@ export class AiExtractionError extends Error {
 /** Request options per model family. Haiku 4.5 takes neither adaptive thinking nor effort. */
 function requestOptions(model, format) {
   if (model.startsWith('claude-haiku')) return { output_config: { format } };
-  // Extraction is a reading task: low effort keeps latency and cost down.
+  // Extraction is a reading task: low effort keeps latency and cost down. Set explicitly: Claude Opus 5.5 defaults to medium.
   return { thinking: { type: 'adaptive' }, output_config: { effort: 'low', format } };
 }
+
+// Models whose safety classifiers can decline a request. On those, the API re-runs a declined request on the model
+// Anthropic recommends for the refusal category ("default" fallbacks), instead of returning the refusal.
+const FALLBACK_MODELS = /^claude-(opus-5|fable-5-1|sonnet-5-5)/;
+export const FALLBACK_BETA = 'server-side-fallback-2026-07-01';
 
 /**
  * Claude-backed extraction. Every call is logged to ai_extractions with token usage and
@@ -101,15 +106,18 @@ export function createAiService({ db, config, client, now = () => new Date(), lo
     const base = { company_id: companyId, kind, model: ai.model, prompt_version: promptVersion, input_text: inputText, input_photo_id: inputPhotoId };
     const started = Date.now();
 
+    const request = {
+      model: ai.model,
+      max_tokens: 16000,
+      ...requestOptions(ai.model, zodOutputFormat(schema)),
+      system,
+      messages: [{ role: 'user', content }],
+    };
     let response;
     try {
-      response = await sdk.messages.parse({
-        model: ai.model,
-        max_tokens: 16000,
-        ...requestOptions(ai.model, zodOutputFormat(schema)),
-        system,
-        messages: [{ role: 'user', content }],
-      });
+      response = FALLBACK_MODELS.test(ai.model)
+        ? await sdk.beta.messages.parse({ ...request, betas: [FALLBACK_BETA], fallbacks: 'default' })
+        : await sdk.messages.parse(request);
     } catch (err) {
       logger.error(`[ai] ${kind} extraction request failed:`, err?.status ?? '', err?.message);
       log({ ...base, latency_ms: Date.now() - started, error: `${err?.status ?? 'network'}: ${err?.message ?? err}`.slice(0, 500) });
@@ -117,15 +125,17 @@ export function createAiService({ db, config, client, now = () => new Date(), lo
     }
 
     const u = response.usage ?? {};
+    // After a fallback, response.model is the model that answered; price the call at its rates.
+    const answeredBy = response.model ?? ai.model;
     const metrics = {
-      model: response.model ?? ai.model,
+      model: answeredBy,
       input_tokens: u.input_tokens ?? null,
       output_tokens: u.output_tokens ?? null,
       cache_read_tokens: u.cache_read_input_tokens ?? null,
       cache_write_tokens: u.cache_creation_input_tokens ?? null,
       latency_ms: Date.now() - started,
       stop_reason: response.stop_reason ?? null,
-      cost_micro_usd: costMicroUsd(ai.model, u),
+      cost_micro_usd: costMicroUsd(answeredBy, u),
     };
 
     const failure =

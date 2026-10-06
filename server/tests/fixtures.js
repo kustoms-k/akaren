@@ -43,7 +43,7 @@ export const ORDER_EMAIL_OUTPUT = orderOutput({
 /** Fake Anthropic SDK client: records requests and returns a canned parse() response. */
 export function fakeClient(respond) {
   const calls = [];
-  return {
+  const client = {
     calls,
     messages: {
       async parse(params) {
@@ -60,4 +60,7 @@ export function fakeClient(respond) {
       },
     },
   };
+  // Requests with server-side fallbacks go through client.beta.messages.parse; same canned answer.
+  client.beta = { messages: { parse: (params) => client.messages.parse(params) } };
+  return client;
 }

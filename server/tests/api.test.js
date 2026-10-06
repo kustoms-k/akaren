@@ -130,7 +130,7 @@ describe('settings', () => {
     const { as } = await testApp({ configOverrides: { ANTHROPIC_API_KEY: 'sk-test-secret' } });
     const res = await as('get', '/api/settings/integrations');
     expect(res.body).toMatchObject({
-      ai: { configured: true, model: 'claude-opus-5' },
+      ai: { configured: true, model: 'claude-opus-5-5' },
       sms: { enabled: false, sender: 'Lasskoll' },
       fortnox: { configured: false, status: 'disconnected' },
       public_base_url: 'http://192.168.1.50:5173',

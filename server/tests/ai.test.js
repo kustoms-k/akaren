@@ -30,13 +30,34 @@ describe('cost', () => {
 });
 
 describe('ai.extractOrder', () => {
+  it('prices a call at the model that answered, after a fallback', async () => {
+    const client = fakeClient({ parsed_output: ORDER_EMAIL_OUTPUT, model: 'claude-opus-4-8' });
+    const { ai, db, companyId } = setup({ client });
+    const r = await ai.extractOrder({ companyId, companyName: 'Teståkeriet AB', text: ORDER_EMAIL });
+    const row = db.prepare('SELECT model, cost_micro_usd FROM ai_extractions WHERE id = ?').get(r.extractionId);
+    expect(row).toEqual({ model: 'claude-opus-4-8', cost_micro_usd: 27_000 });
+  });
+
+  it('sends Haiku without fallbacks, thinking or effort', async () => {
+    const client = fakeClient({ parsed_output: ORDER_EMAIL_OUTPUT });
+    const { ai, companyId } = setup({ client, model: 'claude-haiku-4-5' });
+    await ai.extractOrder({ companyId, companyName: 'Teståkeriet AB', text: ORDER_EMAIL });
+    const req = client.calls[0];
+    expect(req.fallbacks).toBeUndefined();
+    expect(req.betas).toBeUndefined();
+    expect(req.thinking).toBeUndefined();
+  });
+
   it('calls the configured model with structured output and logs usage and cost', async () => {
     const client = fakeClient({ parsed_output: ORDER_EMAIL_OUTPUT });
     const { ai, db, companyId } = setup({ client });
     const r = await ai.extractOrder({ companyId, companyName: 'Teståkeriet AB', text: ORDER_EMAIL });
 
     const req = client.calls[0];
-    expect(req.model).toBe('claude-opus-5');
+    expect(req.model).toBe('claude-opus-5-5');
+    // Declined requests are re-run server-side on Anthropic's recommended fallback model.
+    expect(req.betas).toEqual(['server-side-fallback-2026-07-01']);
+    expect(req.fallbacks).toBe('default');
     expect(req.thinking).toEqual({ type: 'adaptive' });
     expect(req.output_config.effort).toBe('low');
     expect(req.output_config.format.type).toBe('json_schema');
@@ -45,7 +66,8 @@ describe('ai.extractOrder', () => {
 
     expect(r.fields.telefon.value).toBe('+46701740610');
     const row = db.prepare('SELECT * FROM ai_extractions WHERE id = ?').get(r.extractionId);
-    expect(row).toMatchObject({ kind: 'order', model: 'claude-opus-5', input_tokens: 2400, output_tokens: 600, cost_micro_usd: 27_000, error: null });
+    // claude-opus-5-5: $4 / $20 per million tokens.
+    expect(row).toMatchObject({ kind: 'order', model: 'claude-opus-5-5', input_tokens: 2400, output_tokens: 600, cost_micro_usd: 21_600, error: null });
     expect(JSON.parse(row.fields_json).fields.kund.value).toBe('Norrbacka Mark & Anläggning AB');
   });
 
@@ -100,7 +122,7 @@ describe('ai.extractOrder', () => {
     await expect(ai.extractOrder({ companyId, companyName: 'X', text: ORDER_EMAIL })).rejects.toBeInstanceOf(AiBudgetExceededError);
     expect(client.calls).toHaveLength(1);
 
-    expect(ai.usage(companyId)).toMatchObject({ month_cost_usd: 1.03, budget_usd: 1, calls: 2 });
+    expect(ai.usage(companyId)).toMatchObject({ month_cost_usd: 1.02, budget_usd: 1, calls: 2 });
   });
 
   it('a zero budget disables AI', async () => {

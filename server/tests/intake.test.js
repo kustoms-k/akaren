@@ -42,7 +42,7 @@ describe('order intake', () => {
     const { as, customer, project } = await setup();
     const res = await as('post', '/api/intake/extract').send({ text: ORDER_EMAIL });
     expect(res.status).toBe(201);
-    expect(res.body).toMatchObject({ status: 'utkast', source: 'ai', model: 'claude-opus-5' });
+    expect(res.body).toMatchObject({ status: 'utkast', source: 'ai', model: 'claude-opus-5-5' });
     expect(res.body.fields.antal_lass).toEqual({ value: 12, confidence: 'lag' });
     expect(res.body.preselect).toEqual({ customer_id: customer.id, project_id: project.id });
 
@@ -194,7 +194,7 @@ describe('order intake', () => {
     const { as } = await setup();
     await as('post', '/api/intake/extract').send({ text: ORDER_EMAIL });
     const i = (await as('get', '/api/settings/integrations')).body;
-    expect(i.ai).toMatchObject({ configured: true, model: 'claude-opus-5', calls: 1, month_cost_usd: 0.03, budget_usd: 30 });
+    expect(i.ai).toMatchObject({ configured: true, model: 'claude-opus-5-5', calls: 1, month_cost_usd: 0.02, budget_usd: 30 });
   });
 });
 

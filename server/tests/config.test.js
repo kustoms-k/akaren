@@ -5,7 +5,7 @@ import { TEST_ENV } from './helpers.js';
 describe('loadConfig', () => {
   it('builds a config from a valid env', () => {
     const c = loadConfig(TEST_ENV);
-    expect(c.anthropic.model).toBe('claude-opus-5');
+    expect(c.anthropic.model).toBe('claude-opus-5-5');
     expect(c.elks.sender).toBe('Lasskoll');
     expect(c.elks.enabled).toBe(false);
     expect(c.fortnox.configured).toBe(false);
@@ -32,7 +32,7 @@ describe('loadConfig', () => {
 
   it('treats blank optional values as unset', () => {
     const c = loadConfig({ ...TEST_ENV, ANTHROPIC_MODEL: '', PORT: '', FORTNOX_REDIRECT_URI: '' });
-    expect(c.anthropic.model).toBe('claude-opus-5');
+    expect(c.anthropic.model).toBe('claude-opus-5-5');
     expect(c.port).toBe(3002);
     expect(c.fortnox.redirectUri).toBeNull();
   });
