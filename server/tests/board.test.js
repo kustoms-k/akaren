@@ -106,7 +106,7 @@ describe('booking several days at once', () => {
     const text = buildAssignmentSms({
       driverName: 'Mikael Lund', datum: '2030-12-20', datumTill: '2030-12-27', tid: '07:00', typeLabel: 'Schakt',
       projectName: 'Täby Park etapp 3 – VA-schakt', address: 'Stora Marknadsvägen 15 Täby', regnr: 'TKA418',
-      link: 'http://192.168.1.50:5173/f/abcdefghijklmnopqrstuv', companyName: 'Teståkeriet AB',
+      link: 'http://192.168.1.50:5173/f/abcdefghijklmnopqrstuv', companyName: 'Lagerviks Åkeri AB',
     });
     expect(text.length).toBeLessThanOrEqual(306);
     expect(text).toContain('fre 20 dec-fre 27 dec kl 07:00');

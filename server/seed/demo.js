@@ -5,14 +5,15 @@ import { addDays, isoWeek, isoWeekRange, isoWeekday, stockholmDate, stockholmLoc
 import { seedInbox } from './inbox.js';
 import { seedWeighList } from './weighList.js';
 
-// Demo data for "Teståkeriet AB". Every company name, org nr, regnr and person is fictional.
+// Demo data for "Lagerviks Åkeri AB". Every company name, org nr, regnr, domain and person is fictional (domains were
+// checked to be unregistered when chosen; see lib/inboxDemo.js). It should look real to a prospect, so no "test" names.
 // Driver phone numbers are in 070-174 06 05–99 and the office number in 08-465 004 00–99, ranges PTS reserves for fiction.
 
-export const DEMO_EMAIL = 'kontor@testakeriet.se';
+export const DEMO_EMAIL = 'kontor@lagerviksakeri.se';
 
 const COMPANY = {
-  name: 'Teståkeriet AB', org_nr: '559000-0013', address: 'Lagervägen 7', postnr: '13650', ort: 'Haninge',
-  phone: '+46846500400', email: 'kontor@testakeriet.se', retention_months: 36, default_vat_mode: 'normal',
+  name: 'Lagerviks Åkeri AB', org_nr: '559000-0013', address: 'Lagervägen 7', postnr: '13650', ort: 'Haninge',
+  phone: '+46846500400', email: 'kontor@lagerviksakeri.se', retention_months: 36, default_vat_mode: 'normal',
   order_terms: 'Uppdraget utförs enligt Alltrans 2007 och våra prislistor. Avbokning senast kl 15.00 vardagen före, '
     + 'annars debiteras framkörning. Väntetid över 15 minuter per lass debiteras per påbörjad kvart.',
 };
@@ -60,17 +61,17 @@ const PRICE_LISTS = [
 const CUSTOMERS = [
   {
     key: 'norrbacka', name: 'Norrbacka Mark & Anläggning AB', org_nr: '559101-2348',
-    address: 'Industrigatan 14', postnr: '11246', ort: 'Stockholm', email: 'faktura@norrbacka-mark.example',
+    address: 'Industrigatan 14', postnr: '11246', ort: 'Stockholm', email: 'faktura@norrbackamark.se',
     price_list: 'norrbacka', vat_mode: 'omvand_bygg',
   },
   {
     key: 'saltsjo', name: 'Saltsjö Bygg & Entreprenad AB', org_nr: '559212-6782',
-    address: 'Värmdövägen 220', postnr: '13140', ort: 'Nacka', email: 'ekonomi@saltsjobygg.example',
+    address: 'Värmdövägen 220', postnr: '13140', ort: 'Nacka', email: 'ekonomi@saltsjobyggentreprenad.se',
     price_list: null, vat_mode: null,
   },
   {
     key: 'ekhagen', name: 'Ekhagens Fastighetsutveckling AB', org_nr: '559303-4563',
-    address: 'Frösundaleden 2', postnr: '16970', ort: 'Solna', email: 'inkop@ekhagen.example',
+    address: 'Frösundaleden 2', postnr: '16970', ort: 'Solna', email: 'inkop@ekhagensfastigheter.se',
     price_list: 'ekhagen', vat_mode: null,
   },
 ];

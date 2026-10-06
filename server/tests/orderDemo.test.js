@@ -60,7 +60,7 @@ describe('ai service in DEMO_MODE', () => {
     expect(ai.usage(companyId)).toMatchObject({ configured: true, demo: true, model: 'demo' });
     const sample = ai.demoSamples().find((s) => s.id === 'rorstrand');
 
-    const r = await ai.extractOrder({ companyId, companyName: 'Teståkeriet AB', text: sample.text });
+    const r = await ai.extractOrder({ companyId, companyName: 'Lagerviks Åkeri AB', text: sample.text });
     expect(r.model).toBe('demo');
     expect(r.fields.kund).toEqual({ value: 'Norrbacka Mark & Anläggning AB', confidence: 'hog' });
     expect(r.fields.telefon.value).toBe('+46701740610');

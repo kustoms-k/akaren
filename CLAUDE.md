@@ -95,7 +95,7 @@ client/src/
 ```bash
 npm run setup                         # installs root, server and client
 cp server/.env.example server/.env    # fill in JWT_SECRET, ENCRYPTION_KEY, PUBLIC_BASE_URL
-npm run seed                          # Teståkeriet AB demo data (prints the login)
+npm run seed                          # Lagerviks Åkeri AB demo data (prints the login)
 npm run dev                           # server :3002 + Vite :5173
 ```
 

@@ -19,7 +19,7 @@ Mvh
 Petra Holm
 Norrbacka Mark & Anläggning AB
 070-174 06 10
-petra.holm@norrbacka-mark.example`;
+petra.holm@norrbackamark.se`;
 
 /** What a good extraction of ORDER_EMAIL looks like (today = 2026-10-03). */
 export const ORDER_EMAIL_OUTPUT = orderOutput({

@@ -9,8 +9,8 @@ import {
 } from '../lib/replyTemplates.js';
 import { demoInboxEmails } from '../lib/inboxDemo.js';
 
-const company = { name: 'Teståkeriet AB', phone: '+46846500400', email: 'kontor@testakeriet.se', order_terms: null };
-const email = { subject: 'Container till Vallentuna onsdag?', from_name: 'Erik Sandberg', from_email: 'erik@sandbergsmark.example', received_at: '2026-10-05T08:14:00.000Z', body_text: 'Hej,\n\nKan ni ställa ut en container?\n\nErik' };
+const company = { name: 'Lagerviks Åkeri AB', phone: '+46846500400', email: 'kontor@lagerviksakeri.se', order_terms: null };
+const email = { subject: 'Container till Vallentuna onsdag?', from_name: 'Erik Sandberg', from_email: 'erik@sandbergsmarkab.se', received_at: '2026-10-05T08:14:00.000Z', body_text: 'Hej,\n\nKan ni ställa ut en container?\n\nErik' };
 const f = (value, confidence = 'hog') => ({ value, confidence });
 
 describe('reply templates', () => {
@@ -26,7 +26,7 @@ describe('reply templates', () => {
     expect(r.subject).toBe('SV: Container till Vallentuna onsdag?');
     expect(r.text).toMatch(/^Hej Erik!/);
     expect(r.text).toContain('Tyvärr har vi inte möjlighet på onsdag 7 oktober, men vi kan erbjuda torsdag 8 oktober kl 07.00.');
-    expect(r.text).toContain('Telefon 08-465 004 00 · kontor@testakeriet.se');
+    expect(r.text).toContain('Telefon 08-465 004 00 · kontor@lagerviksakeri.se');
     expect(() => buildReply('nytt_datum', { email, company }, {})).toThrow();
   });
 
@@ -66,7 +66,7 @@ describe('reply templates', () => {
 
   it('quotes the original and renders quotes as a block', () => {
     const quote = quoteOriginal(email);
-    expect(quote).toMatch(/^Den 5 okt\. 2026 10:14 skrev Erik Sandberg <erik@sandbergsmark\.example>:/);
+    expect(quote).toMatch(/^Den 5 okt\. 2026 10:14 skrev Erik Sandberg <erik@sandbergsmarkab\.se>:/);
     expect(quote).toContain('> Kan ni ställa ut en container?');
     const html = replyHtml(`Hej <Erik> & co\n\n${quote}`);
     expect(html).toContain('Hej &lt;Erik&gt; &amp; co');
@@ -111,11 +111,11 @@ describe('order inbox API', () => {
     seedDemo(db, { today: stockholmDate(), password: 'hemligt123', withInbox });
     sent = [];
     const mail = {
-      enabled: true, from: 'order@testakeriet.se',
+      enabled: true, from: 'order@lagerviksakeri.se',
       send: async (msg) => { sent.push(msg); return { status: 'skickat', messageId: msg.messageId }; },
     };
     app = createApp({ config: testConfig({ DEMO_MODE: demoMode }), db, services: { mail }, logger: silentLogger });
-    const login = await request(app).post('/api/auth/login').send({ email: 'kontor@testakeriet.se', password: 'hemligt123' });
+    const login = await request(app).post('/api/auth/login').send({ email: 'kontor@lagerviksakeri.se', password: 'hemligt123' });
     as = (method, url) => request(app)[method](url).set('Authorization', `Bearer ${login.body.token}`);
   }
 
@@ -126,7 +126,7 @@ describe('order inbox API', () => {
   it('sorts mail into order threads and the rest', async () => {
     const res = await as('get', '/api/inbox');
     expect(res.status).toBe(200);
-    expect(res.body.account.address).toBe('order@testakeriet.se');
+    expect(res.body.account.address).toBe('order@lagerviksakeri.se');
     expect(res.body.counts).toMatchObject({ att_hantera: 7, order: 10, bortsorterat: 9 });
     expect(res.body.threads.every((t) => t.order && t.status === 'ny')).toBe(true);
 
@@ -234,10 +234,10 @@ describe('order inbox API', () => {
     // Threaded with the customer's mail, from the order mailbox, and recorded as the job's confirmation.
     expect(sent).toHaveLength(1);
     const msg = sent[0];
-    expect(msg.replyTo).toBe('order@testakeriet.se');
+    expect(msg.replyTo).toBe('order@lagerviksakeri.se');
     expect(msg.inReplyTo).toBe(demoInboxEmails(stockholmDate()).find((e) => e.key === 'erik-svar').message_id);
     expect(msg.references).toHaveLength(3);
-    expect(msg.messageId).toMatch(/^<[0-9a-f-]+@testakeriet\.se>$/);
+    expect(msg.messageId).toMatch(/^<[0-9a-f-]+@lagerviksakeri\.se>$/);
     const final = (await as('get', `/api/inbox/threads/${erik.id}`)).body;
     expect(final.status).toBe('besvarad');
     expect(final.messages.at(-1)).toMatchObject({ kind: 'out', template: 'bekrafta', status: 'skickat' });
@@ -248,11 +248,11 @@ describe('order inbox API', () => {
   it('sends an edited reply with the original quoted, and validates it', async () => {
     const hammarby = await threadBySubject('SV: massor');
     const t = (await as('get', `/api/inbox/threads/${hammarby.id}`)).body;
-    const body = { template: 'mer_info', params: { questions: ['adress'] }, to: 'jonas.m@hammarbybygg.example', subject: 'SV: massor' };
+    const body = { template: 'mer_info', params: { questions: ['adress'] }, to: 'jonas.m@hammarbybyggtjanst.se', subject: 'SV: massor' };
     await as('post', `/api/inbox/emails/${t.reply_to}/reply`).send(body).expect(400);
     await as('post', `/api/inbox/emails/${t.reply_to}/reply`).send({ ...body, to: 'inte-en-adress', text: 'Hej' }).expect(400);
     await as('post', `/api/inbox/emails/${t.reply_to}/reply`).send({ ...body, text: 'Hej Jonas!\n\nVilken adress?' }).expect(201);
-    expect(sent[0].text).toMatch(/^Hej Jonas!\n\nVilken adress\?\n\nDen .+ skrev jonas\.m@hammarbybygg\.example:\n> Hej igen,/);
+    expect(sent[0].text).toMatch(/^Hej Jonas!\n\nVilken adress\?\n\nDen .+ skrev jonas\.m@hammarbybyggtjanst\.se:\n> Hej igen,/);
     expect(sent[0].html).toContain('<blockquote');
     expect((await threadBySubject('SV: massor')).status).toBe('besvarad');
     await as('post', `/api/inbox/emails/${t.reply_to}/reply`).send({ ...body, template: 'nytt_datum', params: {}, text: 'x' }).expect(400);

@@ -7,8 +7,8 @@ import { TEST_ENV, testApp, testConfig, silentLogger } from './helpers.js';
 import { orderOutput, mf } from './fixtures.js';
 
 const COMPANY = {
-  name: 'Teståkeriet AB', org_nr: '559000-0013', address: 'Lagervägen 7', postnr: '13650', ort: 'Haninge',
-  phone: '+46846500400', email: 'kontor@testakeriet.se', order_terms: 'Uppdraget utförs enligt Alltrans 2007.\nAvbokning senast kl 15.00 dagen före.',
+  name: 'Lagerviks Åkeri AB', org_nr: '559000-0013', address: 'Lagervägen 7', postnr: '13650', ort: 'Haninge',
+  phone: '+46846500400', email: 'kontor@lagerviksakeri.se', order_terms: 'Uppdraget utförs enligt Alltrans 2007.\nAvbokning senast kl 15.00 dagen före.',
 };
 
 const JOB = {
@@ -104,7 +104,7 @@ describe('mail config', () => {
 });
 
 describe('mail service', () => {
-  const msg = { fromName: 'Teståkeriet AB', to: 'petra@example.se', subject: 'Ämne', text: 'Hej', html: '<p>Hej</p>' };
+  const msg = { fromName: 'Lagerviks Åkeri AB', to: 'petra@example.se', subject: 'Ämne', text: 'Hej', html: '<p>Hej</p>' };
 
   it('simulates and logs without SMTP settings', async () => {
     const logged = [];
@@ -120,7 +120,7 @@ describe('mail service', () => {
     const mail = createMailService({ config: testConfig({ MAIL_FROM: 'kontor@example.se' }), transport, logger: silentLogger });
     const r = await mail.send({ ...msg, replyTo: 'kontor@example.se', bcc: 'kopia@example.se' });
     expect(r).toEqual({ status: 'skickat', messageId: '<1@test>' });
-    expect(calls[0]).toMatchObject({ from: { name: 'Teståkeriet AB', address: 'kontor@example.se' }, to: 'petra@example.se', replyTo: 'kontor@example.se', bcc: 'kopia@example.se' });
+    expect(calls[0]).toMatchObject({ from: { name: 'Lagerviks Åkeri AB', address: 'kontor@example.se' }, to: 'petra@example.se', replyTo: 'kontor@example.se', bcc: 'kopia@example.se' });
     expect(calls[0]).not.toHaveProperty('cc');
   });
 
@@ -156,10 +156,10 @@ describe('order confirmation API', () => {
         return { messageId: `<${calls.length}@test>` };
       },
     };
-    const configOverrides = { MAIL_FROM: 'kontor@testakeriet.se' };
+    const configOverrides = { MAIL_FROM: 'kontor@lagerviksakeri.se' };
     const mail = createMailService({ config: testConfig(configOverrides), transport, logger: silentLogger });
     const t = await testApp({ services: { mail }, configOverrides });
-    await t.as('patch', '/api/settings').send({ email: 'kontor@testakeriet.se', phone: '08-465 004 00', order_terms: 'Alltrans 2007.' }).expect(200);
+    await t.as('patch', '/api/settings').send({ email: 'kontor@lagerviksakeri.se', phone: '08-465 004 00', order_terms: 'Alltrans 2007.' }).expect(200);
     const customer = (await t.as('post', '/api/customers').send({ name: 'Norrbacka Mark & Anläggning AB', org_nr: '559101-2348' })).body;
     const project = (await t.as('post', '/api/projects').send({ customer_id: customer.id, name: 'Kv. Rörstrand – schakt', customer_ref: 'NMA-2611', miljozon: 0 })).body;
 
@@ -179,7 +179,7 @@ describe('order confirmation API', () => {
     const { job_id } = (await createJob({ epost: 'petra.holm@norrbacka.example' }).then((r) => r.body));
 
     const info = (await as('get', `/api/jobs/${job_id}/order-confirmation`).expect(200)).body;
-    expect(info).toMatchObject({ default_to: 'petra.holm@norrbacka.example', office_email: 'kontor@testakeriet.se', mail_enabled: true, can_send: true, history: [] });
+    expect(info).toMatchObject({ default_to: 'petra.holm@norrbacka.example', office_email: 'kontor@lagerviksakeri.se', mail_enabled: true, can_send: true, history: [] });
 
     const preview = (await as('post', `/api/jobs/${job_id}/order-confirmation/preview`).send({ message: 'Två bilar.' }).expect(200)).body;
     expect(preview.subject).toContain('er ref NMA-2611');
@@ -188,10 +188,10 @@ describe('order confirmation API', () => {
 
     const sent = (await as('post', `/api/jobs/${job_id}/order-confirmation`)
       .send({ to: 'petra.holm@norrbacka.example', cc: 'plats@norrbacka.example', message: 'Två bilar.' }).expect(201)).body;
-    expect(sent).toMatchObject({ status: 'skickat', to_email: 'petra.holm@norrbacka.example', bcc_email: 'kontor@testakeriet.se', error_message: null });
+    expect(sent).toMatchObject({ status: 'skickat', to_email: 'petra.holm@norrbacka.example', bcc_email: 'kontor@lagerviksakeri.se', error_message: null });
     expect(calls[0]).toMatchObject({
-      from: { name: 'Test AB', address: 'kontor@testakeriet.se' }, to: 'petra.holm@norrbacka.example',
-      cc: 'plats@norrbacka.example', bcc: 'kontor@testakeriet.se', replyTo: 'kontor@testakeriet.se',
+      from: { name: 'Test AB', address: 'kontor@lagerviksakeri.se' }, to: 'petra.holm@norrbacka.example',
+      cc: 'plats@norrbacka.example', bcc: 'kontor@lagerviksakeri.se', replyTo: 'kontor@lagerviksakeri.se',
     });
     expect(calls[0].text).toContain('Två bilar.');
     expect(calls[0].text).toContain('Alltrans 2007.');
@@ -216,7 +216,7 @@ describe('order confirmation API', () => {
   it('does not copy the office when it is the recipient or when unticked', async () => {
     const { as, calls, createJob } = await setup();
     const { job_id } = (await createJob()).body;
-    await as('post', `/api/jobs/${job_id}/order-confirmation`).send({ to: 'KONTOR@testakeriet.se' }).expect(201);
+    await as('post', `/api/jobs/${job_id}/order-confirmation`).send({ to: 'KONTOR@lagerviksakeri.se' }).expect(201);
     await as('post', `/api/jobs/${job_id}/order-confirmation`).send({ to: 'petra@norrbacka.example', office_copy: false }).expect(201);
     expect(calls.map((c) => c.bcc)).toEqual([undefined, undefined]);
   });
@@ -248,7 +248,7 @@ describe('order confirmation API', () => {
 
   it('is simulated and stored when SMTP is not configured', async () => {
     const { as, db } = await testApp();
-    await as('patch', '/api/settings').send({ email: 'kontor@testakeriet.se' });
+    await as('patch', '/api/settings').send({ email: 'kontor@lagerviksakeri.se' });
     const customer = (await as('post', '/api/customers').send({ name: 'Kund AB' })).body;
     const project = (await as('post', '/api/projects').send({ customer_id: customer.id, name: 'Projekt', miljozon: 0 })).body;
     const intake = (await as('post', '/api/intake/manual').send({ text: '' })).body;

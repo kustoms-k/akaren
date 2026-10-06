@@ -28,7 +28,7 @@ export function demoRouter({ db, config, audit, logger = console }) {
     res.json({
       facility_name: 'Ekbacka massmottagning',
       facility_orgnr: '559404-1236',
-      prospect_name: 'Teståkeriet AB',
+      prospect_name: 'Lagerviks Åkeri AB',
       vaglista: { name: `vagningsrapport-ekbacka-${week.toLowerCase()}.csv`, text: ekbackaListText(db, { companyId: req.companyId, week }) },
       faktura: { name: `fakturaspecifikation-${week.toLowerCase()}.csv`, text: invoiceSpecText(db, { companyId: req.companyId, week }) },
     });

@@ -1,5 +1,5 @@
 // Usage: npm run seed [-- --reset]
-// Seeds "Teståkeriet AB" into DATA_DIR/akaren.db with rendered demo vågsedel photos.
+// Seeds "Lagerviks Åkeri AB" into DATA_DIR/akaren.db with rendered demo vågsedel photos.
 // --reset deletes the database and the photo folder first.
 import { existsSync, rmSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
@@ -31,7 +31,7 @@ const password = process.env.SEED_PASSWORD || randomBytes(6).toString('base64url
 try {
   const s = seedDemo(db, { today: stockholmDate(), password, withPhotos: true });
   await renderDemoPhotos(db, config.photosDir, s.photos);
-  console.log(`[seed] Teståkeriet AB seeded into ${config.dbFile}`);
+  console.log(`[seed] Lagerviks Åkeri AB seeded into ${config.dbFile}`);
   console.log(`[seed] ${s.vehicles} fordon, ${s.drivers} förare, ${s.customers} kunder, ${s.projects} projekt`);
   console.log(`[seed] ${s.lass} lass (${s.versions} versioner, ${s.photos.length} vågsedelfoton), ${s.timeEntries} tidrapporter, veckor ${s.previousWeek} + ${s.currentWeek}`);
   if (s.weighList) console.log(`[seed] Avstämning: våglista från Ekbacka för ${s.previousWeek} importerad (${s.weighList.rows} vägningar)`);
@@ -42,7 +42,7 @@ try {
   writeFileSync(join(config.dataDir, 'exempel-vaglista-ekbacka.csv'), ekbackaListText(db, { companyId, week: s.previousWeek }));
   writeFileSync(join(config.dataDir, 'exempel-fakturaspecifikation.csv'), invoiceSpecText(db, { companyId, week: s.previousWeek }));
   console.log(`[seed] Exempelfiler i ${config.dataDir}: exempel-vaglista-skogsas.txt (Avstämning), exempel-vaglista-ekbacka.csv + exempel-fakturaspecifikation.csv (Förlustkontroll)`);
-  if (s.inbox) console.log(`[seed] Inkorg order@testakeriet.se: ${s.inbox.emails} mejl, ${s.inbox.replies} svar, ${s.inbox.pool} väntar på "Hämta ny post"`);
+  if (s.inbox) console.log(`[seed] Inkorg order@lagerviksakeri.se: ${s.inbox.emails} mejl, ${s.inbox.replies} svar, ${s.inbox.pool} väntar på "Hämta ny post"`);
   console.log(`[seed] Logga in: ${s.email} / ${password}${process.env.SEED_PASSWORD ? ' (från SEED_PASSWORD)' : ''}`);
 } catch (err) {
   if (err.message === 'Database already contains data') {

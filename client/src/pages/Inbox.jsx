@@ -134,7 +134,7 @@ function Welcome({ demoAvailable, onStarted }) {
       </div>
       {demoAvailable && (
         <div className="notice notice-blue" style={{ alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-          <span>Demoläge: prova inkorgen med en vecka av påhittade mejl till order@testakeriet.se.</span>
+          <span>Demoläge: prova inkorgen med en vecka av påhittade mejl till order@lagerviksakeri.se.</span>
           <Button size="sm" onClick={startDemo} loading={busy}><Mail size={13} /> Starta demoinkorgen</Button>
         </div>
       )}

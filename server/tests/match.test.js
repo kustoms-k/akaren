@@ -4,8 +4,8 @@ import { postProcessOrder } from '../lib/orderExtraction.js';
 import { ORDER_EMAIL, ORDER_EMAIL_OUTPUT, orderOutput, mf } from './fixtures.js';
 
 const customers = [
-  { id: 1, name: 'Norrbacka Mark & Anläggning AB', org_nr: '559101-2348', email: 'faktura@norrbacka-mark.example' },
-  { id: 2, name: 'Saltsjö Bygg & Entreprenad AB', org_nr: '559212-6782', email: 'ekonomi@saltsjobygg.example' },
+  { id: 1, name: 'Norrbacka Mark & Anläggning AB', org_nr: '559101-2348', email: 'faktura@norrbackamark.se' },
+  { id: 2, name: 'Saltsjö Bygg & Entreprenad AB', org_nr: '559212-6782', email: 'ekonomi@saltsjobyggentreprenad.se' },
   { id: 3, name: 'Ekhagens Fastighetsutveckling AB', org_nr: '559303-4563', email: 'inkop@gmail.com' },
   { id: 4, name: 'Norrby Schakt AB', org_nr: null, email: null },
 ];
@@ -38,7 +38,7 @@ describe('suggestMatches', () => {
   it('finds customer and project from a real-looking order email', () => {
     const s = suggestMatches({ customers, projects, fields: fieldsOf(ORDER_EMAIL_OUTPUT), rawText: ORDER_EMAIL });
     expect(s.customers[0]).toMatchObject({ id: 1 });
-    expect(s.customers[0].reasons).toEqual(expect.arrayContaining(['E-post från @norrbacka-mark.example', 'Namnet liknar']));
+    expect(s.customers[0].reasons).toEqual(expect.arrayContaining(['E-post från @norrbackamark.se', 'Namnet liknar']));
     expect(s.projects[0]).toMatchObject({ id: 10 });
     expect(s.projects[0].reasons).toEqual(expect.arrayContaining(['Referensen NMA-2611 finns i texten', 'Samma adress']));
     expect(confidentPick(s.customers)?.id).toBe(1);

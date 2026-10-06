@@ -23,7 +23,7 @@ const SAMPLES = [
     id: 'rorstrand',
     kind: 'mejl',
     label: 'Norrbacka · schakt Kv. Rörstrand',
-    text: () => `Från: Petra Holm <petra.holm@norrbacka-mark.example>
+    text: () => `Från: Petra Holm <petra.holm@norrbackamark.se>
 Ämne: Bortforsling schaktmassor Kv. Rörstrand – tisdag
 
 Hej!
@@ -44,7 +44,7 @@ Org.nr 559101-2348
       kund_orgnr: f('559101-2348'),
       kontaktperson: f('Petra Holm'),
       telefon: f('070-174 06 10'),
-      epost: f('petra.holm@norrbacka-mark.example'),
+      epost: f('petra.holm@norrbackamark.se'),
       projekt: f('Kv. Rörstrand'),
       adress: f('Rörstrandsgatan 40'),
       postnr: f('113 40'),
@@ -86,7 +86,7 @@ Org.nr 559101-2348
     id: 'orminge',
     kind: 'mejl',
     label: 'Saltsjö Bygg · bergkross 2 dagar',
-    text: () => `Från: Linnea Ek <linnea.ek@saltsjobygg.example>
+    text: () => `Från: Linnea Ek <linnea.ek@saltsjobyggentreprenad.se>
 Ämne: Beställning bergkross – Orminge centrum
 
 Hej,
@@ -105,7 +105,7 @@ Arbetsledare, Saltsjö Bygg & Entreprenad AB
         kund: f('Saltsjö Bygg & Entreprenad AB'),
         kontaktperson: f('Linnea Ek'),
         telefon: f('070-174 06 12'),
-      epost: f('linnea.ek@saltsjobygg.example'),
+      epost: f('linnea.ek@saltsjobyggentreprenad.se'),
         projekt: f('Orminge centrum – grundläggning'),
         adress: f('Kanholmsvägen 2'),
         postnr: f('132 30'),
@@ -127,10 +127,10 @@ Arbetsledare, Saltsjö Bygg & Entreprenad AB
     id: 'arenastaden',
     kind: 'mejl',
     label: 'Ekhagen · kranbil Arenastaden',
-    text: () => `Från: Hampus Strand <hampus.strand@ekhagen.example>
+    text: () => `Från: Hampus Strand <hampus.strand@ekhagensfastigheter.se>
 Ämne: Kranbil fredag – Arenastaden kv. Lagern
 
-Hej Teståkeriet,
+Hej Lagerviks Åkeri,
 
 Kan ni ställa en kranbil hos oss på Arenastaden kv. Lagern, Evenemangsgatan 21 i Solna, på fredag kl 09.00? Det gäller lyft av 6 st prefab-trappor (ca 1,8 ton/st) från bil upp till bjälklaget på plan 2. Räkna med 3–4 timmar.
 
@@ -146,7 +146,7 @@ Tel 070-174 06 13`,
       kund_orgnr: f('559303-4563'),
       kontaktperson: f('Hampus Strand'),
       telefon: f('070-174 06 13'),
-      epost: f('hampus.strand@ekhagen.example'),
+      epost: f('hampus.strand@ekhagensfastigheter.se'),
       projekt: f('Arenastaden kv. Lagern'),
       adress: f('Evenemangsgatan 21'),
       ort: f('Solna'),
@@ -164,7 +164,7 @@ Tel 070-174 06 13`,
     label: 'Ny kund · arbetsorder maskintransport',
     text: (today) => `ARBETSORDER                                   AO-2026-0412
 Vallby Schakt & Väg AB · Org.nr 559415-3727
-Box 118, 181 21 Lidingö · order@vallbyschakt.example
+Box 118, 181 21 Lidingö · order@vallbyschakt.se
 
 Beställare:      Vallby Schakt & Väg AB
 Kontaktperson:   Ali Haddad, tel 070-174 06 21
@@ -184,7 +184,7 @@ Betalningsvillkor 30 dagar netto.                          Sida 1 av 1`,
       kund_orgnr: f('559415-3727'),
       kontaktperson: f('Ali Haddad'),
       telefon: f('070-174 06 21'),
-      epost: f('order@vallbyschakt.example', 'medel'),
+      epost: f('order@vallbyschakt.se', 'medel'),
       projekt: f('Brf Sjöglimten – ny dagvattenledning'),
       adress: f('Sjöglimtsvägen 9'),
       postnr: f('181 62'),
@@ -202,7 +202,7 @@ Betalningsvillkor 30 dagar netto.                          Sida 1 av 1`,
     id: 'hammarby',
     kind: 'mejl',
     label: 'Otydligt mejl · massor nästa vecka',
-    text: () => `Från: jonas.m@hammarbybygg.example
+    text: () => `Från: jonas.m@hammarbybyggtjanst.se
 Ämne: SV: massor
 
 Hej igen,
@@ -217,7 +217,7 @@ Skickat från min iPhone`,
     output: (today) => output({
       kund: f('Hammarby Bygg', 'lag'),
       kontaktperson: f('Jonas', 'medel'),
-      epost: f('jonas.m@hammarbybygg.example'),
+      epost: f('jonas.m@hammarbybyggtjanst.se'),
       projekt: f('Gården i Hammarby sjöstad', 'lag'),
       ort: f('Stockholm', 'lag'),
       datum: f(nextWeekday(today, 1), 'lag'),

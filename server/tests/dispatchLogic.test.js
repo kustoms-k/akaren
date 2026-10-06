@@ -24,12 +24,12 @@ describe('assignment SMS', () => {
   const sms = buildAssignmentSms({
     driverName: 'Mikael Lund', datum: '2026-10-06', tid: '07:00', typeLabel: 'Schakt',
     projectName: 'Kv. Rörstrand – schakt', address: 'Rörstrandsgatan 40 Stockholm', regnr: 'TKA412',
-    link: 'http://192.168.32.11:5173/f/AbCdEfGhIjKlMnOpQrStUv', companyName: 'Teståkeriet AB',
+    link: 'http://192.168.32.11:5173/f/AbCdEfGhIjKlMnOpQrStUv', companyName: 'Lagerviks Åkeri AB',
   });
 
   it('is short, readable Swedish with the link', () => {
     expect(sms).toBe('Hej Mikael! Uppdrag tis 6 okt kl 07:00 med TKA412: Schakt, Kv. Rörstrand - schakt, Rörstrandsgatan 40 Stockholm. '
-      + 'Info och lassrapport: http://192.168.32.11:5173/f/AbCdEfGhIjKlMnOpQrStUv /Teståkeriet AB');
+      + 'Info och lassrapport: http://192.168.32.11:5173/f/AbCdEfGhIjKlMnOpQrStUv /Lagerviks Åkeri AB');
     expect(sms.length).toBeLessThanOrEqual(306);
   });
 

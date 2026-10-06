@@ -8,7 +8,7 @@ import {
 const EKBACKA_CSV = [
   'Ekbacka massmottagning AB;;;;;;',
   'Vägningsrapport 2026-09-28 – 2026-10-02;;;;;;',
-  'Kund: Teståkeriet AB (kundnr 10442);;;;;;',
+  'Kund: Lagerviks Åkeri AB (kundnr 10442);;;;;;',
   ';;;;;;',
   'Datum;Tid;Vågsedelnr;Regnr;Artikel;Märkning;Netto (kg)',
   '2026-09-28;07:12;EKB418233;TKA 412;Schaktmassor;NMA-2611;18 420',

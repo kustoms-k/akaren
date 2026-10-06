@@ -17,7 +17,7 @@ async function setup({ output = ORDER_EMAIL_OUTPUT, apiKey = 'sk-test' } = {}) {
 
   // Existing master data, as in the demo seed.
   const customer = (await as('post', '/api/customers').send({
-    name: 'Norrbacka Mark & Anläggning AB', org_nr: '559101-2348', email: 'faktura@norrbacka-mark.example',
+    name: 'Norrbacka Mark & Anläggning AB', org_nr: '559101-2348', email: 'faktura@norrbackamark.se',
   })).body;
   const project = (await as('post', '/api/projects').send({
     customer_id: customer.id, name: 'Kv. Rörstrand – schakt', customer_ref: 'NMA-2611', address: 'Rörstrandsgatan 40', miljozon: 1,

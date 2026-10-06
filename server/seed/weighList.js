@@ -67,7 +67,7 @@ export function ekbackaListText(db, { companyId, week }) {
     'Ekbacka massmottagning AB;;;;;;',
     'Ekbackavägen 3, 194 91 Upplands Väsby;;;;;;',
     `Vägningsrapport ${from} – ${to};;;;;;`,
-    'Kund: Teståkeriet AB (kundnr 10442);;;;;;',
+    'Kund: Lagerviks Åkeri AB (kundnr 10442);;;;;;',
     ';;;;;;',
     'Datum;Tid;Vågsedelnr;Regnr;Artikel;Märkning;Netto (kg)',
   ];

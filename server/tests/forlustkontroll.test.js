@@ -97,7 +97,7 @@ describe('Förlustkontroll API and demo tools', () => {
     expect(pf.error).toBeNull();
     const res = await ctx.as('post', '/api/forlustkontroll').send({
       weigh: { text: ex.vaglista.text, mapping: pw.mapping }, invoice: { text: ex.faktura.text, mapping: pf.mapping },
-      facility_name: ex.facility_name, prospect_name: 'Teståkeriet AB',
+      facility_name: ex.facility_name, prospect_name: 'Lagerviks Åkeri AB',
     });
     expect(res.status).toBe(200);
     const r = res.body;

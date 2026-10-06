@@ -2,12 +2,14 @@ import { addDays, isoWeek, isoWeekRange, isoWeekday } from './dates.js';
 import { ORDER_FIELDS } from './orderExtraction.js';
 import { dayText } from './replyTemplates.js';
 
-// The DEMO_MODE order mailbox: a realistic week of email to "order@testakeriet.se", already sorted, with the
+// The DEMO_MODE order mailbox: a realistic week of email to "order@lagerviksakeri.se", already sorted, with the
 // AI extraction for every order written out by hand. Customers, people, phone numbers (070-174 06 xx, a range
-// PTS reserves for fiction) and domains (.example) are fictional and match the demo seed (seed/demo.js).
+// PTS reserves for fiction) and .se domains are fictional and match the demo seed (seed/demo.js). Every domain was
+// checked to have no DNS records (unregistered) when chosen, and senders that would be real brands (newsletters,
+// suppliers) are fictional companies, so no email here is attributed to a real organisation.
 // Nothing here is used outside DEMO_MODE or the demo seed; real mail is never guessed at.
 
-export const DEMO_MAILBOX = 'order@testakeriet.se';
+export const DEMO_MAILBOX = 'order@lagerviksakeri.se';
 export const INBOX_DEMO_MODEL = 'demo';
 export const INBOX_DEMO_PROMPT_VERSION = 'inbox-demo-v1';
 
@@ -16,12 +18,12 @@ const output = (given) => Object.fromEntries(ORDER_FIELDS.map((k) => [k, given[k
 const nextWeekday = (from, wd) => addDays(from, ((wd - isoWeekday(from) + 7) % 7) || 7);
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
-const PETRA = { name: 'Petra Holm', email: 'petra.holm@norrbacka-mark.example' };
-const OSKAR = { name: 'Oskar Wiklund', email: 'oskar.wiklund@norrbacka-mark.example' };
-const LINNEA = { name: 'Linnea Ek', email: 'linnea.ek@saltsjobygg.example' };
-const HAMPUS = { name: 'Hampus Strand', email: 'hampus.strand@ekhagen.example' };
-const ALI = { name: 'Ali Haddad', email: 'ali.haddad@vallbyschakt.example' };
-const ERIK = { name: 'Erik Sandberg', email: 'erik@sandbergsmark.example' };
+const PETRA = { name: 'Petra Holm', email: 'petra.holm@norrbackamark.se' };
+const OSKAR = { name: 'Oskar Wiklund', email: 'oskar.wiklund@norrbackamark.se' };
+const LINNEA = { name: 'Linnea Ek', email: 'linnea.ek@saltsjobyggentreprenad.se' };
+const HAMPUS = { name: 'Hampus Strand', email: 'hampus.strand@ekhagensfastigheter.se' };
+const ALI = { name: 'Ali Haddad', email: 'ali.haddad@vallbyschakt.se' };
+const ERIK = { name: 'Erik Sandberg', email: 'erik@sandbergsmarkab.se' };
 
 const PETRA_SIGN = 'Mvh\nPetra Holm\nPlatschef, Norrbacka Mark & Anläggning AB\n070-174 06 10';
 const LINNEA_SIGN = 'Linnea Ek\nArbetsledare, Saltsjö Bygg & Entreprenad AB\n070-174 06 12';
@@ -104,40 +106,40 @@ ${LINNEA_SIGN}`,
 
     // ── Filtered out: what a real order mailbox also receives ──
     {
-      key: 'ms365', at: [addDays(today, -3), '08:05'], from: { name: 'Microsoft 365', email: 'no-reply@microsoft.example' }, state: 'read',
+      key: 'ms365', at: [addDays(today, -3), '08:05'], from: { name: 'Haninge IT-partner', email: 'no-reply@haningeitpartner.se' }, state: 'read',
       subject: 'Din postlåda är nästan full',
-      body: 'Postlådan order@testakeriet.se använder 46,2 GB av 50 GB. Rensa gamla mejl eller uppgradera lagringen för att fortsätta ta emot e-post.',
+      body: 'Postlådan order@lagerviksakeri.se använder 46,2 GB av 50 GB. Rensa gamla mejl eller uppgradera lagringen för att fortsätta ta emot e-post.',
       triage: { category: 'ovrigt', source: 'regel', summary: 'Systemmeddelande om lagringsutrymme.', filter_reason: NO_REPLY },
     },
     {
-      key: 'vianor', at: [addDays(today, -2), '12:40'], from: { name: 'Vianor Haninge', email: 'haninge@vianor.example' }, state: 'read',
+      key: 'vianor', at: [addDays(today, -2), '12:40'], from: { name: 'Däckcentralen Haninge', email: 'bokning@dackcentralenhaninge.se' }, state: 'read',
       subject: 'Bokningsbekräftelse: däckbyte TKA418',
       body: `Hej!
 
-Tack för din bokning. Välkommen till Vianor Haninge ${dayText(thu)} kl 07.30 för byte till vinterdäck på TKA418. Räkna med ungefär en timme.
+Tack för din bokning. Välkommen till Däckcentralen Haninge ${dayText(thu)} kl 07.30 för byte till vinterdäck på TKA418. Räkna med ungefär en timme.
 
 Adress: Kilowattvägen 6, Haninge
 
 Vänliga hälsningar
-Vianor Haninge`,
+Däckcentralen Haninge`,
       triage: { category: 'ovrigt', source: 'ai', summary: 'Verkstadsbokning för er egen bil TKA418.', filter_reason: 'Bekräftelse från verkstad som gäller er egen bil, inte en kundorder' },
     },
     {
-      key: 'tfcenter', at: [addDays(today, -2), '21:14'], from: { name: 'Truck & Flak Center', email: 'kampanj@tfcenter.example' }, state: 'read',
+      key: 'tfcenter', at: [addDays(today, -2), '21:14'], from: { name: 'Truck & Flak Center', email: 'kampanj@truckflakcenter.se' }, state: 'read',
       subject: 'Höstkampanj: begagnade tippflak från 89 000 kr',
       body: 'Just nu har vi 14 begagnade tippflak i lager, alla besiktade och klara för leverans. Boka en visning i Arlandastad redan i dag!\n\nVill du inte ha fler erbjudanden? Avregistrera dig här.',
       triage: { category: 'ovrigt', source: 'regel', summary: 'Reklam för begagnade tippflak.', filter_reason: NEWSLETTER },
     },
     {
-      key: 'akeri-inbjudan', at: [yesterday, '07:12'], from: { name: 'Sveriges Åkeriföretag', email: 'evenemang@akeri.example' }, state: 'read',
+      key: 'akeri-inbjudan', at: [yesterday, '07:12'], from: { name: 'Åkerinätverket Stockholm', email: 'evenemang@akerinatverket.se' }, state: 'read',
       subject: 'Inbjudan: Branschdag Anläggning 12 november',
       body: 'Välkommen till Branschdag Anläggning! Ta del av nyheter om massahantering, nya regler för avfallsrapportering och hur fler åkerier får betalt i tid.\n\nAnmäl dig senast 1 november.\n\nAvregistrera dig från utskicken.',
       triage: { category: 'ovrigt', source: 'regel', summary: 'Inbjudan till branschdag.', filter_reason: NEWSLETTER },
     },
     {
-      key: 'ekbacka-kvitto', at: [yesterday, '15:47'], from: { name: 'Ekbacka Massmottagning', email: 'noreply@ekbacka.example' }, state: 'read',
-      subject: 'Mottagningskvitto – Teståkeriet AB',
-      body: `Sammanställning av mottagna lass från Teståkeriet AB, ${dayText(yesterday)}:
+      key: 'ekbacka-kvitto', at: [yesterday, '15:47'], from: { name: 'Ekbacka Massmottagning', email: 'noreply@ekbackamassmottagning.se' }, state: 'read',
+      subject: 'Mottagningskvitto – Lagerviks Åkeri AB',
+      body: `Sammanställning av mottagna lass från Lagerviks Åkeri AB, ${dayText(yesterday)}:
 
 Antal lass: 9
 Mottagen mängd: 152,36 ton
@@ -147,29 +149,29 @@ Detta är ett automatiskt utskick. Svara inte på det här mejlet.`,
       triage: { category: 'ovrigt', source: 'regel', summary: 'Dagskvitto från Ekbacka massmottagning.', filter_reason: `${NO_REPLY}. Lassen registreras redan via förarnas vågsedlar` },
     },
     {
-      key: 'ansokan', at: [yesterday, '19:30'], from: { name: 'Ahmed Yusuf', email: 'ahmed.yusuf@mail.example' }, state: 'read',
+      key: 'ansokan', at: [yesterday, '19:30'], from: { name: 'Ahmed Yusuf', email: 'ahmed.yusuf@bredbandshuset.se' }, state: 'read',
       subject: 'Ansökan: CE-chaufför',
       body: 'Hej!\n\nJag har CE-körkort, YKB och fem års erfarenhet av tippbil i Stockholmsområdet. Jag undrar om ni behöver fler förare. CV bifogas.\n\nMvh\nAhmed',
       attachments: [{ filename: 'CV_Ahmed_Yusuf.pdf', content_type: 'application/pdf', size_bytes: 88412, text_content: null }],
       triage: { category: 'ovrigt', source: 'ai', summary: 'Jobbansökan som CE-chaufför.', filter_reason: 'Jobbansökan. Vidarebefordra till den som anställer' },
     },
     {
-      key: 'volvo', at: [today, '05:58'], from: { name: 'Volvo Lastvagnar', email: 'nyhetsbrev@volvotrucks.example' }, state: 'unread',
-      subject: 'Nyheter i oktober: FH Electric för anläggningsjobb',
-      body: 'Hej Teståkeriet AB!\n\nI oktobernumret: så klarar FH Electric en heldag med tippbil i Stockholmstrafik, nya serviceavtal för anläggningsfordon och höstens kurser för förare.\n\nDu får det här mejlet eftersom du prenumererar på Volvo Lastvagnars nyhetsbrev. Avregistrera dig här.',
-      triage: { category: 'ovrigt', source: 'regel', summary: 'Nyhetsbrev från Volvo Lastvagnar.', filter_reason: NEWSLETTER },
+      key: 'volvo', at: [today, '05:58'], from: { name: 'Lastvagnsdepån Södertörn', email: 'nyhetsbrev@lastvagnsdepan.se' }, state: 'unread',
+      subject: 'Nyheter i oktober: eldrivna tippbilar för anläggningsjobb',
+      body: 'Hej Lagerviks Åkeri AB!\n\nI oktobernumret: så klarar en eldriven tippbil en heldag i Stockholmstrafik, nya serviceavtal för anläggningsfordon och höstens kurser för förare.\n\nDu får det här mejlet eftersom du prenumererar på Lastvagnsdepåns nyhetsbrev. Avregistrera dig här.',
+      triage: { category: 'ovrigt', source: 'regel', summary: 'Nyhetsbrev från en lastbilsåterförsäljare.', filter_reason: NEWSLETTER },
     },
     {
-      key: 'preem', at: [today, '06:30'], from: { name: 'Preem Företagskort', email: 'faktura@preem.example' }, state: 'unread',
+      key: 'preem', at: [today, '06:30'], from: { name: 'Nordbränsle Företagskort', email: 'faktura@nordbransle.se' }, state: 'unread',
       subject: 'Faktura 4471882 – drivmedel september',
-      body: 'Hej,\n\nBifogat finns faktura 4471882 för drivmedel under september.\n\nBelopp att betala: 84 316,00 kr\nFörfallodag: 30 oktober\n\nMed vänlig hälsning\nPreem Företagskort',
-      attachments: [{ filename: 'Faktura_4471882.pdf', content_type: 'application/pdf', size_bytes: 61240, text_content: 'FAKTURA 4471882\nPreem Företagskort\nKund: Teståkeriet AB\nPeriod: september\nDiesel MK1 HVO-inblandning 4 211 liter\nAtt betala: 84 316,00 kr\nFörfallodag: 30 oktober' }],
+      body: 'Hej,\n\nBifogat finns faktura 4471882 för drivmedel under september.\n\nBelopp att betala: 84 316,00 kr\nFörfallodag: 30 oktober\n\nMed vänlig hälsning\nNordbränsle Företagskort',
+      attachments: [{ filename: 'Faktura_4471882.pdf', content_type: 'application/pdf', size_bytes: 61240, text_content: 'FAKTURA 4471882\nNordbränsle Företagskort\nKund: Lagerviks Åkeri AB\nPeriod: september\nDiesel MK1 HVO-inblandning 4 211 liter\nAtt betala: 84 316,00 kr\nFörfallodag: 30 oktober' }],
       triage: { category: 'ovrigt', source: 'ai', summary: 'Leverantörsfaktura för drivmedel, 84 316 kr.', filter_reason: 'Leverantörsfaktura. Hör till bokföringen, inte en order' },
     },
     {
-      key: 'tachoweb', at: [today, '07:02'], from: { name: 'Tachoweb', email: 'rapport@tachoweb.example' }, state: 'unread',
+      key: 'tachoweb', at: [today, '07:02'], from: { name: 'Färdskrivarportalen', email: 'rapport@fardskrivarportalen.se' }, state: 'unread',
       subject: `Veckorapport färdskrivare v. ${prevWeek}`,
-      body: `Veckorapporten för vecka ${prevWeek} är klar. 5 fordon, 4 förare, inga avvikelser.\n\nLogga in på Tachoweb för att se hela rapporten.`,
+      body: `Veckorapporten för vecka ${prevWeek} är klar. 5 fordon, 4 förare, inga avvikelser.\n\nLogga in på Färdskrivarportalen för att se hela rapporten.`,
       triage: { category: 'ovrigt', source: 'regel', summary: 'Veckorapport från färdskrivarsystemet.', filter_reason: NO_REPLY },
     },
 
@@ -218,7 +220,7 @@ ${PETRA_SIGN}`,
       }],
     },
     {
-      key: 'tyreso', at: [yesterday, '13:37'], from: { name: 'Karin Ström', email: 'karin.strom@tyresomark.example' }, state: 'read',
+      key: 'tyreso', at: [yesterday, '13:37'], from: { name: 'Karin Ström', email: 'karin.strom@tyresomarkbyggnad.se' }, state: 'read',
       subject: `Förfrågan: 2 tippbilar v. ${tyresoWeek.week}, VA-jobb Tyresö`,
       body: `Hej,
 
@@ -233,7 +235,7 @@ Inköpare, Tyresö Markbyggarna AB
       triage: { category: 'fraga', source: 'ai', summary: `Förfrågan, inte en beställning än: kapacitet och pris för 2 tippbilar vecka ${tyresoWeek.week}, 40–50 lass schaktmassor i Tyresö.` },
       extraction: output({
         kund: f('Tyresö Markbyggarna AB'), kontaktperson: f('Karin Ström'), telefon: f('070-174 06 34'),
-        epost: f('karin.strom@tyresomark.example'), projekt: f('VA-jobb Bollmoravägen', 'medel'), adress: f('Bollmoravägen', 'lag'),
+        epost: f('karin.strom@tyresomarkbyggnad.se'), projekt: f('VA-jobb Bollmoravägen', 'medel'), adress: f('Bollmoravägen', 'lag'),
         ort: f('Tyresö'), datum: f(tyresoMonday, 'medel'), datum_till: f(addDays(tyresoMonday, 4), 'medel'),
         uppdragstyp: f('schakt'), material: f('Schaktmassor'), antal_lass: f(45, 'lag'),
         instruktioner: f(`2 bilar per dag under vecka ${tyresoWeek.week}. Kunden vill ha pris per lass eller ton inklusive tipp.`, 'medel'),
@@ -256,7 +258,7 @@ Arbetsledare, Vallby Schakt & Väg AB
         filename: 'AO-2026-0412.pdf', content_type: 'application/pdf', size_bytes: 48213,
         text_content: `ARBETSORDER                                   AO-2026-0412
 Vallby Schakt & Väg AB · Org.nr 559415-3727
-Box 118, 181 21 Lidingö · order@vallbyschakt.example
+Box 118, 181 21 Lidingö · order@vallbyschakt.se
 
 Beställare:      Vallby Schakt & Väg AB
 Kontaktperson:   Ali Haddad, tel 070-174 06 21
@@ -282,7 +284,7 @@ Betalningsvillkor 30 dagar netto.                          Sida 1 av 1`,
       }),
     },
     {
-      key: 'hammarby', at: [today, '06:52'], from: { name: null, email: 'jonas.m@hammarbybygg.example' }, state: 'unread',
+      key: 'hammarby', at: [today, '06:52'], from: { name: null, email: 'jonas.m@hammarbybyggtjanst.se' }, state: 'unread',
       subject: 'SV: massor',
       body: `Hej igen,
 
@@ -295,7 +297,7 @@ Som sagt på telefon – vi har en del massor som behöver bort från gården i 
 Skickat från min iPhone`,
       triage: { category: 'bestallning', source: 'ai', summary: 'Oklar beställning: 8–10 lass massor från en gård i Hammarby sjöstad nästa vecka. Adress, dag och mottagning saknas, och massorna kan innehålla asfalt.' },
       extraction: output({
-        kund: f('Hammarby Bygg', 'lag'), kontaktperson: f('Jonas', 'medel'), epost: f('jonas.m@hammarbybygg.example'),
+        kund: f('Hammarby Bygg', 'lag'), kontaktperson: f('Jonas', 'medel'), epost: f('jonas.m@hammarbybyggtjanst.se'),
         projekt: f('Gården i Hammarby sjöstad', 'lag'), ort: f('Stockholm', 'lag'), datum: f(nextWeekday(today, 1), 'lag'),
         tid: f('07:00', 'lag'), uppdragstyp: f('schakt', 'medel'), material: f('Schaktmassor, kan innehålla asfalt', 'medel'),
         antal_lass: f(10, 'lag'), fran: f('Hammarby sjöstad', 'lag'),
@@ -420,10 +422,10 @@ Går det att lösa?
       }),
     },
     {
-      key: 'transportforetagen', pool: 2, from: { name: 'Transportföretagen', email: 'nyheter@transportforetagen.example' },
+      key: 'transportforetagen', pool: 2, from: { name: 'Transportbranschen Nytt', email: 'nyheter@transportbranschnytt.se' },
       subject: 'Veckobrev: skärpta miljözonsregler i Stockholm 2027',
-      body: 'Veckans nyheter: Stockholm stad föreslår att miljözon klass 2 utökas, nya krav på elektroniska vägsedlar och kurser i lastsäkring under november.\n\nDu får det här veckobrevet som medlem. Avregistrera dig här.',
-      triage: { category: 'ovrigt', source: 'regel', summary: 'Veckobrev från Transportföretagen.', filter_reason: NEWSLETTER },
+      body: 'Veckans nyheter: nytt förslag om att utöka miljözon klass 2 i Stockholms innerstad, nya krav på elektroniska vägsedlar och kurser i lastsäkring under november.\n\nDu får det här veckobrevet som prenumerant. Avregistrera dig här.',
+      triage: { category: 'ovrigt', source: 'regel', summary: 'Veckobrev om transportbranschen.', filter_reason: NEWSLETTER },
     },
     {
       key: 'vallby-rattelse', pool: 3, from: ALI, replyTo: 'vallby-ao',

@@ -33,7 +33,7 @@ describe('ai.extractOrder', () => {
   it('prices a call at the model that answered, after a fallback', async () => {
     const client = fakeClient({ parsed_output: ORDER_EMAIL_OUTPUT, model: 'claude-opus-4-8' });
     const { ai, db, companyId } = setup({ client });
-    const r = await ai.extractOrder({ companyId, companyName: 'Teståkeriet AB', text: ORDER_EMAIL });
+    const r = await ai.extractOrder({ companyId, companyName: 'Lagerviks Åkeri AB', text: ORDER_EMAIL });
     const row = db.prepare('SELECT model, cost_micro_usd FROM ai_extractions WHERE id = ?').get(r.extractionId);
     expect(row).toEqual({ model: 'claude-opus-4-8', cost_micro_usd: 27_000 });
   });
@@ -41,7 +41,7 @@ describe('ai.extractOrder', () => {
   it('sends Haiku without fallbacks, thinking or effort', async () => {
     const client = fakeClient({ parsed_output: ORDER_EMAIL_OUTPUT });
     const { ai, companyId } = setup({ client, model: 'claude-haiku-4-5' });
-    await ai.extractOrder({ companyId, companyName: 'Teståkeriet AB', text: ORDER_EMAIL });
+    await ai.extractOrder({ companyId, companyName: 'Lagerviks Åkeri AB', text: ORDER_EMAIL });
     const req = client.calls[0];
     expect(req.fallbacks).toBeUndefined();
     expect(req.betas).toBeUndefined();
@@ -51,7 +51,7 @@ describe('ai.extractOrder', () => {
   it('calls the configured model with structured output and logs usage and cost', async () => {
     const client = fakeClient({ parsed_output: ORDER_EMAIL_OUTPUT });
     const { ai, db, companyId } = setup({ client });
-    const r = await ai.extractOrder({ companyId, companyName: 'Teståkeriet AB', text: ORDER_EMAIL });
+    const r = await ai.extractOrder({ companyId, companyName: 'Lagerviks Åkeri AB', text: ORDER_EMAIL });
 
     const req = client.calls[0];
     expect(req.model).toBe('claude-opus-5-5');
