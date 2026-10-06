@@ -15,6 +15,32 @@ https://demo.<domain>│  (HTTPS) ─► demo   fake data, resets 03:30│
 
 Everything the app stores (the database, vågsedel photos and nightly backups) lives in Docker volumes that survive restarts and updates.
 
+## Free options
+
+**Right now, from your own computer:** `bash deploy/quick-demo.sh`
+- Starts the demo copy (fake data only) and prints a public HTTPS address you can share, such as `https://abc123.lhr.life`.
+- It uses a free tunnel: a Cloudflare quick tunnel, or localhost.run over SSH when your network blocks Cloudflare.
+- No account, domain or card.
+- The address changes every time you start it, and it only works while the computer is awake and the script is running. Good for a meeting or a day of sending links, not for customers.
+
+**Permanent, free:** Oracle Cloud's Always Free tier plus a free address from sslip.io.
+1. Create an Oracle Cloud account (it asks for a card to verify you, but Always Free resources aren't charged). Choose **Sweden Central (Stockholm)** as home region.
+2. Create a VM: **Ubuntu 24.04**, shape **VM.Standard.A1.Flex** (Ampere, Always Free eligible), 2 OCPU / 12 GB RAM, with your SSH key. If it says "out of capacity", try again later or pick another availability domain.
+3. Open ports 80 and 443 in two places:
+   - In the VCN: **Networking → Virtual cloud networks → your VCN → Security list → Add ingress rules**, TCP 80 and 443 from `0.0.0.0/0`.
+   - On the server: Oracle's Ubuntu image has its own firewall rules. After `bootstrap.sh`, also run
+     `sudo iptables -I INPUT -p tcp -m multiport --dports 80,443 -j ACCEPT && sudo netfilter-persistent save`.
+4. Use sslip.io instead of buying a domain. A name like `app.203-0-113-7.sslip.io` (your server's IP with dashes) points at your server with no sign-up, and Caddy gets a real certificate for it. In `deploy/.env`:
+
+   ```
+   APP_DOMAIN=app.203-0-113-7.sslip.io
+   DEMO_DOMAIN=demo.203-0-113-7.sslip.io
+   ```
+
+   Use the same names in `app.env` and `demo.env`. Then follow "First setup" below from step 2; skip step 1.
+
+   sslip.io is fine to start with. Switch to your own domain before customers depend on it: change the three env files and run `update.sh`, and Caddy fetches new certificates by itself.
+
 ## What it costs
 
 | | Roughly |
