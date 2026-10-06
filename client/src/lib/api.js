@@ -1,4 +1,4 @@
-// Thin JSON client for the Åkaren API. Errors carry the server's Swedish message
+// Thin JSON client for the Lasskoll API. Errors carry the server's Swedish message
 // and per-field messages so forms can show them inline.
 
 const TOKEN_KEY = 'akaren_token';

@@ -363,7 +363,7 @@ function DifferenceTable({ rows, onFix }) {
               <td>
                 {r.differences.map((d) => (
                   <div key={d.field} className="num" style={{ fontSize: 13 }}>
-                    <span className="t-muted">{WEIGH_DIFF_LABELS[d.field]}:</span> {formatDiffValue(d.field, d.lass)} i Åkaren,{' '}
+                    <span className="t-muted">{WEIGH_DIFF_LABELS[d.field]}:</span> {formatDiffValue(d.field, d.lass)} i Lasskoll,{' '}
                     <strong>{formatDiffValue(d.field, d.list)}</strong> på listan
                     {d.field === 'netto_kg' && d.lass != null && <span className="t-muted"> ({formatKgDiff(d.list - d.lass)})</span>}
                   </div>
@@ -573,7 +573,7 @@ export function AvstamningDetail({ params }) {
         <div className="notice notice-red" role="status" style={{ marginBottom: 16, alignItems: 'center' }}>
           <TriangleAlert size={16} style={{ flexShrink: 0 }} />
           <span>
-            <strong>{t.saknas} {t.saknas === 1 ? 'vägning' : 'vägningar'}</strong> hos {list.facility_name} saknas i Åkaren
+            <strong>{t.saknas} {t.saknas === 1 ? 'vägning' : 'vägningar'}</strong> hos {list.facility_name} saknas i Lasskoll
             {t.saknas_value_ore > 0 && <> och är värda ungefär <strong className="num">{formatKr(t.saknas_value_ore, { round: true })}</strong> exkl. moms</>}
             {t.saknas_value_ore > 0 && t.saknas_unpriced > 0 && <>, plus {t.saknas_unpriced} utan uppdrag eller pris</>}.
             {' '}Utan lass blir de aldrig fakturerade.
@@ -589,7 +589,7 @@ export function AvstamningDetail({ params }) {
       <div className="stat-grid" style={{ marginBottom: 16 }}>
         <StatTile label="Vägningar" value={t.rows} sub={formatTon(t.list_kg)} />
         <StatTile label="Matchade" value={matched.length} sub={`${t.matchad} helt lika`} tone={matched.length === t.rows ? 'var(--success)' : undefined} />
-        <StatTile label="Saknas i Åkaren" value={t.saknas}
+        <StatTile label="Saknas i Lasskoll" value={t.saknas}
           sub={t.saknas ? `${formatTon(t.saknas_kg)}${t.saknas_value_ore ? ` · ≈ ${formatKr(t.saknas_value_ore, { round: true })}` : ''}` : 'Inget saknas'}
           tone={t.saknas ? 'var(--danger)' : undefined} />
         <StatTile label="Avvikelser" value={t.avvikelse}
@@ -599,7 +599,7 @@ export function AvstamningDetail({ params }) {
       </div>
 
       {missing.length > 0 && (
-        <Section title="Saknas i Åkaren" count={missing.length} tone="badge-red"
+        <Section title="Saknas i Lasskoll" count={missing.length} tone="badge-red"
           hint="Vägda hos anläggningen men inte loggade. Skapa lasset på rätt uppdrag så kommer det med på fakturaunderlaget, eller ignorera vägningen om den inte är er.">
           <MissingTable rows={missing} onCreate={creating.show} onIgnore={ignoring.show} />
         </Section>
@@ -614,7 +614,7 @@ export function AvstamningDetail({ params }) {
 
       {data.unlisted.length > 0 && (
         <Section title="Inte på våglistan" count={data.unlisted.length} tone="badge-amber"
-          hint={`Lass som enligt Åkaren gick till ${list.facility_name} under perioden men som inte finns på listan. Kontrollera mottagaren på lasset eller fråga anläggningen.`}>
+          hint={`Lass som enligt Lasskoll gick till ${list.facility_name} under perioden men som inte finns på listan. Kontrollera mottagaren på lasset eller fråga anläggningen.`}>
           <UnlistedTable rows={data.unlisted} />
         </Section>
       )}

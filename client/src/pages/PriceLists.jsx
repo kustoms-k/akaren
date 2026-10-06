@@ -94,7 +94,7 @@ export function PriceLists() {
       </Link>
       <PageHeader
         title="Prislistor"
-        description="Priser exkl. moms. Åkaren använder projektets prislista först, sedan kundens och sist standardlistan. Det mest specifika priset vinner."
+        description="Priser exkl. moms. Lasskoll använder projektets prislista först, sedan kundens och sist standardlistan. Det mest specifika priset vinner."
         actions={<Button onClick={() => setListDialog({ list: null })}><Plus size={14} /> Ny prislista</Button>}
       />
       <ErrorNotice error={error} onRetry={reload} />

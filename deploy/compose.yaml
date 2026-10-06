@@ -1,4 +1,4 @@
-# Åkaren on one server: the real app, a public demo, and Caddy in front for HTTPS.
+# Lasskoll on one server: the real app, a public demo, and Caddy in front for HTTPS.
 # Run from the repo root:  docker compose -f deploy/compose.yaml up -d --build
 # Domains and the certificate email come from deploy/.env; app and demo settings from deploy/app.env and deploy/demo.env.
 

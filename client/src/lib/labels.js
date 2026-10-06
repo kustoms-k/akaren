@@ -282,7 +282,7 @@ export function formatQty(q, unit) {
 // ── Avstämning (facility weighing lists against logged lass) ──
 
 export const WEIGH_ROW_STATUS = {
-  saknas: { label: 'Saknas i Åkaren', badge: 'badge-red' },
+  saknas: { label: 'Saknas i Lasskoll', badge: 'badge-red' },
   avvikelse: { label: 'Avvikelse', badge: 'badge-amber' },
   matchad: { label: 'Matchad', badge: 'badge-green' },
   ignorerad: { label: 'Ignorerad', badge: 'badge-muted' },

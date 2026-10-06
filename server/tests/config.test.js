@@ -6,7 +6,7 @@ describe('loadConfig', () => {
   it('builds a config from a valid env', () => {
     const c = loadConfig(TEST_ENV);
     expect(c.anthropic.model).toBe('claude-opus-5');
-    expect(c.elks.sender).toBe('Akaren');
+    expect(c.elks.sender).toBe('Lasskoll');
     expect(c.elks.enabled).toBe(false);
     expect(c.fortnox.configured).toBe(false);
     expect(c.corsOrigins).toEqual(['http://localhost:5173', 'http://192.168.1.50:5173']);

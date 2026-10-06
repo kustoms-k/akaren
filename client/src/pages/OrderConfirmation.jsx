@@ -17,7 +17,7 @@ function EmailFrame({ html, title }) {
       title={title}
       sandbox=""
       srcDoc={html}
-      style={{ width: '100%', height: 460, border: '1px solid var(--border)', borderRadius: 10, background: '#f4f5f7' }}
+      style={{ width: '100%', height: 460, border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg-base)' }}
     />
   );
 }

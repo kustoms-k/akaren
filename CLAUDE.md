@@ -1,4 +1,6 @@
-# Åkaren
+# Lasskoll
+
+> **Name.** The product is **Lasskoll** ("Koll på varje lass"), renamed from Åkaren on 2026-10-06. Everything a user, driver or prospect sees says Lasskoll. Code identifiers keep `akaren`: the repo, package names, `akaren.db`, localStorage keys, Docker project and volume names. Don't rename those.
 
 > **Pivot in progress.** Phases 2–6 are done: cleanup and schema, AI order intake, dispatch and the driver page, lass review, hazardous-waste reporting and Massredovisning, and the weekly fakturaunderlag with Fortnox drafts. The order inbox (`/inkorg`) exists as a demo mailbox; real mailbox connections come later. Fortnox payload details still need a sandbox check (pivot plan §7). Next is Phase 7. `docs/pivot-plan.md` is the source of truth for the target data model, routes and pages, with a progress log at the top. The old full TMS is archived at git tag `pre-pivot-archive`.
 
@@ -30,7 +32,14 @@ These were removed on purpose. Don't reintroduce them, even partially, without a
 
 ## Stack
 
-- **Client:** React 19, Vite 8, Tailwind 4, `motion`, `lucide-react`, jsPDF. Design tokens live in `client/src/index.css`: a clean, light Scandinavian look in Geist. Keep it.
+- **Client:** React 19, Vite 8, Tailwind 4, `motion`, `lucide-react`, jsPDF.
+- **Brand ("Tallgrön").** Design tokens live in `client/src/index.css`:
+  - pine green `--accent` #1f4d3a for the brand and primary actions
+  - warm sand-tinted neutrals and a green-tinted ink
+  - Geist type
+  - semantic colours (info blue, success, amber, red) kept separate from the brand green
+
+  The mark and wordmark are in `client/src/assets/Logo.jsx` (a load of soil on a truck bed with a check), and the favicon is `client/public/favicon.svg`. Buttons take their colours from the tokens (`.btn-*`). Use the tokens; don't hard-code colours.
 - **Server:** Node ≥20.19, Express 4, better-sqlite3 (WAL), JWT, multer + sharp for photos, zod for validation, node-cron.
 - **Integrations:**
   - Anthropic: `@anthropic-ai/sdk`, structured outputs, model from `ANTHROPIC_MODEL`.
@@ -188,7 +197,7 @@ npm run build       # client production build
 
 **Order inbox (`/inkorg`, `routes/inbox.js`).** One read-only order mailbox per company (`mail_accounts`). Each incoming email is stored once per Message-ID, threaded by In-Reply-To, and sorted into `bestallning`, `andring`, `avbokning`, `fraga`, `svar` or `ovrigt` (filtered out), with `category_source` `regel` (cheap pre-filter, no AI), `ai` or `kontoret` (the office corrected it).
 - Order emails carry an AI extraction in `ai_extractions`. "Granska och skapa uppdrag" turns it into an ordinary order intake, so the human-in-the-loop rules above apply unchanged. Confirming links the job back to the email.
-- Changes and cancellations are linked to the job and shown. **Åkaren never changes a job from an email**; the office does it.
+- Changes and cancellations are linked to the job and shown. **Lasskoll never changes a job from an email**; the office does it.
 - Replies come from `lib/replyTemplates.js` (pure, tested). The office edits them and sends them; nothing is sent automatically. They are threaded (In-Reply-To/References), quote the original, and are stored in `email_replies`. A `bekrafta` reply is the order confirmation and is also stored in `order_confirmations`.
 - Real mailbox fetching (Microsoft Graph, Gmail, IMAP) and AI triage through `services/ai.js` are not built yet; `services/inbox.js` `ingest()` is where they plug in.
 

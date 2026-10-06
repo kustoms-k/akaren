@@ -1,4 +1,4 @@
-# Åkaren pivot plan (Phase 1 audit)
+# Lasskoll (formerly Åkaren) pivot plan (Phase 1 audit)
 
 Status: **approved 2026-10-03 with all recommendations (D1–D16)**. Phases 2–6 are done (Phase 6 awaits a Fortnox sandbox check); Phase 7 is next.
 Audit date: 2026-10-03, against `main` @ `fb5d389` (tagged `pre-pivot-archive`).
@@ -94,6 +94,15 @@ Audit date: 2026-10-03, against `main` @ `fb5d389` (tagged `pre-pivot-archive`).
   - Unit codes `t`/`st`/`tim`
   - the `externalinvoicereference1` list filter
   - reverse charge (rows have VAT 0, plus a remark and the customer's VATType)
+
+**Rebrand to Lasskoll, "Tallgrön" (2026-10-06, owner decision).** The name and the look were chosen by the owner from three options each. "Lasskoll" is the Swedish idiom "ha koll på" plus "lass": the promise of traceability and complete invoicing. A web search found no Swedish software with that name; "Tippa" was dropped as too close to Tiptapp.
+- **Mark:** a load of soil on a truck bed with a check through it, on a pine tile (`Logo.jsx`, `favicon.svg`). Wordmark in Geist Bold; tagline "Koll på varje lass".
+- **Palette:** pine `#1f4d3a`, sand `#e8dfc9`, warm neutrals and a green-tinted ink. Semantic colours unchanged.
+- **Buttons:** move from hard-coded colours to token classes (`.btn-*`).
+- **Login:** a split layout, with the brand panel carrying the claim and the three jobs.
+- **PDF titles:** in pine.
+- **Defaults:** `ELKS_SENDER` defaults to `Lasskoll`.
+- **Unchanged:** code identifiers stay `akaren`.
 
 **Hosting (2026-10-06, owner decision).** One EU server with Docker Compose; the runbook is `deploy/README.md`. 316 server tests pass. Rehearsed locally without Docker: the production config, an account created by the script, login, HSTS, demo login refused, and the demo instance seeding itself from an empty database. **The Docker image itself has not been built yet** (no Docker on the development Mac), so the first `deploy/update.sh` on the server is its first build.
 - **Image:** `Dockerfile`, a two-stage `node:22-bookworm-slim` build with native modules compiled in the build stage, tzdata, a non-root user and a healthcheck. Any local data or `.env` is deleted from the image.

@@ -70,7 +70,7 @@ function ImportDialog({ open, onClose }) {
       });
       const t = r.totals;
       toast(t.saknas
-        ? `Våglistan är importerad. ${t.saknas} ${t.saknas === 1 ? 'vägning saknas' : 'vägningar saknas'} i Åkaren.`
+        ? `Våglistan är importerad. ${t.saknas} ${t.saknas === 1 ? 'vägning saknas' : 'vägningar saknas'} i Lasskoll.`
         : 'Våglistan är importerad.');
       onClose();
       navigate(`/avstamning/${r.list.id}`);
@@ -240,7 +240,7 @@ export function Avstamning() {
         <div className="notice notice-red" role="status" style={{ marginBottom: 16, alignItems: 'center' }}>
           <TriangleAlert size={16} style={{ flexShrink: 0 }} />
           <span>
-            <strong>{missing} {missing === 1 ? 'vägning' : 'vägningar'}</strong> på våglistorna saknas i Åkaren
+            <strong>{missing} {missing === 1 ? 'vägning' : 'vägningar'}</strong> på våglistorna saknas i Lasskoll
             {missingValue > 0 && <> och är värda ungefär <strong className="num">{formatKr(missingValue, { round: true })}</strong> exkl. moms</>}.
             Skapa lassen så kommer de med på fakturaunderlaget.
           </span>

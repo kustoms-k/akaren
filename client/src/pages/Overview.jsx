@@ -85,7 +85,7 @@ function buildTodos({ hazards, inbox, drafts, lass, avst, board, tomorrow, prevU
   if (avst?.saknas) {
     todos.push({
       key: 'weigh', tone: 'red', Icon: Scale,
-      title: `${plural(avst.saknas, 'vägning', 'vägningar')} saknas i Åkaren`,
+      title: `${plural(avst.saknas, 'vägning', 'vägningar')} saknas i Lasskoll`,
       detail: 'Vägda hos mottagaren men aldrig loggade. Utan lass blir de inte fakturerade.',
       value: avst.saknas_value_ore ? `≈ ${formatKr(avst.saknas_value_ore, { round: true })}` : null,
       to: '/avstamning',

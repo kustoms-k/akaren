@@ -44,7 +44,7 @@ const schema = z.object({
   ELKS_PASSWORD: optionalString,
   ELKS_SENDER:   z.preprocess(emptyToUndefined, z.string()
     .regex(/^[A-Za-z][A-Za-z0-9]{1,10}$/, 'ELKS_SENDER must be 2–11 ASCII letters/digits and start with a letter')
-    .default('Akaren')),
+    .default('Lasskoll')),
   ELKS_API_BASE: z.preprocess(emptyToUndefined, z.url().default('https://api.46elks.com/a1')),
 
   // SMTP for order confirmation emails. Without SMTP_HOST and MAIL_FROM, sending is simulated and logged.

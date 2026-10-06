@@ -134,7 +134,7 @@ function FortnoxPanel() {
               <div className="notice notice-red">Kopplingen har gått ut (Fortnox kräver ny inloggning efter 45 dagar utan användning). Anslut igen för att kunna skapa fakturautkast.</div>
             )}
             <p className="t-muted" style={{ fontSize: 13 }}>
-              Åkaren skapar bara <strong>fakturautkast</strong> i Fortnox. Inget bokförs eller skickas automatiskt.
+              Lasskoll skapar bara <strong>fakturautkast</strong> i Fortnox. Inget bokförs eller skickas automatiskt.
               {status.connected_at && <> Ansluten {formatTimestamp(status.connected_at)}.</>}
               {status.last_sync_at && <> Kunder synkade {formatTimestamp(status.last_sync_at)}.</>}
             </p>
@@ -170,7 +170,7 @@ function InboxPanel() {
       <div className="panel-body">
         <p className="t-muted" style={{ fontSize: 13 }}>
           {box
-            ? <>Åkaren läser <strong>{box.address}</strong>, sorterar ut beställningarna och läser av dem. Senast hämtad {formatAgo(box.last_sync_at)}. <Link to="/inkorg">Öppna inkorgen</Link>.</>
+            ? <>Lasskoll läser <strong>{box.address}</strong>, sorterar ut beställningarna och läser av dem. Senast hämtad {formatAgo(box.last_sync_at)}. <Link to="/inkorg">Öppna inkorgen</Link>.</>
             : <>Koppla en adress som tar emot beställningar, så hamnar de i <Link to="/inkorg">inkorgen</Link> sorterade och avlästa. Koppling till Microsoft 365, Google och IMAP kommer snart.</>}
         </p>
       </div>

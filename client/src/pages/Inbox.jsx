@@ -71,7 +71,7 @@ function ReaderIdle({ counts, demo }) {
         <div className="flow-step">
           <span className="n">1</span>
           <h3>Mejlet kommer in</h3>
-          <p>Åkaren läser bara er orderadress. Nyhetsbrev, fakturor och autosvar sorteras bort direkt, utan AI.</p>
+          <p>Lasskoll läser bara er orderadress. Nyhetsbrev, fakturor och autosvar sorteras bort direkt, utan AI.</p>
         </div>
         <div className="flow-step">
           <span className="n">2</span>
@@ -120,7 +120,7 @@ function Welcome({ demoAvailable, onStarted }) {
         <h2 className="t-heading">Koppla er order-e-post</h2>
         <p className="t-muted" style={{ marginTop: 4 }}>
           Koppla en adress som bara tar emot beställningar, t.ex. order@ert-akeri.se, eller en mapp som en regel i Outlook fyller.
-          Åkaren läser bara den, flyttar och raderar ingenting, och kollar efter ny post varje minut.
+          Lasskoll läser bara den, flyttar och raderar ingenting, och kollar efter ny post varje minut.
         </p>
       </div>
       <div style={{ display: 'grid', gap: 8 }}>
@@ -191,7 +191,7 @@ export function Inbox({ params }) {
     <>
       <PageHeader
         title="Inkorg"
-        description={<>Mejl till <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{data.account.address}</strong>. Åkaren sorterar ut beställningarna och läser av dem åt dig.</>}
+        description={<>Mejl till <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{data.account.address}</strong>. Lasskoll sorterar ut beställningarna och läser av dem åt dig.</>}
         actions={(
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             {data.demo && <span className="badge badge-blue" title="Påhittade mejl. Svar sparas men skickas inte på riktigt utan SMTP.">Demoinkorg</span>}

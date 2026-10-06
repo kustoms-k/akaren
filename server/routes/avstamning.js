@@ -46,7 +46,7 @@ const fixSchema = z.object({
 const ignoreSchema = z.object({ reason: requiredText(200) }).strict();
 
 const parseJson = (s, fallback) => { try { return s ? JSON.parse(s) : fallback; } catch { return fallback; } };
-const STATUS_TEXT = { matchad: 'Matchad', avvikelse: 'Avvikelse', saknas: 'Saknas i Åkaren', ignorerad: 'Ignorerad' };
+const STATUS_TEXT = { matchad: 'Matchad', avvikelse: 'Avvikelse', saknas: 'Saknas i Lasskoll', ignorerad: 'Ignorerad' };
 const FIELD_TEXT = { netto_kg: 'vikt', vagsedel_nr: 'vågsedelnr', datum: 'datum', regnr: 'regnr' };
 
 /**
@@ -324,8 +324,8 @@ export function avstamningRouter({ db, audit, lass: lassService }) {
     const list = loadList(req);
     const r = build(req.companyId, list);
     const kr = (ore) => (ore == null ? '' : (ore / 100).toFixed(2).replace('.', ','));
-    const header = ['Rad', 'Datum', 'Tid', 'Vågsedel', 'Regnr', 'Material', 'Netto våglista (t)', 'Status', 'Lass i Åkaren',
-      'Netto i Åkaren (t)', 'Avvikelse', 'Kund / projekt', 'Uppskattat värde (kr)', 'Anteckning'];
+    const header = ['Rad', 'Datum', 'Tid', 'Vågsedel', 'Regnr', 'Material', 'Netto våglista (t)', 'Status', 'Lass i Lasskoll',
+      'Netto i Lasskoll (t)', 'Avvikelse', 'Kund / projekt', 'Uppskattat värde (kr)', 'Anteckning'];
     const lines = [header.map(csvCell).join(';')];
     for (const row of r.rows) {
       lines.push([

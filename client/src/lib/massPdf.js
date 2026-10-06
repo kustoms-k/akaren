@@ -1,5 +1,5 @@
 import { formatAddress, formatDate, formatDateTime, formatTon } from './labels.js';
-import { INK, MUTED, PAGE, pdfSafe, table } from './pdfKit.js';
+import { BRAND, INK, MUTED, PAGE, pdfSafe, table } from './pdfKit.js';
 
 // Massredovisning as a PDF (A4 landscape), built client-side with jsPDF's standard Helvetica.
 
@@ -10,10 +10,10 @@ const ton = (kg) => (kg == null ? '' : formatTon(kg).replace(' t', ''));
 function build(JsPDF, report) {
   const { project, company, from, to, rows, summary, totals, generated_at: generatedAt } = report;
   const doc = new JsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  doc.setProperties({ title: pdfSafe(`Massredovisning ${project.name}`), creator: 'Åkaren' });
+  doc.setProperties({ title: pdfSafe(`Massredovisning ${project.name}`), creator: 'Lasskoll' });
 
   let y = PAGE.margin + 4;
-  doc.setFont('helvetica', 'bold').setFontSize(16).setTextColor(...INK).text('Massredovisning', PAGE.margin, y);
+  doc.setFont('helvetica', 'bold').setFontSize(16).setTextColor(...BRAND).text('Massredovisning', PAGE.margin, y);
   doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(...MUTED)
     .text(pdfSafe(`${company.name}${company.org_nr ? ` · org.nr ${company.org_nr}` : ''}`), PAGE.w - PAGE.margin, y, { align: 'right' });
   y += 7;

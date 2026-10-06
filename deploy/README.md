@@ -1,4 +1,4 @@
-# Hosting Åkaren
+# Hosting Lasskoll
 
 One small Linux server in the EU runs everything:
 

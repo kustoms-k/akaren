@@ -1,4 +1,4 @@
-# Åkaren: one image for the API and the built office/driver client (single port).
+# Lasskoll: one image for the API and the built office/driver client (single port).
 # Built on the server by deploy/compose.yaml; see deploy/README.md.
 
 # ── Build: server dependencies (native: better-sqlite3, sharp) and the client bundle ──

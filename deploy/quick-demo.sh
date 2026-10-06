@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# A public demo from this computer, right now and for free: the demo copy of Åkaren (fake data only) behind a
+# A public demo from this computer, right now and for free: the demo copy of Lasskoll (fake data only) behind a
 # free tunnel. No account, no domain, no card. Run from anywhere:  bash deploy/quick-demo.sh
 #
 # Tunnels, tried in order (force one with TUNNEL=cloudflare or TUNNEL=localhostrun):

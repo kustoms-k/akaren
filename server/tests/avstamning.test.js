@@ -269,7 +269,7 @@ describe('deleting and exporting', () => {
     expect(res.headers['content-disposition']).toMatch(/avstamning-ekbacka-massmottagning-/);
     const lines = res.text.replace(/^\uFEFF/, '').trim().split('\r\n');
     expect(lines[0]).toMatch(/^Rad;Datum;Tid;Vågsedel/);
-    expect(lines.filter((l) => l.includes(';Saknas i Åkaren;'))).toHaveLength(3);
+    expect(lines.filter((l) => l.includes(';Saknas i Lasskoll;'))).toHaveLength(3);
     expect(lines.filter((l) => l.includes(';Inte på våglistan;'))).toHaveLength(1);
   });
 

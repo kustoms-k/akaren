@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import {
   Briefcase, Building2, ClipboardCheck, FileSpreadsheet, LayoutDashboard, LogOut, Mail, Menu, Plus, ReceiptText, Scale, SearchCheck, Settings, Truck,
 } from 'lucide-react';
-import { LogoMark } from '../assets/Logo.jsx';
+import { LogoMark, Wordmark } from '../assets/Logo.jsx';
 import { useLocation } from '../lib/router.js';
 import { Link } from './Link.jsx';
 import { useAuth } from '../lib/auth.js';
@@ -60,8 +60,8 @@ export function AppShell({ children }) {
         <button type="button" onClick={() => setOpen(true)} aria-label="Öppna meny" style={{ background: 'none', border: 'none', display: 'flex', padding: 4 }}>
           <Menu size={20} />
         </button>
-        <LogoMark size={22} />
-        <span>Åkaren</span>
+        <LogoMark size={24} />
+        <Wordmark size={16} />
         {(counts.inbox + counts.review + counts.weighMissing) > 0 && (
           <span className="nav-count nav-count-red" style={{ marginLeft: 'auto' }} aria-label="Saker att hantera">
             {counts.inbox + counts.review + counts.weighMissing}
@@ -72,8 +72,8 @@ export function AppShell({ children }) {
 
       <nav className={`sidebar${open ? ' open' : ''}`} aria-label="Huvudmeny">
         <div className="sidebar-brand">
-          <LogoMark size={24} />
-          <span>Åkaren</span>
+          <LogoMark size={28} title="Lasskoll" />
+          <Wordmark size={18} />
         </div>
         <Link to="/bestallning" className="sidebar-cta" aria-current={onOrder ? 'page' : undefined} onClick={() => setOpen(false)}>
           <Plus size={15} strokeWidth={2.2} />

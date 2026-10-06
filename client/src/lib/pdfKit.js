@@ -15,8 +15,10 @@ export function pdfSafe(s) {
 }
 
 export const PAGE = { w: 297, h: 210, margin: 14 };
-export const INK = [26, 29, 36];
-export const MUTED = [107, 114, 128];
+export const INK = [22, 33, 28];
+/** Lasskoll pine, for document titles. */
+export const BRAND = [31, 77, 58];
+export const MUTED = [91, 102, 95];
 export const RULE = [221, 224, 229];
 
 /** Cut text to fit `width` mm on one line. */

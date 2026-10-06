@@ -14,7 +14,7 @@ const PASSWORD = 'hemligt123';
 
 const fakeSms = () => {
   const sent = [];
-  return { sent, enabled: false, sender: 'Akaren', async send(to, text) { sent.push({ to, text }); return { status: 'simulerat' }; } };
+  return { sent, enabled: false, sender: 'Lasskoll', async send(to, text) { sent.push({ to, text }); return { status: 'simulerat' }; } };
 };
 
 let ctx;

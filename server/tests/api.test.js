@@ -131,7 +131,7 @@ describe('settings', () => {
     const res = await as('get', '/api/settings/integrations');
     expect(res.body).toMatchObject({
       ai: { configured: true, model: 'claude-opus-5' },
-      sms: { enabled: false, sender: 'Akaren' },
+      sms: { enabled: false, sender: 'Lasskoll' },
       fortnox: { configured: false, status: 'disconnected' },
       public_base_url: 'http://192.168.1.50:5173',
     });

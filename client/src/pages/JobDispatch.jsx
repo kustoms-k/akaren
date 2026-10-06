@@ -242,7 +242,7 @@ export function AssignmentsPanel({ job, onChanged }) {
         )}
       >
         <p className="t-muted" style={{ fontSize: 13 }}>
-          Åkaren kontrollerar bara fordonets angivna miljözonsklass mot projektets zon. Att tilldela ändå loggas.
+          Lasskoll kontrollerar bara fordonets angivna miljözonsklass mot projektets zon. Att tilldela ändå loggas.
         </p>
       </Dialog>
     </section>

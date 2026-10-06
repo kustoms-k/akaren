@@ -1,5 +1,5 @@
 import { formatDate, formatDateTime, formatKr, formatTon } from './labels.js';
-import { INK, MUTED, PAGE, pdfSafe, table } from './pdfKit.js';
+import { BRAND, INK, MUTED, PAGE, pdfSafe, table } from './pdfKit.js';
 
 // Förlustkontroll as a PDF (A4 landscape) to leave with the åkeri: what was weighed, what was invoiced, and
 // what fell between. Built client-side with jsPDF's standard Helvetica.
@@ -12,12 +12,12 @@ const weekLabel = (key) => `v. ${Number(key.split('-W')[1])} ${key.slice(0, 4)}`
 
 function build(JsPDF, r) {
   const doc = new JsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  doc.setProperties({ title: pdfSafe(`Förlustkontroll ${r.prospect_name ?? ''}`.trim()), creator: 'Åkaren' });
+  doc.setProperties({ title: pdfSafe(`Förlustkontroll ${r.prospect_name ?? ''}`.trim()), creator: 'Lasskoll' });
   const t = r.totals;
   const right = PAGE.w - PAGE.margin;
 
   let y = PAGE.margin + 4;
-  doc.setFont('helvetica', 'bold').setFontSize(16).setTextColor(...INK).text('Förlustkontroll', PAGE.margin, y);
+  doc.setFont('helvetica', 'bold').setFontSize(16).setTextColor(...BRAND).text('Förlustkontroll', PAGE.margin, y);
   doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(...MUTED).text(pdfSafe(`Skapad ${formatDateTime(r.generated_at)}`), right, y, { align: 'right' });
   y += 7;
   doc.setFont('helvetica', 'bold').setFontSize(12).setTextColor(...INK)
@@ -97,7 +97,7 @@ function build(JsPDF, r) {
   for (let i = 1; i <= pages; i++) {
     doc.setPage(i);
     doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(...MUTED)
-      .text(pdfSafe('Gjord med Åkaren. Värdet är en uppskattning; kontrollera mot vågsedlarna innan ni fakturerar i efterhand.'), PAGE.margin, PAGE.h - 7)
+      .text(pdfSafe('Gjord med Lasskoll. Värdet är en uppskattning; kontrollera mot vågsedlarna innan ni fakturerar i efterhand.'), PAGE.margin, PAGE.h - 7)
       .text(`${i} / ${pages}`, right, PAGE.h - 7, { align: 'right' });
   }
   return doc;

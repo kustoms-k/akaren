@@ -9,7 +9,7 @@ import { ekbackaListText, invoiceSpecText } from '../seed/weighList.js';
 const resetSchema = z.object({ confirm: z.literal('ÅTERSTÄLL', { error: 'Skriv ÅTERSTÄLL för att bekräfta.' }) }).strict();
 
 /**
- * Tools for showing Åkaren to prospects (/api/demo). Mounted only with DEMO_MODE=1, which the config refuses in
+ * Tools for showing Lasskoll to prospects (/api/demo). Mounted only with DEMO_MODE=1, which the config refuses in
  * production, so none of this exists on a real installation.
  */
 export function demoRouter({ db, config, audit, logger = console }) {

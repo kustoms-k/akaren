@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-time setup of a fresh Ubuntu 24.04 server for Åkaren. Run as root:
+# One-time setup of a fresh Ubuntu 24.04 server for Lasskoll. Run as root:
 #   curl -fsSL https://get.docker.com -o /tmp/get-docker.sh   # (this script does it for you)
 #   bash deploy/bootstrap.sh
 # Installs Docker, turns on the firewall (SSH, HTTP, HTTPS only), automatic security updates and a swap file.

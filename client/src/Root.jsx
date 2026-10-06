@@ -14,7 +14,7 @@ class LoadBoundary extends Component {
     return (
       <div style={{ padding: 32, maxWidth: 420, margin: '0 auto', fontSize: 17 }}>
         <h1 style={{ fontSize: 22, marginBottom: 8 }}>Sidan behöver laddas om</h1>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: 16 }}>Åkaren har uppdaterats eller så bröts anslutningen.</p>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: 16 }}>Lasskoll har uppdaterats eller så bröts anslutningen.</p>
         <button type="button" className="drv-btn" onClick={() => window.location.reload()}>Ladda om</button>
       </div>
     );

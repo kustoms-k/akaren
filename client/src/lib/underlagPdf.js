@@ -1,5 +1,5 @@
 import { formatDate, formatDateTime, formatKr, formatPhone, formatQty } from './labels.js';
-import { INK, MUTED, PAGE, pdfSafe, table } from './pdfKit.js';
+import { BRAND, INK, MUTED, PAGE, pdfSafe, table } from './pdfKit.js';
 
 // Fakturaunderlag for one customer + project and week, as an A4 PDF for customers invoiced outside Fortnox.
 
@@ -12,11 +12,11 @@ function rowStatus(r, labels) {
 
 function build(JsPDF, { group, company, weekLabel, labels }) {
   const doc = new JsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  doc.setProperties({ title: pdfSafe(`Fakturaunderlag ${group.customer.name} ${weekLabel}`), creator: 'Åkaren' });
+  doc.setProperties({ title: pdfSafe(`Fakturaunderlag ${group.customer.name} ${weekLabel}`), creator: 'Lasskoll' });
   const right = PAGE.w - PAGE.margin;
 
   let y = PAGE.margin + 4;
-  doc.setFont('helvetica', 'bold').setFontSize(16).setTextColor(...INK).text('Fakturaunderlag', PAGE.margin, y);
+  doc.setFont('helvetica', 'bold').setFontSize(16).setTextColor(...BRAND).text('Fakturaunderlag', PAGE.margin, y);
   doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(...MUTED)
     .text(pdfSafe(`${company.name}${company.org_nr ? ` · org.nr ${company.org_nr}` : ''}`), right, y, { align: 'right' });
   y += 7;

@@ -120,7 +120,7 @@ function AiCard({ t, busy, onIntake, onCategory }) {
   return (
     <motion.section className="ai-card" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <div className="ai-card-head">
-        <span className="ai-card-title"><Sparkles size={13} /> Åkaren läste mejlet</span>
+        <span className="ai-card-title"><Sparkles size={13} /> Lasskoll läste mejlet</span>
         <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <span className={`badge ${cat.badge}`}>{cat.label}</span>
           <span className="t-muted" style={{ fontSize: 12 }}>{CATEGORY_SOURCE[triage.source]}</span>
@@ -170,7 +170,7 @@ function AiCard({ t, busy, onIntake, onCategory }) {
             </Link>
             <span className="t-muted" style={{ fontSize: 12.5 }}>
               {isChange
-                ? 'Åkaren ändrar aldrig ett uppdrag själv. Gör ändringen i uppdraget och bekräfta sedan till kunden nedan.'
+                ? 'Lasskoll ändrar aldrig ett uppdrag själv. Gör ändringen i uppdraget och bekräfta sedan till kunden nedan.'
                 : `${job.project_name}, ${formatDate(job.datum_fran)}${job.tid ? ` kl ${job.tid}` : ''}. Skapat från mejlet.`}
             </span>
           </>
@@ -446,7 +446,7 @@ function Composer({ t, template, onTemplate, onSent }) {
               <div className="t-label" style={{ marginBottom: 6 }}>Orderbekräftelsen</div>
               <ErrorNotice error={previewError} />
               {preview?.html
-                ? <iframe title="Orderbekräftelsen" sandbox="" srcDoc={preview.html} style={{ width: '100%', height: 420, border: '1px solid var(--border)', borderRadius: 10, background: '#f4f5f7' }} />
+                ? <iframe title="Orderbekräftelsen" sandbox="" srcDoc={preview.html} style={{ width: '100%', height: 420, border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg-base)' }} />
                 : !previewError && <TableSkeleton rows={4} />}
             </div>
           </>
@@ -512,7 +512,7 @@ function ConfirmationDialog({ message, onClose }) {
       footer={<Button variant="secondary" onClick={onClose}>Stäng</Button>}>
       {message?.body_html && (
         <iframe title="Orderbekräftelse" sandbox="" srcDoc={message.body_html}
-          style={{ width: '100%', height: 480, border: '1px solid var(--border)', borderRadius: 10, background: '#f4f5f7' }} />
+          style={{ width: '100%', height: 480, border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg-base)' }} />
       )}
     </Dialog>
   );
