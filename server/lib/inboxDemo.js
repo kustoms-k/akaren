@@ -220,7 +220,7 @@ ${PETRA_SIGN}`,
       }],
     },
     {
-      key: 'tyreso', at: [yesterday, '13:37'], from: { name: 'Karin Ström', email: 'karin.strom@tyresomarkbyggnad.se' }, state: 'read',
+      key: 'tyreso', at: [yesterday, '13:37'], from: { name: 'Karin Ström', email: 'karin.strom@tyresomarkbyggarna.se' }, state: 'read',
       subject: `Förfrågan: 2 tippbilar v. ${tyresoWeek.week}, VA-jobb Tyresö`,
       body: `Hej,
 
@@ -235,7 +235,7 @@ Inköpare, Tyresö Markbyggarna AB
       triage: { category: 'fraga', source: 'ai', summary: `Förfrågan, inte en beställning än: kapacitet och pris för 2 tippbilar vecka ${tyresoWeek.week}, 40–50 lass schaktmassor i Tyresö.` },
       extraction: output({
         kund: f('Tyresö Markbyggarna AB'), kontaktperson: f('Karin Ström'), telefon: f('070-174 06 34'),
-        epost: f('karin.strom@tyresomarkbyggnad.se'), projekt: f('VA-jobb Bollmoravägen', 'medel'), adress: f('Bollmoravägen', 'lag'),
+        epost: f('karin.strom@tyresomarkbyggarna.se'), projekt: f('VA-jobb Bollmoravägen', 'medel'), adress: f('Bollmoravägen', 'lag'),
         ort: f('Tyresö'), datum: f(tyresoMonday, 'medel'), datum_till: f(addDays(tyresoMonday, 4), 'medel'),
         uppdragstyp: f('schakt'), material: f('Schaktmassor'), antal_lass: f(45, 'lag'),
         instruktioner: f(`2 bilar per dag under vecka ${tyresoWeek.week}. Kunden vill ha pris per lass eller ton inklusive tipp.`, 'medel'),
