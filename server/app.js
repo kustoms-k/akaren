@@ -30,6 +30,10 @@ import { massredovisningRouter } from './routes/massredovisning.js';
 import { inboxRouter } from './routes/inbox.js';
 import { fakturaunderlagRouter } from './routes/fakturaunderlag.js';
 import { priceListsRouter } from './routes/priceLists.js';
+import { avstamningRouter } from './routes/avstamning.js';
+import { boardRouter } from './routes/board.js';
+import { forlustkontrollRouter } from './routes/forlustkontroll.js';
+import { demoRouter } from './routes/demo.js';
 
 const PRIVATE_LAN = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/;
 
@@ -52,8 +56,8 @@ export function createApp({ config, db, services = {}, logger = console }) {
 
   const app = express();
   app.disable('x-powered-by');
-  // One proxy hop in dev (Vite). Gives rate limiting the real client IP.
-  app.set('trust proxy', 'loopback');
+  // The proxy in front (Vite in dev, Caddy when hosted) passes the real client IP for rate limiting and the audit log.
+  app.set('trust proxy', config.trustProxy);
 
   app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
@@ -67,6 +71,9 @@ export function createApp({ config, db, services = {}, logger = console }) {
     },
     exposedHeaders: ['Content-Disposition'],
   }));
+  // Weighing lists are pasted or uploaded as text: a month of weighings is larger than any other request.
+  // Signed-in office users only, so the larger limit isn't open to anyone.
+  app.use(['/api/avstamning', '/api/forlustkontroll'], auth.requireOffice, express.json({ limit: '3mb' }));
   app.use(express.json({ limit: '256kb' }));
 
   // Public
@@ -93,6 +100,10 @@ export function createApp({ config, db, services = {}, logger = console }) {
   office.use('/photos', photosRouter(deps));
   office.use('/lass', lassRouter(deps));
   office.use('/massredovisning', massredovisningRouter(deps));
+  office.use('/avstamning', avstamningRouter(deps));
+  office.use('/board', boardRouter(deps));
+  office.use('/forlustkontroll', forlustkontrollRouter(deps));
+  if (config.demoMode) office.use('/demo', demoRouter(deps));
   office.use('/', dispatchRouter(deps));
   app.use('/api', office);
 

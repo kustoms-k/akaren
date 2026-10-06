@@ -1,4 +1,5 @@
 import { addDays, stockholmLocalToUtc } from './dates.js';
+import { isWorkday } from './workdays.js';
 
 // ── Driver magic links ──────────────────────────────────────────────────────
 
@@ -48,10 +49,14 @@ export function shortDateSv(date) {
 
 const cut = (s, n) => (s && s.length > n ? `${s.slice(0, n - 1)}.` : s);
 
-/** The assignment SMS. Kept GSM-safe and within two SMS segments (306 chars). */
-export function buildAssignmentSms({ driverName, datum, tid, typeLabel, projectName, address, regnr, link, companyName }) {
+/**
+ * The assignment SMS. Kept GSM-safe and within two SMS segments (306 chars).
+ * datumTill: the last day when one SMS covers several days with the same truck ("mån 5 okt-fre 9 okt").
+ */
+export function buildAssignmentSms({ driverName, datum, datumTill = null, tid, typeLabel, projectName, address, regnr, link, companyName }) {
   const first = (driverName ?? '').split(' ')[0];
-  const when = `${shortDateSv(datum)}${tid ? ` kl ${tid}` : ''}`;
+  const days = datumTill && datumTill !== datum ? `${shortDateSv(datum)}-${shortDateSv(datumTill)}` : shortDateSv(datum);
+  const when = `${days}${tid ? ` kl ${tid}` : ''}`;
   const where = [cut(projectName, 40), cut(address, 40)].filter(Boolean).join(', ');
   const text = `Hej ${first}! Uppdrag ${when} med ${regnr}: ${typeLabel}, ${where}. Info och lassrapport: ${link} /${cut(companyName, 24)}`;
   return gsmSafe(text);
@@ -69,4 +74,12 @@ export const TYPE_LABELS = {
 /** Miljözon: does this vehicle meet the project's zone class? */
 export function miljozonOk(vehicleClass, projectZone) {
   return !projectZone || vehicleClass >= projectZone;
+}
+
+/** The days a booking covers: just `datum`, or every working day (no weekends or public holidays) up to `datumTill`. */
+export function bookingDays(datum, datumTill = null) {
+  if (!datumTill || datumTill === datum) return [datum];
+  const days = [];
+  for (let d = datum; d <= datumTill; d = addDays(d, 1)) if (isWorkday(d)) days.push(d);
+  return days;
 }

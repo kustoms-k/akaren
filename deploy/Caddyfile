@@ -1,0 +1,30 @@
+# HTTPS certificates are fetched and renewed automatically (Let's Encrypt) once DNS points here.
+{
+	email {$ACME_EMAIL}
+}
+
+(common) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+	# Weighing lists and photos are the largest requests (3 MB JSON, 15 MB images).
+	request_body {
+		max_size 20MB
+	}
+}
+
+{$APP_DOMAIN} {
+	import common
+	reverse_proxy app:3002
+}
+
+{$DEMO_DOMAIN} {
+	import common
+	# Keep the demo out of search engines.
+	header X-Robots-Tag "noindex, nofollow"
+	reverse_proxy demo:3002
+}

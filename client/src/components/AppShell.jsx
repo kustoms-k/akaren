@@ -1,41 +1,58 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Briefcase, Building2, ClipboardCheck, ClipboardPaste, FileSpreadsheet, LayoutDashboard, LogOut, Mail, Menu, ReceiptText, Settings, Truck } from 'lucide-react';
+import {
+  Briefcase, Building2, ClipboardCheck, FileSpreadsheet, LayoutDashboard, LogOut, Mail, Menu, Plus, ReceiptText, Scale, SearchCheck, Settings, Truck,
+} from 'lucide-react';
 import { LogoMark } from '../assets/Logo.jsx';
 import { useLocation } from '../lib/router.js';
 import { Link } from './Link.jsx';
 import { useAuth } from '../lib/auth.js';
-import { api } from '../lib/api.js';
-import { onInboxChanged } from '../lib/inboxEvents.js';
+import { useWorkCounts } from '../lib/workCounts.js';
 
+// Grouped the way the week runs: today's work, the loads, Friday's invoicing, and the registers behind it all.
+// `badge` picks what the item counts from the shared work counts: [count, tone, label].
 const NAV = [
-  { to: '/', label: 'Översikt', Icon: LayoutDashboard, match: (p) => p === '/' },
-  { to: '/inkorg', label: 'Inkorg', Icon: Mail, match: (p) => p.startsWith('/inkorg'), count: 'inbox' },
-  { to: '/bestallning', label: 'Ny beställning', Icon: ClipboardPaste, match: (p) => p.startsWith('/bestallning') },
-  { to: '/uppdrag', label: 'Uppdrag', Icon: Briefcase, match: (p) => p.startsWith('/uppdrag') },
-  { to: '/lass', label: 'Granska lass', Icon: ClipboardCheck, match: (p) => p.startsWith('/lass') },
-  { to: '/massor', label: 'Massredovisning', Icon: FileSpreadsheet, match: (p) => p.startsWith('/massor') },
-  { to: '/faktura', label: 'Fakturaunderlag', Icon: ReceiptText, match: (p) => p.startsWith('/faktura') || p.startsWith('/prislistor') },
-  { to: '/kunder', label: 'Kunder & projekt', Icon: Building2, match: (p) => p.startsWith('/kunder') },
-  { to: '/flotta', label: 'Fordon & förare', Icon: Truck, match: (p) => p.startsWith('/flotta') },
-  { to: '/installningar', label: 'Inställningar', Icon: Settings, match: (p) => p.startsWith('/installningar') },
+  {
+    items: [
+      { to: '/', label: 'Översikt', Icon: LayoutDashboard, match: (p) => p === '/' },
+      { to: '/inkorg', label: 'Inkorg', Icon: Mail, match: (p) => p.startsWith('/inkorg'), badge: (c) => [c.inbox, 'blue', 'att hantera'] },
+      { to: '/uppdrag', label: 'Uppdrag', Icon: Briefcase, match: (p) => p.startsWith('/uppdrag') },
+    ],
+  },
+  {
+    title: 'Lass',
+    items: [
+      {
+        to: '/lass', label: 'Granska lass', Icon: ClipboardCheck, match: (p) => p.startsWith('/lass'),
+        badge: (c) => [c.review, c.hazardOverdue ? 'red' : 'amber', c.hazardOverdue ? 'att granska, farligt avfall försenat' : 'att granska'],
+      },
+      { to: '/avstamning', label: 'Avstämning', Icon: Scale, match: (p) => p.startsWith('/avstamning'), badge: (c) => [c.weighMissing, 'red', 'vägningar saknas'] },
+      { to: '/massor', label: 'Massredovisning', Icon: FileSpreadsheet, match: (p) => p.startsWith('/massor') },
+    ],
+  },
+  {
+    title: 'Fakturering',
+    items: [
+      { to: '/faktura', label: 'Fakturaunderlag', Icon: ReceiptText, match: (p) => p.startsWith('/faktura') || p.startsWith('/prislistor') },
+      { to: '/forlustkontroll', label: 'Förlustkontroll', Icon: SearchCheck, match: (p) => p.startsWith('/forlustkontroll') },
+    ],
+  },
+  {
+    title: 'Register',
+    items: [
+      { to: '/kunder', label: 'Kunder & projekt', Icon: Building2, match: (p) => p.startsWith('/kunder') },
+      { to: '/flotta', label: 'Fordon & förare', Icon: Truck, match: (p) => p.startsWith('/flotta') },
+      { to: '/installningar', label: 'Inställningar', Icon: Settings, match: (p) => p.startsWith('/installningar') },
+    ],
+  },
 ];
 
 export function AppShell({ children }) {
   const { path } = useLocation();
   const { company, user, logout } = useAuth();
   const [open, setOpen] = useState(false);
-  const [inboxCount, setInboxCount] = useState(0);
-
-  // Order mail waiting in the inbox: refreshed on navigation, when the inbox changes, and every minute.
-  useEffect(() => {
-    let alive = true;
-    const load = () => api('/api/inbox/summary').then((s) => { if (alive) setInboxCount(s.att_hantera); }).catch(() => {});
-    load();
-    const timer = setInterval(load, 60_000);
-    const off = onInboxChanged(load);
-    return () => { alive = false; clearInterval(timer); off(); };
-  }, [path]);
+  const counts = useWorkCounts(path);
+  const onOrder = path.startsWith('/bestallning');
 
   return (
     <div className="app">
@@ -45,6 +62,11 @@ export function AppShell({ children }) {
         </button>
         <LogoMark size={22} />
         <span>Åkaren</span>
+        {(counts.inbox + counts.review + counts.weighMissing) > 0 && (
+          <span className="nav-count nav-count-red" style={{ marginLeft: 'auto' }} aria-label="Saker att hantera">
+            {counts.inbox + counts.review + counts.weighMissing}
+          </span>
+        )}
       </div>
       {open && <div className="backdrop" onClick={() => setOpen(false)} />}
 
@@ -53,23 +75,34 @@ export function AppShell({ children }) {
           <LogoMark size={24} />
           <span>Åkaren</span>
         </div>
-        {NAV.map(({ to, label, Icon, match, count }) => {
-          const active = match(path);
-          return (
-            <Link key={to} to={to} className="nav-item" aria-current={active ? 'page' : undefined} onClick={() => setOpen(false)}>
-              {active && (
-                <motion.span
-                  layoutId="nav-active"
-                  className="nav-item-bg"
-                  transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                />
-              )}
-              <Icon size={17} strokeWidth={1.8} />
-              <span>{label}</span>
-              {count === 'inbox' && inboxCount > 0 && <span className="nav-count" aria-label={`${inboxCount} att hantera`}>{inboxCount}</span>}
-            </Link>
-          );
-        })}
+        <Link to="/bestallning" className="sidebar-cta" aria-current={onOrder ? 'page' : undefined} onClick={() => setOpen(false)}>
+          <Plus size={15} strokeWidth={2.2} />
+          <span>Ny beställning</span>
+          {counts.drafts > 0 && <span className="nav-count nav-count-light" aria-label={`${counts.drafts} utkast att granska`}>{counts.drafts}</span>}
+        </Link>
+        {NAV.map((group, gi) => (
+          <div key={gi} className="nav-group">
+            {group.title && <div className="nav-group-title">{group.title}</div>}
+            {group.items.map(({ to, label, Icon, match, badge }) => {
+              const active = match(path);
+              const [n, tone, what] = badge ? badge(counts) : [0];
+              return (
+                <Link key={to} to={to} className="nav-item" aria-current={active ? 'page' : undefined} onClick={() => setOpen(false)}>
+                  {active && (
+                    <motion.span
+                      layoutId="nav-active"
+                      className="nav-item-bg"
+                      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                    />
+                  )}
+                  <Icon size={17} strokeWidth={1.8} />
+                  <span>{label}</span>
+                  {n > 0 && <span className={`nav-count nav-count-${tone}`} aria-label={`${n} ${what}`}>{n}</span>}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
         <div className="sidebar-company">
           <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{company?.name}</div>
           <div>{user?.email}</div>

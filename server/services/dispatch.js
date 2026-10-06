@@ -78,14 +78,17 @@ export function createDispatchService({ db, config, sms, audit, now = () => new 
     return { link: link.url, expires_at: link.expiresAt, driver_name: a.driver_name };
   }
 
-  /** Send (or re-send) the SMS for an assignment with a fresh magic link. */
-  async function sendAssignmentSms({ companyId, assignmentId, actor }) {
+  /**
+   * Send (or re-send) the SMS for an assignment with a fresh magic link.
+   * untilDate: the last day of a multi-day booking, so one SMS covers all of it (the link lists every day).
+   */
+  async function sendAssignmentSms({ companyId, assignmentId, actor, untilDate = null }) {
     const a = loadActiveAssignment(companyId, assignmentId);
     if (!a.driver_active || !a.driver_phone) throw new HttpError(400, 'no_phone', 'Föraren saknar mobilnummer.');
 
     const link = issueLink(companyId, a.driver_id);
     const text = buildAssignmentSms({
-      driverName: a.driver_name, datum: a.datum, tid: a.tid, typeLabel: TYPE_LABELS[a.uppdragstyp],
+      driverName: a.driver_name, datum: a.datum, datumTill: untilDate, tid: a.tid, typeLabel: TYPE_LABELS[a.uppdragstyp],
       projectName: a.project_name, address: [a.project_address, a.project_ort].filter(Boolean).join(' '),
       regnr: a.regnr, link: link.url, companyName: a.company_name,
     });

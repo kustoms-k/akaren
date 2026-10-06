@@ -1,0 +1,19 @@
+# Only source goes into the image: no dependencies, builds, data, secrets or tooling.
+**/node_modules
+client/dist
+server/data
+server/backups
+**/.env
+**/.env.*
+!**/.env.example
+**/*.db
+**/*.db-wal
+**/*.db-shm
+.git
+.claude
+.agents
+.codegraph
+.vscode
+docs
+deploy/*.env
+**/.DS_Store

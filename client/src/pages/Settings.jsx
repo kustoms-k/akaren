@@ -226,6 +226,44 @@ function AiPanel() {
   );
 }
 
+/** The signed-in user changes their own password (the first one comes from whoever set up the account). */
+function PasswordPanel() {
+  const toast = useToast();
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  async function save(e) {
+    e.preventDefault();
+    setBusy(true);
+    setErrors({});
+    try {
+      await api('/api/auth/password', { method: 'POST', body: { current_password: current, new_password: next } });
+      setCurrent('');
+      setNext('');
+      toast('Lösenordet är bytt');
+    } catch (err) {
+      setErrors({ ...err.fields, ...(Object.keys(err.fields ?? {}).length ? {} : { _: err.message }) });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="panel" style={{ marginBottom: 16 }}>
+      <div className="panel-head"><h2 className="t-heading">Ditt lösenord</h2></div>
+      <form className="panel-body form-grid" onSubmit={save}>
+        <TextField label="Nuvarande lösenord" type="password" autoComplete="current-password" value={current} onChange={setCurrent} error={errors.current_password} />
+        <TextField label="Nytt lösenord" type="password" autoComplete="new-password" value={next} onChange={setNext}
+          error={errors.new_password} hint="Minst 10 tecken." />
+        {errors._ && <div className="notice notice-red span-2">{errors._}</div>}
+        <div className="span-2"><Button type="submit" loading={busy} disabled={!current || !next}>Byt lösenord</Button></div>
+      </form>
+    </section>
+  );
+}
+
 export function Settings() {
   const toast = useToast();
   const { query } = useLocation();
@@ -253,6 +291,7 @@ export function Settings() {
         {company ? (
           <CompanyForm company={company} onSaved={(c) => { setData(c); setCompanyName(c.name); toast('Inställningarna är sparade'); }} />
         ) : !error && <TableSkeleton rows={6} />}
+        <PasswordPanel />
       </div>
     </>
   );

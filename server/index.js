@@ -3,6 +3,9 @@ import { openDb, migrate } from './db/index.js';
 import { createApp } from './app.js';
 import { scheduleBackups } from './jobs/backup.js';
 import { scheduleRetention } from './jobs/retention.js';
+import { scheduleDemoReset } from './jobs/demoReset.js';
+import { resetDemo } from './seed/resetDemo.js';
+import { createAudit } from './lib/audit.js';
 
 let config;
 try {
@@ -15,6 +18,11 @@ try {
 const db = openDb(config.dbFile);
 const applied = migrate(db);
 if (applied.length) console.log(`[db] applied migrations: ${applied.join(', ')}`);
+
+// A hosted demo instance starts with demo data instead of an empty database.
+if (config.demoAutoReset && !db.prepare('SELECT 1 FROM companies LIMIT 1').get()) {
+  await resetDemo({ db, config, audit: createAudit(db) });
+}
 
 const app = createApp({ config, db });
 const server = app.listen(config.port, config.host, () => {
@@ -38,6 +46,7 @@ server.on('error', (err) => {
 
 scheduleRetention({ db, config });
 scheduleBackups({ db, config });
+scheduleDemoReset({ db, config, audit: createAudit(db) });
 
 const shutdown = () => {
   server.close(() => {

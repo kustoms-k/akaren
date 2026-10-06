@@ -1,0 +1,70 @@
+# Åkaren on one server: the real app, a public demo, and Caddy in front for HTTPS.
+# Run from the repo root:  docker compose -f deploy/compose.yaml up -d --build
+# Domains and the certificate email come from deploy/.env; app and demo settings from deploy/app.env and deploy/demo.env.
+
+name: akaren
+
+services:
+  app:
+    build: { context: .., dockerfile: Dockerfile }
+    image: akaren:latest
+    restart: unless-stopped
+    env_file: app.env
+    environment:
+      NODE_ENV: production
+      DATA_DIR: /data
+      BACKUP_DIR: /backup
+      TRUST_PROXY: "1"
+      DEMO_MODE: "0"
+    volumes:
+      - app-data:/data
+      - ${BACKUP_PATH:-app-backup}:/backup
+    expose: ["3002"]
+    logging: { driver: json-file, options: { max-size: 10m, max-file: "5" } }
+
+  # Fake data only. Prospects log in with one click; everything resets every night at 03:30.
+  # It runs as a development build on purpose: DEMO_MODE is refused in production, so the real app can never have it.
+  demo:
+    image: akaren:latest
+    depends_on: [app]
+    restart: unless-stopped
+    env_file: demo.env
+    environment:
+      NODE_ENV: development
+      DATA_DIR: /data
+      TRUST_PROXY: "1"
+      DEMO_MODE: "1"
+      DEMO_AUTO_RESET: "1"
+      ANTHROPIC_API_KEY: ""
+      ELKS_USERNAME: ""
+      ELKS_PASSWORD: ""
+      SMTP_HOST: ""
+      FORTNOX_CLIENT_ID: ""
+    volumes:
+      - demo-data:/data
+    expose: ["3002"]
+    logging: { driver: json-file, options: { max-size: 10m, max-file: "3" } }
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on: [app, demo]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?Set APP_DOMAIN in deploy/.env}
+      DEMO_DOMAIN: ${DEMO_DOMAIN:?Set DEMO_DOMAIN in deploy/.env}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in deploy/.env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  app-data:
+  app-backup:
+  demo-data:
+  caddy-data:
+  caddy-config:

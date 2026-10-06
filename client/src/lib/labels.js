@@ -278,3 +278,43 @@ export function formatQty(q, unit) {
   const n = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: unit === 'ton' ? 3 : 2 }).format(q);
   return `${n} ${QTY_UNITS[unit] ?? ''}`.trim();
 }
+
+// ── Avstämning (facility weighing lists against logged lass) ──
+
+export const WEIGH_ROW_STATUS = {
+  saknas: { label: 'Saknas i Åkaren', badge: 'badge-red' },
+  avvikelse: { label: 'Avvikelse', badge: 'badge-amber' },
+  matchad: { label: 'Matchad', badge: 'badge-green' },
+  ignorerad: { label: 'Ignorerad', badge: 'badge-muted' },
+};
+
+export const MATCH_KIND = {
+  vagsedel: 'Samma vågsedel',
+  fordon_dag: 'Samma bil, dag och vikt',
+  skapad: 'Skapat från våglistan',
+};
+
+// What differs between the scale and the lass.
+export const WEIGH_DIFF_LABELS = { netto_kg: 'Nettovikt', vagsedel_nr: 'Vågsedelnummer', datum: 'Datum', regnr: 'Regnr' };
+
+/** Display value of a weighing-list difference. */
+export function formatDiffValue(field, value) {
+  if (value == null || value === '') return '–';
+  if (field === 'netto_kg') return formatTon(value);
+  if (field === 'datum') return formatDate(value);
+  return String(value);
+}
+
+/** '+240 kg' / '−1 840 kg', for a weight difference (scale minus logged). */
+export function formatKgDiff(kg) {
+  if (kg == null) return '';
+  const n = new Intl.NumberFormat('sv-SE').format(Math.abs(kg));
+  return `${kg > 0 ? '+' : kg < 0 ? '−' : ''}${n} kg`;
+}
+
+/** '28 sep – 2 okt 2026' for a period. */
+export function formatPeriod(from, to) {
+  if (!from) return '';
+  const year = to?.slice(0, 4) ?? from.slice(0, 4);
+  return from === to ? `${formatDate(from)} ${year}` : `${formatDate(from)} – ${formatDate(to)} ${year}`;
+}

@@ -1,27 +1,15 @@
 // Usage: npm run seed [-- --reset]
 // Seeds "Teståkeriet AB" into DATA_DIR/akaren.db with rendered demo vågsedel photos.
 // --reset deletes the database and the photo folder first.
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { createHash, randomBytes } from 'node:crypto';
+import { existsSync, rmSync, writeFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
-import sharp from 'sharp';
 import { loadConfig } from '../config.js';
 import { openDb, migrate } from '../db/index.js';
 import { stockholmDate } from '../lib/dates.js';
 import { seedDemo } from './demo.js';
-import { renderVagsedel } from './vagsedelImage.js';
-
-/** Render the demo tickets and fill in the placeholder photo rows created by seedDemo. */
-async function renderDemoPhotos(db, photosDir, photos) {
-  const update = db.prepare('UPDATE photos SET sha256 = ?, bytes = ?, width = ?, height = ? WHERE id = ?');
-  for (const p of photos) {
-    const jpeg = await renderVagsedel(p.slip, { blur: p.blur });
-    const { width, height } = await sharp(jpeg).metadata();
-    mkdirSync(join(photosDir, p.id.slice(0, 2)), { recursive: true });
-    writeFileSync(join(photosDir, p.id.slice(0, 2), `${p.id}.jpg`), jpeg, { mode: 0o600 });
-    update.run(createHash('sha256').update(jpeg).digest('hex'), jpeg.length, width, height, p.id);
-  }
-}
+import { renderDemoPhotos } from './demoPhotos.js';
+import { ekbackaListText, invoiceSpecText, skogsasListText } from './weighList.js';
 
 const config = loadConfig();
 
@@ -46,6 +34,14 @@ try {
   console.log(`[seed] Teståkeriet AB seeded into ${config.dbFile}`);
   console.log(`[seed] ${s.vehicles} fordon, ${s.drivers} förare, ${s.customers} kunder, ${s.projects} projekt`);
   console.log(`[seed] ${s.lass} lass (${s.versions} versioner, ${s.photos.length} vågsedelfoton), ${s.timeEntries} tidrapporter, veckor ${s.previousWeek} + ${s.currentWeek}`);
+  if (s.weighList) console.log(`[seed] Avstämning: våglista från Ekbacka för ${s.previousWeek} importerad (${s.weighList.rows} vägningar)`);
+  // A second facility's list to try the import with (Avstämning → Importera våglista → Välj fil).
+  const companyId = db.prepare('SELECT id FROM companies ORDER BY id LIMIT 1').pluck().get();
+  const sample = join(config.dataDir, 'exempel-vaglista-skogsas.txt');
+  writeFileSync(sample, skogsasListText(db, { companyId, week: s.previousWeek }));
+  writeFileSync(join(config.dataDir, 'exempel-vaglista-ekbacka.csv'), ekbackaListText(db, { companyId, week: s.previousWeek }));
+  writeFileSync(join(config.dataDir, 'exempel-fakturaspecifikation.csv'), invoiceSpecText(db, { companyId, week: s.previousWeek }));
+  console.log(`[seed] Exempelfiler i ${config.dataDir}: exempel-vaglista-skogsas.txt (Avstämning), exempel-vaglista-ekbacka.csv + exempel-fakturaspecifikation.csv (Förlustkontroll)`);
   if (s.inbox) console.log(`[seed] Inkorg order@testakeriet.se: ${s.inbox.emails} mejl, ${s.inbox.replies} svar, ${s.inbox.pool} väntar på "Hämta ny post"`);
   console.log(`[seed] Logga in: ${s.email} / ${password}${process.env.SEED_PASSWORD ? ' (från SEED_PASSWORD)' : ''}`);
 } catch (err) {

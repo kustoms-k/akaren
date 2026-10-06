@@ -33,6 +33,12 @@ const schema = z.object({
   // Local demos only: canned order extractions for the built-in sample orders when no API key is set,
   // and a login button that needs no email or password.
   DEMO_MODE: z.preprocess(emptyToUndefined, z.enum(['0', '1']).default('0')),
+  // Hosted demo instance only (with DEMO_MODE=1): wipe and reseed the demo data every night, so the dates stay current
+  // and whatever prospects changed is gone the next morning. Starts with seeded data when the database is empty.
+  DEMO_AUTO_RESET: z.preprocess(emptyToUndefined, z.enum(['0', '1']).default('0')),
+  // Which proxies to trust for the client IP (rate limits, audit log). 'loopback' for the Vite dev proxy;
+  // a hop count such as 1 behind a reverse proxy in another container (deploy/compose.yaml).
+  TRUST_PROXY: z.preprocess(emptyToUndefined, z.string().regex(/^(loopback|\d{1,2})$/, "TRUST_PROXY must be 'loopback' or a hop count").default('loopback')),
 
   ELKS_USERNAME: optionalString,
   ELKS_PASSWORD: optionalString,
@@ -79,6 +85,9 @@ export function loadConfig(env = process.env) {
   if (e.DEMO_MODE === '1' && e.NODE_ENV === 'production') {
     throw new Error('Invalid configuration:\n  - DEMO_MODE: must not be enabled in production');
   }
+  if (e.DEMO_AUTO_RESET === '1' && e.DEMO_MODE !== '1') {
+    throw new Error('Invalid configuration:\n  - DEMO_AUTO_RESET: needs DEMO_MODE=1 (it wipes the database every night)');
+  }
   const dataDir = resolveDir(e.DATA_DIR);
 
   const corsOrigins = new Set([
@@ -92,6 +101,8 @@ export function loadConfig(env = process.env) {
     isProd:  e.NODE_ENV === 'production',
     isTest:  e.NODE_ENV === 'test',
     demoMode: e.DEMO_MODE === '1',
+    demoAutoReset: e.DEMO_AUTO_RESET === '1',
+    trustProxy: /^\d+$/.test(e.TRUST_PROXY) ? Number(e.TRUST_PROXY) : e.TRUST_PROXY,
     host:    e.HOST,
     port:    e.PORT,
     dataDir,

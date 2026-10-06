@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { reviewStatusFor } from '../lib/lassReview.js';
 import { addDays, isoWeek, isoWeekRange, isoWeekday, stockholmDate, stockholmLocalToUtc } from '../lib/dates.js';
 import { seedInbox } from './inbox.js';
+import { seedWeighList } from './weighList.js';
 
 // Demo data for "Teståkeriet AB". Every company name, org nr, regnr and person is fictional.
 // Driver phone numbers are in 070-174 06 05–99 and the office number in 08-465 004 00–99, ranges PTS reserves for fiction.
@@ -136,8 +137,9 @@ export function demoWorkdays(today) {
  * for the caller to render (rendering is async; see renderDemoPhotos in run.js).
  * withInbox: also seed the demo order mailbox (seed/inbox.js) as of `now` (default: now if `today` is today,
  * otherwise noon on `today`).
+ * withWeighList: also import Ekbacka's weighing list for the previous week (seed/weighList.js), for Avstämning.
  */
-export function seedDemo(db, { today, password, withPhotos = false, withInbox = true, now = null }) {
+export function seedDemo(db, { today, password, withPhotos = false, withInbox = true, withWeighList = true, now = null }) {
   if (db.prepare('SELECT COUNT(*) FROM companies').pluck().get() > 0) {
     throw new Error('Database already contains data');
   }
@@ -151,6 +153,7 @@ export function seedDemo(db, { today, password, withPhotos = false, withInbox = 
   const photos = [];
   const { days, previousWeek, currentWeek } = demoWorkdays(today);
   let inbox = null;
+  let weighList = null;
 
   const ins = {
     company: db.prepare(`INSERT INTO companies (name, org_nr, address, postnr, ort, phone, email, retention_months, default_vat_mode, order_terms)
@@ -423,10 +426,9 @@ export function seedDemo(db, { today, password, withPhotos = false, withInbox = 
       }
     }
 
-    if (withInbox) {
-      const at = now ?? (stockholmDate() === today ? new Date() : new Date(stockholmLocalToUtc(today, '12:00')));
-      inbox = seedInbox(db, { companyId, userId, now: at });
-    }
+    const seedNow = now ?? (stockholmDate() === today ? new Date() : new Date(stockholmLocalToUtc(today, '12:00')));
+    if (withWeighList) weighList = seedWeighList(db, { companyId, userId, week: previousWeek, now: seedNow });
+    if (withInbox) inbox = seedInbox(db, { companyId, userId, now: seedNow });
   })();
 
   return {
@@ -440,6 +442,7 @@ export function seedDemo(db, { today, password, withPhotos = false, withInbox = 
     projects: PROJECTS.length,
     ...counts,
     inbox,
+    weighList,
     photos,
   };
 }

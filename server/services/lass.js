@@ -7,8 +7,9 @@ import { LASS_FIELDS, REGNR_MISMATCH_REASON, reviewStatusFor } from '../lib/lass
  */
 export function createLassService({ db }) {
   const stmtInsertLass = db.prepare(`
-    INSERT INTO lass (company_id, job_id, assignment_id, client_uuid, created_at) VALUES (?, ?, ?, ?, ?)
+    INSERT INTO lass (company_id, job_id, assignment_id, client_uuid, weigh_list_row_id, created_at) VALUES (?, ?, ?, ?, ?, ?)
   `);
+  const stmtWeighRow = db.prepare('SELECT weigh_list_row_id FROM lass WHERE id = ?');
   const stmtInsertVersion = db.prepare(`
     INSERT INTO lass_versions (lass_id, version, customer_id, project_id, vehicle_regnr, driver_id, datum, tid,
       fran_text, till_namn, till_orgnr, till_adress, material, avfallskod, farligt_avfall, netto_kg, vagsedel_nr,
@@ -64,7 +65,7 @@ export function createLassService({ db }) {
    */
   function create({
     companyId, jobId, assignmentId = null, clientUuid = null, customerId, projectId, vehicleRegnr, driverId = null,
-    values, photoId = null, aiExtractionId = null, confidence, regnrMismatch = false, note = null,
+    values, photoId = null, aiExtractionId = null, confidence, regnrMismatch = false, note = null, weighListRowId = null,
     createdByKind, createdByUserId = null, createdByDriverId = null, createdAt = new Date().toISOString(),
   }) {
     if (clientUuid) {
@@ -72,11 +73,11 @@ export function createLassService({ db }) {
       if (existing) return { lass: current(existing.id, companyId), created: false };
     }
     const review = reviewStatusFor({
-      confidence, hasPhoto: Boolean(photoId), duplicate: isDuplicate(companyId, values.vagsedel_nr),
-      farligtAvfall: Boolean(values.farligt_avfall), regnrMismatch,
+      confidence, hasPhoto: Boolean(photoId), fromWeighList: Boolean(weighListRowId),
+      duplicate: isDuplicate(companyId, values.vagsedel_nr), farligtAvfall: Boolean(values.farligt_avfall), regnrMismatch,
     });
     const lassId = db.transaction(() => {
-      const id = Number(stmtInsertLass.run(companyId, jobId, assignmentId, clientUuid, createdAt).lastInsertRowid);
+      const id = Number(stmtInsertLass.run(companyId, jobId, assignmentId, clientUuid, weighListRowId, createdAt).lastInsertRowid);
       stmtInsertVersion.run(versionRow({
         lass_id: id, version: 1, customer_id: customerId, project_id: projectId, vehicle_regnr: vehicleRegnr,
         driver_id: driverId, values, photo_id: photoId, ai_extraction_id: aiExtractionId,
@@ -122,7 +123,8 @@ export function createLassService({ db }) {
     const review = reviewStatus
       ? { status: reviewStatus, reasons: [] }
       : reviewStatusFor({
-        confidence, hasPhoto: Boolean(prev.photo_id), duplicate: isDuplicate(companyId, values.vagsedel_nr, lassId),
+        confidence, hasPhoto: Boolean(prev.photo_id), fromWeighList: Boolean(stmtWeighRow.pluck().get(lassId)),
+        duplicate: isDuplicate(companyId, values.vagsedel_nr, lassId),
         farligtAvfall: Boolean(values.farligt_avfall), regnrMismatch: prev.review_reasons.includes(REGNR_MISMATCH_REASON),
       });
 

@@ -9,6 +9,8 @@ A focused add-on for Stockholm åkerier (10–50 trucks) in schakt/anläggning. 
 1. **AI order intake.** Pasted order text (email, SMS, PDF text) becomes a draft job. The office confirms it before it becomes real.
 2. **Lass logging.** The driver photographs the vågsedel, AI extracts the fields, the driver checks them, and the lass is logged against the right customer and project.
 3. **Output.** A weekly fakturaunderlag per customer/project, pushed to Fortnox as **draft** invoices, plus an exportable massor/spårbarhet log (Massredovisning) per project.
+   - **Förlustkontroll** (`/forlustkontroll`, `lib/lossCheck.js`) compares a weighing list with an invoice specification and shows the loads that never reached an invoice, as a PDF report. Stateless: nothing from the files is stored, so it can be run on a prospect's data.
+   - **Avstämning** (`/avstamning`) guards the fakturaunderlag: the office imports a receiving facility's weighing list (CSV or rows pasted from Excel) and sees every weighing with no lass (a load that would never be invoiced), every lass whose values differ from the scale, and every lass to the facility that isn't on the list.
 
 Promise to customers: *"Fakturaunderlaget är klart på fredagen och ni kan alltid visa vart varje lass tog vägen."*
 
@@ -23,7 +25,7 @@ These were removed on purpose. Don't reintroduce them, even partially, without a
 - Pricing intelligence or price suggestions
 - Tender matching (TED/upphandlingar). That belongs to a separate product.
 - Multi-role RBAC. There are exactly two roles: `office` (JWT login) and `driver` (no account; a signed, expiring magic link scoped to one driver).
-- Railway deployment config. The app runs locally only, for now.
+- Railway or any other platform-specific deployment config. Hosting is one EU server with Docker Compose (`deploy/`, owner decision 2026-10-06); keep it that way.
 - Also removed (decision D1): the offert/quote flow and public quote page, the customer portal, Stripe, BankID, CO2, Nätverk, Drivmedel, Underhåll, profitability dashboards, weather/road alerts/fuel price, the onboarding tour, the English UI (i18n), offline sync of the office app, and S3 backups.
 
 ## Stack
@@ -65,6 +67,19 @@ client/src/
                       Fakturaunderlag /faktura, PriceLists /prislistor, …)
   driver/             the driver page bundle (/f/:token)
 ```
+
+## Hosting
+
+- `deploy/README.md` is the runbook.
+- `Dockerfile` (repo root) builds one image: the API plus the built client on one port.
+- `deploy/compose.yaml` runs three services:
+  - **`app`:** production, real customers. `DEMO_MODE` is forced to "0".
+  - **`demo`:** fake data, `DEMO_MODE=1` with `DEMO_AUTO_RESET=1` (empty database → seeded; reseeds at 03:30), and blank API keys.
+  - **`caddy`:** HTTPS.
+- Secrets live only in `deploy/*.env` on the server (gitignored).
+- Customer accounts: `deploy/account.sh` → `server/scripts/account.js` (`lib/accounts.js`). There is no sign-up page. Users change their password under Inställningar.
+- `TRUST_PROXY=1` behind Caddy; the default `loopback` is for the Vite proxy.
+- Don't add anything that only works on the server: everything still runs with `npm run dev` on a laptop.
 
 ## Running locally
 
@@ -121,6 +136,11 @@ npm run build       # client production build
 - Schema changes go in a new numbered file in `server/db/migrations/`. Never edit an applied migration.
 - Prepared statements only; no string-built SQL with user input.
 - Every query is scoped by `company_id`.
+
+**Avstämning.**
+- Matching is computed on every read (`lib/reconcile.js`, pure), never stored, so it follows later corrections. Only the office's decisions are stored on `weigh_list_rows`: lass created from the row, or ignored with a reason.
+- A lass is only ever created or corrected from a row by a person clicking it. Corrections are new lass versions with the reason "Rättad enligt våglista från …"; an invoiced lass is never corrected.
+- A lass created from a row stores `lass.weigh_list_row_id`; the row is its evidence, so "Inget foto på vågsedeln" doesn't apply to it.
 
 **Lass records are append-only.** A correction writes a new row in `lass_versions` with `change_reason`; nothing is ever updated in place, and a DB trigger enforces this. Only the retention job may delete, and it logs to `audit_log` (today it keeps every lass).
 - The office reviews in `/lass` (`routes/lass.js`). Approving writes a version with `review_status='granskad'`, and every uncertain value counts as checked by the office (`kontor`). A changed value always needs a `change_reason`.

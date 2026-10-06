@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { asyncHandler, idParam, notFound, conflict, validate } from '../lib/http.js';
 import { officeActor } from '../lib/audit.js';
-import { isValidDate } from '../lib/dates.js';
+import { isValidDate, stockholmDate } from '../lib/dates.js';
 import { optionalText, email } from '../lib/schemas.js';
 import { buildOrderConfirmation, MAIL_ERRORS } from '../lib/orderConfirmation.js';
 
@@ -25,7 +25,16 @@ export function jobsRouter({ db, audit, mail, limiters }) {
            c.id AS customer_id, c.name AS customer_name,
            p.id AS project_id, p.name AS project_name, p.miljozon,
            (SELECT COUNT(*) FROM lass l WHERE l.job_id = j.id) AS lass_count,
-           (SELECT COUNT(*) FROM job_assignments a WHERE a.job_id = j.id AND a.cancelled_at IS NULL) AS assignment_count
+           (SELECT COUNT(*) FROM job_assignments a WHERE a.job_id = j.id AND a.cancelled_at IS NULL) AS assignment_count,
+           -- Progress and today's state, so the list answers "is it running, is it covered, how far has it got".
+           (SELECT COALESCE(SUM(lc.netto_kg), 0) FROM lass_current lc WHERE lc.job_id = j.id) AS netto_kg,
+           (SELECT COUNT(*) FROM lass_current lc WHERE lc.job_id = j.id AND lc.review_status = 'behover_granskas') AS to_review,
+           (SELECT COUNT(*) FROM lass_current lc WHERE lc.job_id = j.id AND lc.datum = @today) AS lass_today,
+           (SELECT MAX(lc.datum) FROM lass_current lc WHERE lc.job_id = j.id) AS last_lass_datum,
+           (SELECT group_concat(v.regnr, ', ') FROM job_assignments a JOIN vehicles v ON v.id = a.vehicle_id
+              WHERE a.job_id = j.id AND a.datum = @today AND a.cancelled_at IS NULL) AS today_regnrs,
+           (SELECT MIN(a.datum) FROM job_assignments a WHERE a.job_id = j.id AND a.datum > @today AND a.cancelled_at IS NULL) AS next_assignment,
+           (j.datum_fran <= @today AND COALESCE(j.datum_till, j.datum_fran) >= @today) AS runs_today
     FROM jobs j
     JOIN customers c ON c.id = j.customer_id
     JOIN projects p ON p.id = j.project_id
@@ -95,7 +104,8 @@ export function jobsRouter({ db, audit, mail, limiters }) {
       status: STATUSES.includes(q.status) ? q.status : null,
       from: isValidDate(q.from) ? q.from : null,
       to: isValidDate(q.to) ? q.to : null,
-    }));
+      today: stockholmDate(),
+    }).map((j) => ({ ...j, runs_today: Boolean(j.runs_today) })));
   });
 
   router.get('/:id', (req, res) => {

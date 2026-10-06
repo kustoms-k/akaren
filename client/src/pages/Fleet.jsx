@@ -87,12 +87,34 @@ export function Fleet() {
   const toast = useToast();
   const vehicles = useApi('/api/vehicles?all=1');
   const drivers = useApi('/api/drivers?all=1');
+  const board = useApi('/api/board');
   const [vehicleDialog, setVehicleDialog] = useState(null);
+
+  // Today's assignments by truck and by driver, for the "Idag" columns.
+  const todayByVehicle = new Map();
+  const todayByDriver = new Map();
+  for (const v of board.data?.vehicles ?? []) {
+    for (const a of v.assignments) {
+      todayByVehicle.set(v.id, [...(todayByVehicle.get(v.id) ?? []), a]);
+      todayByDriver.set(a.driver_id, [...(todayByDriver.get(a.driver_id) ?? []), { ...a, regnr: v.regnr }]);
+    }
+  }
+  const todayCell = (list, active, describe) => {
+    if (!active) return <span className="t-muted">–</span>;
+    if (!board.data) return null;
+    if (!list?.length) return <span className="t-muted">Ledig</span>;
+    return list.map((a) => (
+      <div key={a.id} style={{ fontSize: 13 }}>
+        <span style={{ fontWeight: 550 }}>{a.project_name}</span>
+        <div className="t-muted" style={{ fontSize: 12 }}>{describe(a)}{a.lass_count > 0 ? ` · ${a.lass_count} lass` : ''}</div>
+      </div>
+    ));
+  };
   const [driverDialog, setDriverDialog] = useState(null);
 
   return (
     <>
-      <PageHeader title="Fordon & förare" description="Regnr, typ och miljözonsklass. Förare med mobilnummer för SMS-länkar." />
+      <PageHeader title="Fordon & förare" description="Vem som kör vad idag, fordonens miljözonsklass och förarnas mobilnummer för SMS-länkar." />
       <ErrorNotice error={vehicles.error ?? drivers.error} onRetry={() => { vehicles.reload(); drivers.reload(); }} />
 
       <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', alignItems: 'start' }}>
@@ -105,7 +127,7 @@ export function Fleet() {
             <div className="empty">Inga fordon än.</div>
           ) : (
             <table className="table">
-              <thead><tr><th>Regnr</th><th>Typ</th><th>Miljözon</th></tr></thead>
+              <thead><tr><th>Regnr</th><th>Typ</th><th>Miljözon</th><th>Idag</th></tr></thead>
               <tbody>
                 {vehicles.data?.map((v) => (
                   <tr key={v.id} className={`clickable${v.active ? '' : ' inactive'}`} tabIndex={0}
@@ -114,6 +136,7 @@ export function Fleet() {
                     <td className="num" style={{ fontWeight: 600 }}>{v.regnr}{!v.active && <span className="badge badge-muted" style={{ marginLeft: 8 }}>Ur trafik</span>}</td>
                     <td>{VEHICLE_TYPES[v.typ]}</td>
                     <td>{v.miljozonsklass > 0 ? VEHICLE_ZONE_CLASSES[v.miljozonsklass] : <span className="badge badge-amber">Uppfyller ingen</span>}</td>
+                    <td>{todayCell(todayByVehicle.get(v.id), v.active, (a) => a.driver_name)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -130,7 +153,7 @@ export function Fleet() {
             <div className="empty">Inga förare än.</div>
           ) : (
             <table className="table">
-              <thead><tr><th>Namn</th><th>Mobil</th></tr></thead>
+              <thead><tr><th>Namn</th><th>Mobil</th><th>Idag</th></tr></thead>
               <tbody>
                 {drivers.data?.map((d) => (
                   <tr key={d.id} className={`clickable${d.active ? '' : ' inactive'}`} tabIndex={0}
@@ -138,6 +161,7 @@ export function Fleet() {
                     onKeyDown={(e) => { if (e.key === 'Enter') setDriverDialog({ driver: d }); }}>
                     <td style={{ fontWeight: 550 }}>{d.name}{!d.active && <span className="badge badge-muted" style={{ marginLeft: 8 }}>Inaktiv</span>}</td>
                     <td className="num">{formatPhone(d.phone)}</td>
+                    <td>{todayCell(todayByDriver.get(d.id), d.active, (a) => a.regnr)}</td>
                   </tr>
                 ))}
               </tbody>

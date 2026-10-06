@@ -20,6 +20,9 @@ import { Massredovisning } from './pages/Massredovisning.jsx';
 import { Inbox } from './pages/Inbox.jsx';
 import { Fakturaunderlag } from './pages/Fakturaunderlag.jsx';
 import { PriceLists } from './pages/PriceLists.jsx';
+import { Avstamning } from './pages/Avstamning.jsx';
+import { AvstamningDetail } from './pages/AvstamningDetail.jsx';
+import { Forlustkontroll } from './pages/Forlustkontroll.jsx';
 
 const ROUTES = [
   ['/', Overview],
@@ -32,6 +35,9 @@ const ROUTES = [
   ['/lass', LassQueue],
   ['/lass/:id', LassDetail],
   ['/massor', Massredovisning],
+  ['/avstamning', Avstamning],
+  ['/avstamning/:id', AvstamningDetail],
+  ['/forlustkontroll', Forlustkontroll],
   ['/faktura', Fakturaunderlag],
   ['/prislistor', PriceLists],
   ['/kunder', Customers],

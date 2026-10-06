@@ -3,15 +3,21 @@ import { z } from 'zod';
 import { HttpError, asyncHandler, validate, idParam, notFound, conflict, badRequest } from '../lib/http.js';
 import { officeActor } from '../lib/audit.js';
 import { date, idRef } from '../lib/schemas.js';
-import { miljozonOk } from '../lib/dispatch.js';
+import { addDays } from '../lib/dates.js';
+import { bookingDays, miljozonOk, shortDateSv } from '../lib/dispatch.js';
+
+const MAX_RANGE_DAYS = 31;
 
 const assignSchema = z.object({
   vehicle_id: idRef,
   driver_id: idRef,
   datum: date,
+  // Book every working day from datum to datum_till (weekends and Swedish public holidays are skipped).
+  datum_till: date.optional(),
   acknowledge_miljozon: z.boolean().optional(),
   send_sms: z.boolean().optional(),
 }).strict();
+
 
 /** Office: assign vehicles and drivers to jobs, send magic-link SMS. Mounted at /api. */
 export function dispatchRouter({ db, audit, dispatch, limiters }) {
@@ -89,8 +95,20 @@ export function dispatchRouter({ db, audit, dispatch, limiters }) {
     const driver = stmtDriver.get(input.driver_id, req.companyId);
     if (!vehicle || !vehicle.active) throw badRequest('Fordonet finns inte eller är inte i trafik.', { fields: { vehicle_id: 'Välj ett fordon i trafik.' } });
     if (!driver || !driver.active) throw badRequest('Föraren finns inte eller är inaktiv.', { fields: { driver_id: 'Välj en aktiv förare.' } });
-    if (stmtSame.get(job.id, vehicle.id, driver.id, input.datum)) {
-      throw conflict('duplicate_assignment', `${vehicle.regnr} med ${driver.name} är redan tilldelad den dagen.`);
+    if (input.datum_till) {
+      if (input.datum_till < input.datum) throw badRequest('Slutdatumet är före startdatumet.', { fields: { datum_till: 'Välj ett datum efter startdatumet.' } });
+      if (addDays(input.datum, MAX_RANGE_DAYS) < input.datum_till) {
+        throw badRequest(`Högst ${MAX_RANGE_DAYS} dagar åt gången.`, { fields: { datum_till: `Högst ${MAX_RANGE_DAYS} dagar åt gången.` } });
+      }
+    }
+    const days = bookingDays(input.datum, input.datum_till);
+    if (!days.length) throw badRequest('Det finns inga arbetsdagar i perioden.', { fields: { datum_till: 'Inga arbetsdagar i perioden.' } });
+    const skipped = days.filter((d) => stmtSame.get(job.id, vehicle.id, driver.id, d));
+    const toBook = days.filter((d) => !skipped.includes(d));
+    if (!toBook.length) {
+      throw conflict('duplicate_assignment', days.length === 1
+        ? `${vehicle.regnr} med ${driver.name} är redan tilldelad den dagen.`
+        : `${vehicle.regnr} med ${driver.name} är redan tilldelad alla dagarna.`);
     }
 
     // Static miljözon check: the vehicle must meet the project's zone class.
@@ -101,17 +119,32 @@ export function dispatchRouter({ db, audit, dispatch, limiters }) {
         { vehicle_class: vehicle.miljozonsklass, zone: job.miljozon });
     }
 
-    const id = Number(stmtInsert.run(req.companyId, job.id, vehicle.id, driver.id, input.datum,
-      zoneOk ? 0 : 1, zoneOk ? null : req.user.id, req.user.id).lastInsertRowid);
+    const ids = db.transaction(() => toBook.map((d) => Number(stmtInsert.run(req.companyId, job.id, vehicle.id, driver.id, d,
+      zoneOk ? 0 : 1, zoneOk ? null : req.user.id, req.user.id).lastInsertRowid)))();
     audit({
-      ...officeActor(req), entity: 'assignment', entityId: id, action: 'create',
-      after: { job_id: job.id, vehicle: vehicle.regnr, driver_id: driver.id, datum: input.datum, miljozon_override: !zoneOk },
+      ...officeActor(req), entity: 'assignment', entityId: ids[0], action: 'create',
+      after: { job_id: job.id, vehicle: vehicle.regnr, driver_id: driver.id, days: toBook, assignment_ids: ids, miljozon_override: !zoneOk },
     });
 
-    const warnings = stmtBusy.all(req.companyId, vehicle.id, input.datum, job.id)
-      .map((b) => `${b.regnr} är också bokad på ${b.project_name} samma dag.`);
-    const sms = input.send_sms ? await dispatch.sendAssignmentSms({ companyId: req.companyId, assignmentId: id, actor: officeActor(req) }) : null;
-    res.status(201).json({ assignment: stmtList.all(job.id, req.companyId).find((a) => a.id === id), warnings, sms });
+    // The truck booked elsewhere on the same days: one warning per other project.
+    const busy = new Map();
+    for (const d of toBook) {
+      for (const b of stmtBusy.all(req.companyId, vehicle.id, d, job.id)) {
+        if (!busy.has(b.project_name)) busy.set(b.project_name, []);
+        busy.get(b.project_name).push(d);
+      }
+    }
+    const warnings = [...busy.entries()].map(([project, ds]) => (ds.length === 1
+      ? `${vehicle.regnr} är också bokad på ${project} samma dag.`
+      : `${vehicle.regnr} är också bokad på ${project} ${ds.map(shortDateSv).join(', ')}.`));
+    const sms = input.send_sms
+      ? await dispatch.sendAssignmentSms({
+        companyId: req.companyId, assignmentId: ids[0], actor: officeActor(req), untilDate: toBook.length > 1 ? toBook.at(-1) : null,
+      })
+      : null;
+    const list = stmtList.all(job.id, req.companyId);
+    const created = list.filter((a) => ids.includes(a.id));
+    res.status(201).json({ assignment: created[0], assignments: created, skipped, warnings, sms });
   }));
 
   router.post('/assignments/:id/send-sms', limiters.sms, asyncHandler(async (req, res) => {

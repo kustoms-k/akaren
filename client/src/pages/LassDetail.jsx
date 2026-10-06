@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowLeft, Check, Undo2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, Check, SkipForward, Undo2 } from 'lucide-react';
 import { Button } from '../components/Button.jsx';
 import { Dialog } from '../components/Dialog.jsx';
 import { AuthImage } from '../components/AuthImage.jsx';
@@ -9,6 +9,7 @@ import { api } from '../lib/api.js';
 import { useApi } from '../lib/useApi.js';
 import { navigate } from '../lib/router.js';
 import { useToast } from '../lib/toast.js';
+import { useWorkCounts } from '../lib/workCounts.js';
 import {
   HAZARD_STATE, LASS_CONFIDENCE, LASS_FIELD_LABELS, REVIEW_STATUS, UPPDRAGSTYPER,
   formatDate, formatDateTime, formatLassValue, kgToTonInput, tonToKg,
@@ -63,6 +64,8 @@ function LassReview({ data, reload }) {
   const [zoom, setZoom] = useState(false);
   const reviewed = lass.review_status === 'granskad';
   const readOnly = invoiced;
+  const counts = useWorkCounts(lass.lass_id);
+  const inQueue = lass.review_status === 'behover_granskas';
 
   const set = (k) => (e) => {
     const v = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
@@ -135,6 +138,21 @@ function LassReview({ data, reload }) {
   }
 
   const status = REVIEW_STATUS[lass.review_status];
+  const canApprove = !readOnly && !reviewed && busy === null && !(changed.length > 0 && !reason.trim());
+
+  // ⌘/Ctrl + Enter approves, so a queue of lass can be worked through from the keyboard.
+  const approveRef = useRef(null);
+  useEffect(() => { approveRef.current = canApprove ? approve : null; });
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && approveRef.current) {
+        e.preventDefault();
+        approveRef.current();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
 
   return (
     <>
@@ -144,6 +162,14 @@ function LassReview({ data, reload }) {
       <PageHeader
         title={lass.vagsedel_nr ? `Vågsedel ${lass.vagsedel_nr}` : `Lass ${lass.lass_id}`}
         description={<>{context.customer_name} · {context.project_name} · <span className={`badge ${status.badge}`}>{status.label}</span></>}
+        actions={inQueue && (
+          <>
+            {counts.review > 0 && <span className="t-muted" style={{ fontSize: 13, alignSelf: 'center' }}>{counts.review} kvar att granska</span>}
+            {data.next_review_id && (
+              <Button variant="ghost" size="sm" onClick={() => navigate(`/lass/${data.next_review_id}`)}><SkipForward size={14} /> Hoppa över</Button>
+            )}
+          </>
+        )}
       />
 
       <div className="review">
@@ -239,8 +265,10 @@ function LassReview({ data, reload }) {
               </Button>
             )}
             {!reviewed && (
-              <Button size="lg" onClick={approve} loading={busy === 'approve'} disabled={busy !== null || (changed.length > 0 && !reason.trim())}>
+              <Button size="lg" onClick={approve} loading={busy === 'approve'} disabled={busy !== null || (changed.length > 0 && !reason.trim())}
+                title="Godkänn (⌘/Ctrl + Enter)">
                 <Check size={16} /> {changed.length ? 'Rätta och godkänn' : 'Godkänn'}
+                <kbd className="kbd">{navigator.platform?.startsWith('Mac') ? '⌘↵' : 'Ctrl ↵'}</kbd>
               </Button>
             )}
           </div>

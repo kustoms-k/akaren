@@ -15,11 +15,13 @@ const TRUSTED = new Set(['hog', 'medel', 'forare', 'kontor']);
 
 /**
  * confidence: { field: 'hog'|'medel'|'lag'|'saknas'|'forare'|'kontor' }
+ * fromWeighList: the lass was created from the receiving facility's weighing list, which is its evidence instead
+ * of a photo of the ticket.
  * Returns { status, reasons } where reasons are Swedish, user-facing strings.
  */
-export function reviewStatusFor({ confidence = {}, hasPhoto, duplicate = false, farligtAvfall = false, regnrMismatch = false }) {
+export function reviewStatusFor({ confidence = {}, hasPhoto, fromWeighList = false, duplicate = false, farligtAvfall = false, regnrMismatch = false }) {
   const reasons = [];
-  if (!hasPhoto) reasons.push('Inget foto på vågsedeln');
+  if (!hasPhoto && !fromWeighList) reasons.push('Inget foto på vågsedeln');
   for (const [key, label] of Object.entries(BILLING_FIELDS)) {
     const c = confidence[key] ?? 'saknas';
     if (c === 'saknas') reasons.push(`${label} saknas`);

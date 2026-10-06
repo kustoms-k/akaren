@@ -1,5 +1,5 @@
 import { useDeferredValue, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Play, Search } from 'lucide-react';
 import { Button } from '../components/Button.jsx';
 import { AuthImage } from '../components/AuthImage.jsx';
 import { PageHeader, ErrorNotice, TableSkeleton } from '../components/PageHeader.jsx';
@@ -120,6 +120,11 @@ export function LassQueue() {
       <PageHeader
         title="Granska lass"
         description="Lass med osäkra eller saknade uppgifter kontrolleras här innan de kan faktureras."
+        actions={tab === 'granska' && list.data?.length > 0 && (
+          <Button onClick={() => navigate(`/lass/${list.data[0].id}`)}>
+            <Play size={14} /> Börja granska ({list.data.length})
+          </Button>
+        )}
       />
       <ErrorNotice error={current.error ?? summary.error} onRetry={() => { current.reload(); summary.reload(); }} />
 

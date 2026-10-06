@@ -6,6 +6,7 @@ client/dist/
 .env
 .env.*
 !.env.example
+deploy/*.env
 
 # Runtime data: database, photos, backups (personal data; never commit)
 server/data/

@@ -95,6 +95,87 @@ Audit date: 2026-10-03, against `main` @ `fb5d389` (tagged `pre-pivot-archive`).
   - the `externalinvoicereference1` list filter
   - reverse charge (rows have VAT 0, plus a remark and the customer's VATType)
 
+**Hosting (2026-10-06, owner decision).** One EU server with Docker Compose; the runbook is `deploy/README.md`. 316 server tests pass. Rehearsed locally without Docker: the production config, an account created by the script, login, HSTS, demo login refused, and the demo instance seeding itself from an empty database. **The Docker image itself has not been built yet** (no Docker on the development Mac), so the first `deploy/update.sh` on the server is its first build.
+- **Image:** `Dockerfile`, a two-stage `node:22-bookworm-slim` build with native modules compiled in the build stage, tzdata, a non-root user and a healthcheck. Any local data or `.env` is deleted from the image.
+- **Services:** `deploy/compose.yaml` runs `app` (production), `demo` (DEMO_MODE, nightly reset, API keys blanked) and `caddy` (automatic HTTPS, HSTS, the demo `noindex`).
+- **Server changes:**
+  - `TRUST_PROXY` config, so rate limits see the real IP behind Caddy.
+  - `DEMO_AUTO_RESET` (needs DEMO_MODE): seeds an empty database on start and resets nightly. The shared logic lives in `seed/resetDemo.js`.
+  - `POST /api/auth/password` and a "Ditt lösenord" panel under Inställningar.
+  - `lib/accounts.js` and `scripts/account.js` (create-company, add-user, list) with readable generated passwords.
+- **Scripts:**
+  - `deploy/bootstrap.sh`: Docker, ufw, unattended upgrades, swap, Stockholm time.
+  - `deploy/update.sh`: pull, build, up, health check.
+  - `deploy/account.sh`.
+  - `deploy/backup-offsite.sh`: rsync of the backup volume to a storage box.
+- **Demo guide:** it no longer says "same wifi" when the driver link is public.
+
+**Showing prospects what it does (2026-10-06, owner request).** 307 server tests pass. Verified in headless Chrome: demo guide → QR code for today's driver → Förlustkontroll with the example files → PDF → demo reset.
+- **Förlustkontroll (`/forlustkontroll`):** the free check offered in the sales emails.
+  - **What it compares:** a facility's weighing list against an invoice specification. It finds the weighings that never reached an invoice, plus loads invoiced at a lower weight than the scale weighed, each valued with the price derived from the invoices themselves or one the office types.
+  - **Logic:** `lib/lossCheck.js` is pure. It reads the ticket number out of invoice descriptions (`ticketInText`), and reuses `reconcile()` with options for invoice rows: tickets up to 120 days apart, and digit matching without the facility check. It also gives a week-by-week comparison that works on summary invoices.
+  - **Parser:** `lib/weighList.js` now reads invoice specifications (`kind: 'faktura'`, a `belopp` column, Fakturadatum and Antal headers). The preview logic is shared by both routes (`previewWeighList`).
+  - **Privacy:** stateless, so the files are never stored and only the counts are audited.
+  - **Output:** a PDF report (`client/src/lib/lossPdf.js`).
+- **Demo tools (DEMO_MODE only):**
+  - `POST /api/demo/reset` wipes and reseeds around today, with photos, in about 2 seconds.
+  - `GET /api/demo/forlustkontroll-exempel` returns last week's Ekbacka list plus an invoice specification with one forgotten load (`seed/weighList.js` `invoiceSpecText`).
+  - A demo guide on Översikt walks through the pitch in order, with a QR code to open today's driver view on the prospect's phone.
+  - `npm run seed` writes the example files to `DATA_DIR` too.
+- **Not built:**
+  - hosting, which is an owner decision
+  - Fortnox sandbox verification (needs credentials)
+  - real AI reading (needs an API key)
+
+**Workflow refinement of the office tabs (2026-10-06, owner request: "useful and productive, not just fancy tabs").** 298 server tests pass. Verified in headless Chrome at 1440 and 390 px, including approving a lass with Ctrl+Enter and landing on the next one.
+- **Sidebar:**
+  - Grouped as the week runs: the day, Lass, Fakturering, Register.
+  - "Ny beställning" is a primary button, with a badge for drafts.
+  - Live counts on Inkorg, Granska lass (red when a hazardous-waste report is overdue) and Avstämning.
+  - The counts come from one shared store (`lib/workCounts.js`) and refresh on navigation, on inbox events, after actions and every minute.
+- **Översikt:**
+  - An "Att göra" list sorted by urgency, each row linking to where the work is done: hazardous-waste deadlines, jobs without a truck today and tomorrow, Fortnox reconnect, lass to review, missing weighings with their value, last week's underlag ready to send, inbox and drafts.
+  - The week's invoicing status.
+  - A day board (`components/DayBoard.jsx`, `GET /api/board?datum=`): every truck's job, driver, lass and tonnes for the day, free trucks and drivers, and uncovered jobs. You can step day by day.
+  - The integration status lives under Inställningar only.
+- **Uppdrag:**
+  - An "Idag" filter with uncovered jobs first, and search.
+  - Columns for today's trucks (or "Ingen bil idag" / the next booked day), progress against the ordered loads or tonnes, and lass to review.
+  - `GET /api/jobs` now returns `runs_today`, `today_regnrs`, `lass_today`, `netto_kg`, `to_review`, `next_assignment`.
+- **Job page:**
+  - A booking can cover a range: `datum_till` books every working day (`lib/dispatch.js` `bookingDays`, which skips weekends and holidays), at most 31 days. Already-booked days are skipped and reported. One SMS covers the range ("mån 5 okt-fre 9 okt").
+  - A "Resten av uppdraget" shortcut.
+  - Earlier days are folded away, and today is highlighted.
+  - Lass are grouped per day with totals; the newest day and days with lass to review start open.
+- **Fordon & förare:** an "Idag" column per truck and driver.
+- **Granska lass:**
+  - "Börja granska" opens the oldest lass in the queue.
+  - On a lass: Ctrl/⌘+Enter approves, a "Hoppa över" button, and the count of what's left.
+
+**Avstämning against the facilities' weighing lists (2026-10-06, owner request: "what makes us stand out").** `/avstamning`. The office imports a receiving facility's weighing list (våglista/vägningsrapport) and sees, per weighing, whether a lass is logged for it. The pitch: a lost vågsedel is a load that's never invoiced, and this finds it with the facility's own numbers. 291 server tests pass, and the flow was verified in headless Chrome at 1440 and 390 px: seeded list → create lass on the suggested job → hired truck with a hand-picked job → correct a weight → ignore → import the Skogsås sample by paste.
+- **Import (`lib/weighList.js`, pure):** CSV or rows pasted from Excel. It detects the delimiter (tab, `;`, `,`, quotes) and finds the header below title lines. Columns are recognised by Swedish header synonyms (Vågsedelnr, Kvitto, Bil, Netto (kg), Artikel, Märkning, …), and the unit is guessed from the header or the values. It reads Swedish date, time and number formats, computes netto as brutto − tara, and skips summary rows and repeated headers. Unreadable rows are listed with a reason. The office confirms or changes the mapping in a preview before anything is saved. Windows-1252 files are decoded client-side. The route gets its own 3 MB JSON limit, behind office auth.
+- **Matching (`lib/reconcile.js`, pure, computed on every read):**
+  - the lass created from the row
+  - the same ticket (letters + digits) within ±3 days
+  - the same ticket digits (lists drop the "EKB" prefix), restricted to this facility or the same truck
+  - the same truck and day, paired by closest weight and time
+  - Each lass matches at most once.
+  - Differences: weight over 10 kg, ticket, date, truck.
+  - "Inte på listan": lass to the facility in the period that nobody weighed. Recognised by org nr, else a distinctive word in the name.
+- **What the office can do:**
+  - Create the lass from a row. The truck's assignment that day is suggested; any other job can be picked (hired trucks). Material and waste code are suggested from the job's latest lass. The estimated value comes from the price list, mirroring `buildUnderlag`.
+  - Correct the matched lass from the scale. This writes a new version with a reason, and is refused when the lass is invoiced.
+  - Ignore a row with a reason, and undo that.
+  - Export CSV.
+  - Delete the list, unless lass were created from it.
+  - Översikt shows a banner with the missing count and value.
+- **Data:** migration `008_weigh_lists.sql` adds `weigh_lists`, `weigh_list_rows` (only the mapped fields, not the raw file) and `lass.weigh_list_row_id`. A lass created from a row uses the row as its evidence (`reviewStatusFor({ fromWeighList })`), so it needs no photo; another regnr than the assignment's still sends it to review.
+- **Seed:** an Ekbacka list for the previous week is imported, with 240 kg more on one load, two loads never logged, a hired truck (UEB551) and the container load missing from the list. `npm run seed` also writes `DATA_DIR/exempel-vaglista-skogsas.txt` (tab separated, tonnes, tickets without prefix) to try the import.
+- **Not built:**
+  - PDF lists (would need AI extraction, with the same review rules as vågsedlar)
+  - fetching lists by email
+  - retention of weigh lists (they hold no personal data beyond regnr; revisit with D14)
+
 **Order inbox, demo version (2026-10-06, owner request, between Phases 5 and 6).** `/inkorg` shows the email that arrives at the company's order address, sorted so that only order mail needs attention. AI reads each order, and the office replies from pre-written templates. 226 server tests pass, and the flow was verified in headless Edge at 1440 and 390 px.
 - **Data:** migration `006_inbox.sql` adds `mail_accounts`, `inbound_emails` (Message-ID unique, threaded, category with source), `inbound_attachments` (extracted text, no file bytes) and `email_replies`.
 - **Flow:** email → AI card with the reading and its confidence, matched customer/project, missing details, a hazardous-waste warning, and changes against an existing job → "Granska och skapa uppdrag" opens the normal order review → back to the thread with the order confirmation ready to send as a reply.
