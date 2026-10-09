@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { ArrowLeft, FileUp, Scale, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, FileUp, Scale, Sparkles, TriangleAlert } from 'lucide-react';
 import { Button } from '../components/Button.jsx';
 import { Dialog } from '../components/Dialog.jsx';
 import { PageHeader, ErrorNotice, TableSkeleton } from '../components/PageHeader.jsx';
@@ -215,6 +215,7 @@ function Totals({ t }) {
 
 export function Avstamning() {
   const lists = useApi('/api/avstamning');
+  const found = useApi('/api/avstamning/found').data?.totals;
   // Each opening is a fresh dialog (keyed), so a cancelled import doesn't linger.
   const [importing, setImporting] = useState({ open: false, n: 0 });
   const startImport = () => setImporting((s) => ({ open: true, n: s.n + 1 }));
@@ -243,6 +244,16 @@ export function Avstamning() {
             <strong>{missing} {missing === 1 ? 'vägning' : 'vägningar'}</strong> på våglistorna saknas i Lasskoll
             {missingValue > 0 && <> och är värda ungefär <strong className="num">{formatKr(missingValue, { round: true })}</strong> exkl. moms</>}.
             Skapa lassen så kommer de med på fakturaunderlaget.
+          </span>
+        </div>
+      )}
+
+      {found?.value_ore > 0 && (
+        <div className="notice notice-green" role="status" style={{ marginBottom: 16, alignItems: 'center' }}>
+          <Sparkles size={16} style={{ flexShrink: 0 }} />
+          <span>
+            Hittat hittills: <strong className="num">{formatKr(found.value_ore, { round: true })}</strong> som annars inte hade fakturerats.{' '}
+            <a href="/hittat" onClick={(e) => { e.preventDefault(); navigate('/hittat'); }}>Visa vad</a>
           </span>
         </div>
       )}

@@ -196,6 +196,11 @@ Audit date: 2026-10-03, against `main` @ `fb5d389` (tagged `pre-pivot-archive`).
 
 ---
 
+**Hittat av Lasskoll and slip photos in the underlag PDF (2026-10-09, owner request, for the Sveriges Åkeriföretag meeting and the pilot guarantee).** 325 server tests pass. Verified in headless Chrome at 1440 and 390 px on the demo data: empty Översikt panel → step 6 (create the two never-logged loads, correct the 240 kg) → Översikt shows 4 797 kr → `/hittat` → PDF report; then last week's Norrbacka underlag as a PDF with 40 slip photos (9 pages, 1.3 MB).
+- **Hittat värde** (`lib/foundValue.js`, `GET /api/avstamning/found`, `/hittat`, a panel on Översikt and a line on Avstämning): the money found on weighing lists, computed on read from the office's own decisions. The pilot price (800 kr/month for three months) comes with a guarantee measured by this number.
+- **Underlag PDF with vågsedlar:** every lass row's photo after the totals; a lass created from a weighing list says so instead of showing a photo.
+- Not seeded: the demo starts at 0 kr so the number climbs during step 6, and the playbook's figures stay true.
+
 ## 1. Current state
 
 ### 1.1 Architecture

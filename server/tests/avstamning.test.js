@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { createApp } from '../app.js';
 import { seedDemo, DEMO_EMAIL } from '../seed/demo.js';
 import { ekbackaListText, skogsasListText } from '../seed/weighList.js';
-import { stockholmDate } from '../lib/dates.js';
+import { isoWeek, stockholmDate } from '../lib/dates.js';
 import { testConfig, testDb, silentLogger } from './helpers.js';
 
 const TODAY = stockholmDate();
@@ -107,7 +107,13 @@ describe('creating a lass from a weighing', () => {
     expect(now).toMatchObject({ status: 'matchad', resolution: 'lass_skapad', match: { lass_id: l.lass_id, kind: 'skapad' } });
     expect(after.totals.saknas).toBe(2);
 
-    // It is on the week's fakturaunderlag now.
+    // It is on the week's fakturaunderlag now, with the weighing-list row as its evidence instead of a photo.
+    const underlag = (await ctx.as('get', `/api/fakturaunderlag?week=${isoWeek(row.datum).key}`)).body;
+    const line = underlag.groups.flatMap((g) => g.rows).find((x) => x.lass_id === l.lass_id);
+    expect(line).toMatchObject({ photo_id: null, weigh_list: { facility_name: 'Ekbacka massmottagning', line_no: row.line_no } });
+    const driverLine = underlag.groups.flatMap((g) => g.rows).find((x) => x.kind === 'lass' && x.lass_id !== l.lass_id);
+    expect(driverLine).toHaveProperty('photo_id');
+    expect(driverLine.weigh_list).toBeNull();
     const audit = ctx.db.prepare(`SELECT action FROM audit_log WHERE entity = 'lass' AND entity_id = ?`).pluck().all(String(l.lass_id));
     expect(audit).toContain('create_from_weigh_list');
 
@@ -284,5 +290,52 @@ describe('deleting and exporting', () => {
     const created = (await ctx.as('post', '/api/avstamning').send({ text, mapping: preview.mapping, facility_name: 'Skogsås återvinning' })).body;
     expect((await ctx.as('delete', `/api/avstamning/${created.list.id}`)).status).toBe(204);
     expect(ctx.db.prepare('SELECT COUNT(*) FROM weigh_list_rows WHERE weigh_list_id = ?').pluck().get(created.list.id)).toBe(0);
+  });
+});
+
+describe('hittat värde', () => {
+  it('adds up the loads created from the list and the weights corrected from it', async () => {
+    const empty = (await ctx.as('get', '/api/avstamning/found')).body;
+    expect(empty.totals).toMatchObject({ value_ore: 0, lass: 0, weight_up: 0 });
+    expect(empty.items).toEqual([]);
+
+    const r = await get();
+    const row = byStatus(r, 'saknas').find((x) => x.regnr === 'TKA412');
+    await ctx.as('post', `/api/avstamning/${ctx.listId}/rows/${row.id}/lass`)
+      .send({ job_id: row.suggestion.job_id, assignment_id: row.suggestion.assignment_id, avfallskod: '170504' });
+    const diff = byStatus(r, 'avvikelse')[0];
+    await ctx.as('post', `/api/avstamning/${ctx.listId}/rows/${diff.id}/fix`).send({ fields: ['netto_kg'] });
+
+    const found = (await ctx.as('get', '/api/avstamning/found')).body;
+    expect(found.totals).toMatchObject({
+      lass: 1, lass_value_ore: row.estimate.amount_ore, weight_up: 1, weight_up_value_ore: diff.diff_value_ore,
+      value_ore: row.estimate.amount_ore + diff.diff_value_ore, unpriced: 0,
+    });
+    expect(found.totals.month_value_ore).toBe(found.totals.value_ore);
+    expect(found.items.map((i) => i.kind).sort()).toEqual(['lass', 'vikt_upp']);
+    expect(found.items.find((i) => i.kind === 'lass')).toMatchObject({
+      vagsedel_nr: row.vagsedel_nr, facility_name: 'Ekbacka massmottagning', project_name: 'Kv. Rörstrand – schakt', invoiced: false,
+    });
+    expect(found.items.find((i) => i.kind === 'vikt_upp')).toMatchObject({ from_kg: diff.netto_kg - 240, to_kg: diff.netto_kg });
+  });
+
+  it('uses the invoiced amount once the found lass is invoiced, and is scoped to the company', async () => {
+    const r = await get();
+    const row = byStatus(r, 'saknas').find((x) => x.regnr === 'TKA412');
+    const lassId = (await ctx.as('post', `/api/avstamning/${ctx.listId}/rows/${row.id}/lass`)
+      .send({ job_id: row.suggestion.job_id, assignment_id: row.suggestion.assignment_id })).body.lass.lass_id;
+    const batch = ctx.db.prepare(`INSERT INTO invoice_batches (company_id, iso_week, customer_id, kind, status, external_ref, total_ore,
+      vat_mode, lines_snapshot_json, created_by_user_id) VALUES (?, '2026-W01', 1, 'manuell', 'skapad', 'y', 0, 'normal', '[]', 1)`).run(ctx.companyId).lastInsertRowid;
+    ctx.db.prepare(`INSERT INTO invoice_lines (batch_id, lass_id, lass_version, description, quantity, unit, price_ore, amount_ore)
+      VALUES (?, ?, 1, 'x', 1, 'ton', 0, 123456)`).run(batch, lassId);
+    const found = (await ctx.as('get', '/api/avstamning/found')).body;
+    expect(found.totals.value_ore).toBe(123456);
+    expect(found.items[0].invoiced).toBe(true);
+
+    const other = ctx.db.prepare('INSERT INTO companies (name) VALUES (?)').run('Annat Åkeri AB').lastInsertRowid;
+    ctx.db.prepare('INSERT INTO users (company_id, name, email, password_hash) VALUES (?, ?, ?, ?)')
+      .run(other, 'Annan', 'annan2@test.se', bcrypt.hashSync(PASSWORD, 4));
+    const t = (await request(ctx.app).post('/api/auth/login').send({ email: 'annan2@test.se', password: PASSWORD })).body.token;
+    expect((await ctx.as('get', '/api/avstamning/found', t)).body.totals).toMatchObject({ value_ore: 0, lass: 0 });
   });
 });

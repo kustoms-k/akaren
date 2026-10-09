@@ -18,8 +18,8 @@ const STEPS = [
   { key: 'uppdrag', to: '/uppdrag?visa=idag', title: 'Boka bil', text: 'Öppna ett uppdrag, gärna ett som saknar bil idag, och boka "Resten av uppdraget". Ett SMS täcker alla dagarna.' },
   { key: 'forare', driver: true, title: 'Förarens mobil', text: 'Låt kunden skanna QR-koden: så ser föraren dagen och fotar vågsedeln. Ingen app, inget konto.' },
   { key: 'granska', to: '/lass', title: 'Granska lass', text: 'Börja granska. Jämför med fotot och godkänn med ⌘↵, nästa lass öppnas direkt.' },
-  { key: 'avstamning', to: '/avstamning', title: 'Avstämning', text: 'Ekbackas våglista: tre lass som aldrig loggades och en vikt som skiljer. Skapa lasset med ett klick.' },
-  { key: 'faktura', to: '/faktura', title: 'Fredag', text: 'Förra veckans underlag är klart. Förhandsgranska utkastet till Fortnox.' },
+  { key: 'avstamning', to: '/avstamning', title: 'Avstämning', text: 'Ekbackas våglista: tre lass som aldrig loggades och en vikt som skiljer. Skapa lassen och rätta vikten, och visa sedan Hittat av Lasskoll.' },
+  { key: 'faktura', to: '/faktura', title: 'Fredag', text: 'Förra veckans underlag är klart. Ladda ner PDF med vågsedlar: ett foto bakom varje rad. Förhandsgranska utkastet till Fortnox.' },
   { key: 'forlust', to: '/forlustkontroll', title: 'Erbjud förlustkontrollen', text: 'Ladda exemplet och visa PDF:en. Erbjud samma kontroll gratis på deras egna filer.' },
 ];
 

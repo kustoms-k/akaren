@@ -150,6 +150,7 @@ npm run build       # client production build
 - Matching is computed on every read (`lib/reconcile.js`, pure), never stored, so it follows later corrections. Only the office's decisions are stored on `weigh_list_rows`: lass created from the row, or ignored with a reason.
 - A lass is only ever created or corrected from a row by a person clicking it. Corrections are new lass versions with the reason "Rättad enligt våglista från …"; an invoiced lass is never corrected.
 - A lass created from a row stores `lass.weigh_list_row_id`; the row is its evidence, so "Inget foto på vågsedeln" doesn't apply to it.
+- **Hittat av Lasskoll** (`/hittat`, `GET /api/avstamning/found`, pure `lib/foundValue.js`) adds up what Avstämning found: lass created from a row (valued at their invoice line once invoiced, else at their fakturaunderlag estimate) and weights corrected upwards from a list (the extra weight's value). It's computed on read and never stored. Corrections are found by the change-reason prefix `WEIGH_LIST_FIX_REASON`, so keep writing it. Förlustkontroll never counts here (prospect data). The PDF report (`client/src/lib/foundPdf.js`) is the evidence for the pilot guarantee.
 
 **Lass records are append-only.** A correction writes a new row in `lass_versions` with `change_reason`; nothing is ever updated in place, and a DB trigger enforces this. Only the retention job may delete, and it logs to `audit_log` (today it keeps every lass).
 - The office reviews in `/lass` (`routes/lass.js`). Approving writes a version with `review_status='granskad'`, and every uncertain value counts as checked by the office (`kontor`). A changed value always needs a `change_reason`.
@@ -181,6 +182,7 @@ npm run build       # client production build
 - **Two ways out, and every billed row is claimed by a unique `invoice_lines` row** (per lass, per assignment-day, per fixed job):
   - a Fortnox draft
   - "Lås underlag", for customers outside Fortnox (they get the PDF/CSV)
+- **The PDF carries the evidence** (`client/src/lib/underlagPdf.js`): after the totals, a photo of the vågsedel behind every lass row, six per page. Rows carry `photo_id` and `weigh_list` (the row a lass was created from); photos are fetched with the office token and scaled to 900 px in the browser before they go in.
 - **A failed Fortnox call** releases the rows and keeps the batch as `misslyckad`. On an unclear failure (timeout, 5xx) the route first looks the draft up by `ExternalInvoiceReference1`.
 - **Voiding** (`makulerad`) releases the rows. A Fortnox draft must also be deleted in Fortnox, and the UI says so.
 - **Price lists:** `/prislistor` (`routes/priceLists.js`); customers and projects pick one in their dialogs.

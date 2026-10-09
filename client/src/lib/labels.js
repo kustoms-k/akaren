@@ -294,6 +294,13 @@ export const MATCH_KIND = {
   skapad: 'Skapat från våglistan',
 };
 
+// Hittat värde: what Lasskoll found that would otherwise not have been invoiced.
+export const FOUND_KIND = {
+  lass: 'Lass som saknades',
+  vikt_upp: 'Vikt rättad uppåt',
+  vikt_ned: 'Vikt rättad nedåt',
+};
+
 // What differs between the scale and the lass.
 export const WEIGH_DIFF_LABELS = { netto_kg: 'Nettovikt', vagsedel_nr: 'Vågsedelnummer', datum: 'Datum', regnr: 'Regnr' };
 

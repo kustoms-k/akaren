@@ -34,8 +34,13 @@ export function fakturaunderlagRouter({ db, audit, fortnox, logger = console }) 
     company: db.prepare('SELECT name, org_nr, address, postnr, ort, phone, email, bankgiro, default_vat_mode FROM companies WHERE id = ?'),
     lass: db.prepare(`
       SELECT lc.lass_id, lc.version, lc.customer_id, lc.project_id, lc.job_id, lc.datum, lc.tid, lc.vagsedel_nr,
-             lc.vehicle_regnr, lc.material, lc.netto_kg, lc.till_namn, lc.review_status, d.name AS driver_name
-      FROM lass_current lc LEFT JOIN drivers d ON d.id = lc.driver_id
+             lc.vehicle_regnr, lc.material, lc.netto_kg, lc.till_namn, lc.review_status, d.name AS driver_name,
+             lc.photo_id, w.facility_name AS weigh_list_facility, wr.line_no AS weigh_list_line
+      FROM lass_current lc
+      JOIN lass l ON l.id = lc.lass_id
+      LEFT JOIN drivers d ON d.id = lc.driver_id
+      LEFT JOIN weigh_list_rows wr ON wr.id = l.weigh_list_row_id
+      LEFT JOIN weigh_lists w ON w.id = wr.weigh_list_id
       WHERE lc.company_id = ? AND lc.datum BETWEEN ? AND ?`),
     hours: db.prepare(`
       SELECT a.id AS assignment_id, a.job_id, a.datum, v.regnr, d.name AS driver_name,

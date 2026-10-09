@@ -23,6 +23,7 @@ import { PriceLists } from './pages/PriceLists.jsx';
 import { Avstamning } from './pages/Avstamning.jsx';
 import { AvstamningDetail } from './pages/AvstamningDetail.jsx';
 import { Forlustkontroll } from './pages/Forlustkontroll.jsx';
+import { Hittat } from './pages/Hittat.jsx';
 
 const ROUTES = [
   ['/', Overview],
@@ -38,6 +39,7 @@ const ROUTES = [
   ['/avstamning', Avstamning],
   ['/avstamning/:id', AvstamningDetail],
   ['/forlustkontroll', Forlustkontroll],
+  ['/hittat', Hittat],
   ['/faktura', Fakturaunderlag],
   ['/prislistor', PriceLists],
   ['/kunder', Customers],

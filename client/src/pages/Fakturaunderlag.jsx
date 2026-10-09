@@ -223,7 +223,7 @@ function GroupCard({ g, data, company, onChanged }) {
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           <Button size="sm" variant="ghost" onClick={csv} loading={busy === 'csv'}><FileSpreadsheet size={13} /> CSV</Button>
-          <Button size="sm" variant="ghost" onClick={pdf} loading={busy === 'pdf'}><FileDown size={13} /> PDF</Button>
+          <Button size="sm" variant="ghost" onClick={pdf} loading={busy === 'pdf'} title="Underlaget med ett foto av varje vågsedel"><FileDown size={13} /> PDF med vågsedlar</Button>
           {billable && (
             <>
               <Button size="sm" variant="secondary" onClick={() => setPreview(true)}><Eye size={13} /> Förhandsgranska</Button>

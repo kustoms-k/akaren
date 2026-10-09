@@ -22,7 +22,7 @@ const ton = (kg) => `${(kg / 1000).toFixed(2).replace('.', ',')} t`;
  *   week, from, to, companyVatMode,
  *   lass: lass_current rows in the week, joined with the job: { lass_id, version, customer_id, project_id, job_id,
  *         datum, tid, vagsedel_nr, vehicle_regnr, material, netto_kg, till_namn, review_status, driver_name,
- *         job_uppdragstyp, job_material },
+ *         job_uppdragstyp, job_material, photo_id, weigh_list_facility, weigh_list_line },
  *   hours: assignment days in the week: { assignment_id, job_id, datum, regnr, driver_name, timmar (null = none) },
  *   jobs: [{ id, customer_id, project_id, uppdragstyp, material, datum_fran, status }] (every job referenced, plus
  *         jobs starting in the week),
@@ -101,6 +101,9 @@ export function buildUnderlag(input) {
       price_source: price?.list.name ?? null,
       blockers,
       invoiced: input.invoiced.lass.get(l.lass_id) ?? null,
+      // The evidence behind the row: the photo of the vågsedel, or the weighing-list row the lass was created from.
+      photo_id: l.photo_id ?? null,
+      weigh_list: l.weigh_list_facility ? { facility_name: l.weigh_list_facility, line_no: l.weigh_list_line } : null,
     });
   }
 

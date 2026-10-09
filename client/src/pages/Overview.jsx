@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  ArrowRight, CircleCheck, ClipboardCheck, Inbox, Mail, PlugZap, ReceiptText, Scale, TriangleAlert, Truck,
+  ArrowRight, CircleCheck, ClipboardCheck, Inbox, Mail, PlugZap, ReceiptText, Scale, Sparkles, TriangleAlert, Truck,
 } from 'lucide-react';
 import { PageHeader, ErrorNotice } from '../components/PageHeader.jsx';
 import { Link } from '../components/Link.jsx';
@@ -166,6 +166,47 @@ function WeekPanel({ underlag }) {
   );
 }
 
+/** Hittat av Lasskoll: money found on weighing lists that would otherwise never have been invoiced. */
+function FoundPanel({ found }) {
+  if (!found) return <section className="panel"><div className="skeleton" style={{ height: 120, margin: 18 }} /></section>;
+  const t = found.totals;
+  const any = t.lass + t.weight_up + t.weight_down > 0;
+  const parts = [
+    t.lass && plural(t.lass, 'lass som saknades', 'lass som saknades'),
+    t.weight_up && plural(t.weight_up, 'vikt rättad', 'vikter rättade'),
+  ].filter(Boolean);
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <h2 className="t-heading">Hittat av Lasskoll</h2>
+        <Link to="/hittat" style={{ fontSize: 13 }}>Visa</Link>
+      </div>
+      <div className="panel-body" style={{ display: 'grid', gap: 10 }}>
+        {any ? (
+          <>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+              <div className="num" style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--success)' }}>
+                {formatKr(t.value_ore, { round: true })}
+              </div>
+              <span className="t-muted" style={{ fontSize: 13 }}>som annars inte hade fakturerats</span>
+            </div>
+            <div className="t-muted" style={{ fontSize: 13 }}>
+              {parts.join(' · ')}{t.month_value_ore > 0 && t.month_value_ore !== t.value_ore && <> · {formatKr(t.month_value_ore, { round: true })} denna månad</>}
+            </div>
+          </>
+        ) : (
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <Sparkles size={17} strokeWidth={1.9} className="t-muted" style={{ flexShrink: 0, marginTop: 2 }} />
+            <p className="t-muted" style={{ fontSize: 13 }}>
+              Inget hittat än. När Avstämningen hittar lass som vägdes men aldrig loggades, och du skapar dem, syns värdet här.
+            </p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export function Overview() {
   const { user } = useAuth();
   const [datum, setDatum] = useState(todayLocal);
@@ -182,6 +223,7 @@ export function Overview() {
   const underlag = useApi('/api/fakturaunderlag');
   const prevUnderlag = useApi(underlag.data ? `/api/fakturaunderlag?week=${underlag.data.prev_week}` : null);
   const integrations = useApi('/api/settings/integrations');
+  const found = useApi('/api/avstamning/found');
   const demo = useApi('/api/auth/demo').data?.enabled === true;
 
   const sources = [hazards, inbox, drafts, lass, avst, board, tomorrow, underlag, prevUnderlag];
@@ -220,7 +262,10 @@ export function Overview() {
             <div className="todo">{todos.map(({ key, ...t }) => <Todo key={key} {...t} />)}</div>
           )}
         </section>
-        <WeekPanel underlag={underlag.data} />
+        <div style={{ display: 'grid', gap: 16, alignContent: 'start' }}>
+          <WeekPanel underlag={underlag.data} />
+          <FoundPanel found={found.data} />
+        </div>
       </div>
 
       <DayBoard datum={datum} onDatum={setDatum} />

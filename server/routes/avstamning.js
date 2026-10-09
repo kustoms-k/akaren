@@ -8,6 +8,7 @@ import { submittedConfidence } from '../lib/lassReview.js';
 import { csvCell, fileSlug, kgToTonCell } from '../lib/massredovisning.js';
 import { FIELDS, MAX_ROWS, WeighListError, parseWeighList, previewWeighList, regnrKey } from '../lib/weighList.js';
 import { FIXABLE, estimateValue, facilityMatches, reconcile, suggestAssignment } from '../lib/reconcile.js';
+import { WEIGH_LIST_FIX_REASON, foundValue } from '../lib/foundValue.js';
 import { lassFieldsSchema } from './driver.js';
 
 // 5000 rows of a wide export fit comfortably; the route's own JSON parser allows this (see app.js).
@@ -128,6 +129,27 @@ export function avstamningRouter({ db, audit, lass: lassService }) {
       WHERE id = ? AND resolution = 'ignorerad'`),
     createdCount: db.prepare('SELECT COUNT(*) FROM weigh_list_rows WHERE weigh_list_id = ? AND resolved_lass_id IS NOT NULL'),
     deleteList: db.prepare('DELETE FROM weigh_lists WHERE id = ? AND company_id = ?'),
+    // Hittat värde: lass created from a weighing-list row, and lass weights corrected from a list.
+    foundCreated: db.prepare(`
+      SELECT r.resolved_at AS found_at, w.facility_name, lc.lass_id, lc.job_id, lc.datum, lc.vagsedel_nr, lc.material,
+             lc.netto_kg, c.name AS customer_name, p.name AS project_name,
+             (SELECT il.amount_ore FROM invoice_lines il WHERE il.lass_id = lc.lass_id) AS invoiced_ore
+      FROM weigh_list_rows r
+      JOIN weigh_lists w ON w.id = r.weigh_list_id
+      JOIN lass_current lc ON lc.lass_id = r.resolved_lass_id AND lc.company_id = r.company_id
+      JOIN customers c ON c.id = lc.customer_id
+      JOIN projects p ON p.id = lc.project_id
+      WHERE r.company_id = ? AND r.resolution = 'lass_skapad'`),
+    foundCorrections: db.prepare(`
+      SELECT v.created_at AS found_at, v.till_namn AS facility_name, v.lass_id, l.job_id, v.datum, v.vagsedel_nr,
+             v.material, pv.netto_kg AS from_kg, v.netto_kg AS to_kg, c.name AS customer_name, p.name AS project_name
+      FROM lass_versions v
+      JOIN lass l ON l.id = v.lass_id
+      JOIN lass_versions pv ON pv.lass_id = v.lass_id AND pv.version = v.version - 1
+      JOIN customers c ON c.id = v.customer_id
+      JOIN projects p ON p.id = v.project_id
+      WHERE l.company_id = ? AND v.change_reason LIKE ? || '%'
+        AND v.netto_kg IS NOT NULL AND pv.netto_kg IS NOT NULL AND v.netto_kg != pv.netto_kg`),
   };
 
   /** Price lists with their items, customers, projects and jobs by id: what estimates need. */
@@ -265,6 +287,21 @@ export function avstamningRouter({ db, audit, lass: lassService }) {
       out.avvikelse += totals.avvikelse;
     }
     res.json(out);
+  });
+
+  // Hittat värde: loads found on weighing lists and weights corrected from them, with what they are worth.
+  router.get('/found', (req, res) => {
+    const ctx = pricingContext(req.companyId);
+    const valueOf = (item, nettoKg) => {
+      const job = ctx.jobs.get(item.job_id);
+      return job ? estimate(ctx, job, { material: item.material, nettoKg }).amount_ore : null;
+    };
+    res.json(foundValue({
+      created: stmt.foundCreated.all(req.companyId),
+      corrections: stmt.foundCorrections.all(req.companyId, WEIGH_LIST_FIX_REASON),
+      valueOf,
+      today: stockholmDate(),
+    }));
   });
 
   // Receivers the company's lass have gone to, for picking the facility when importing.
@@ -436,7 +473,7 @@ export function avstamningRouter({ db, audit, lass: lassService }) {
     const before = lassService.current(current.match.lass_id, req.companyId);
     const updated = lassService.addVersion({
       lassId: before.lass_id, companyId: req.companyId, patch,
-      changeReason: `Rättad enligt våglista från ${list.facility_name} (rad ${row.line_no})`, personKind: 'kontor',
+      changeReason: `${WEIGH_LIST_FIX_REASON} från ${list.facility_name} (rad ${row.line_no})`, personKind: 'kontor',
       reviewStatus: before.review_status === 'granskad' ? 'granskad' : null,
       createdByKind: 'office', createdByUserId: req.user.id,
     });

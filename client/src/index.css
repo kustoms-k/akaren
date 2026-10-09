@@ -637,6 +637,8 @@ button.drv-card { cursor: pointer; font: inherit; }
 .notice-amber { background: #fffbeb; border: 1px solid rgba(245,158,11,0.3); color: #78350f; }
 .notice-red   { background: #fef2f2; border: 1px solid rgba(239,68,68,0.3); color: #7f1d1d; }
 .notice-blue  { background: #eff6ff; border: 1px solid rgba(59,130,246,0.25); color: #1e3a5f; }
+.notice-green { background: #f0fdf4; border: 1px solid rgba(34,197,94,0.3); color: #14532d; }
+.notice-green a { color: inherit; font-weight: 600; }
 
 .empty {
   padding: 40px 20px;
