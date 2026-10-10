@@ -9,6 +9,7 @@ import {
   VAGSEDEL_PROMPT_VERSION, VagsedelSchema, buildVagsedelSystemPrompt, buildVagsedelUserText, postProcessVagsedel,
 } from '../lib/vagsedelExtraction.js';
 import { DEMO_MODEL, DEMO_PROMPT_VERSION, demoOrderSamples, findDemoOrder } from '../lib/orderDemo.js';
+import { DEMO_VAGSEDEL_PROMPT_VERSION, demoVagsedelOutput } from '../lib/vagsedelDemo.js';
 
 export class AiNotConfiguredError extends Error {
   constructor() { super('ANTHROPIC_API_KEY is not set'); this.code = 'ai_not_configured'; }
@@ -204,10 +205,31 @@ export function createAiService({ db, config, client, now = () => new Date(), lo
     });
   }
 
+  /**
+   * DEMO_MODE without a key: the reading of the demo slip (lib/vagsedelDemo.js), validated against the driver's
+   * assignment and logged like a real call. Callers label it as simulated; it never reads the photo.
+   */
+  async function demoVagsedel({ companyId, photoId, assignmentDate, assignedRegnr }) {
+    if (!demo) throw new AiNotConfiguredError();
+    const today = stockholmDate(now());
+    const started = Date.now();
+    if (demoDelayMs > 0) await new Promise((r) => setTimeout(r, demoDelayMs));
+    const raw = demoVagsedelOutput(today);
+    const { fields, warnings } = postProcessVagsedel(raw, { today, assignmentDate, assignedRegnr });
+    const extractionId = log({
+      company_id: companyId, kind: 'vagsedel', model: DEMO_MODEL, prompt_version: DEMO_VAGSEDEL_PROMPT_VERSION, input_photo_id: photoId,
+      fields_json: JSON.stringify({ fields, warnings }),
+      confidence_json: JSON.stringify(Object.fromEntries(Object.entries(fields).map(([k, f]) => [k, f.confidence]))),
+      raw_response: JSON.stringify(raw),
+      latency_ms: Date.now() - started,
+    });
+    return { extractionId, fields, warnings, model: DEMO_MODEL };
+  }
+
   /** Sample orders for the inbox; empty unless DEMO_MODE is active. */
   function demoSamples() {
     return demo ? demoOrderSamples(stockholmDate(now())) : [];
   }
 
-  return { configured: Boolean(sdk), demo, usage, extractOrder, extractVagsedel, demoSamples };
+  return { configured: Boolean(sdk), demo, usage, extractOrder, extractVagsedel, demoVagsedel, demoSamples };
 }

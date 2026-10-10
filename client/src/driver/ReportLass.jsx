@@ -53,7 +53,7 @@ export function ReportLass({ assignmentId, photo, onDone }) {
 function ReportForm({ assignment, file, onNext, onDone }) {
   const [clientUuid] = useState(uuid);
   const [phase, setPhase] = useState(file ? 'reading' : 'form'); // reading | form | sending | done
-  const [upload, setUpload] = useState({ photoId: null, extractionId: null, blob: null, offline: false, aiError: null, warnings: [] });
+  const [upload, setUpload] = useState({ photoId: null, extractionId: null, blob: null, offline: false, aiError: null, warnings: [], demoReading: false, simulated: false });
   const [conf, setConf] = useState({});
   const [values, setValues] = useState(() => ({
     vagsedel_nr: '', netto: '', material: assignment.material ?? '', till_namn: assignment.till_text ?? '',
@@ -67,6 +67,33 @@ function ReportForm({ assignment, file, onNext, onDone }) {
   const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
 
+  /** Fill the form from an AI reading and remember how sure it was of each field. */
+  function applyExtraction(extraction) {
+    const patch = {};
+    const c = {};
+    for (const [formKey, aiKey] of Object.entries(FROM_AI)) {
+      const field = extraction.fields[aiKey];
+      if (!field) continue;
+      c[formKey] = field.confidence;
+      if (field.value != null) patch[formKey] = formKey === 'netto' ? toTon(field.value) : field.value;
+    }
+    setValues((v) => ({ ...v, ...patch }));
+    setConf(c);
+  }
+
+  // Demo mode without a key: the simulated reading of the demo slip, labelled as such.
+  async function demoReading() {
+    setPhase('reading');
+    try {
+      const { extraction } = await driverApi(`/api/driver/photos/${upload.photoId}/demo-reading`, { method: 'POST', body: { assignment_id: assignment.id } });
+      applyExtraction(extraction);
+      setUpload((u) => ({ ...u, extractionId: extraction.id, aiError: null, warnings: extraction.warnings ?? [], demoReading: false, simulated: true }));
+    } catch (err) {
+      setFormError(err.message);
+    }
+    setPhase('form');
+  }
+
   // Shrink, upload and let the AI read the ticket.
   useEffect(() => {
     if (!file) return undefined;
@@ -76,24 +103,15 @@ function ReportForm({ assignment, file, onNext, onDone }) {
       try {
         const res = await uploadPhoto(assignment.id, blob);
         if (!alive) return;
-        const next = { photoId: res.photo_id, extractionId: res.extraction?.id ?? null, blob: null, offline: false, aiError: res.ai_error, warnings: res.extraction?.warnings ?? [] };
-        if (res.extraction) {
-          const f = res.extraction.fields;
-          const patch = {};
-          const c = {};
-          for (const [formKey, aiKey] of Object.entries(FROM_AI)) {
-            const field = f[aiKey];
-            if (!field) continue;
-            c[formKey] = field.confidence;
-            if (field.value != null) patch[formKey] = formKey === 'netto' ? toTon(field.value) : field.value;
-          }
-          setValues((v) => ({ ...v, ...patch }));
-          setConf(c);
-        }
+        const next = {
+          photoId: res.photo_id, extractionId: res.extraction?.id ?? null, blob: null, offline: false, aiError: res.ai_error,
+          warnings: res.extraction?.warnings ?? [], demoReading: Boolean(res.demo_reading), simulated: false,
+        };
+        if (res.extraction) applyExtraction(res.extraction);
         setUpload(next);
       } catch (err) {
         if (!alive) return;
-        if (err.code === 'network') setUpload({ photoId: null, extractionId: null, blob, offline: true, aiError: null, warnings: [] });
+        if (err.code === 'network') setUpload({ photoId: null, extractionId: null, blob, offline: true, aiError: null, warnings: [], demoReading: false, simulated: false });
         else setFormError(err.message);
       }
       if (alive) setPhase('form');
@@ -178,7 +196,17 @@ function ReportForm({ assignment, file, onNext, onDone }) {
         <div className="drv-banner info" role="status">Läser vågsedeln… Det tar några sekunder.</div>
       )}
       {upload.offline && <div className="drv-banner warn">Ingen täckning. Skriv av vågsedeln så skickas lasset med bilden när du har täckning.</div>}
-      {upload.aiError && <div className="drv-banner warn">{upload.aiError}</div>}
+      {upload.demoReading && phase !== 'reading' ? (
+        <div className="drv-banner info">
+          <div style={{ marginBottom: 10 }}>Demoläge: automatisk avläsning är inte påslagen i demon.</div>
+          <button type="button" className="drv-btn secondary small" onClick={demoReading}>Demo: läs av demovågsedeln</button>
+        </div>
+      ) : upload.aiError && <div className="drv-banner warn">{upload.aiError}</div>}
+      {upload.simulated && (
+        <div className="drv-banner info" role="status">
+          Simulerad avläsning (demoläge): uppgifterna kommer från demovågsedeln, inte från fotot. Kontrollera de markerade fälten.
+        </div>
+      )}
       {!file && <div className="drv-banner warn">Utan foto kontrollerar kontoret lasset innan det faktureras.</div>}
       {upload.warnings.length > 0 && <div className="drv-banner warn">{upload.warnings.join(' ')}</div>}
 

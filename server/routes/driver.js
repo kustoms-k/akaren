@@ -179,7 +179,18 @@ export function driverRouter({ db, auth, dispatch, photos, ai, lass, audit, limi
         }
       }
     }
-    res.status(201).json({ photo_id: photo.id, extraction, ai_error: aiError });
+    // DEMO_MODE without a key: offer the labelled demo reading instead of only "fill it in yourself".
+    res.status(201).json({ photo_id: photo.id, extraction, ai_error: aiError, demo_reading: Boolean(ai.demo && !extraction) });
+  }));
+
+  // DEMO_MODE only: the simulated reading of the demo slip for an uploaded photo. The driver page labels it as such.
+  router.post('/photos/:id/demo-reading', limiters.ai, asyncHandler(async (req, res) => {
+    if (!ai.demo) throw notFound('Finns bara i demoläget.');
+    const photo = photos.get(req.params.id, req.companyId);
+    if (!photo || photo.uploaded_by_driver_id !== req.driver.id) throw notFound('Bilden finns inte.');
+    const a = loadAssignment(req, req.body?.assignment_id);
+    const r = await ai.demoVagsedel({ companyId: req.companyId, photoId: photo.id, assignmentDate: a.datum, assignedRegnr: a.regnr });
+    res.status(201).json({ extraction: { id: r.extractionId, fields: r.fields, warnings: r.warnings, simulated: true } });
   }));
 
   router.get('/photos/:id', (req, res) => {

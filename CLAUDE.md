@@ -107,8 +107,10 @@ npm run dev                           # server :3002 + Vite :5173
 - Every URL comes from env: `APP_URL`, `PUBLIC_BASE_URL`, `FORTNOX_REDIRECT_URI`, `VITE_API_TARGET`, and the `*_API_BASE` vars. Never hardcode `localhost` outside `.env.example`.
 - Without `ELKS_*` credentials, SMS is simulated and logged to the console. Without `SMTP_HOST`/`MAIL_FROM`, order confirmation emails are simulated the same way (logged and stored, not sent). Without `ANTHROPIC_API_KEY`, the extraction endpoints return a clear error. **Never fall back to fake data.**
 - The one exception is `DEMO_MODE=1` (owner decision, for showing prospects), refused in production. It does two things:
-  - canned extractions for the built-in sample orders in `lib/orderDemo.js`, exact text match only, ignored when an API key is set. Don't extend it to other text or to vågsedel extraction.
+  - canned extractions for the built-in sample orders in `lib/orderDemo.js`, exact text match only, ignored when an API key is set. Don't extend it to other text.
+  - a simulated reading of the playbook's demo vågsedel (`lib/vagsedelDemo.js`, owner decision 2026-10-10): after an upload without a key, the driver page offers "Demo: läs av demovågsedeln" and labels the result as simulated. It never reads the photo, and nothing else uses it.
   - one-click office login: an empty login form calls `POST /api/auth/demo-login`, which signs in the first active office user. The route only exists in demo mode; `GET /api/auth/demo` tells the login page.
+  - the demo data: `DEMO_FULL=1` (default) seeds the whole company (`seed/demoFull.js`: 14 trucks, 7 customers, a month of history with invoiced weeks, reconciled weighing lists and reported hazardous waste). Prices follow published 2024–2026 price lists (sources in the file). The base set (`seed/demo.js`) is identical either way and is what the tests and the playbook's numbers rely on; tests run with `DEMO_FULL=0`. A reset renders the photos the demo shows first and the rest in the background.
   - the demo order mailbox: "Hämta ny post" delivers the next held-back email from `lib/inboxDemo.js`, and `POST /api/inbox/demo` adds the mailbox to an existing demo database. Outside demo mode nothing fetches mail.
 
 ## Testing

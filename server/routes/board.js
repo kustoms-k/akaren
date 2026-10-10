@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { badRequest } from '../lib/http.js';
 import { addDays, isValidDate, stockholmDate } from '../lib/dates.js';
+import { isWorkday } from '../lib/workdays.js';
 
 /**
  * The day board (/api/board?datum=YYYY-MM-DD, default today): where every truck is, what it has logged, which
@@ -30,6 +31,7 @@ export function boardRouter({ db }) {
       WHERE a.company_id = ? AND a.datum = ? AND a.cancelled_at IS NULL AND j.status != 'avbruten'
       ORDER BY j.tid, a.id`),
     // Active jobs that run on the day (single-day jobs on their date, ranges inclusive) without an assignment.
+    // A range only runs on workdays, as booking does (lib/dispatch.js bookingDays); see the filter in the route.
     uncovered: db.prepare(`
       SELECT j.id, j.uppdragstyp, j.material, j.tid, j.datum_fran, j.datum_till, j.antal_lass,
              c.name AS customer_name, p.name AS project_name
@@ -63,7 +65,8 @@ export function boardRouter({ db }) {
       next: addDays(datum, 1),
       vehicles,
       free_drivers: stmt.drivers.all(req.companyId).filter((d) => !busyDrivers.has(d.id)),
-      uncovered: stmt.uncovered.all({ cid: req.companyId, datum }),
+      uncovered: stmt.uncovered.all({ cid: req.companyId, datum })
+        .filter((j) => !j.datum_till || j.datum_till === j.datum_fran || isWorkday(datum)),
       totals: {
         vehicles: vehicles.length,
         vehicles_out: vehicles.filter((v) => v.assignments.length).length,

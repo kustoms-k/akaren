@@ -4,6 +4,7 @@ import { reviewStatusFor } from '../lib/lassReview.js';
 import { addDays, isoWeek, isoWeekRange, isoWeekday, stockholmDate, stockholmLocalToUtc } from '../lib/dates.js';
 import { seedInbox } from './inbox.js';
 import { seedWeighList } from './weighList.js';
+import { seedFullCompany } from './demoFull.js';
 
 // Demo data for "Lagerviks Åkeri AB". Every company name, org nr, regnr, domain and person is fictional (domains were
 // checked to be unregistered when chosen; see lib/inboxDemo.js). It should look real to a prospect, so no "test" names.
@@ -106,7 +107,7 @@ const FACILITIES = {
 };
 
 /** Small deterministic PRNG so the demo data is the same on every run. */
-function mulberry32(seed) {
+export function mulberry32(seed) {
   let a = seed >>> 0;
   return () => {
     a = (a + 0x6d2b79f5) >>> 0;
@@ -115,6 +116,13 @@ function mulberry32(seed) {
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+/** Random helpers over one PRNG stream: between(lo, hi) and int(lo, hi) inclusive. */
+export function randomHelpers(seed) {
+  const rand = mulberry32(seed);
+  const between = (lo, hi) => lo + rand() * (hi - lo);
+  return { rand, between, int: (lo, hi) => Math.floor(between(lo, hi + 1)) };
 }
 
 /** Weekdays (Mon–Fri) of the previous and the current ISO week, up to and including `today`. */
@@ -139,14 +147,16 @@ export function demoWorkdays(today) {
  * withInbox: also seed the demo order mailbox (seed/inbox.js) as of `now` (default: now if `today` is today,
  * otherwise noon on `today`).
  * withWeighList: also import Ekbacka's weighing list for the previous week (seed/weighList.js), for Avstämning.
+ * full: the whole company the demo instances show (seed/demoFull.js): 14 trucks, 7 customers, two more weeks of
+ * history with invoiced weeks, weighing lists and hazardous-waste reports. Off by default so tests stay small; the
+ * base data is identical either way.
  */
-export function seedDemo(db, { today, password, withPhotos = false, withInbox = true, withWeighList = true, now = null }) {
+export function seedDemo(db, { today, password, withPhotos = false, withInbox = true, withWeighList = true, now = null, full = false }) {
   if (db.prepare('SELECT COUNT(*) FROM companies').pluck().get() > 0) {
     throw new Error('Database already contains data');
   }
-  const rand = mulberry32(20261003);
-  const between = (lo, hi) => lo + rand() * (hi - lo);
-  const int = (lo, hi) => Math.floor(between(lo, hi + 1));
+  const R = randomHelpers(20261003);
+  const { between, int } = R;
   const round20 = (kg) => Math.round(kg / 20) * 20;
 
   const ids = { vehicles: {}, drivers: {}, priceLists: {}, customers: {}, projects: {} };
@@ -155,6 +165,11 @@ export function seedDemo(db, { today, password, withPhotos = false, withInbox = 
   const { days, previousWeek, currentWeek } = demoWorkdays(today);
   let inbox = null;
   let weighList = null;
+  let fullSummary = null;
+  // Registries the full company extends (seed/demoFull.js).
+  const vehicles = new Map(VEHICLES.map((v) => [v.key, v]));
+  const projectsByKey = new Map(PROJECTS.map((p) => [p.key, p]));
+  const facilities = { ...FACILITIES };
 
   const ins = {
     company: db.prepare(`INSERT INTO companies (name, org_nr, address, postnr, ort, phone, email, retention_months, default_vat_mode, order_terms)
@@ -259,9 +274,9 @@ export function seedDemo(db, { today, password, withPhotos = false, withInbox = 
     };
 
     const counters = Object.fromEntries(Object.entries(FACILITIES).map(([k, f]) => [k, f.start]));
-    const slipNr = (fac) => {
-      const f = FACILITIES[fac];
-      counters[fac] += int(1, 4);
+    const slipNr = (fac, r = R) => {
+      const f = facilities[fac];
+      counters[fac] = (counters[fac] ?? f.start) + r.int(1, 4);
       return `${f.prefix}${counters[fac]}`;
     };
 
@@ -275,23 +290,25 @@ export function seedDemo(db, { today, password, withPhotos = false, withInbox = 
     };
 
     const addLass = ({ jobId, assignmentId, customer, project, vehicle, driver, datum, tid, fran, fac, material,
-      avfallskod = null, farligt = false, netto, slipNetto = netto, confidence = HIGH, review = 'ok', note = null }) => {
-      const f = FACILITIES[fac];
+      avfallskod = null, farligt = false, netto, slipNetto = netto, confidence = HIGH, review = 'ok', note = null, r = R }) => {
+      const f = facilities[fac];
       const created = at(datum, tid);
-      const v = VEHICLES.find((x) => x.key === vehicle);
+      const v = vehicles.get(vehicle);
       const lassId = Number(ins.lass.run(companyId, jobId, assignmentId, created).lastInsertRowid);
-      const nr = slipNr(fac);
+      const nr = slipNr(fac, r);
       let photoId = null;
       if (withPhotos) {
         photoId = randomBytes(16).toString('hex');
         ins.photo.run(photoId, companyId, ids.drivers[driver], created);
-        const tara = v.tara + int(-60, 60) * 2;
+        const tara = v.tara + r.int(-60, 60) * 2;
         photos.push({
           id: photoId,
           blur: confidence.netto_kg === 'lag' || confidence.vagsedel_nr === 'lag',
+          // Rendered before the reset returns: what the demo shows first (today, and lass waiting for review).
+          urgent: datum === today || review !== 'ok',
           slip: {
             facility: f, nr, datum, tid, regnr: v.regnr, kund: COMPANY.name,
-            marking: PROJECTS.find((p) => p.key === project).customer_ref, material, avfallskod, farligt,
+            marking: projectsByKey.get(project).customer_ref, material, avfallskod, farligt,
             netto: slipNetto, tara, brutto: slipNetto + tara,
           },
         });
@@ -311,18 +328,21 @@ export function seedDemo(db, { today, password, withPhotos = false, withInbox = 
       });
       counts.lass++;
       counts.versions++;
-      return { lassId, base, created };
+      return { lassId, base, created, version: 1 };
     };
 
-    const addVersion = (prev, patch, { reason, review = 'granskad', minutesLater = 240 }) => {
-      const created = new Date(Date.parse(prev.created) + minutesLater * 60_000).toISOString();
+    const addVersion = (prev, patch, { reason, review = 'granskad', minutesLater = 240, at: when = null }) => {
+      const created = when ?? new Date(Date.parse(prev.created) + minutesLater * 60_000).toISOString();
+      const version = (prev.version ?? 1) + 1;
       ins.version.run({
-        ...prev.base, ...patch, version: 2, field_confidence_json: JSON.stringify(HIGH), review_status: review,
+        ...prev.base, ...patch, version, field_confidence_json: JSON.stringify(HIGH), review_status: review,
         review_reasons_json: '[]',
         note: null, change_reason: reason, created_by_kind: 'office', created_by_user_id: userId,
         created_by_driver_id: null, created_at: created,
       });
       counts.versions++;
+      prev.version = version;
+      Object.assign(prev.base, patch);
     };
 
     const times = (n, start = 6 * 60 + 45) => {
@@ -427,6 +447,13 @@ export function seedDemo(db, { today, password, withPhotos = false, withInbox = 
       }
     }
 
+    if (full) {
+      fullSummary = seedFullCompany({
+        db, ins, companyId, userId, at, today, days, previousWeek, currentWeek, firstDay, lastDay, ids, counts, jobs,
+        vehicles, projectsByKey, facilities, counters, assign, addLass, addVersion, HIGH, COMPANY,
+      });
+    }
+
     const seedNow = now ?? (stockholmDate() === today ? new Date() : new Date(stockholmLocalToUtc(today, '12:00')));
     if (withWeighList) weighList = seedWeighList(db, { companyId, userId, week: previousWeek, now: seedNow });
     if (withInbox) inbox = seedInbox(db, { companyId, userId, now: seedNow });
@@ -437,13 +464,14 @@ export function seedDemo(db, { today, password, withPhotos = false, withInbox = 
     previousWeek,
     currentWeek,
     days: days.length,
-    vehicles: VEHICLES.length,
-    drivers: DRIVERS.length,
-    customers: CUSTOMERS.length,
-    projects: PROJECTS.length,
+    vehicles: vehicles.size,
+    drivers: Object.keys(ids.drivers).length,
+    customers: Object.keys(ids.customers).length,
+    projects: projectsByKey.size,
     ...counts,
     inbox,
     weighList,
+    full: fullSummary,
     photos,
   };
 }

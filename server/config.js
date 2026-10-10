@@ -36,6 +36,9 @@ const schema = z.object({
   // Hosted demo instance only (with DEMO_MODE=1): wipe and reseed the demo data every night, so the dates stay current
   // and whatever prospects changed is gone the next morning. Starts with seeded data when the database is empty.
   DEMO_AUTO_RESET: z.preprocess(emptyToUndefined, z.enum(['0', '1']).default('0')),
+  // DEMO_MODE: seed and reset the whole demo company (14 trucks, a month of history, seed/demoFull.js). 0 gives the
+  // small base set, which is quicker to seed (tests use it).
+  DEMO_FULL: z.preprocess(emptyToUndefined, z.enum(['0', '1']).default('1')),
   // Which proxies to trust for the client IP (rate limits, audit log). 'loopback' for the Vite dev proxy;
   // a hop count such as 1 behind a reverse proxy in another container (deploy/compose.yaml).
   TRUST_PROXY: z.preprocess(emptyToUndefined, z.string().regex(/^(loopback|\d{1,2})$/, "TRUST_PROXY must be 'loopback' or a hop count").default('loopback')),
@@ -102,6 +105,7 @@ export function loadConfig(env = process.env) {
     isTest:  e.NODE_ENV === 'test',
     demoMode: e.DEMO_MODE === '1',
     demoAutoReset: e.DEMO_AUTO_RESET === '1',
+    demoFull: e.DEMO_FULL === '1',
     trustProxy: /^\d+$/.test(e.TRUST_PROXY) ? Number(e.TRUST_PROXY) : e.TRUST_PROXY,
     host:    e.HOST,
     port:    e.PORT,

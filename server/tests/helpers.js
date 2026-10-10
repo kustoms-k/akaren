@@ -11,6 +11,7 @@ export const TEST_ENV = {
   JWT_SECRET: 'test-secret-test-secret-test-secret-123',
   ENCRYPTION_KEY: '0'.repeat(64),
   DATA_DIR: '/tmp/akaren-test-unused',
+  DEMO_FULL: '0',
 };
 
 export const silentLogger = { log() {}, error() {}, warn() {} };

@@ -201,6 +201,13 @@ Audit date: 2026-10-03, against `main` @ `fb5d389` (tagged `pre-pivot-archive`).
 - **Underlag PDF with vågsedlar:** every lass row's photo after the totals; a lass created from a weighing list says so instead of showing a photo.
 - Not seeded: the demo starts at 0 kr so the number climbs during step 6, and the playbook's figures stay true.
 
+**The whole demo company, and a simulated slip reading (2026-10-10, owner request: "populate the entire system with researched realistic mock data for Sweden", no spending before a contract).** 329 server tests pass. Verified in headless Chrome on a reset demo: every office page, last week ready to invoice (10 underlag, 607 420 kr), week 39 fully invoiced, Avstämning with three reconciled history lists, Hittat at 7 481 kr, and the driver page's labelled demo reading.
+- `seed/demoFull.js` behind `DEMO_FULL` (default on): 14 trucks (one truck and trailer, a 70-tm crane, a machine trailer, an older Euro V reserve), 13 drivers, 4 more customers and 6 projects (an hourly contract, a per-ton contract with truck and trailer, makadam deliveries, a per-load inner-city contract, demolition containers), 3 more facilities, and two history weeks: every project invoiced on the Friday (Fortnox drafts, or locked for customers outside Fortnox), weighing lists reconciled that afternoon (a missing load created, a weight corrected), contaminated loads reported the next working day. Prices follow published price lists (AMK Transport 2026, Heidelberg Materials 2024, Svevia 2026). The base data is byte-identical to before.
+- `services/underlag.js`: the week loader, moved out of the route so the seed invoices with the app's own logic.
+- Demo slip reading (`lib/vagsedelDemo.js`, `POST /api/driver/photos/:id/demo-reading`): owner decision, replacing "never in demo mode". The time comes back uncertain so the check is shown.
+- Fixed: the day board asked for a truck on weekends and holidays for jobs that run over several days; booking already skips them.
+- Reset: urgent photos (today, to review) render before it returns, the rest in the background, newest first; a newer reset stops an older render.
+
 ## 1. Current state
 
 ### 1.1 Architecture

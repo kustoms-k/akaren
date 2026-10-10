@@ -29,11 +29,15 @@ migrate(db);
 
 const password = process.env.SEED_PASSWORD || randomBytes(6).toString('base64url');
 try {
-  const s = seedDemo(db, { today: stockholmDate(), password, withPhotos: true });
+  const s = seedDemo(db, { today: stockholmDate(), password, withPhotos: true, full: config.demoFull });
   await renderDemoPhotos(db, config.photosDir, s.photos);
   console.log(`[seed] Lagerviks Åkeri AB seeded into ${config.dbFile}`);
   console.log(`[seed] ${s.vehicles} fordon, ${s.drivers} förare, ${s.customers} kunder, ${s.projects} projekt`);
   console.log(`[seed] ${s.lass} lass (${s.versions} versioner, ${s.photos.length} vågsedelfoton), ${s.timeEntries} tidrapporter, veckor ${s.previousWeek} + ${s.currentWeek}`);
+  if (s.full) {
+    const f = s.full;
+    console.log(`[seed] Historik ${f.history_weeks.join(' + ')}: ${f.invoiced.batches} fakturerade underlag (${f.invoiced.fortnox} Fortnox-utkast), ${f.found.lists} våglistor avstämda, ${f.hazard_reports} farligt avfall rapporterat`);
+  }
   if (s.weighList) console.log(`[seed] Avstämning: våglista från Ekbacka för ${s.previousWeek} importerad (${s.weighList.rows} vägningar)`);
   // A second facility's list to try the import with (Avstämning → Importera våglista → Välj fil).
   const companyId = db.prepare('SELECT id FROM companies ORDER BY id LIMIT 1').pluck().get();

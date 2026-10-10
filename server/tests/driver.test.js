@@ -290,3 +290,59 @@ describe('vågsedel photo and lass reporting', () => {
     expect((await m.as('get', `/api/driver/assignments/${m.assignment.id}`)).body.timmar).toBe(7.5);
   });
 });
+
+describe('the demo slip reading (DEMO_MODE without a key)', () => {
+  async function demoSetup() {
+    const config = testConfig({ DEMO_MODE: '1', DATA_DIR: mkdtempSync(join(tmpdir(), 'akaren-test-')) });
+    const db = testDb();
+    const user = addCompanyWithUser(db);
+    const ai = createAiService({ db, config, logger: silentLogger, demoDelayMs: 0 });
+    const app = createApp({ config, db, services: { ai }, logger: silentLogger });
+    const officeToken = (await request(app).post('/api/auth/login').send({ email: user.email, password: user.password })).body.token;
+    const office = (m, url) => request(app)[m](url).set('Authorization', `Bearer ${officeToken}`);
+    const customer = (await office('post', '/api/customers').send({ name: 'Norrbacka Mark AB' })).body;
+    const project = (await office('post', '/api/projects').send({ customer_id: customer.id, name: 'Kv. Rörstrand' })).body;
+    const truck = (await office('post', '/api/vehicles').send({ regnr: 'TKA412', typ: 'tippbil', miljozonsklass: 1 })).body;
+    const driver = (await office('post', '/api/drivers').send({ name: 'Mikael Lund', phone: '070-174 06 05' })).body;
+    const jobId = Number(db.prepare(`INSERT INTO jobs (company_id, customer_id, project_id, uppdragstyp, material, datum_fran, tid,
+        fran_text, till_text, created_by_user_id) VALUES (?, ?, ?, 'schakt', 'Schaktmassor', ?, '07:00', 'Rörstrandsgatan 40', 'Ekbacka', ?)`)
+      .run(user.companyId, customer.id, project.id, TODAY, user.userId).lastInsertRowid);
+    const res = await office('post', `/api/jobs/${jobId}/assignments`).send({ vehicle_id: truck.id, driver_id: driver.id, datum: TODAY, send_sms: true });
+    const session = await request(app).post('/api/driver/session').send({ token: res.body.sms.link.split('/f/')[1] });
+    const as = (m, url) => request(app)[m](url).set('Authorization', `Bearer ${session.body.token}`);
+    return { as, db, assignment: res.body.assignment };
+  }
+
+  it('offers the labelled demo reading after an upload and fills in the demo slip, uncertain time included', async () => {
+    const { as, db, assignment } = await demoSetup();
+    const up = await as('post', '/api/driver/photos').field('assignment_id', String(assignment.id)).attach('photo', await jpegWithGps(), 's.jpg');
+    expect(up.status).toBe(201);
+    expect(up.body).toMatchObject({ extraction: null, demo_reading: true });
+    expect(up.body.ai_error).toMatch(/inte påslagen/);
+
+    const r = await as('post', `/api/driver/photos/${up.body.photo_id}/demo-reading`).send({ assignment_id: assignment.id });
+    expect(r.status).toBe(201);
+    const { extraction } = r.body;
+    expect(extraction.simulated).toBe(true);
+    expect(extraction.fields).toMatchObject({
+      vagsedel_nr: { value: 'EKB419901', confidence: 'hog' }, datum: { value: TODAY }, tid: { value: '09:42', confidence: 'lag' },
+      regnr: { value: 'TKA412', confidence: 'hog' }, netto_kg: { value: 17640, confidence: 'hog' }, avfallskod: { value: '170504' },
+    });
+    const logged = db.prepare('SELECT kind, model, cost_micro_usd, input_photo_id FROM ai_extractions WHERE id = ?').get(extraction.id);
+    expect(logged).toEqual({ kind: 'vagsedel', model: 'demo', cost_micro_usd: 0, input_photo_id: up.body.photo_id });
+
+    const lass = await as('post', '/api/driver/lass').send({
+      assignment_id: assignment.id, client_uuid: randomUUID(), photo_id: up.body.photo_id, ai_extraction_id: extraction.id,
+      fields: { vagsedel_nr: 'EKB419901', datum: TODAY, tid: '09:42', netto_kg: 17640, material: 'Schaktmassor', till_namn: 'Ekbacka massmottagning' },
+    });
+    expect(lass.status).toBe(201);
+  });
+
+  it('does not exist outside demo mode', async () => {
+    const m = await ctx.driverSession(ctx.mikael);
+    const up = await m.as('post', '/api/driver/photos').field('assignment_id', String(m.assignment.id)).attach('photo', await jpegWithGps(), 's.jpg');
+    expect(up.body.demo_reading).toBe(false);
+    const r = await m.as('post', `/api/driver/photos/${up.body.photo_id}/demo-reading`).send({ assignment_id: m.assignment.id });
+    expect(r.status).toBe(404);
+  });
+});

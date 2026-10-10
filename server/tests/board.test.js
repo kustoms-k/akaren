@@ -61,6 +61,14 @@ describe('day board', () => {
     expect(b.free_drivers).toHaveLength(4);
   });
 
+  it('doesn\'t ask for a truck on a weekend or holiday for a job that runs over several days', async () => {
+    ctx.db.prepare(`UPDATE jobs SET datum_till = ? WHERE id = ?`).run('2099-03-09', ctx.jobId('Täby Park etapp 3 – VA-schakt'));
+    const saturday = (await ctx.as('get', '/api/board?datum=2099-03-07')).body;
+    expect(saturday.uncovered.map((j) => j.project_name)).not.toContain('Täby Park etapp 3 – VA-schakt');
+    const monday = (await ctx.as('get', '/api/board?datum=2099-03-09')).body;
+    expect(monday.uncovered.map((j) => j.project_name)).toContain('Täby Park etapp 3 – VA-schakt');
+  });
+
   it('rejects a bad date', async () => {
     expect((await ctx.as('get', '/api/board?datum=igår')).status).toBe(400);
   });

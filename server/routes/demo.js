@@ -18,7 +18,7 @@ export function demoRouter({ db, config, audit, logger = console }) {
   // Wipe the database and seed fresh demo data dated around today, so every meeting starts from the same story.
   router.post('/reset', asyncHandler(async (req, res) => {
     validate(resetSchema, req.body);
-    const s = await resetDemo({ db, config, audit, logger });
+    const s = await resetDemo({ db, config, audit, logger, waitForPhotos: false });
     res.json({ ok: true, lass: s.lass, previous_week: s.previousWeek, current_week: s.currentWeek });
   }));
 

@@ -21,7 +21,7 @@ if (applied.length) console.log(`[db] applied migrations: ${applied.join(', ')}`
 
 // A hosted demo instance starts with demo data instead of an empty database.
 if (config.demoAutoReset && !db.prepare('SELECT 1 FROM companies LIMIT 1').get()) {
-  await resetDemo({ db, config, audit: createAudit(db) });
+  await resetDemo({ db, config, audit: createAudit(db), waitForPhotos: false });
 }
 
 const app = createApp({ config, db });
