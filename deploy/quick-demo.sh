@@ -5,7 +5,7 @@
 # Tunnels, tried in order (force one with TUNNEL=cloudflare or TUNNEL=localhostrun):
 #   cloudflare    Cloudflare quick tunnel, https://<random-words>.trycloudflare.com. Some networks block it.
 #   localhostrun  localhost.run over SSH (built into macOS and Linux), https://<random>.lhr.life.
-# The address is new every time the script starts (localhost.run may also change it after a few hours), and the
+# The address is new every time the script starts (localhost.run may also drop it after a few hours), and the
 # demo is only reachable while this computer is awake and the script runs. Both are free services for testing,
 # without uptime guarantees. For an address that stays, use the server setup in deploy/README.md. Stop with Ctrl-C.
 set -euo pipefail
@@ -103,6 +103,11 @@ for _ in $(seq 1 60); do
   curl -fs "http://127.0.0.1:$PORT/health" >/dev/null 2>&1 && break
   sleep 1
 done
+# localhost.run closes a tunnel nobody uses ("tunnel activity timeout"): keep it busy with a request every two minutes.
+( while kill -0 "$TUNNEL_PID" 2>/dev/null; do curl -fs -o /dev/null --max-time 20 "$URL/health" || true; sleep 120; done ) &
+KEEPALIVE=$!
+trap 'kill $TUNNEL_PID $SERVER $KEEPALIVE 2>/dev/null || true' EXIT INT TERM
+
 echo
 echo "    Public demo: $URL"
 echo "    Log in with one click. Share the address; it works until you stop this script."
